@@ -1,0 +1,1 @@
+/usr/bin/c++  -g   CMakeFiles/Stratos_Compiler.dir/main.cpp.o CMakeFiles/Stratos_Compiler.dir/file/file.cpp.o CMakeFiles/Stratos_Compiler.dir/path/path.cpp.o CMakeFiles/Stratos_Compiler.dir/sys/system.cpp.o  -o Stratos_Compiler 

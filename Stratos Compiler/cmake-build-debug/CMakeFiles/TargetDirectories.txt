@@ -1,0 +1,3 @@
+/home/publisher/Development/Stratos/Stratos Compiler/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/publisher/Development/Stratos/Stratos Compiler/cmake-build-debug/CMakeFiles/Stratos_Compiler.dir
+/home/publisher/Development/Stratos/Stratos Compiler/cmake-build-debug/CMakeFiles/edit_cache.dir

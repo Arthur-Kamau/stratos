@@ -1,0 +1,4 @@
+/home/publisher/Software/clion-2019.3.5/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" "/home/publisher/Development/Stratos/Stratos Compiler"
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/publisher/Development/Stratos/Stratos Compiler/cmake-build-debug
