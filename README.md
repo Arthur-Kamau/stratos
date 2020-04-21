@@ -19,16 +19,11 @@ This project intends to  enable its creators make mistakes and learn from them ð
 I am not for the use of `ANTLR` ,`YACC`, `BISON`.
 
 
-###  The plan.
-
-This is a pretty young project.The plan is to build a lexer and a parser.
-The idea is to rely on the underlying infrastructure be it llvm ir or ocamel.
-
-
-
 ### Workplan .
 This is a wip (work in progress).
-* Designing the language.(The basics are done) .
+* Designing the language.(The basics are done)  check out
+     [design.md ](stratos/design/design.md) {`location /stratos/design/design.md`}
+     [compiler_design_thoughts.md ](stratos/design/compiler_design_thoughts.md) {`location /stratos/design/compiler_design_thoughts.md`}
 * Writing a Parser and a Lexer. (starting off)
 * Sematic and syntax analysis (coming soon).
 * Human Intermediate Representation (HIR) (We will get there soon )
@@ -45,7 +40,14 @@ File extensions are `.st` or `.sts`<br>
 however passed in compiler arguments overide the file extension type inference. 
 
 ### Design
-check the  [design.md ](stratos/design/design.md) {`location /stratos/design/design.md`} file for the language design.
+* check the  [design.md ](stratos/design/design.md) {`location /stratos/design/design.md`} file for the language design.
+
+* [compiler_design_thoughts.md ](stratos/design/compiler_design_thoughts.md) {`location /stratos/design/compiler_design_thoughts.md`} file for compiler design thoughts.
+
+* [standard_library_thoughts.md ](stratos/design/compiler_design_thoughts.md) {`location /stratos/design/standard_library_thoughts.md`} file for the standard library design thoughts.
+
+* [tooling.md ](stratos/tooling/tooling.md) {`location /stratos/tooling/tooling.md`} file for the standard library design thoughts.
+
 <br>
 <br>
 
