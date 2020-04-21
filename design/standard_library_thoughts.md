@@ -1,4 +1,4 @@
-# Standard Library
+# Standard Library (Sdl)
 
 From observation a well designed, comprehensive standard library increases programmers productivity.
 Unlike Go, Stratos will have a more thorough standard library.
@@ -19,3 +19,5 @@ Exmple
 2. IO
 3. File 
 
+
+`namespace linq`
