@@ -4,17 +4,19 @@ Trying to build a compiler and an interpretter.
 
 The language priorities are fast and fun to write.
 
-The tutorial is in cSharp 💓. Quickly prototype ideas in Kotlin.
-The language in written in C 💞.
+The tutorial is in cSharp 💓   Quickly prototype ideas in Kotlin.
+The language in written in C or C ++💞.
 
+hopefully one day Stratos will be built in stratos.(dogfeeding)
 
-There are few bsics which have not been concluded.
-1) Will use gcc or clang(llvm yess.).
-2) Whether it will be  vm(Virtual Machine) based language .
+There are few basics which have not been concluded.
+1) Will use gcc or clang(llvm yes.).
+2) Whether it will be  vm(Virtual Machine) based language . 
+3)  A source to source compiler .(typescript  am looking at you 😀 ).
 
 This project intends to  enable its creators make mistakes and learn from them 😘.
 
-hopefully one day Stratos will be built in stratos.(dogfeeding)
+I am not for the use of `ANTLR` ,`YACC`, `BISON`.
 
 
 ###  The plan.
@@ -26,7 +28,11 @@ The idea is to rely on the underlying infrastructure be it llvm ir or ocamel.
 
 ### Workplan .
 This is a wip (work in progress).
-currently designing the language. 
+* Designing the language.(The basics are done) .
+* Writing a Parser and a Lexer. (starting off)
+* Sematic and syntax analysis (coming soon).
+* Human Intermediate Representation (HIR) (We will get there soon )
+
 
 ### Language basic
 compile to binary or genrate bytecode to run in an intergpreter

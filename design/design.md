@@ -14,7 +14,7 @@
 * `char` 
 * `unit` 
 * `mut` 
-* `null` 
+* `nill` 
 * `list` 
 * `set` 
 * `array` 
@@ -54,6 +54,12 @@
 * `thread` 
 * `process` 
 * `task` 
+* `?:`
+* `:=`
+
+## Use of null.
+Since stratos is written in another language it uses `nill` instead of `null`.To prevent the compiler from getting confused.
+
 
 ## Comparison operators
 `==`, `!=` , `>=` , `=<` , `<>`,  `<=>` ,`<!>`, `<!=>` <br>
@@ -122,6 +128,12 @@ An example of the various ways you could dclare an integer variable of name myIn
     3. declare nullable  mutable variable of type  int 
     `let mut  myInt : int? `
     4. declare a public nullable  mutable variable of type  int  `public let mut  myInt : int? `
+    5. For quick typing variables that are declared and initialized could be simlified as
+      `let myInt := 33` .
+      Also under consideration is the following synatax.Remeber variables are immutable and non nullable by default.
+      `let myInt ? := 33`.-> declaring a nullable int. 
+      `let mut myInt ? := 33`.-> declaring a mutable  nullable int. 
+
 
 *  function declarations 
     1.  declare a function (functions with no return type have a return type of type void) or you could set it explicitly remember `fn == function`, example : <br>
@@ -136,6 +148,23 @@ An example of the various ways you could dclare an integer variable of name myIn
 
       finally you could call the function  using number 4 above with named args1 as manadatory and args 2 as optional
 `function_name(args1="name1",args2="name1")` 
+
+* ternary oprator. 
+   since `?` is used for null safty ie a variable with `?` can be null, we could have an automatic return statement in an if like kotlin, which is inpired by functional programming,however i consider this esotoric,as Object oriented dominats software development its wise to have a smooth transition for user from other languages.
+   The use of `?:` looks more appealing plus less typing.
+   `Avoid  EXAMPLE`
+   `....`
+   `let age = 21 `
+   `let isAdult = if( age>18 ) { "you are an adult " }else{ "You ar underaged}` 
+   `print(isAdult);`
+   `.....`
+
+   `Prefer `
+ `....`
+   `let age = 21 `
+   `let isAdult =  age>18 ?: "you are an adult " : "You ar underaged ;` 
+   `print(isAdult);`
+   `.....`
 
 ### Difference between import and use
 
