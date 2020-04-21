@@ -1,3 +1,10 @@
+## Inspirations
+The Compiler development cycle will be make it work, make it beautiful then if fast.
+From Joe Armstrong . `make it work, then make it beautiful, then if you really have to make it fast.90 % of the time if you make it beautiful , it will be alrady fast` (creator of erlang.).
+
+Also With influence from lua and cPython where not alot of effort is put into optimizations.
+
+
 ## Compiler Basics
 A programming languages split lines of code into statements and expression.
 
