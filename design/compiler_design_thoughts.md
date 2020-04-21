@@ -1,4 +1,4 @@
-## Basics
+## Compiler Basics
 A programming languages split lines of code into statements and expression.
 
 * An expression evaluates to a value.Think arithmetic expression etc.
