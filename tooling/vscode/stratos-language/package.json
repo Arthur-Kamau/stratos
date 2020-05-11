@@ -1,0 +1,40 @@
+{
+    "name": "stratos-language",
+    "displayName": "Stratos Language ",
+    "description": "stratos language support.",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.45.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "stratos",
+            "aliases": ["Stratos", "stratos"],
+            "extensions": [".sts",".st",".srt"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "stratos",
+            "scopeName": "source.stratos",
+            "path": "./syntaxes/stratos.tmLanguage.json"
+        }]
+    }, 
+	"keywords": [
+		"lox",
+		"lox-language",
+		"vscode",
+		"vscode-extension",
+		"vscode-language"
+	],
+	"bugs": {
+		"url": "https://github.com:Arthur-Kamau/stratos/issues"
+	},
+	"homepage": "https://github.com:Arthur-Kamau/stratos#readme",
+    "repository": {
+		"type": "git",
+		"url": "git+https://github.com:Arthur-Kamau/stratos.git"
+	}
+}
