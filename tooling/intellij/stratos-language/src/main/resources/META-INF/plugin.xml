@@ -1,0 +1,37 @@
+<idea-plugin>
+    <id>org.araizen.stratos</id>
+    <name>Stratos Language</name>
+    <version>0.1.0</version>
+    <vendor email="support@araizen.com" url="http://www.araizen.com">Araizen Technologies</vendor>
+
+    <description><![CDATA[
+    Stratos Language Pluguin .<br>
+    <em>Support For Stratos File</em><br>
+    <em>Autocompletion</em><br>
+    <em>Code Navigation</em><br>
+    <em>Syntax highlighting</em><br>
+    <em>Code debugger </em><br>
+    ]]></description>
+
+    <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lang</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add your extensions here -->
+    </extensions>
+
+    <actions>
+        <!-- Add your actions here -->
+    <group id="RunAction" text="build" description="building and running stratos code">
+        <add-to-group group-id="MainMenu" anchor="last">
+        </add-to-group>
+        <action class="com.araizen.stratos.RunAction" text="Run"></action>
+        <action class="com.araizen.stratos.BuildAction" text="Build"></action>
+        <action class="com.araizen.stratos.AnalyseAction" text="Analyse"></action>
+        <action class="com.araizen.stratos.FeedBackAction" text="Feedback"></action>
+        <action class="com.araizen.stratos.DocumentationAction" text="Documentation"></action>
+    </group>
+    </actions>
+</idea-plugin>
