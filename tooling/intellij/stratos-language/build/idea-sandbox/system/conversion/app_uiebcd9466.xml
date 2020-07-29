@@ -1,0 +1,21 @@
+<conversion>
+  <applied-converters>
+    <converter id="kotlin-non-jvm-source-roots" />
+    <converter id="junit-to-android-junit-configurations" />
+    <converter id="android-sdk-library" />
+    <converter id="android-module-to-java-module" />
+    <converter id="android-proguard-options" />
+  </applied-converters>
+  <project-files>
+    <file path="/home/kamau/Development/Java/app_ui/.idea/uiDesigner.xml" timestamp="1590912805903" />
+    <file path="/home/kamau/Development/Java/app_ui/.idea/workspace.xml" timestamp="1593492420559" />
+    <file path="/home/kamau/Development/Java/app_ui/.idea/vcs.xml" timestamp="1590912805903" />
+    <file path="/home/kamau/Development/Java/app_ui/.idea/encodings.xml" timestamp="1590912864603" />
+    <file path="/home/kamau/Development/Java/app_ui/.idea/gradle.xml" timestamp="1590912824995" />
+    <file path="/home/kamau/Development/Java/app_ui/Java.iml" timestamp="1590912805919" />
+    <file path="/home/kamau/Development/Java/app_ui/.idea/misc.xml" timestamp="1590912864479" />
+    <file path="/home/kamau/Development/Java/app_ui/.idea/artifacts/JavaFXApp.xml" timestamp="1590912824831" />
+    <file path="/home/kamau/Development/Java/app_ui/.idea/compiler.xml" timestamp="1590912805891" />
+    <file path="/home/kamau/Development/Java/app_ui/.idea/modules.xml" timestamp="1590912864671" />
+  </project-files>
+</conversion>

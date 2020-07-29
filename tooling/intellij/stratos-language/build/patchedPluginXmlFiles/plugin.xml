@@ -1,0 +1,31 @@
+<idea-plugin>
+  <change-notes>
+      Version 0.1.0 Notes.&lt;br&gt;
+      &lt;em&gt;Initial Release&lt;/em&gt;</change-notes>
+  <idea-version since-build="201.7223" until-build="201.*"/>
+  <id>org.araizen.stratos</id>
+  <name>Stratos Language</name>
+  <version>1.0-SNAPSHOT</version>
+  <vendor email="support@araizen.com" url="http://www.araizen.com">Araizen Technologies</vendor>
+  <description>
+    Stratos Language Pluguin .&lt;br&gt;
+    &lt;em&gt;Support For Stratos File&lt;/em&gt;&lt;br&gt;
+    &lt;em&gt;Autocompletion&lt;/em&gt;&lt;br&gt;
+    &lt;em&gt;Code Navigation&lt;/em&gt;&lt;br&gt;
+    &lt;em&gt;Syntax highlighting&lt;/em&gt;&lt;br&gt;
+    &lt;em&gt;Code debugger &lt;/em&gt;&lt;br&gt;
+    </description>
+  <depends>com.intellij.modules.platform</depends>
+  <depends>com.intellij.modules.lang</depends>
+  <extensions defaultExtensionNs="com.intellij"/>
+  <actions>
+    <group id="RunAction" text="Build" description="Building and running stratos code">
+      <add-to-group group-id="MainMenu" anchor="last"/>
+      <action class="com.araizen.stratos.RunAction" id="com.araizen.stratos.app.RunAction" text="Run"/>
+      <action class="com.araizen.stratos.BuildAction" id="com.araizen.stratos.app.BuildAction" text="Build"/>
+      <action class="com.araizen.stratos.AnalyseAction" id="com.araizen.stratos.app.AnalyseAction" text="Analyse"/>
+      <action class="com.araizen.stratos.FeedBackAction" id="com.araizen.stratos.app.FeedBackAction" text="Feedback"/>
+      <action class="com.araizen.stratos.DocumentationAction" id="com.araizen.stratos.app.DocumentationAction" text="Documentation"/>
+    </group>
+  </actions>
+</idea-plugin>

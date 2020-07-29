@@ -24,14 +24,14 @@
 
     <actions>
         <!-- Add your actions here -->
-    <group id="RunAction" text="build" description="building and running stratos code">
+    <group id="RunAction" text="Stratos" description="Building and running stratos code">
         <add-to-group group-id="MainMenu" anchor="last">
         </add-to-group>
-        <action class="com.araizen.stratos.RunAction" text="Run"></action>
-        <action class="com.araizen.stratos.BuildAction" text="Build"></action>
-        <action class="com.araizen.stratos.AnalyseAction" text="Analyse"></action>
-        <action class="com.araizen.stratos.FeedBackAction" text="Feedback"></action>
-        <action class="com.araizen.stratos.DocumentationAction" text="Documentation"></action>
+        <action class="com.araizen.stratos.RunAction"  id="com.araizen.stratos.app.RunAction" text="Run App"/>
+        <action class="com.araizen.stratos.BuildAction" id="com.araizen.stratos.app.BuildAction" text="Build Executable"/>
+<!--        <action class="com.araizen.stratos.AnalyseAction" id="com.araizen.stratos.app.AnalyseAction" text="Analyse"/>-->
+        <action class="com.araizen.stratos.FeedBackAction" id="com.araizen.stratos.app.FeedBackAction" text="Feedback"/>
+        <action class="com.araizen.stratos.DocumentationAction"  id="com.araizen.stratos.app.DocumentationAction" text="Documentation"/>
     </group>
     </actions>
 </idea-plugin>
