@@ -1,11 +1,12 @@
-package com.araizen.stratos
+package com.araizen.stratos.actions
+
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 
 
-class BuildAction : AnAction(){
+class RunAction : AnAction(){
 
     override fun actionPerformed (e : AnActionEvent){
-print("build action ")
+        print("run action ")
     }
 }

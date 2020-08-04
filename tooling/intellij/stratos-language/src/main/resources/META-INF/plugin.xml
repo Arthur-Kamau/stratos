@@ -20,6 +20,12 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
+        <fileType name="Stratos File" implementationClass="com.araizen.stratos.files.StratosFileType"
+                  fieldName="INSTANCE" language="Stratos" extensions="st"/>
+        <fileTypeFactory implementation="com.araizen.stratos.files.StratosFileTypeFactory"/>
+
+        <lang.commenter language="Stratos" implementationClass="com.araizen.stratos.lexer.StratosCommenter"/>
+        <lang.parserDefinition language="Stratos" implementationClass="com.araizen.stratos.parser.StratosParserDefinition"/>
     </extensions>
 
     <actions>
@@ -27,11 +33,11 @@
     <group id="RunAction" text="Stratos" description="Building and running stratos code">
         <add-to-group group-id="MainMenu" anchor="last">
         </add-to-group>
-        <action class="com.araizen.stratos.RunAction"  id="com.araizen.stratos.app.RunAction" text="Run App"/>
-        <action class="com.araizen.stratos.BuildAction" id="com.araizen.stratos.app.BuildAction" text="Build Executable"/>
+        <action class="com.araizen.stratos.actions.RunAction"  id="com.araizen.stratos.app.RunAction" text="Run App"/>
+        <action class="com.araizen.stratos.actions.BuildAction" id="com.araizen.stratos.app.BuildAction" text="Build Executable"/>
 <!--        <action class="com.araizen.stratos.AnalyseAction" id="com.araizen.stratos.app.AnalyseAction" text="Analyse"/>-->
-        <action class="com.araizen.stratos.FeedBackAction" id="com.araizen.stratos.app.FeedBackAction" text="Feedback"/>
-        <action class="com.araizen.stratos.DocumentationAction"  id="com.araizen.stratos.app.DocumentationAction" text="Documentation"/>
+        <action class="com.araizen.stratos.actions.FeedBackAction" id="com.araizen.stratos.app.FeedBackAction" text="Feedback"/>
+        <action class="com.araizen.stratos.actions.DocumentationAction"  id="com.araizen.stratos.app.DocumentationAction" text="Documentation"/>
     </group>
     </actions>
 </idea-plugin>

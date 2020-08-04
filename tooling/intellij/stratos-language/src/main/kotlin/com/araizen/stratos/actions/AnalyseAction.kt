@@ -1,4 +1,4 @@
-package com.araizen.stratos
+package com.araizen.stratos.actions
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
