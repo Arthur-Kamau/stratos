@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<options>
+  <configurable id="preferences.keymap" configurable_name="Keymap">
+    <option name="build" path="ActionManager" hit="Build Executable" />
+    <option name="executable" path="ActionManager" hit="Build Executable" />
+    <option name="documentation" path="ActionManager" hit="Documentation" />
+    <option name="feedback" path="ActionManager" hit="Feedback" />
+    <option name="app" path="ActionManager" hit="Run App" />
+    <option name="run" path="ActionManager" hit="Run App" />
+  </configurable>
+</options>
+

@@ -4,7 +4,7 @@
       <map>
         <entry key="$USER_HOME$/Development/Java/app_ui">
           <value>
-            <RecentProjectMetaInfo opened="true" projectWorkspaceId="1cfHcaOVIfMbjkulE6zLDyriM2G">
+            <RecentProjectMetaInfo projectWorkspaceId="1cfHcaOVIfMbjkulE6zLDyriM2G">
               <option name="binFolder" value="$APPLICATION_HOME_DIR$/bin" />
               <option name="build" value="IC-201.7223.91" />
               <option name="buildTimestamp" value="1588220686867" />
@@ -13,10 +13,37 @@
             </RecentProjectMetaInfo>
           </value>
         </entry>
+        <entry key="$USER_HOME$/IdeaProjects/StratosProject">
+          <value>
+            <RecentProjectMetaInfo projectWorkspaceId="1fdurJm2VbMpjZ9zwYDtWmIEsWF">
+              <option name="binFolder" value="$APPLICATION_HOME_DIR$/bin" />
+              <option name="build" value="IC-201.7223.91" />
+              <option name="buildTimestamp" value="1588220688562" />
+              <frame x="52" y="47" width="1304" height="701" />
+              <option name="productionCode" value="IC" />
+              <option name="projectOpenTimestamp" value="1596560489501" />
+            </RecentProjectMetaInfo>
+          </value>
+        </entry>
+        <entry key="$USER_HOME$/Development/stratos_projects">
+          <value>
+            <RecentProjectMetaInfo opened="true" projectWorkspaceId="1fdv9WRz3GdNYKbEfa3SKSzagUu">
+              <option name="binFolder" value="$APPLICATION_HOME_DIR$/bin" />
+              <option name="build" value="IC-201.7223.91" />
+              <option name="buildTimestamp" value="1588220640041" />
+              <frame x="143" y="78" width="1184" height="647" />
+              <option name="productionCode" value="IC" />
+              <option name="projectOpenTimestamp" value="1596570016252" />
+            </RecentProjectMetaInfo>
+          </value>
+        </entry>
       </map>
     </option>
+    <option name="lastProjectLocation" value="$USER_HOME$/Development" />
     <option name="recentPaths">
       <list>
+        <option value="$USER_HOME$/Development/stratos_projects" />
+        <option value="$USER_HOME$/IdeaProjects/StratosProject" />
         <option value="$USER_HOME$/Development/Java/app_ui" />
       </list>
     </option>

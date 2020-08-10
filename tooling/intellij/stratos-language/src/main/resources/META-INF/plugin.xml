@@ -24,8 +24,17 @@
                   fieldName="INSTANCE" language="Stratos" extensions="st"/>
         <fileTypeFactory implementation="com.araizen.stratos.files.StratosFileTypeFactory"/>
 
-        <lang.commenter language="Stratos" implementationClass="com.araizen.stratos.lexer.StratosCommenter"/>
-        <lang.parserDefinition language="Stratos" implementationClass="com.araizen.stratos.parser.StratosParserDefinition"/>
+
+        <lang.parserDefinition language="Stratos" implementationClass="com.araizen.stratos.syntax.StratosParserDefinition"/>
+        <lang.syntaxHighlighterFactory language="Stratos"
+                                       implementationClass="com.lark.syntax.LarkSyntaxHighlighterFactory"/>
+        <colorSettingsPage implementation="com.lark.syntax.LarkColorSettingsPage"/>
+        <completion.contributor language="Stratos" implementationClass="com.lark.syntax.LarkCompletionContributor"/>
+        <psi.referenceProvider language="Stratos" providerClass="com.lark.syntax.LarkReferenceProvider"/>
+        <multiHostInjector implementation="com.lark.syntax.LarkRegexInjector"/>
+
+<!--        <lang.commenter language="Stratos" implementationClass="com.araizen.stratos.lexer.StratosCommenter"/>-->
+<!--        <lang.parserDefinition language="Stratos" implementationClass="com.araizen.stratos.parser.StratosParserDefinition"/>-->
     </extensions>
 
     <actions>

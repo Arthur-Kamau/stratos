@@ -17,15 +17,17 @@
     </description>
   <depends>com.intellij.modules.platform</depends>
   <depends>com.intellij.modules.lang</depends>
-  <extensions defaultExtensionNs="com.intellij"/>
+  <extensions defaultExtensionNs="com.intellij">
+    <fileType name="Stratos File" implementationClass="com.araizen.stratos.files.StratosFileType" fieldName="INSTANCE" language="Stratos" extensions="st"/>
+    <fileTypeFactory implementation="com.araizen.stratos.files.StratosFileTypeFactory"/>
+  </extensions>
   <actions>
-    <group id="RunAction" text="Build" description="Building and running stratos code">
+    <group id="RunAction" text="Stratos" description="Building and running stratos code">
       <add-to-group group-id="MainMenu" anchor="last"/>
-      <action class="com.araizen.stratos.RunAction" id="com.araizen.stratos.app.RunAction" text="Run"/>
-      <action class="com.araizen.stratos.BuildAction" id="com.araizen.stratos.app.BuildAction" text="Build"/>
-      <action class="com.araizen.stratos.AnalyseAction" id="com.araizen.stratos.app.AnalyseAction" text="Analyse"/>
-      <action class="com.araizen.stratos.FeedBackAction" id="com.araizen.stratos.app.FeedBackAction" text="Feedback"/>
-      <action class="com.araizen.stratos.DocumentationAction" id="com.araizen.stratos.app.DocumentationAction" text="Documentation"/>
+      <action class="com.araizen.stratos.actions.RunAction" id="com.araizen.stratos.app.RunAction" text="Run App"/>
+      <action class="com.araizen.stratos.actions.BuildAction" id="com.araizen.stratos.app.BuildAction" text="Build Executable"/>
+      <action class="com.araizen.stratos.actions.FeedBackAction" id="com.araizen.stratos.app.FeedBackAction" text="Feedback"/>
+      <action class="com.araizen.stratos.actions.DocumentationAction" id="com.araizen.stratos.app.DocumentationAction" text="Documentation"/>
     </group>
   </actions>
 </idea-plugin>

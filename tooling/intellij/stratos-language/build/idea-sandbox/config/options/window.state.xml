@@ -1,23 +1,26 @@
 <application>
   <component name="WindowManager">
+    <frame x="143" y="78" width="1184" height="647" />
     <layout>
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Find" order="1" />
       <window_info anchor="bottom" id="Inspection" order="4" weight="0.4" />
-      <window_info content_ui="combo" id="Project" order="0" weight="0.25" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info id="Structure" order="1" weight="0.25" />
       <window_info anchor="bottom" id="Run" order="2" />
       <window_info anchor="bottom" id="Version Control" order="0" />
+      <window_info content_ui="combo" id="Project" order="0" weight="0.25" />
     </layout>
   </component>
   <component name="WindowStateApplicationService">
-    <state x="444" y="104" width="424" height="491" key="FileChooserDialogImpl" timestamp="1596028808999">
-      <screen x="0" y="27" width="1366" height="741" />
+    <state x="472" y="104" width="424" height="491" key="FileChooserDialogImpl" timestamp="1596560469859">
+      <screen x="42" y="27" width="1324" height="741" />
     </state>
     <state x="444" y="104" width="424" height="491" key="FileChooserDialogImpl/0.27.1366.741" timestamp="1596028808999" />
-    <state x="0" y="27" width="1356" height="741" key="new project wizard" timestamp="1596028786964">
-      <screen x="0" y="27" width="1366" height="741" />
+    <state x="472" y="104" key="FileChooserDialogImpl/42.27.1324.741" timestamp="1596560469859" />
+    <state x="42" y="27" width="1356" height="741" key="new project wizard" timestamp="1596560487310">
+      <screen x="42" y="27" width="1324" height="741" />
     </state>
     <state x="0" y="27" width="1356" height="741" key="new project wizard/0.27.1366.741" timestamp="1596028786964" />
+    <state x="42" y="27" key="new project wizard/42.27.1324.741" timestamp="1596560487310" />
   </component>
 </application>
