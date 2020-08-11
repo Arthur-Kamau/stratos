@@ -2,7 +2,9 @@
     "name": "stratos-language",
     "displayName": "Stratos Language ",
     "description": "stratos language support.",
-    "version": "0.0.1",
+    "icon": "icons/images.jpg",
+    "publisher": "arthurKamau",
+    "version": "0.1.0",
     "engines": {
         "vscode": "^1.45.0"
     },
@@ -23,8 +25,8 @@
         }]
     }, 
 	"keywords": [
-		"lox",
-		"lox-language",
+		"Stratos",
+		"Stratos-language",
 		"vscode",
 		"vscode-extension",
 		"vscode-language"

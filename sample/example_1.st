@@ -1,12 +1,37 @@
-use "system"
+use "system";
+import "";
+part "";
 
+class nname implements kamau {
+ if(kam)  
+}
+part of ex 
+// kama
+/** */
 /**
 **
+* au
 * use of namespace, Enum, Class , Constructors (create), Destructors (destroy), Contional (When)
 */
+try{
+   true ;
+   "kama"
+}
+true nil 
+true 
+ if ()
+'name'
+"""kamau """
+return 
+let me = ",ll    "
+nil null 
+#region
+#endregion
 namespace Species{
-
-    Enums Race {
+struct space {
+   
+}
+    enum Race {
        African , Asian , Europian, American
     }
     class Mammals{
@@ -14,7 +39,7 @@ namespace Species{
           // create getter and setter for class properties
           data limbs: int;
           data hasHooves: bool;
-
+false 
           /**
            *default constructor
            *  you could als create is ussing
@@ -32,11 +57,13 @@ namespace Species{
             hasHooves = false
           }
 
+
+
           // non default constructor
           create biped(){
              println("Non default  constructot")
           }
-
+let me = true 
 
            /**
              *  default destructor
@@ -45,10 +72,25 @@ namespace Species{
           destroy {
 
           }
-
+return nil
     }
 }
+print()
 
+#region
+class kamau {
+
+val name = true
+this 
+}
+
+namespace me{
+
+}
+
+
+
+#endregion
 
 
 
