@@ -1,0 +1,12 @@
+<conversion>
+  <applied-converters>
+    <converter id="kotlin-non-jvm-source-roots" />
+    <converter id="junit-to-android-junit-configurations" />
+    <converter id="android-sdk-library" />
+    <converter id="android-module-to-java-module" />
+    <converter id="android-proguard-options" />
+  </applied-converters>
+  <project-files>
+    <file path="/home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/build/idea-sandbox/config/light-edit/.idea/workspace.xml" timestamp="1597128255777" />
+  </project-files>
+</conversion>

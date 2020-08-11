@@ -1,0 +1,48 @@
+<application>
+  <component name="ActionsLocalSummary">
+    <data>
+      <entry key="EditorEnter">
+        <ActionSummary times="3" last="1596563576509" />
+      </entry>
+      <entry key="GotoClass">
+        <ActionSummary times="1" last="1596560510916" />
+      </entry>
+      <entry key="NewProject">
+        <ActionSummary times="1" last="1596560580537" />
+      </entry>
+      <entry key="NewScratchFile">
+        <ActionSummary times="1" last="1596560526860" />
+      </entry>
+      <entry key="RevealIn">
+        <ActionSummary times="1" last="1596560540059" />
+      </entry>
+      <entry key="ShowSettings">
+        <ActionSummary times="1" last="1596572204729" />
+      </entry>
+      <entry key="SynchronizeCurrentFile">
+        <ActionSummary times="1" last="1596560672397" />
+      </entry>
+      <entry key="Tree-selectNext">
+        <ActionSummary times="65" last="1596572298132" />
+      </entry>
+      <entry key="Tree-selectPrevious">
+        <ActionSummary times="33" last="1596572298880" />
+      </entry>
+      <entry key="WelcomeScreen.CreateNewProject">
+        <ActionSummary times="2" last="1596560471987" />
+      </entry>
+      <entry key="WelcomeScreen.OpenProject">
+        <ActionSummary times="2" last="1596560464404" />
+      </entry>
+      <entry key="com.intellij.ide.plugins.PluginManagerConfigurable$InstallFromDiskAction">
+        <ActionSummary times="1" last="1596572224793" />
+      </entry>
+      <entry key="com.intellij.ide.plugins.newui.TabbedPaneHeaderComponent$3">
+        <ActionSummary times="2" last="1596572217643" />
+      </entry>
+      <entry key="com.intellij.openapi.project.DumbAwareAction$SimpleDumbAwareAction">
+        <ActionSummary times="1" last="1596560513934" />
+      </entry>
+    </data>
+  </component>
+</application>

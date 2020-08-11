@@ -1,0 +1,16 @@
+<conversion>
+  <applied-converters>
+    <converter id="kotlin-non-jvm-source-roots" />
+    <converter id="junit-to-android-junit-configurations" />
+    <converter id="android-sdk-library" />
+    <converter id="android-module-to-java-module" />
+    <converter id="android-proguard-options" />
+  </applied-converters>
+  <project-files>
+    <file path="/home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/sample project/.idea/sample project.iml" timestamp="1597129387026" />
+    <file path="/home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/sample project/.idea/modules.xml" timestamp="1597129387146" />
+    <file path="/home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/sample project/.idea/workspace.xml" timestamp="1597130441910" />
+    <file path="/home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/sample project/.idea/misc.xml" timestamp="1597129387098" />
+    <file path="/home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/sample project/.idea/vcs.xml" timestamp="1597129387190" />
+  </project-files>
+</conversion>

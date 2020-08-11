@@ -7,8 +7,6 @@
 			"include": "#keywords"
 		},
 		
-		
-		
 		{
 			"include": "#string-multiline"
 		},
@@ -59,10 +57,6 @@
 			]
 		}
 	
-		
-		
-	
-		
 	],
 	"repository": {
 		"keywords": {
@@ -170,6 +164,23 @@
 				},
 				{
 					"match": "\\b(class)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(<)\\s*([A-Za-z_][A-Za-z0-9_]*))?\\b",
+					"captures": {
+						"1": {
+							"name": "storage.type.class.stratos"
+						},
+						"2": {
+							"name": "entity.name.type.class.stratos"
+						},
+						"3": {
+							"name": "storage.modifier.stratos"
+						},
+						"4": {
+							"name": "entity.name.type.class.stratos"
+						}
+					}
+				},
+				{
+					"match": "\\b(implements)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(<)\\s*([A-Za-z_][A-Za-z0-9_]*))?\\b",
 					"captures": {
 						"1": {
 							"name": "storage.type.class.stratos"

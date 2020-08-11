@@ -1,9 +1,19 @@
 # Stratos.
 
+<img src="./icons/images.jpg"/>
 
-Trying to build a compiler and an interpretter.
 
 The language priorities are fast and fun to write.
+
+## objective
+
+* fast
+* lowlevel
+* mix of functional and oop.
+* flexible.
+* compiled language.
+* Ability to generate static binaries.
+
 
 
 ## Status.

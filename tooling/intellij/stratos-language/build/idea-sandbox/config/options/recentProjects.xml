@@ -2,49 +2,23 @@
   <component name="RecentProjectsManager">
     <option name="additionalInfo">
       <map>
-        <entry key="$USER_HOME$/Development/Java/app_ui">
+        <entry key="$USER_HOME$/Development/Stratos/compiler/tooling/intellij/sample project">
           <value>
-            <RecentProjectMetaInfo projectWorkspaceId="1cfHcaOVIfMbjkulE6zLDyriM2G">
+            <RecentProjectMetaInfo opened="true" projectWorkspaceId="1fwVuErTEA5yVG3RjuTL6LWo9ul">
               <option name="binFolder" value="$APPLICATION_HOME_DIR$/bin" />
-              <option name="build" value="IC-201.7223.91" />
-              <option name="buildTimestamp" value="1588220686867" />
+              <option name="build" value="IC-202.6397.94" />
+              <option name="buildTimestamp" value="1595846399982" />
+              <frame x="-89" y="411" width="1346" height="692" />
               <option name="productionCode" value="IC" />
-              <option name="projectOpenTimestamp" value="1596028820545" />
-            </RecentProjectMetaInfo>
-          </value>
-        </entry>
-        <entry key="$USER_HOME$/IdeaProjects/StratosProject">
-          <value>
-            <RecentProjectMetaInfo projectWorkspaceId="1fdurJm2VbMpjZ9zwYDtWmIEsWF">
-              <option name="binFolder" value="$APPLICATION_HOME_DIR$/bin" />
-              <option name="build" value="IC-201.7223.91" />
-              <option name="buildTimestamp" value="1588220688562" />
-              <frame x="52" y="47" width="1304" height="701" />
-              <option name="productionCode" value="IC" />
-              <option name="projectOpenTimestamp" value="1596560489501" />
-            </RecentProjectMetaInfo>
-          </value>
-        </entry>
-        <entry key="$USER_HOME$/Development/stratos_projects">
-          <value>
-            <RecentProjectMetaInfo opened="true" projectWorkspaceId="1fdv9WRz3GdNYKbEfa3SKSzagUu">
-              <option name="binFolder" value="$APPLICATION_HOME_DIR$/bin" />
-              <option name="build" value="IC-201.7223.91" />
-              <option name="buildTimestamp" value="1588220640041" />
-              <frame x="143" y="78" width="1184" height="647" />
-              <option name="productionCode" value="IC" />
-              <option name="projectOpenTimestamp" value="1596570016252" />
+              <option name="projectOpenTimestamp" value="1597129363374" />
             </RecentProjectMetaInfo>
           </value>
         </entry>
       </map>
     </option>
-    <option name="lastProjectLocation" value="$USER_HOME$/Development" />
     <option name="recentPaths">
       <list>
-        <option value="$USER_HOME$/Development/stratos_projects" />
-        <option value="$USER_HOME$/IdeaProjects/StratosProject" />
-        <option value="$USER_HOME$/Development/Java/app_ui" />
+        <option value="$USER_HOME$/Development/Stratos/compiler/tooling/intellij/sample project" />
       </list>
     </option>
   </component>

@@ -1,7 +1,6 @@
 <idea-plugin>
     <id>org.araizen.stratos</id>
     <name>Stratos Language</name>
-    <version>0.1.0</version>
     <vendor email="support@araizen.com" url="http://www.araizen.com">Araizen Technologies</vendor>
 
     <description><![CDATA[
@@ -20,33 +19,13 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
-        <fileType name="Stratos File" implementationClass="com.araizen.stratos.files.StratosFileType"
-                  fieldName="INSTANCE" language="Stratos" extensions="st"/>
-        <fileTypeFactory implementation="com.araizen.stratos.files.StratosFileTypeFactory"/>
-
-
-        <lang.parserDefinition language="Stratos" implementationClass="com.araizen.stratos.syntax.StratosParserDefinition"/>
-        <lang.syntaxHighlighterFactory language="Stratos"
-                                       implementationClass="com.lark.syntax.LarkSyntaxHighlighterFactory"/>
-        <colorSettingsPage implementation="com.lark.syntax.LarkColorSettingsPage"/>
-        <completion.contributor language="Stratos" implementationClass="com.lark.syntax.LarkCompletionContributor"/>
-        <psi.referenceProvider language="Stratos" providerClass="com.lark.syntax.LarkReferenceProvider"/>
-        <multiHostInjector implementation="com.lark.syntax.LarkRegexInjector"/>
-
-<!--        <lang.commenter language="Stratos" implementationClass="com.araizen.stratos.lexer.StratosCommenter"/>-->
-<!--        <lang.parserDefinition language="Stratos" implementationClass="com.araizen.stratos.parser.StratosParserDefinition"/>-->
     </extensions>
 
     <actions>
         <!-- Add your actions here -->
-    <group id="RunAction" text="Stratos" description="Building and running stratos code">
-        <add-to-group group-id="MainMenu" anchor="last">
-        </add-to-group>
-        <action class="com.araizen.stratos.actions.RunAction"  id="com.araizen.stratos.app.RunAction" text="Run App"/>
-        <action class="com.araizen.stratos.actions.BuildAction" id="com.araizen.stratos.app.BuildAction" text="Build Executable"/>
-<!--        <action class="com.araizen.stratos.AnalyseAction" id="com.araizen.stratos.app.AnalyseAction" text="Analyse"/>-->
-        <action class="com.araizen.stratos.actions.FeedBackAction" id="com.araizen.stratos.app.FeedBackAction" text="Feedback"/>
-        <action class="com.araizen.stratos.actions.DocumentationAction"  id="com.araizen.stratos.app.DocumentationAction" text="Documentation"/>
-    </group>
+        <fileType name="Stratos File" implementationClass="com.araizen.stratos.files.StratosFileType"
+                  fieldName="INSTANCE" language="Stratos" extensions="st"/>
+        <fileTypeFactory implementation="com.araizen.stratos.files.StratosFileTypeFactory"/>
+
     </actions>
 </idea-plugin>
