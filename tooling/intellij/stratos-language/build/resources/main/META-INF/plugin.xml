@@ -4,7 +4,7 @@
       Add change notes here.&lt;br&gt;
       &lt;em&gt;most HTML tags may be used&lt;/em&gt;</change-notes>
   <idea-version since-build="202.6397" until-build="202.*"/>
-  <id>org.araizen.stratos</id>
+  <id>stratos</id>
   <name>Stratos Language</name>
   <vendor email="support@araizen.com" url="http://www.araizen.com">Araizen Technologies</vendor>
   <description>
@@ -17,9 +17,13 @@
     </description>
   <depends>com.intellij.modules.platform</depends>
   <depends>com.intellij.modules.lang</depends>
-  <extensions defaultExtensionNs="com.intellij"/>
+  <extensions defaultExtensionNs="com.intellij">
+    <fileType name="Stratos" implementationClass="com.araizen.stratos.files.StratosLanguageFileType" fieldName="INSTANCE" language="stratos" extensions="st"/>
+    <projectStructureDetector implementation="com.araizen.stratos.modules.StratosProjectStructureDetector"/>
+  </extensions>
   <actions>
-    <fileType name="Stratos File" implementationClass="com.araizen.stratos.files.StratosFileType" fieldName="INSTANCE" language="Stratos" extensions="st"/>
-    <fileTypeFactory implementation="com.araizen.stratos.files.StratosFileTypeFactory"/>
+    <action id="Stratos.NewFile" class="com.araizen.stratos.action.NewStratosFileAction" text="Stratos File" description="Create new Stratos file">
+      <add-to-group group-id="NewGroup" anchor="before" relative-to-action="NewFromTemplate"/>
+    </action>
   </actions>
 </idea-plugin>
