@@ -296,6 +296,12 @@ To use abstract class or interface use struct instead.
 
 pointers are a bone of contetion and are still under evaluation.
 
+User input 
+===========
+1. Piping result.
+2. printing object.
+3. Alias and enums.
+
 
 ---
 The language syntax borrows from  these languages `java` , `kotlin`, `dart`, `c` , `c#` , `rust` and `elixir`.

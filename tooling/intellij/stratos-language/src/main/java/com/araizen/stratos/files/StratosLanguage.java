@@ -12,15 +12,20 @@ public class StratosLanguage extends Language {
 
     public static final StratosLanguage INSTANCE = new StratosLanguage();
 
+//    private StratosLanguage() {
+//        super("stratos");
+//    }
+
     private StratosLanguage() {
-        super("stratos");
+        super("Stratos", "text/x-stratos-source", "text/stratos", "application/x-stratos", "text/x-stratos");
     }
+
     /**
      * Returns true if value is a valid identifier (as specified
-     * in Java Language Specification, section 3.8).
+     * in stratos Language Specification, section 3.8).
      *
      * @param value string to test (can be null or empty)
-     * @return true if value is a valid java identifier.
+     * @return true if value is a valid stratos identifier.
      */
     public static boolean isIdentifier(String value) {
 
@@ -92,6 +97,18 @@ public class StratosLanguage extends Language {
                     "const", "float", "native", "super", "while"); //NOI18N
         }
         return keywords.contains(value);
+    }
+
+
+    @NotNull
+    @Override
+    public String getDisplayName() {
+        return "Stratos";
+    }
+
+    @Override
+    public boolean isCaseSensitive() {
+        return true;
     }
 
     private static boolean isBooleanLiteral(String value) {
