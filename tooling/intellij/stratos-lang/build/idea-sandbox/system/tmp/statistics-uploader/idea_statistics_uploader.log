@@ -1,0 +1,14 @@
+19/08 17:49:29 INFO  com.intellij.internal.statistic.uploader.ExternalDataCollectorLogger - Process started with '--ide-token /home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/stratos-lang/build/idea-sandbox/system/token --recorder FUS --files /home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/stratos-lang/build/idea-sandbox/system/event-log-data/logs/FUS/75ae-4428-8755-52aff1d1aa1d-202.6397.94-release.log --device 19082030610e00a-e605-493d-8fc8-5a973985983e --bucket 159 --url https://resources.jetbrains.com/storage/fus/config/v3/%s/%s.json --product IC --product-version 2020.2 --user-agent IntelliJ IDEA/202.6397.94'
+19/08 17:49:29 INFO  com.intellij.internal.statistic.uploader.events.ExternalEventsLogger - 1597848569405 STARTED
+19/08 17:49:29 INFO  com.intellij.internal.statistic.uploader.ExternalDataCollectorLogger - IDE token file: /home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/stratos-lang/build/idea-sandbox/system/token
+19/08 17:49:29 INFO  com.intellij.internal.statistic.uploader.ExternalDataCollectorLogger - Waiting for 2000ms for IDE to close. Attempt #0
+19/08 17:49:31 INFO  com.intellij.internal.statistic.uploader.ExternalDataCollectorLogger - Start uploading...
+19/08 17:49:31 INFO  com.intellij.internal.statistic.uploader.ExternalDataCollectorLogger - {url:https://resources.jetbrains.com/storage/fus/config/v3/%s/%s.json, product:IC, userAgent:IntelliJ IDEA/202.6397.94(External), internal:false, isTest:false}
+19/08 17:49:31 INFO  com.intellij.internal.statistic.uploader.ExternalDataCollectorLogger - {recorder:FUS, files:/home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/stratos-lang/build/idea-sandbox/system/event-log-data/logs/FUS/75ae-4428-8755-52aff1d1aa1d-202.6397.94-release.log}
+19/08 17:49:31 INFO  com.intellij.internal.statistic.uploader.ExternalDataCollectorLogger - {device:19082030610e00a-e605-493d-8fc8-5a973985983e, bucket:159}
+19/08 17:49:33 TRACE com.intellij.internal.statistic.uploader.ExternalDataCollectorLogger - 75ae-4428-8755-52aff1d1aa1d-202.6397.94-release.log-> Cannot upload event log, record list is empty
+19/08 17:49:33 TRACE com.intellij.internal.statistic.uploader.ExternalDataCollectorLogger - Removed sent log: 75ae-4428-8755-52aff1d1aa1d-202.6397.94-release.log
+19/08 17:49:33 INFO  com.intellij.internal.statistic.uploader.events.ExternalEventsLogger - 1597848573435 SEND 0 1 1 []
+19/08 17:49:33 INFO  com.intellij.internal.statistic.uploader.events.ExternalEventsLogger - 1597848573445 FINISHED SENT_WITH_ERRORS
+19/08 17:49:33 TRACE com.intellij.internal.statistic.uploader.ExternalDataCollectorLogger - Uploading finished with SENT_WITH_ERRORS
+19/08 17:49:33 TRACE com.intellij.internal.statistic.uploader.ExternalDataCollectorLogger - Uploaded 0 out of 1 files.

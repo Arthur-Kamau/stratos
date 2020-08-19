@@ -1,0 +1,31 @@
+<idea-plugin>
+    <id>stratos</id>
+
+    <name>Stratos Language</name>
+    <vendor email="kamaukenn11@gmail.com.com" url="https://github.com/Arthur-Kamau/stratos">Stratos</vendor>
+
+    <description><![CDATA[
+   Stratos Language Plugin.<br>
+    <em>Project creating</em>
+    <em>Syntax highlighting</em>
+    <em>Commenting code</em>
+    ]]></description>
+
+    <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add your extensions here -->
+
+            <fileType name="Stratos File" implementationClass="lang.stratos.language.StratosFileType"
+                      fieldName="INSTANCE"  extensions="st"/>
+<!--        <lang.commenter language="stratos" implementationClass=" lang.stratos.commentor.StratosCommenter"/>-->
+        <lang.commenter  implementationClass=" lang.stratos.commentor.StratosCommenter"/>
+
+    </extensions>
+
+    <actions>
+        <!-- Add your actions here -->
+    </actions>
+</idea-plugin>
