@@ -1,7 +1,7 @@
 
 ## Ternary oprator. 
    
-  use of  `?:` instead of `?` as `?` is used of safe checks.
+  use of  `?: ` instead of `?`. as `?` is used of safe checks.
   `value = expression ?: value :  value ;`<br>
 Example <br/>
 

@@ -8,4 +8,4 @@ To understand how to navigate the project folder structure please chack the main
 
 ## Inspirations.
 Stratos has borowed rom From oop languages such as CPP, JAVA and C# (`constructors`, `destructors`, `structs`, `classes`, `objects`).Language guarantes such as scoping and safety accessor (`some` and `none`) from Rust.A flexible type system from Kotlin (`data  types(a class is a type)`, `var`, `val`).
-Flexibility from elixir (`specify main`) and pipes `|>` 
+Maliable from functional language example get to specify project entry point other than main  and pipes `|>`  from elixir/erlang.
