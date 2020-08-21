@@ -1,4 +1,0 @@
- java.lang.Thread.run 100ms
-  sun.awt.X11.XToolkit.run 100ms
-   sun.awt.X11.XToolkit.run 100ms
-    sun.awt.X11.XlibWrapper.XFilterEvent 100ms

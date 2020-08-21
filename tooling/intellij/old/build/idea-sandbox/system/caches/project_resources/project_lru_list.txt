@@ -1,3 +1,0 @@
-stratos_projects.d0d72433
-stratosproject.469d5881
-app_ui.ebcd9466

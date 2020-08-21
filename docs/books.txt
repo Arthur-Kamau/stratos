@@ -1,4 +1,0 @@
-http://www.craftinginterpreters.com/introduction.html#design-note
-https://tomassetti.me/how-to-create-programming-language/
-https://www.guru99.com/syntax-analysis-parsing-types.html
-https://www.tutorialspoint.com/compiler_design/compiler_design_syntax_analysis.htm

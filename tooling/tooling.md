@@ -1,28 +1,16 @@
 ## Tooling.
-This will contain the language tools, that increase productivity.
-This could include the following.
+Tooling contain the following items
+(Some projects have not yet been completed, some are longterm while some have been bootstrapped.)
 
 1. Compiler plugins(We will get ther soon enough).
-2. A language server  for ide / code editor.
-3. A source code analysis tool example (example think of dart analyzer,PVS-Studio ,  )
+2. A language server  for ide / code editor.(Mid term goals)
+3. A source code analysis tool example (example think of dart analyzer,PVS-Studio  )
 4. Toolman  the build tool for the Stratos programming language
 
+5. Vs code plugin. check  [README.md ](vscode/README.md) {`location /stratos/tooling/vscode/README.md`} 
 
-### A Language Server.
-Sratos will aim at providing tooling for   VS Code and Intellij Community.
-
-
----
-## Vscode  
-found inside vscode
-1. stratos language - > vs code  for language syntax highlightin, opne in vs code and press `F5`
-2. stratos lang -> Smart code completion, debugging, linting (comming soon)
+6. Intellij Idea Language plugin. [README.md ](vscode/README.md) {`location /stratos/tooling/vscode/README.md`} 
 
 
-### creating a new language extension
-- getting started by running `yo code`
-- select `new  language support`
-
-### helpful links -  How to structre tmLanguage.json
-
- https://macromates.com/manual/en/language_grammars
+* For The Vs Code Stratos Language Plugin and Intellij Idea Stratos Language  Plugin contain `README.md` files and `documentation.md` for more details
+on the current version , features supported and  planned
