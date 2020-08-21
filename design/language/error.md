@@ -1,4 +1,10 @@
 ### Error syntax
+* To promote  type safety  functions/ classes can result in non  nullable and nullable types.
+
+* Nullable types have `let` as the base declaration  while non nullables have `var` and `val` as the base declaration (`variables.md`)
+
+* 
+
 
 Errors derive from the exception class the error syntax should resemble these :
 

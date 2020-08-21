@@ -30,3 +30,10 @@ or  onother example is the use of with, with is used on the succes of  an expres
 &emsp;`print(" name cannot be cast to an intgeer");`<br>
 `   }`
 
+
+use of if, just like any c based language.<br>
+`if(20>21)`<br>
+&emsp; `print("greater")`
+`} else {`<br>
+&emsp; `print("greater")`
+`}`

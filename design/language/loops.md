@@ -13,11 +13,6 @@
   `}`<br>
 
 
-* using for with incrimental
-  `for (let size=0;size== ["allan","mathew","rachael"].size,size++){`<br>
-  &emsp; `println("name $name");`<br>
-  `}`<br>
-
 
 * using do while
 

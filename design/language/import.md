@@ -5,7 +5,7 @@ Import is for a class while use is for a namespace.
 The difference is that the compiler at compile time should resolve all the classes in the namespace and discard all those that are not in use.
 This is target to avoid uneccessary imports example
 
-`use System;` <br> 
+`use System::out;` <br> 
 `fn main (){` <br> 
   &emsp; `print("hello");` <br>
   &emsp; `println("hello");` <br>
@@ -13,8 +13,8 @@ This is target to avoid uneccessary imports example
 
 could compile to an intermediate form of
 
-`import System.Print;` <br> 
-`import System.Println;` <br> 
+`import System::Print;` <br> 
+`import System::Println;` <br> 
 `fn main (){` <br> 
   &emsp; `print("hello");` <br>
   &emsp; `println("hello");` <br>
