@@ -4,7 +4,7 @@
 <img  src="./icons/images.jpg"/>
 </p>
 
-The language priorities are fast and fun to write.
+A Fast and fun to write programming language.
 
 ## objective
 
@@ -18,9 +18,10 @@ The language priorities are fast and fun to write.
 ## Status.
 
 Status In `Active development` 👷👷 <br>
-Plan  <br>
 
-- Focus now is in tooling.
+## Plan  <br>
+
+- Focus now is in tooling. ✅
 - Parser.
 - Lexer.
 - Stratos IR.
