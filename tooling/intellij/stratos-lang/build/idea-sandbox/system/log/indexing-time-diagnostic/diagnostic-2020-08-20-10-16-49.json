@@ -1,0 +1,119 @@
+{
+  "appInfo" : {
+    "build" : "202.6397.94",
+    "buildDate" : "Mon, 27 Jul 2020 13:39:22 +0300",
+    "productCode" : "IC",
+    "generated" : "Thu, 20 Aug 2020 10:16:49 +0300",
+    "os" : "Linux 5.4.0-7634-generic",
+    "runtime" : "JetBrains s.r.o. 11.0.7 11.0.7+10-b944.20"
+  },
+  "runtimeInfo" : {
+    "maxMemory" : 536870912,
+    "numberOfProcessors" : 4,
+    "maxNumberOfIndexingThreads" : 4,
+    "maxSizeOfFileForIntelliSense" : 2560000,
+    "maxSizeOfFileForContentLoading" : 20971520
+  },
+  "projectIndexingHistory" : {
+    "projectName" : "sample project",
+    "numberOfFileProviders" : 2,
+    "totalNumberOfFiles" : 22,
+    "times" : {
+      "indexingTime" : "1 s 564 ms",
+      "scanFilesTime" : "670 ms",
+      "pushPropertiesTime" : "54 ms",
+      "indexExtensionsTime" : "< 1 ms",
+      "pushPropertiesStart" : "Thu, 20 Aug 2020 10:16:48 +0300",
+      "pushPropertiesEnd" : "Thu, 20 Aug 2020 10:16:48 +0300",
+      "scanFilesStart" : "Thu, 20 Aug 2020 10:16:48 +0300",
+      "scanFilesEnd" : "Thu, 20 Aug 2020 10:16:48 +0300",
+      "indexExtensionsStart" : "Thu, 20 Aug 2020 10:16:48 +0300",
+      "indexExtensionsEnd" : "Thu, 20 Aug 2020 10:16:48 +0300",
+      "indexingStart" : "Thu, 20 Aug 2020 10:16:48 +0300",
+      "indexingEnd" : "Thu, 20 Aug 2020 10:16:49 +0300"
+    },
+    "numberOfIndexingThreads" : 3,
+    "totalStatsPerFileType" : [ {
+      "fileType" : "XML",
+      "partOfTotalIndexingTime" : "79.6%",
+      "partOfTotalContentLoadingTime" : "97.5%",
+      "totalNumberOfFiles" : 21,
+      "totalFilesSize" : "1.06 MB",
+      "indexingSpeed" : "7.22 MB/s",
+      "biggestContributors" : [ {
+        "providerName" : "com.intellij.javaee.ExternalResourcesRootsProvider@732a072d",
+        "numberOfFiles" : 21,
+        "totalFilesSize" : "1.06 MB",
+        "partOfTotalIndexingTimeOfThisFileType" : "100.0%"
+      } ]
+    }, {
+      "fileType" : "Stratos",
+      "partOfTotalIndexingTime" : "20.4%",
+      "partOfTotalContentLoadingTime" : "2.5%",
+      "totalNumberOfFiles" : 1,
+      "totalFilesSize" : "462 B",
+      "indexingSpeed" : "12.24 kB/s",
+      "biggestContributors" : [ {
+        "providerName" : "Module 'sample project'",
+        "numberOfFiles" : 1,
+        "totalFilesSize" : "462 B",
+        "partOfTotalIndexingTimeOfThisFileType" : "100.0%"
+      } ]
+    } ],
+    "totalStatsPerIndexer" : [ {
+      "indexId" : "Stubs",
+      "partOfTotalIndexingTime" : "79.6%",
+      "totalNumberOfFiles" : 20,
+      "totalFilesSize" : "1.05 MB",
+      "indexingSpeed" : "7.16 MB/s"
+    }, {
+      "indexId" : "IdIndex",
+      "partOfTotalIndexingTime" : "13.7%",
+      "totalNumberOfFiles" : 1,
+      "totalFilesSize" : "462 B",
+      "indexingSpeed" : "18.21 kB/s"
+    }, {
+      "indexId" : "Trigram.Index",
+      "partOfTotalIndexingTime" : "6.7%",
+      "totalNumberOfFiles" : 1,
+      "totalFilesSize" : "462 B",
+      "indexingSpeed" : "37.4 kB/s"
+    } ],
+    "fileProviderStatistics" : [ {
+      "providerName" : "com.intellij.javaee.ExternalResourcesRootsProvider@732a072d",
+      "totalNumberOfFiles" : 21,
+      "totalIndexingTime" : "677 ms",
+      "statsPerFileType" : [ {
+        "fileType" : "XML",
+        "numberOfFiles" : 21,
+        "totalFilesSize" : "1.06 MB",
+        "partOfTotalIndexingTime" : "100.0%",
+        "partOfTotalContentLoadingTime" : "100.0%"
+      } ],
+      "statsPerIndexer" : [ {
+        "indexId" : "Stubs",
+        "partOfTotalIndexingTime" : "100.0%"
+      } ],
+      "fastIndexers" : [ ]
+    }, {
+      "providerName" : "Module 'sample project'",
+      "totalNumberOfFiles" : 1,
+      "totalIndexingTime" : "99 ms",
+      "statsPerFileType" : [ {
+        "fileType" : "Stratos",
+        "numberOfFiles" : 1,
+        "totalFilesSize" : "462 B",
+        "partOfTotalIndexingTime" : "100.0%",
+        "partOfTotalContentLoadingTime" : "100.0%"
+      } ],
+      "statsPerIndexer" : [ {
+        "indexId" : "IdIndex",
+        "partOfTotalIndexingTime" : "67.3%"
+      }, {
+        "indexId" : "Trigram.Index",
+        "partOfTotalIndexingTime" : "32.7%"
+      } ],
+      "fastIndexers" : [ ]
+    } ]
+  }
+}

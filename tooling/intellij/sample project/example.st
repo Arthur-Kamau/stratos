@@ -1,4 +1,5 @@
-part 
+/// part
+nme=me
 class name{
    t @= """kama"""
     'name'

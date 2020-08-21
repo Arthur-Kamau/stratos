@@ -17,7 +17,7 @@ public class StratosFileType extends LanguageFileType {
     @NotNull
     @Override
     public String getName() {
-        return "Dart";
+        return "Stratos";
     }
 
     @NotNull

@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>stratos</id>
-
     <name>Stratos Language</name>
+    <version>0.1.0</version>
     <vendor email="kamaukenn11@gmail.com.com" url="https://github.com/Arthur-Kamau/stratos">Stratos</vendor>
 
     <description><![CDATA[
@@ -14,18 +14,27 @@
     <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lang</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
 
             <fileType name="Stratos File" implementationClass="lang.stratos.language.StratosFileType"
-                      fieldName="INSTANCE"  extensions="st"/>
-<!--        <lang.commenter language="stratos" implementationClass=" lang.stratos.commentor.StratosCommenter"/>-->
-        <lang.commenter  implementationClass=" lang.stratos.commentor.StratosCommenter"/>
+                      fieldName="INSTANCE" language="stratos"  extensions="st"/>
+        <lang.commenter language="stratos" implementationClass="lang.stratos.commentor.StratosCommenter"/>
+
+            <lang.syntaxHighlighterFactory language="stratos"
+                                           implementationClass="lang.stratos.language.StratosSyntaxHighlighterFactory"/>
 
     </extensions>
 
     <actions>
         <!-- Add your actions here -->
+
+
+        <action id="Stratos.NewFile" class="lang.stratos.action.NewStratosFileAction"
+                text="Stratos File" description="Create new Stratos file">
+            <add-to-group group-id="NewGroup" anchor="before" relative-to-action="NewFromTemplate"/>
+        </action>
     </actions>
 </idea-plugin>

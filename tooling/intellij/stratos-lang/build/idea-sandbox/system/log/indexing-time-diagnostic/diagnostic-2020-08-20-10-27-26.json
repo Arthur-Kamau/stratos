@@ -1,0 +1,84 @@
+{
+  "appInfo" : {
+    "build" : "202.6397.94",
+    "buildDate" : "Mon, 27 Jul 2020 13:39:07 +0300",
+    "productCode" : "IC",
+    "generated" : "Thu, 20 Aug 2020 10:27:26 +0300",
+    "os" : "Linux 5.4.0-7634-generic",
+    "runtime" : "JetBrains s.r.o. 11.0.7 11.0.7+10-b944.20"
+  },
+  "runtimeInfo" : {
+    "maxMemory" : 536870912,
+    "numberOfProcessors" : 4,
+    "maxNumberOfIndexingThreads" : 4,
+    "maxSizeOfFileForIntelliSense" : 2560000,
+    "maxSizeOfFileForContentLoading" : 20971520
+  },
+  "projectIndexingHistory" : {
+    "projectName" : "sample project",
+    "numberOfFileProviders" : 1,
+    "totalNumberOfFiles" : 1,
+    "times" : {
+      "indexingTime" : "1 s 39 ms",
+      "scanFilesTime" : "731 ms",
+      "pushPropertiesTime" : "83 ms",
+      "indexExtensionsTime" : "10 ms",
+      "pushPropertiesStart" : "Thu, 20 Aug 2020 10:27:25 +0300",
+      "pushPropertiesEnd" : "Thu, 20 Aug 2020 10:27:25 +0300",
+      "scanFilesStart" : "Thu, 20 Aug 2020 10:27:25 +0300",
+      "scanFilesEnd" : "Thu, 20 Aug 2020 10:27:26 +0300",
+      "indexExtensionsStart" : "Thu, 20 Aug 2020 10:27:25 +0300",
+      "indexExtensionsEnd" : "Thu, 20 Aug 2020 10:27:25 +0300",
+      "indexingStart" : "Thu, 20 Aug 2020 10:27:25 +0300",
+      "indexingEnd" : "Thu, 20 Aug 2020 10:27:26 +0300"
+    },
+    "numberOfIndexingThreads" : 3,
+    "totalStatsPerFileType" : [ {
+      "fileType" : "Stratos",
+      "partOfTotalIndexingTime" : "100.0%",
+      "partOfTotalContentLoadingTime" : "100.0%",
+      "totalNumberOfFiles" : 1,
+      "totalFilesSize" : "466 B",
+      "indexingSpeed" : "7.13 kB/s",
+      "biggestContributors" : [ {
+        "providerName" : "Module 'sample project'",
+        "numberOfFiles" : 1,
+        "totalFilesSize" : "466 B",
+        "partOfTotalIndexingTimeOfThisFileType" : "100.0%"
+      } ]
+    } ],
+    "totalStatsPerIndexer" : [ {
+      "indexId" : "IdIndex",
+      "partOfTotalIndexingTime" : "65.4%",
+      "totalNumberOfFiles" : 1,
+      "totalFilesSize" : "466 B",
+      "indexingSpeed" : "10.91 kB/s"
+    }, {
+      "indexId" : "Trigram.Index",
+      "partOfTotalIndexingTime" : "34.6%",
+      "totalNumberOfFiles" : 1,
+      "totalFilesSize" : "466 B",
+      "indexingSpeed" : "20.58 kB/s"
+    } ],
+    "fileProviderStatistics" : [ {
+      "providerName" : "Module 'sample project'",
+      "totalNumberOfFiles" : 1,
+      "totalIndexingTime" : "112 ms",
+      "statsPerFileType" : [ {
+        "fileType" : "Stratos",
+        "numberOfFiles" : 1,
+        "totalFilesSize" : "466 B",
+        "partOfTotalIndexingTime" : "100.0%",
+        "partOfTotalContentLoadingTime" : "100.0%"
+      } ],
+      "statsPerIndexer" : [ {
+        "indexId" : "IdIndex",
+        "partOfTotalIndexingTime" : "65.4%"
+      }, {
+        "indexId" : "Trigram.Index",
+        "partOfTotalIndexingTime" : "34.6%"
+      } ],
+      "fastIndexers" : [ ]
+    } ]
+  }
+}

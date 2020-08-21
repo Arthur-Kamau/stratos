@@ -17,7 +17,7 @@ public class StratosCommenter implements CodeDocumentationAwareCommenter {
 
     @Override
     public String getBlockCommentPrefix() {
-        return "/*";
+        return "/**";
     }
 
     @Override
@@ -27,7 +27,7 @@ public class StratosCommenter implements CodeDocumentationAwareCommenter {
 
     @Override
     public String getCommentedBlockCommentPrefix() {
-        return null;
+        return "*";
     }
 
     @Override
@@ -64,13 +64,17 @@ public class StratosCommenter implements CodeDocumentationAwareCommenter {
 
     @Override
     public boolean isDocumentationComment(final PsiComment element) {
-        return element.getTokenType() == StratosTokenSets.SINGLE_LINE_DOC_COMMENT ||
-                element.getTokenType() == StratosTokenSets.MULTI_LINE_DOC_COMMENT;
+//        return element.getTokenType() == StratosTokenSets.SINGLE_LINE_DOC_COMMENT ||
+//                element.getTokenType() == StratosTokenSets.MULTI_LINE_DOC_COMMENT;
+        return true;
     }
 
     @Override
     @Nullable
+//    public IElementType getDocumentationCommentTokenType() {
+//        return StratosTokenSets.SINGLE_LINE_DOC_COMMENT;
+//    }
     public IElementType getDocumentationCommentTokenType() {
-        return StratosTokenSets.SINGLE_LINE_DOC_COMMENT;
+        return null;
     }
 }
