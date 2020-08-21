@@ -17,7 +17,7 @@ The language priorities are fast and fun to write.
 
 
 ## Status.
-Status In Active development
+Status In Active development 👷👷
 Plan 
     * Focus now is in tooling.
     * Parser.
