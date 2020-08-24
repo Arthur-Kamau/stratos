@@ -153,6 +153,7 @@
           AND_AND_EQ="&&="
           HASH="#"
           AT="@"
+          COMMENT="//"
     ]
 }
 

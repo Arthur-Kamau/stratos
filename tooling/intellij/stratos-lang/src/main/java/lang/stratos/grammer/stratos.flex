@@ -6,7 +6,7 @@ import com.intellij.psi.tree.IElementType;
 
 import static com.intellij.psi.TokenType.BAD_CHARACTER; // Pre-defined bad character token.
 import static com.intellij.psi.TokenType.WHITE_SPACE; // Pre-defined whitespace character token.
-import static lang.stratos.grammer.StratosTypes; // Note that is the class which is specified as `elementTypeHolderClass`
+import static lang.stratos.grammer.StratosTypes.*; // Note that is the class which is specified as `elementTypeHolderClass`
 // in bnf grammar file. This will contain all other tokens which we will use.
 
 %%
@@ -165,6 +165,7 @@ WHITE_SPACE=[ \t\n\x0B\f\r]+
   "&&"               { return AND_AND; }
   "&&="              { return AND_AND_EQ; }
   "@"                { return AT; }
+  "//"                { return COMMENT; }
   "#"                { return HASH; }
 
 

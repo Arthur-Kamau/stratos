@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="b15b5429-2b9b-4f4d-9cfe-73271e22fe3d" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/.gradle/6.3/executionHistory/executionHistory.bin" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/.gradle/6.3/executionHistory/executionHistory.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/.gradle/6.3/executionHistory/executionHistory.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/.gradle/6.3/executionHistory/executionHistory.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/.gradle/6.3/fileContent/fileContent.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/.gradle/6.3/fileContent/fileContent.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/.gradle/6.3/fileHashes/fileHashes.bin" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/.gradle/6.3/fileHashes/fileHashes.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/.gradle/6.3/fileHashes/fileHashes.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/.gradle/6.3/fileHashes/fileHashes.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/.gradle/6.3/javaCompile/classAnalysis.bin" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/.gradle/6.3/javaCompile/classAnalysis.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/.gradle/6.3/javaCompile/javaCompile.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/.gradle/6.3/javaCompile/javaCompile.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/.gradle/buildOutputCleanup/buildOutputCleanup.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/.gradle/buildOutputCleanup/buildOutputCleanup.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/.gradle/checksums/checksums.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/.gradle/checksums/checksums.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main-instrumented/lang/stratos/commentor/StratosCommenter.class" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main-instrumented/lang/stratos/commentor/StratosCommenter.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main-instrumented/lang/stratos/documentation/StratosDocLexer.class" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main-instrumented/lang/stratos/documentation/StratosDocLexer.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main-instrumented/lang/stratos/documentation/_StratosDocLexer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main-instrumented/lang/stratos/language/StratosLanguage.class" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main-instrumented/lang/stratos/language/StratosLanguage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main-instrumented/lang/stratos/util/StratosElementType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main-instrumented/lang/stratos/util/StratosTokenSets$DartDocCommentElementType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main-instrumented/lang/stratos/util/StratosTokenSets$DartLazyParseableBlockElementType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main-instrumented/lang/stratos/util/StratosTokenSets.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main/lang/stratos/commentor/StratosCommenter.class" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main/lang/stratos/commentor/StratosCommenter.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main/lang/stratos/documentation/StratosDocLexer.class" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main/lang/stratos/documentation/StratosDocLexer.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main/lang/stratos/documentation/_StratosDocLexer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main/lang/stratos/language/StratosLanguage.class" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main/lang/stratos/language/StratosLanguage.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main/lang/stratos/util/StratosElementType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main/lang/stratos/util/StratosTokenSets$DartDocCommentElementType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main/lang/stratos/util/StratosTokenSets$DartLazyParseableBlockElementType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/classes/java/main/lang/stratos/util/StratosTokenSets.class" beforeDir="false" />
+      <change beforePath="$APPLICATION_CONFIG_DIR$/event-log-metadata/fus/events-scheme.json" beforeDir="false" afterPath="$APPLICATION_CONFIG_DIR$/event-log-metadata/fus/events-scheme.json" afterDir="false" />
+      <change beforePath="$APPLICATION_CONFIG_DIR$/options/debugger.xml" beforeDir="false" afterPath="$APPLICATION_CONFIG_DIR$/options/debugger.xml" afterDir="false" />
+      <change beforePath="$APPLICATION_CONFIG_DIR$/options/other.xml" beforeDir="false" afterPath="$APPLICATION_CONFIG_DIR$/options/other.xml" afterDir="false" />
+      <change beforePath="$APPLICATION_CONFIG_DIR$/options/usage.statistics.xml" beforeDir="false" afterPath="$APPLICATION_CONFIG_DIR$/options/usage.statistics.xml" afterDir="false" />
+      <change beforePath="$APPLICATION_PLUGINS_DIR$/pluginsXMLIds.json" beforeDir="false" afterPath="$APPLICATION_PLUGINS_DIR$/pluginsXMLIds.json" afterDir="false" />
+      <change beforePath="$APPLICATION_PLUGINS_DIR$/pluginsXMLIds.json.etag" beforeDir="false" afterPath="$APPLICATION_PLUGINS_DIR$/pluginsXMLIds.json.etag" afterDir="false" />
+      <change beforePath="$APPLICATION_PLUGINS_DIR$/stratos-lang/lib/stratos-lang-1.0-SNAPSHOT.jar" beforeDir="false" afterPath="$APPLICATION_PLUGINS_DIR$/stratos-lang/lib/stratos-lang-1.0-SNAPSHOT.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/.appinfo" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/.appinfo" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/LocalHistory/changes.storageData" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/LocalHistory/changes.storageData" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/LocalHistory/changes.storageRecordIndex" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/LocalHistory/changes.storageRecordIndex" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/caches/attrib.dat.storageData" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/caches/attrib.dat.storageData" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/caches/attrib.dat.storageRecordIndex" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/caches/attrib.dat.storageRecordIndex" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/caches/names.dat" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/caches/names.dat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/caches/names.dat.keystream" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/caches/names.dat.keystream" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/caches/names.dat.keystream.len" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/caches/names.dat.keystream.len" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/caches/names.dat_i" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/caches/names.dat_i" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/caches/records.dat" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/caches/records.dat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/caches/records.dat.len" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/caches/records.dat.len" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/compile-server/sample_project_48b94a45/ustamp" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/compile-server/sample_project_48b94a45/ustamp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/conversion/sample_project8f582c2f.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/conversion/sample_project8f582c2f.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/log/idea.log" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/idea-sandbox/system/log/idea.log" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/build/libs/stratos-lang-1.0-SNAPSHOT.jar" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/build/libs/stratos-lang-1.0-SNAPSHOT.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/src/main/java/lang/stratos/commentor/StratosCommenter.java" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/src/main/java/lang/stratos/commentor/StratosCommenter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/src/main/java/lang/stratos/documentation/StratosDocLexer.java" beforeDir="false" afterPath="$PROJECT_DIR$/../stratos-lang/src/main/java/lang/stratos/documentation/StratosDocLexer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../stratos-lang/src/main/java/lang/stratos/documentation/_StratosDocLexer.java" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../.." />
+  </component>
+  <component name="ProjectId" id="1gLnwT5Aa8sdjlGnBW60vzKSGjb" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="b15b5429-2b9b-4f4d-9cfe-73271e22fe3d" name="Default Changelist" comment="" />
+      <created>1597902985313</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1597902985313</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="200" y="27" width="992" height="737" key="SettingsEditor" timestamp="1597908472041">
+      <screen x="0" y="27" width="1366" height="741" />
+    </state>
+    <state x="200" y="27" width="992" height="737" key="SettingsEditor/0.27.1366.741@0.27.1366.741" timestamp="1597908472041" />
+    <state x="0" y="27" width="1168" height="741" key="new project wizard" timestamp="1597906846819">
+      <screen x="0" y="27" width="1366" height="741" />
+    </state>
+    <state x="0" y="27" width="1168" height="741" key="new project wizard/0.27.1366.741@0.27.1366.741" timestamp="1597906846819" />
+  </component>
+</project>

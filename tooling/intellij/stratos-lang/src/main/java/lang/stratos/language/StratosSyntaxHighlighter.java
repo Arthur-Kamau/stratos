@@ -2,16 +2,19 @@ package lang.stratos.language;
 
 
 import com.intellij.lexer.Lexer;
-        import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
-        import com.intellij.openapi.editor.HighlighterColors;
-        import com.intellij.openapi.editor.colors.TextAttributesKey;
-        import com.intellij.openapi.fileTypes.SyntaxHighlighterBase;
-        import com.intellij.psi.TokenType;
-        import com.intellij.psi.tree.IElementType;
+import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
+import com.intellij.openapi.editor.HighlighterColors;
+import com.intellij.openapi.editor.colors.TextAttributesKey;
+import com.intellij.openapi.fileTypes.SyntaxHighlighterBase;
+import com.intellij.psi.TokenType;
+import com.intellij.psi.tree.IElementType;
 //        import org.intellij.sdk.language.psi.SimpleTypes;
-        import org.jetbrains.annotations.NotNull;
+import lang.stratos.grammer.StratosLexer;
+import lang.stratos.grammer.StratosLexerAdapter;
+import lang.stratos.grammer.StratosTypes;
+import org.jetbrains.annotations.NotNull;
 
-        import static com.intellij.openapi.editor.colors.TextAttributesKey.createTextAttributesKey;
+import static com.intellij.openapi.editor.colors.TextAttributesKey.createTextAttributesKey;
 
 public class StratosSyntaxHighlighter extends SyntaxHighlighterBase {
 
@@ -39,14 +42,14 @@ public class StratosSyntaxHighlighter extends SyntaxHighlighterBase {
     public Lexer getHighlightingLexer() {
 //        return new SimpleLexerAdapter();
 
-        return null;
+        return new StratosLexerAdapter();
     }
 
     @NotNull
     @Override
     public TextAttributesKey[] getTokenHighlights(IElementType tokenType) {
-//        if (tokenType.equals(SimpleTypes.SEPARATOR)) {
-//            return SEPARATOR_KEYS;
+        if (tokenType.equals(StratosTypes.ABSTRACT)) {
+            return SEPARATOR_KEYS;
 //        } else if (tokenType.equals(SimpleTypes.KEY)) {
 //            return KEY_KEYS;
 //        } else if (tokenType.equals(SimpleTypes.VALUE)) {
@@ -59,7 +62,8 @@ public class StratosSyntaxHighlighter extends SyntaxHighlighterBase {
 //            return EMPTY_KEYS;
 //        }
 
+
+        }
         return EMPTY_KEYS;
     }
-
 }

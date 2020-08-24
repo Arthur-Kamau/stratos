@@ -34,6 +34,7 @@ public interface StratosTypes {
   IElementType CLASS = new StratosTokenType("class");
   IElementType COLON = new StratosTokenType(":");
   IElementType COMMA = new StratosTokenType(",");
+  IElementType COMMENT = new StratosTokenType("//");
   IElementType CONST = new StratosTokenType("const");
   IElementType CONTINUE = new StratosTokenType("continue");
   IElementType COVARIANT = new StratosTokenType("covariant");

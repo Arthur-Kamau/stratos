@@ -6,7 +6,8 @@ import com.intellij.lang.CodeDocumentationAwareCommenter;
         import com.intellij.psi.PsiComment;
         import com.intellij.psi.tree.IElementType;
 //        import com.jetbrains.lang.dart.StratosTokenSets;
-import lang.stratos.util.StratosTokenSets;
+//import lang.stratos.util.StratosTokenSets;
+import lang.stratos.grammer.StratosTypes;
 import org.jetbrains.annotations.Nullable;
 
 public class StratosCommenter implements CodeDocumentationAwareCommenter {
@@ -38,13 +39,13 @@ public class StratosCommenter implements CodeDocumentationAwareCommenter {
     @Override
     @Nullable
     public IElementType getLineCommentTokenType() {
-        return StratosTokenSets.SINGLE_LINE_COMMENT;
+        return StratosTypes.COMMENT;
     }
 
     @Override
     @Nullable
     public IElementType getBlockCommentTokenType() {
-        return StratosTokenSets.MULTI_LINE_COMMENT;
+        return StratosTypes.COMMENT;
     }
 
     @Override

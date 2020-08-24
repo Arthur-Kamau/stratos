@@ -23,8 +23,14 @@
                       fieldName="INSTANCE" language="stratos"  extensions="st"/>
         <lang.commenter language="stratos" implementationClass="lang.stratos.commentor.StratosCommenter"/>
 
+        <lang.parserDefinition language="stratos"
+                               implementationClass="lang.stratos.grammer.StratosParserDefinition"/>
+
+        <colorSettingsPage implementation="lang.stratos.language.StratosColorSettingsPage"/>
+
             <lang.syntaxHighlighterFactory language="stratos"
                                            implementationClass="lang.stratos.language.StratosSyntaxHighlighterFactory"/>
+
 
     </extensions>
 
