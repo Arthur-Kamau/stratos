@@ -1,6 +1,6 @@
 <application>
   <component name="EventLogWhitelist">
-    <update recorder-id="FUS" last-modified="1597262442000" />
+    <update recorder-id="FUS" last-modified="1598385685000" />
   </component>
   <component name="FeatureUsageStatistics" first-run="1597906167710" have-been-shown="false" show-in-other="true" show-in-compilation="true">
     <feature id="editing.completion.smarttype.afternew" count="0" last-shown="0" last-used="0" shown-count="0" />
@@ -90,6 +90,6 @@
     </fixesStatsTag>
   </component>
   <component name="UsagesStatistic" show-notification="false">
-    <system-event-id recorder="FUS" id="1562" />
+    <system-event-id recorder="FUS" id="2433" />
   </component>
 </application>

@@ -1,0 +1,87 @@
+{
+  "appInfo" : {
+    "build" : "202.6397.94",
+    "buildDate" : "Mon, 27 Jul 2020 13:39:56 +0300",
+    "productCode" : "IC",
+    "generated" : "Wed, 26 Aug 2020 09:23:23 +0300",
+    "os" : "Linux 5.4.0-7642-generic",
+    "runtime" : "JetBrains s.r.o. 11.0.7 11.0.7+10-b944.20"
+  },
+  "runtimeInfo" : {
+    "maxMemory" : 536870912,
+    "numberOfProcessors" : 4,
+    "maxNumberOfIndexingThreads" : 4,
+    "maxSizeOfFileForIntelliSense" : 2560000,
+    "maxSizeOfFileForContentLoading" : 20971520
+  },
+  "projectIndexingHistory" : {
+    "projectName" : "sample project",
+    "numberOfFileProviders" : 1,
+    "totalNumberOfFiles" : 1,
+    "times" : {
+      "indexingTime" : "5 s 81 ms",
+      "scanFilesTime" : "2 s 903 ms",
+      "pushPropertiesTime" : "< 1 ms",
+      "indexExtensionsTime" : "< 1 ms",
+      "pushPropertiesStart" : "Wed, 26 Aug 2020 09:23:18 +0300",
+      "pushPropertiesEnd" : "Wed, 26 Aug 2020 09:23:18 +0300",
+      "scanFilesStart" : "Wed, 26 Aug 2020 09:23:18 +0300",
+      "scanFilesEnd" : "Wed, 26 Aug 2020 09:23:21 +0300",
+      "indexExtensionsStart" : "Wed, 26 Aug 2020 09:23:18 +0300",
+      "indexExtensionsEnd" : "Wed, 26 Aug 2020 09:23:18 +0300",
+      "indexingStart" : "Wed, 26 Aug 2020 09:23:18 +0300",
+      "indexingEnd" : "Wed, 26 Aug 2020 09:23:23 +0300"
+    },
+    "numberOfIndexingThreads" : 3,
+    "totalStatsPerFileType" : [ {
+      "fileType" : "Scratch",
+      "partOfTotalIndexingTime" : "100.0%",
+      "partOfTotalContentLoadingTime" : "100.0%",
+      "totalNumberOfFiles" : 1,
+      "totalFilesSize" : "433 B",
+      "indexingSpeed" : "212 B/s",
+      "biggestContributors" : [ {
+        "providerName" : "com.intellij.ide.scratch.ScratchFileServiceImpl$IndexSetContributor@185360a",
+        "numberOfFiles" : 1,
+        "totalFilesSize" : "433 B",
+        "partOfTotalIndexingTimeOfThisFileType" : "100.0%"
+      } ]
+    } ],
+    "totalStatsPerIndexer" : [ {
+      "indexId" : "TodoIndex",
+      "partOfTotalIndexingTime" : "99.4%",
+      "totalNumberOfFiles" : 1,
+      "totalFilesSize" : "433 B",
+      "indexingSpeed" : "213 B/s"
+    }, {
+      "indexId" : "Trigram.Index",
+      "partOfTotalIndexingTime" : "< 1%",
+      "totalNumberOfFiles" : 1,
+      "totalFilesSize" : "433 B",
+      "indexingSpeed" : "58.85 kB/s"
+    }, {
+      "indexId" : "IdIndex",
+      "partOfTotalIndexingTime" : "< 1%",
+      "totalNumberOfFiles" : 1,
+      "totalFilesSize" : "433 B",
+      "indexingSpeed" : "75.91 kB/s"
+    } ],
+    "fileProviderStatistics" : [ {
+      "providerName" : "com.intellij.ide.scratch.ScratchFileServiceImpl$IndexSetContributor@185360a",
+      "totalNumberOfFiles" : 1,
+      "totalIndexingTime" : "2 s 124 ms",
+      "statsPerFileType" : [ {
+        "fileType" : "Scratch",
+        "numberOfFiles" : 1,
+        "totalFilesSize" : "433 B",
+        "partOfTotalIndexingTime" : "100.0%",
+        "partOfTotalContentLoadingTime" : "100.0%"
+      } ],
+      "statsPerIndexer" : [ {
+        "indexId" : "TodoIndex",
+        "partOfTotalIndexingTime" : "99.4%"
+      } ],
+      "fastIndexers" : [ "IdIndex", "Trigram.Index" ]
+    } ]
+  }
+}

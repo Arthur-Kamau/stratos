@@ -1,0 +1,112 @@
+{
+  "appInfo" : {
+    "build" : "202.6397.94",
+    "buildDate" : "Mon, 27 Jul 2020 13:39:07 +0300",
+    "productCode" : "IC",
+    "generated" : "Wed, 26 Aug 2020 09:24:47 +0300",
+    "os" : "Linux 5.4.0-7642-generic",
+    "runtime" : "JetBrains s.r.o. 11.0.7 11.0.7+10-b944.20"
+  },
+  "runtimeInfo" : {
+    "maxMemory" : 536870912,
+    "numberOfProcessors" : 4,
+    "maxNumberOfIndexingThreads" : 4,
+    "maxSizeOfFileForIntelliSense" : 2560000,
+    "maxSizeOfFileForContentLoading" : 20971520
+  },
+  "projectIndexingHistory" : {
+    "projectName" : "sample",
+    "numberOfFileProviders" : 1,
+    "totalNumberOfFiles" : 2,
+    "times" : {
+      "indexingTime" : "245 ms",
+      "scanFilesTime" : "23 ms",
+      "pushPropertiesTime" : "16 ms",
+      "indexExtensionsTime" : "< 1 ms",
+      "pushPropertiesStart" : "Wed, 26 Aug 2020 09:24:47 +0300",
+      "pushPropertiesEnd" : "Wed, 26 Aug 2020 09:24:47 +0300",
+      "scanFilesStart" : "Wed, 26 Aug 2020 09:24:47 +0300",
+      "scanFilesEnd" : "Wed, 26 Aug 2020 09:24:47 +0300",
+      "indexExtensionsStart" : "Wed, 26 Aug 2020 09:24:47 +0300",
+      "indexExtensionsEnd" : "Wed, 26 Aug 2020 09:24:47 +0300",
+      "indexingStart" : "Wed, 26 Aug 2020 09:24:47 +0300",
+      "indexingEnd" : "Wed, 26 Aug 2020 09:24:47 +0300"
+    },
+    "numberOfIndexingThreads" : 3,
+    "totalStatsPerFileType" : [ {
+      "fileType" : "textmate",
+      "partOfTotalIndexingTime" : "59.2%",
+      "partOfTotalContentLoadingTime" : "1.3%",
+      "totalNumberOfFiles" : 1,
+      "totalFilesSize" : "585 B",
+      "indexingSpeed" : "4.82 kB/s",
+      "biggestContributors" : [ {
+        "providerName" : "Module 'sample'",
+        "numberOfFiles" : 1,
+        "totalFilesSize" : "585 B",
+        "partOfTotalIndexingTimeOfThisFileType" : "100.0%"
+      } ]
+    }, {
+      "fileType" : "Stratos",
+      "partOfTotalIndexingTime" : "40.8%",
+      "partOfTotalContentLoadingTime" : "98.7%",
+      "totalNumberOfFiles" : 1,
+      "totalFilesSize" : "1.7 kB",
+      "indexingSpeed" : "20.37 kB/s",
+      "biggestContributors" : [ {
+        "providerName" : "Module 'sample'",
+        "numberOfFiles" : 1,
+        "totalFilesSize" : "1.7 kB",
+        "partOfTotalIndexingTimeOfThisFileType" : "100.0%"
+      } ]
+    } ],
+    "totalStatsPerIndexer" : [ {
+      "indexId" : "TodoIndex",
+      "partOfTotalIndexingTime" : "95.4%",
+      "totalNumberOfFiles" : 2,
+      "totalFilesSize" : "2.29 kB",
+      "indexingSpeed" : "11.71 kB/s"
+    }, {
+      "indexId" : "Trigram.Index",
+      "partOfTotalIndexingTime" : "2.6%",
+      "totalNumberOfFiles" : 2,
+      "totalFilesSize" : "2.29 kB",
+      "indexingSpeed" : "431.15 kB/s"
+    }, {
+      "indexId" : "IdIndex",
+      "partOfTotalIndexingTime" : "2.0%",
+      "totalNumberOfFiles" : 2,
+      "totalFilesSize" : "2.29 kB",
+      "indexingSpeed" : "550.14 kB/s"
+    } ],
+    "fileProviderStatistics" : [ {
+      "providerName" : "Module 'sample'",
+      "totalNumberOfFiles" : 2,
+      "totalIndexingTime" : "161 ms",
+      "statsPerFileType" : [ {
+        "fileType" : "textmate",
+        "numberOfFiles" : 1,
+        "totalFilesSize" : "585 B",
+        "partOfTotalIndexingTime" : "59.2%",
+        "partOfTotalContentLoadingTime" : "1.3%"
+      }, {
+        "fileType" : "Stratos",
+        "numberOfFiles" : 1,
+        "totalFilesSize" : "1.7 kB",
+        "partOfTotalIndexingTime" : "40.8%",
+        "partOfTotalContentLoadingTime" : "98.7%"
+      } ],
+      "statsPerIndexer" : [ {
+        "indexId" : "TodoIndex",
+        "partOfTotalIndexingTime" : "95.4%"
+      }, {
+        "indexId" : "Trigram.Index",
+        "partOfTotalIndexingTime" : "2.6%"
+      }, {
+        "indexId" : "IdIndex",
+        "partOfTotalIndexingTime" : "2.0%"
+      } ],
+      "fastIndexers" : [ ]
+    } ]
+  }
+}

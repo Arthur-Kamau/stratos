@@ -7,10 +7,7 @@
     <converter id="android-proguard-options" />
   </applied-converters>
   <project-files>
-    <file path="/home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/sample project/.idea/sample project.iml" timestamp="1597845307572" />
-    <file path="/home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/sample project/.idea/modules.xml" timestamp="1597845307572" />
-    <file path="/home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/sample project/.idea/workspace.xml" timestamp="1597908485693" />
-    <file path="/home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/sample project/.idea/misc.xml" timestamp="1597845307572" />
-    <file path="/home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/sample project/.idea/vcs.xml" timestamp="1597845307572" />
+    <file path="/home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/sample project/.idea/workspace.xml" timestamp="1598427324546" />
+    <file path="/home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/sample project/.idea/vcs.xml" timestamp="1598420717804" />
   </project-files>
 </conversion>

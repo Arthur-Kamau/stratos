@@ -8,10 +8,11 @@ import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.openapi.fileTypes.SyntaxHighlighterBase;
 import com.intellij.psi.TokenType;
 import com.intellij.psi.tree.IElementType;
-//        import org.intellij.sdk.language.psi.SimpleTypes;
-import lang.stratos.grammer.StratosLexer;
-import lang.stratos.grammer.StratosLexerAdapter;
-import lang.stratos.grammer.StratosTypes;
+//        import org.intellij.sdk.language.psi.StratosTypes;
+//import lang.stratos.grammer.StratosLexer;
+import lang.stratos.grammer.lexer.StratosLexerAdapter;
+//import lang.stratos.grammer.StratosTypes;
+import lang.stratos.grammer.types.StratosTypes;
 import org.jetbrains.annotations.NotNull;
 
 import static com.intellij.openapi.editor.colors.TextAttributesKey.createTextAttributesKey;
@@ -40,30 +41,24 @@ public class StratosSyntaxHighlighter extends SyntaxHighlighterBase {
     @NotNull
     @Override
     public Lexer getHighlightingLexer() {
-//        return new SimpleLexerAdapter();
-
         return new StratosLexerAdapter();
     }
 
     @NotNull
     @Override
     public TextAttributesKey[] getTokenHighlights(IElementType tokenType) {
-        if (tokenType.equals(StratosTypes.ABSTRACT)) {
+        if (tokenType.equals(StratosTypes.SEPARATOR)) {
             return SEPARATOR_KEYS;
-//        } else if (tokenType.equals(SimpleTypes.KEY)) {
-//            return KEY_KEYS;
-//        } else if (tokenType.equals(SimpleTypes.VALUE)) {
-//            return VALUE_KEYS;
-//        } else if (tokenType.equals(SimpleTypes.COMMENT)) {
-//            return COMMENT_KEYS;
-//        } else if (tokenType.equals(TokenType.BAD_CHARACTER)) {
-//            return BAD_CHAR_KEYS;
-//        } else {
-//            return EMPTY_KEYS;
-//        }
-
-
+        } else if (tokenType.equals(StratosTypes.KEY)) {
+            return KEY_KEYS;
+        } else if (tokenType.equals(StratosTypes.VALUE)) {
+            return VALUE_KEYS;
+        } else if (tokenType.equals(StratosTypes.COMMENT)) {
+            return COMMENT_KEYS;
+        } else if (tokenType.equals(TokenType.BAD_CHARACTER)) {
+            return BAD_CHAR_KEYS;
+        } else {
+            return EMPTY_KEYS;
         }
-        return EMPTY_KEYS;
     }
 }

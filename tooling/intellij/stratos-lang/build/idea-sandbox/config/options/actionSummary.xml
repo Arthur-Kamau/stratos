@@ -8,7 +8,7 @@
         <ActionSummary times="1" last="1597906645645" />
       </entry>
       <entry key="ShowSettings">
-        <ActionSummary times="1" last="1597908453147" />
+        <ActionSummary times="2" last="1598420865852" />
       </entry>
       <entry key="WelcomeScreen.OpenProject">
         <ActionSummary times="1" last="1597902959189" />
@@ -18,6 +18,9 @@
       </entry>
       <entry key="com.intellij.notification.NotificationAction$Simple">
         <ActionSummary times="1" last="1597907303336" />
+      </entry>
+      <entry key="com.intellij.openapi.ui.DialogWrapper$5">
+        <ActionSummary times="2" last="1598427323805" />
       </entry>
       <entry key="com.intellij.ui.CommonActionsPanel$RemoveButton">
         <ActionSummary times="2" last="1597907315583" />

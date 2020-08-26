@@ -1,0 +1,66 @@
+{
+  "appInfo" : {
+    "build" : "202.6397.94",
+    "buildDate" : "Mon, 27 Jul 2020 13:39:26 +0300",
+    "productCode" : "IC",
+    "generated" : "Wed, 26 Aug 2020 10:26:43 +0300",
+    "os" : "Linux 5.4.0-7642-generic",
+    "runtime" : "JetBrains s.r.o. 11.0.7 11.0.7+10-b944.20"
+  },
+  "runtimeInfo" : {
+    "maxMemory" : 536870912,
+    "numberOfProcessors" : 4,
+    "maxNumberOfIndexingThreads" : 4,
+    "maxSizeOfFileForIntelliSense" : 2560000,
+    "maxSizeOfFileForContentLoading" : 20971520
+  },
+  "projectIndexingHistory" : {
+    "projectName" : "sample project",
+    "numberOfFileProviders" : 1,
+    "totalNumberOfFiles" : 1,
+    "times" : {
+      "indexingTime" : "1 s 201 ms",
+      "scanFilesTime" : "775 ms",
+      "pushPropertiesTime" : "5 ms",
+      "indexExtensionsTime" : "2 ms",
+      "pushPropertiesStart" : "Wed, 26 Aug 2020 10:26:42 +0300",
+      "pushPropertiesEnd" : "Wed, 26 Aug 2020 10:26:42 +0300",
+      "scanFilesStart" : "Wed, 26 Aug 2020 10:26:42 +0300",
+      "scanFilesEnd" : "Wed, 26 Aug 2020 10:26:43 +0300",
+      "indexExtensionsStart" : "Wed, 26 Aug 2020 10:26:42 +0300",
+      "indexExtensionsEnd" : "Wed, 26 Aug 2020 10:26:42 +0300",
+      "indexingStart" : "Wed, 26 Aug 2020 10:26:42 +0300",
+      "indexingEnd" : "Wed, 26 Aug 2020 10:26:43 +0300"
+    },
+    "numberOfIndexingThreads" : 3,
+    "totalStatsPerFileType" : [ {
+      "fileType" : "textmate",
+      "partOfTotalIndexingTime" : "100.0%",
+      "partOfTotalContentLoadingTime" : "100.0%",
+      "totalNumberOfFiles" : 1,
+      "totalFilesSize" : "353 B",
+      "indexingSpeed" : "0 B/s",
+      "biggestContributors" : [ {
+        "providerName" : "com.intellij.javaee.ExternalResourcesRootsProvider@3eda5366",
+        "numberOfFiles" : 1,
+        "totalFilesSize" : "353 B",
+        "partOfTotalIndexingTimeOfThisFileType" : "100.0%"
+      } ]
+    } ],
+    "totalStatsPerIndexer" : [ ],
+    "fileProviderStatistics" : [ {
+      "providerName" : "com.intellij.javaee.ExternalResourcesRootsProvider@3eda5366",
+      "totalNumberOfFiles" : 1,
+      "totalIndexingTime" : "357 ms",
+      "statsPerFileType" : [ {
+        "fileType" : "textmate",
+        "numberOfFiles" : 1,
+        "totalFilesSize" : "353 B",
+        "partOfTotalIndexingTime" : "100.0%",
+        "partOfTotalContentLoadingTime" : "100.0%"
+      } ],
+      "statsPerIndexer" : [ ],
+      "fastIndexers" : [ ]
+    } ]
+  }
+}

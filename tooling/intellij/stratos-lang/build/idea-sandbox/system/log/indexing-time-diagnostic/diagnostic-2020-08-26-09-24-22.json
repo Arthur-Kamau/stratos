@@ -1,0 +1,93 @@
+{
+  "appInfo" : {
+    "build" : "202.6397.94",
+    "buildDate" : "Mon, 27 Jul 2020 13:39:07 +0300",
+    "productCode" : "IC",
+    "generated" : "Wed, 26 Aug 2020 09:24:22 +0300",
+    "os" : "Linux 5.4.0-7642-generic",
+    "runtime" : "JetBrains s.r.o. 11.0.7 11.0.7+10-b944.20"
+  },
+  "runtimeInfo" : {
+    "maxMemory" : 536870912,
+    "numberOfProcessors" : 4,
+    "maxNumberOfIndexingThreads" : 4,
+    "maxSizeOfFileForIntelliSense" : 2560000,
+    "maxSizeOfFileForContentLoading" : 20971520
+  },
+  "projectIndexingHistory" : {
+    "projectName" : "sample project",
+    "numberOfFileProviders" : 1,
+    "totalNumberOfFiles" : 1,
+    "times" : {
+      "indexingTime" : "622 ms",
+      "scanFilesTime" : "452 ms",
+      "pushPropertiesTime" : "19 ms",
+      "indexExtensionsTime" : "16 ms",
+      "pushPropertiesStart" : "Wed, 26 Aug 2020 09:24:22 +0300",
+      "pushPropertiesEnd" : "Wed, 26 Aug 2020 09:24:22 +0300",
+      "scanFilesStart" : "Wed, 26 Aug 2020 09:24:22 +0300",
+      "scanFilesEnd" : "Wed, 26 Aug 2020 09:24:22 +0300",
+      "indexExtensionsStart" : "Wed, 26 Aug 2020 09:24:22 +0300",
+      "indexExtensionsEnd" : "Wed, 26 Aug 2020 09:24:22 +0300",
+      "indexingStart" : "Wed, 26 Aug 2020 09:24:22 +0300",
+      "indexingEnd" : "Wed, 26 Aug 2020 09:24:22 +0300"
+    },
+    "numberOfIndexingThreads" : 3,
+    "totalStatsPerFileType" : [ {
+      "fileType" : "Stratos",
+      "partOfTotalIndexingTime" : "100.0%",
+      "partOfTotalContentLoadingTime" : "100.0%",
+      "totalNumberOfFiles" : 1,
+      "totalFilesSize" : "433 B",
+      "indexingSpeed" : "5.97 kB/s",
+      "biggestContributors" : [ {
+        "providerName" : "com.intellij.ide.scratch.ScratchFileServiceImpl$IndexSetContributor@53470a48",
+        "numberOfFiles" : 1,
+        "totalFilesSize" : "433 B",
+        "partOfTotalIndexingTimeOfThisFileType" : "100.0%"
+      } ]
+    } ],
+    "totalStatsPerIndexer" : [ {
+      "indexId" : "TodoIndex",
+      "partOfTotalIndexingTime" : "89.8%",
+      "totalNumberOfFiles" : 1,
+      "totalFilesSize" : "433 B",
+      "indexingSpeed" : "6.64 kB/s"
+    }, {
+      "indexId" : "IdIndex",
+      "partOfTotalIndexingTime" : "8.8%",
+      "totalNumberOfFiles" : 1,
+      "totalFilesSize" : "433 B",
+      "indexingSpeed" : "67.53 kB/s"
+    }, {
+      "indexId" : "Trigram.Index",
+      "partOfTotalIndexingTime" : "1.3%",
+      "totalNumberOfFiles" : 1,
+      "totalFilesSize" : "433 B",
+      "indexingSpeed" : "443.31 kB/s"
+    } ],
+    "fileProviderStatistics" : [ {
+      "providerName" : "com.intellij.ide.scratch.ScratchFileServiceImpl$IndexSetContributor@53470a48",
+      "totalNumberOfFiles" : 1,
+      "totalIndexingTime" : "96 ms",
+      "statsPerFileType" : [ {
+        "fileType" : "Stratos",
+        "numberOfFiles" : 1,
+        "totalFilesSize" : "433 B",
+        "partOfTotalIndexingTime" : "100.0%",
+        "partOfTotalContentLoadingTime" : "100.0%"
+      } ],
+      "statsPerIndexer" : [ {
+        "indexId" : "TodoIndex",
+        "partOfTotalIndexingTime" : "89.8%"
+      }, {
+        "indexId" : "IdIndex",
+        "partOfTotalIndexingTime" : "8.8%"
+      }, {
+        "indexId" : "Trigram.Index",
+        "partOfTotalIndexingTime" : "1.3%"
+      } ],
+      "fastIndexers" : [ ]
+    } ]
+  }
+}

@@ -19,12 +19,12 @@
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
 
-            <fileType name="Stratos File" implementationClass="lang.stratos.language.StratosFileType"
+            <fileType name="Stratos" implementationClass="lang.stratos.language.StratosFileType"
                       fieldName="INSTANCE" language="stratos"  extensions="st"/>
         <lang.commenter language="stratos" implementationClass="lang.stratos.commentor.StratosCommenter"/>
 
         <lang.parserDefinition language="stratos"
-                               implementationClass="lang.stratos.grammer.StratosParserDefinition"/>
+                               implementationClass="lang.stratos.grammer.parser.StratosParserDefinition"/>
 
         <colorSettingsPage implementation="lang.stratos.language.StratosColorSettingsPage"/>
 
