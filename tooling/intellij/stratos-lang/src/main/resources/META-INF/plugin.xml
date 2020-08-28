@@ -18,19 +18,25 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->
-
-            <fileType name="Stratos" implementationClass="lang.stratos.language.StratosFileType"
-                      fieldName="INSTANCE" language="stratos"  extensions="st"/>
+<!--file type recognition-->
+        <fileType name="Stratos" implementationClass="lang.stratos.language.StratosFileType"
+                  fieldName="INSTANCE" language="stratos" extensions="st"/>
+<!--        commenting-->
         <lang.commenter language="stratos" implementationClass="lang.stratos.commentor.StratosCommenter"/>
 
+<!--        language parser to enable highlighting,ast, psi-->
         <lang.parserDefinition language="stratos"
                                implementationClass="lang.stratos.grammer.parser.StratosParserDefinition"/>
 
+<!--        color in setting color scheme-->
         <colorSettingsPage implementation="lang.stratos.language.StratosColorSettingsPage"/>
 
-            <lang.syntaxHighlighterFactory language="stratos"
-                                           implementationClass="lang.stratos.language.StratosSyntaxHighlighterFactory"/>
+<!--        syntax highlighting-->
+        <lang.syntaxHighlighterFactory language="stratos"
+                                       implementationClass="lang.stratos.language.StratosSyntaxHighlighterFactory"/>
 
+<!--intellij run a stratos project-->
+            <configurationType implementation="lang.stratos.configuration.StratosRunConfiguration"/>
 
     </extensions>
 

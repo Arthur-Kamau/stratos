@@ -21,6 +21,7 @@
     <lang.parserDefinition language="stratos" implementationClass="lang.stratos.grammer.parser.StratosParserDefinition"/>
     <colorSettingsPage implementation="lang.stratos.language.StratosColorSettingsPage"/>
     <lang.syntaxHighlighterFactory language="stratos" implementationClass="lang.stratos.language.StratosSyntaxHighlighterFactory"/>
+    <configurationType implementation="lang.stratos.configuration.StratosRunConfiguration"/>
   </extensions>
   <actions>
     <action id="Stratos.NewFile" class="lang.stratos.action.NewStratosFileAction" text="Stratos File" description="Create new Stratos file">
