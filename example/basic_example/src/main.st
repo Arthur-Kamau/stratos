@@ -1,6 +1,6 @@
-use "system";
-import "";
-part "";
+//use "system";
+//import "";
+// part "";
 
 class nname implements kamau {
  if(kam)  

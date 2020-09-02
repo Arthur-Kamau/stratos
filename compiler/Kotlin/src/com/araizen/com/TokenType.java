@@ -16,9 +16,9 @@ enum TokenType{
     EqualEqual,Greater,GreaterEqual,
     Less, LessEqual,
     Identifier, String, Number,
-    And, Class, Else , Fun,
-    For, If, Nil, Or, Print, Return ,
-    Super, This, True, Var, While, Eof
+    And, Class, Else , False ,Function ,As, Is,
+    For, If, None , Some , Use , Import ,Nil, Or, Alias, Return ,
+    Super, This, True, Val ,Var, Mut ,Let ,While , When, Eof
 
 
 }

@@ -12,6 +12,7 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/example.st" />
+        <option value="$APPLICATION_CONFIG_DIR$/scratches/scratch.st" />
       </list>
     </option>
   </component>
@@ -22,11 +23,10 @@
       </set>
     </option>
   </component>
-  <component name="ProjectFrameBounds" x="42" y="117" width="1184" height="651" />
+  <component name="ProjectFrameBounds" x="85" y="62" width="1184" height="651" />
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1" />
     <panes>
-      <pane id="Scope" />
       <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
@@ -44,11 +44,13 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="ToolWindowManager">
+    <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.56042033" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.37390542" />
       <window_info id="Structure" order="1" side_tool="true" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info id="Commit" order="3" />

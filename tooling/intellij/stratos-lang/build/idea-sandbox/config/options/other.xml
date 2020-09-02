@@ -10,13 +10,13 @@
     <property name="file.gist.reindex.count" value="1" />
     <property name="ide.memory.adjusted" value="true" />
     <property name="installed.kotlin.plugin.version" value="1.3.72-release-IJ2020.1-6" />
-    <property name="lastSeenTip" value="neue-FocusProjectToolWindow.html" />
-    <property name="lastTimeTipsWereShown" value="1598507706456" />
+    <property name="lastSeenTip" value="neue-ContextActions.html" />
+    <property name="lastTimeTipsWereShown" value="1598601319080" />
     <property name="last_opened_file_path" value="$USER_HOME$/Development/Stratos/compiler/tooling/intellij/sample project" />
     <property name="packagesearch.endpoint.url.fulltext" value="https://package-search.services.jetbrains.com/api/search/idea/fulltext" />
     <property name="packagesearch.endpoint.url.suggest" value="https://package-search.services.jetbrains.com/api/search/idea/suggest" />
-    <property name="packagesearch.status.updated.ts" value="1597902980412" />
-    <property name="seenTips" value="neue-ImagesLookup.html,CreateTargetTag.html,neue-GoToInspection.html,neue-FocusProjectToolWindow.html" />
+    <property name="packagesearch.status.updated.ts" value="1598601297863" />
+    <property name="seenTips" value="neue-FocusProjectToolWindow.html,CreateTargetTag.html,neue-GoToInspection.html,neue-ImagesLookup.html,neue-ContextActions.html" />
     <property name="tasks.pass.word.conversion.enforced" value="true" />
   </component>
 </application>

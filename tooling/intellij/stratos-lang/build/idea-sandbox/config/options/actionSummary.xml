@@ -4,6 +4,18 @@
       <entry key="CloseProject">
         <ActionSummary times="1" last="1597907268667" />
       </entry>
+      <entry key="EditorDelete">
+        <ActionSummary times="3" last="1598601360685" />
+      </entry>
+      <entry key="EditorDown">
+        <ActionSummary times="2" last="1598601344288" />
+      </entry>
+      <entry key="EditorLeft">
+        <ActionSummary times="1" last="1598601360330" />
+      </entry>
+      <entry key="EditorUp">
+        <ActionSummary times="1" last="1598601344297" />
+      </entry>
       <entry key="InvalidateCaches">
         <ActionSummary times="1" last="1597906645645" />
       </entry>

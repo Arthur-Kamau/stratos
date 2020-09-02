@@ -21421,3 +21421,35 @@ java.nio.file.NoSuchFileException: /META-INF/profiler-java.xml
 2020-08-28 10:55:29,845 [  61467]   INFO - tellij.vcs.log.data.VcsLogData - Username not configured for root file:///home/arthur-kamau/Development/Stratos/compiler 
 2020-08-28 10:56:04,895 [  96517]   INFO - rationStore.ComponentStoreImpl - Saving appFileTypeManager took 21 ms, TodoConfiguration took 15 ms 
 2020-08-28 10:57:39,338 [ 190960]   INFO - j.compiler.server.BuildManager - Clearing project build data because the project does not exist or was not opened for more than 30 days: /home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/stratos-lang/build/idea-sandbox/system/compile-server/sample_project_48b94a45 
+2020-08-28 11:15:01,103 [1232725]   INFO - ta.index.VcsLogPersistentIndex - Indexing 1 commits in compiler 
+2020-08-28 11:15:01,598 [1233220]   INFO - ta.index.VcsLogPersistentIndex - 495ms for indexing 1 new commits out of 1 in compiler 
+2020-08-28 11:15:03,371 [1234993]   INFO - oader.EventLogExternalUploader - Started external process for uploading event log 
+2020-08-28 11:15:03,928 [1235550]   INFO - rationStore.ComponentStoreImpl - Saving appFileTypeManager took 21 ms, RecentProjectsManager took 12 ms, TodoConfiguration took 13 ms 
+2020-08-28 11:15:04,524 [1236146]   WARN - com.intellij.util.xmlb.Binding - no accessors for org.jetbrains.kotlin.idea.scripting.gradle.GradleScriptInputsWatcher$Storage 
+2020-08-28 11:15:04,533 [1236155]   WARN - com.intellij.util.xmlb.Binding - no accessors for org.jetbrains.kotlin.idea.core.script.configuration.utils.ScriptClassRootsStorage 
+2020-08-28 11:15:04,568 [1236190]   INFO - rationStore.ComponentStoreImpl - Saving Project(name=sample project, containerState=ACTIVE, componentStore=/home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/sample project)FileEditorManager took 45 ms, GradleLocalSettings took 27 ms, XDebuggerManager took 13 ms 
+2020-08-28 11:15:05,385 [1237007]   INFO - .impl.FileTypeDetectionService - 15 auto-detected files. Detection took 98 ms 
+2020-08-28 11:15:05,430 [1237052]   INFO - org.jetbrains.io.BuiltInServer - web server stopped 
+2020-08-28 11:15:05,479 [1237101]   INFO - il.indexing.FileBasedIndexImpl - START INDEX SHUTDOWN 
+2020-08-28 11:15:05,480 [1237102]   INFO - pl.local.NativeFileWatcherImpl - Watcher terminated with exit code 0 
+2020-08-28 11:15:05,555 [1237177]   INFO - tellij.psi.stubs.StubIndexImpl - StubIndexExtension-s were unloaded 
+2020-08-28 11:15:05,562 [1237184]   INFO - il.indexing.FileBasedIndexImpl - END INDEX SHUTDOWN 
+2020-08-28 11:15:05,563 [1237185]   INFO - newvfs.persistent.PersistentFS - VFS dispose started 
+2020-08-28 11:15:05,567 [1237189]   INFO - newvfs.persistent.PersistentFS - VFS dispose completed 
+2020-08-28 11:15:05,568 [1237190]   INFO - stubs.SerializationManagerImpl - Start shutting down /home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/stratos-lang/build/idea-sandbox/system/index/rep.names 
+2020-08-28 11:15:05,569 [1237191]   INFO - stubs.SerializationManagerImpl - Finished shutting down /home/arthur-kamau/Development/Stratos/compiler/tooling/intellij/stratos-lang/build/idea-sandbox/system/index/rep.names 
+2020-08-28 11:15:05,571 [1237193]   INFO - plication.impl.ApplicationImpl - Write action Statistics:
+Event number:     70
+Total time spent: 3868ms
+Average duration: 55ms
+Median  duration: 3ms
+Max     duration: 893ms (it was 'write action (class com.intellij.openapi.vfs.newvfs.RefreshSessionImpl$$Lambda$2207/0x00000001015a6c40)') 
+2020-08-28 11:15:05,572 [1237194]   INFO - plication.impl.ApplicationImpl - AnAction.update() Statistics:
+Event number:     3512
+Total time spent: 959ms
+Average duration: 0ms
+Median  duration: 0ms
+Max     duration: 295ms (it was 'Select Opened File action update (class com.intellij.ide.projectView.impl.ProjectViewImpl$ScrollFromSourceAction)') 
+2020-08-28 11:15:05,572 [1237194]   INFO - plication.impl.ApplicationImpl - Global instance threads created counter = 21; ProcessIOExecutorService threads: 10 
+2020-08-28 11:15:05,585 [1237207]   INFO -        #com.intellij.idea.Main - ------------------------------------------------------ IDE SHUTDOWN ------------------------------------------------------ 
+2020-08-28 11:15:05,588 [1237210]   INFO - org.jetbrains.io.BuiltInServer - web server stopped 
