@@ -1,4 +1,4 @@
-package com.araizen.com;
+package com.araizen.com.lexer;
 
 //public class TokenType {
 //
@@ -10,12 +10,12 @@ enum TokenType{
     LeftBrace,
     RightBrace,
     Comma,Dot,
-    Minus,Plus,Semicolon,
-    Slash, Star , Bang ,
+    Minus,Plus,Semicolon,Colon,MultiLineComment,
+    Comment ,Slash, Star , Bang ,
     BangEqual , Equal,
     EqualEqual,Greater,GreaterEqual,
     Less, LessEqual,
-    Identifier, String, Number,
+    Identifier, Char ,String, Number,
     And, Class, Else , False ,Function ,As, Is,
     For, If, None , Some , Use , Import ,Nil, Or, Alias, Return ,
     Super, This, True, Val ,Var, Mut ,Let ,While , When, Eof

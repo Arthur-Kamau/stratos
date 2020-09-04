@@ -1,4 +1,4 @@
-package com.araizen.com;
+package com.araizen.com.lexer;
 
 public class Token {
     final TokenType type;
@@ -13,6 +13,6 @@ public class Token {
         this.line=line;
     }
     public String toString(){
-        return "Line\t" + line + "Type\t" + type + " = " + lexeme + " = " + literal;
+        return "Line\t --" + line + "-- Type\t --" + type + "-- Lexeme\t --" + lexeme + "-- Literal\t --" + literal+"--";
     }
 }

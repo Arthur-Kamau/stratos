@@ -1,4 +1,4 @@
-package com.araizen.com;
+package com.araizen.com.lexer;
 
 import com.araizen.com.util.print.Log;
 
@@ -48,11 +48,11 @@ public class Scanner {
     }
 
 
-    Scanner(String src) {
+   public Scanner(String src) {
         this.src = src;
     }
 
-    List<Token> scanTokens() {
+    public List<Token> scanTokens() {
         while (!isAtEnd()) {
             start = current;
             scanToken();
@@ -66,37 +66,90 @@ public class Scanner {
         switch (c) {
             case '(':
                 addToken(TokenType.LeftParen, '(');
+                break;
             case ')':
                 addToken(TokenType.RightParen, ')');
+                break;
             case '{':
                 addToken(TokenType.LeftBrace, '{');
+                break;
             case '}':
                 addToken(TokenType.RightBrace, '}');
+                break;
             case ',':
                 addToken(TokenType.Comma, ',');
+                break;
             case '.':
                 addToken(TokenType.Dot, ".");
+                break;
             case '+':
                 addToken(TokenType.Plus, '+');
+                break;
             case '-':
                 addToken(TokenType.Minus, '-');
+                break;
             case ';':
                 addToken(TokenType.Semicolon, ';');
+                break;
+            case ':':
+                addToken(TokenType.Colon, ':');
+                break;
+            case '#':
+                macroLine();
+                break;
             case '*':
-                addToken(TokenType.Star);
+                addToken(TokenType.Star,'*');
             case '!':
                 addToken(match('=') ? TokenType.BangEqual : TokenType.Bang);
+                break;
             case '=':
                 addToken(match('=') ? TokenType.EqualEqual : TokenType.Equal);
+                break;
             case '<':
                 addToken(match('=') ? TokenType.LessEqual : TokenType.Less);
+                break;
             case '>':
                 addToken(match('=') ? TokenType.GreaterEqual : TokenType.Greater);
+                break;
             case '/':
                 if (match('/')) {
-                    while (
 
-                            peek() != '\n' && !isAtEnd()) advance();
+                    String msg = "";
+                    while (peek() != '\n' && !isAtEnd()) {
+                        char item = advance();
+                        msg += item;
+                    }
+
+
+                    addToken(TokenType.Comment, msg);
+                } else if (match('*')) {
+                    String multiLineComment ="";
+                    while (!isAtEnd()) {
+
+                        char curr = peek();
+                        char nxt = peekNext();
+
+                        if (curr == '\n') {
+                            line++;
+                        }
+                        if (curr == '*' && nxt == '/') {
+                            Log.purple("match found");
+
+                            // move 2 steps
+                            // current * -> token
+                            // next / -> token
+                            char item1 = advance();
+                            multiLineComment += item1;
+                            char item2 = advance();
+                            multiLineComment += item2;
+                            break;
+                        } else {
+
+                            char item = advance();
+                            multiLineComment += item;
+                        }
+                    }
+                    addToken(TokenType.MultiLineComment , multiLineComment );
                 } else {
                     addToken(TokenType.Slash);
                 }
@@ -111,6 +164,9 @@ public class Scanner {
                 break;
             case '"':
                 string();
+                break;
+            case '\'':
+                charItem();
                 break;
             default:
 /* Scanning char-error < Scanning digit-start
@@ -227,6 +283,32 @@ public class Scanner {
 
     private boolean isAtEnd() {
         return current >= src.length();
+    }
+
+    private void macroLine() {
+        while (peek() != '\n' && !isAtEnd()) {
+            advance();
+        }
+    }
+
+    private void charItem() {
+        while (peek() != '\'' && !isAtEnd()) {
+            if (peek() == '\n') line++;
+            advance();
+        }
+        // Unterminated string.
+        if (isAtEnd()) {
+            Log.error("Unterminated charcter.", line);
+            return;
+        }
+
+        // The closing ".
+        advance();
+
+        // Trim the surrounding quotes.
+        String value = src.substring(start + 1, current - 1);
+        addToken(TokenType.Char, value);
+
     }
 
     //< number

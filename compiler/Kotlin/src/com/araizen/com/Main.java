@@ -1,5 +1,7 @@
 package com.araizen.com;
 
+import com.araizen.com.lexer.Scanner;
+import com.araizen.com.lexer.Token;
 import com.araizen.com.util.print.Log;
 
 import java.io.IOException;
@@ -43,9 +45,11 @@ public class Main {
             // For now, just print the tokens.
 
         */
-        for (Token token : tokens) {
-            Log.process(token.toString());
-        }
+//        for (Token token : tokens) {
+//            Log.process(token.toString());
+//        } For now, just print the tokens.
+//
+         Parser parser = new Parser(tokens);
     }
 
     private static void runPrompt() {

@@ -2,7 +2,7 @@
 //import "";
 // part "";
 
-class nname implements kamau {
+class nname : kamau {
  if(kam)  
 }
 part of ex 
