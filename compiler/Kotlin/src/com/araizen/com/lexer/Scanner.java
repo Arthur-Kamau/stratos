@@ -114,14 +114,14 @@ public class Scanner {
             case '/':
                 if (match('/')) {
 
-                    String msg = "";
+                    StringBuilder msg = new StringBuilder();
                     while (peek() != '\n' && !isAtEnd()) {
                         char item = advance();
-                        msg += item;
+                        msg.append(item);
                     }
 
 
-                    addToken(TokenType.Comment, msg);
+                    addToken(TokenType.Comment, msg.toString());
                 } else if (match('*')) {
                     String multiLineComment ="";
                     while (!isAtEnd()) {
@@ -133,7 +133,7 @@ public class Scanner {
                             line++;
                         }
                         if (curr == '*' && nxt == '/') {
-                            Log.purple("match found");
+                          //  Log.purple("match found");
 
                             // move 2 steps
                             // current * -> token

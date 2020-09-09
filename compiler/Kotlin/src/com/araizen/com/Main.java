@@ -4,6 +4,7 @@ import com.araizen.com.lexer.Scanner;
 import com.araizen.com.lexer.Token;
 import com.araizen.com.util.print.Log;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -15,7 +16,10 @@ public class Main {
     public static void main(String[] args) throws IOException {
         // write your code here
         System.out.println("Stratos compiler");
-        String f = "/home/arthur-kamau/Development/Stratos/compiler/example/basic_example/src/main.st";
+
+         String path=   System.getProperty("user.dir");
+        String f = path+"/example/basic_example/src/main.st";
+
         runFile(f);
 //        if (args.length > 1) {
 //            System.out.println("more than one arg Error");
@@ -49,7 +53,7 @@ public class Main {
 //            Log.process(token.toString());
 //        } For now, just print the tokens.
 //
-         Parser parser = new Parser(tokens);
+        // Parser parser = new Parser(tokens);
     }
 
     private static void runPrompt() {

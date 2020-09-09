@@ -1,0 +1,52 @@
+<idea-plugin>
+  <id>stratos</id>
+  <name>Stratos Language</name>
+  <version>0.1.0</version>
+  <vendor email="kamaukenn11@gmail.com.com" url="https://github.com/Arthur-Kamau/stratos">Stratos</vendor>
+
+  <description><![CDATA[
+   Stratos Language Plugin.<br>
+    <em>Project creating</em>
+    <em>Syntax highlighting</em>
+    <em>Commenting code</em>
+    ]]></description>
+<!--  <change-notes><![CDATA[-->
+<!--     Initial version.<br>-->
+<!--      <em>most HTML tags may be used</em>-->
+<!--    ]]>-->
+<!--  </change-notes>-->
+
+  <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+  <idea-version since-build="193.0"/>
+
+  <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+       on how to target different products -->
+  <depends>com.intellij.modules.platform</depends>
+
+  <extensions defaultExtensionNs="com.intellij">
+<!--     create project in intellij wizard-->
+    <moduleType id="STRATOS_LANG_MODULE" implementationClass="lang.stratos.module.StratosModuleType"/>
+    <applicationService serviceImplementation="lang.stratos.services.StratosApplicationService"/>
+    <projectService serviceImplementation="lang.stratos.services.StratosProjectService"/>
+    <!--file type recognition-->
+    <fileType name="Stratos" implementationClass="lang.stratos.language.StratosFileType"
+              fieldName="INSTANCE" language="stratos" extensions="st"/>
+  </extensions>
+
+  <projectListeners>
+    <listener class="lang.stratos.listeners.StratosProjectManagerListener"
+              topic="com.intellij.openapi.project.ProjectManagerListener"/>
+  </projectListeners>
+
+
+
+  <actions>
+    <!-- Add your actions here -->
+
+    <action id="Stratos.NewFile" class="lang.stratos.action.NewStratosFileAction"
+            text="Stratos File" description="Create new Stratos file">
+      <add-to-group group-id="NewGroup" anchor="before" relative-to-action="NewFromTemplate"/>
+    </action>
+  </actions>
+
+</idea-plugin>

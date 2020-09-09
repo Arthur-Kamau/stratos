@@ -18,18 +18,18 @@ public class Log {
     }
 
     public static void warning(String str) {
-        System.out.println(ConsoleColors.YELLOW + "Android :: \t"+  str + ConsoleColors.RESET + " \n");
+        System.out.println(ConsoleColors.YELLOW + "Warning :: \t"+  str + ConsoleColors.RESET + " \n");
     }
 
     public static void purple(String str) {
-        System.out.println(ConsoleColors.PURPLE + "Android \t"+  str + ConsoleColors.RESET + " \n");
+        System.out.println(ConsoleColors.PURPLE + "Insight \t"+  str + ConsoleColors.RESET + " \n");
     }
 
     public static void cyan(String str) {
-        System.out.println(ConsoleColors.CYAN + "Android :: \t"+  str + ConsoleColors.RESET + " \n");
+        System.out.println(ConsoleColors.CYAN + "Check :: \t"+  str + ConsoleColors.RESET + " \n");
     }
 
     public static void blue(String str) {
-        System.out.println(ConsoleColors.BLUE + "Android :: \t"+ str + ConsoleColors.RESET + " \n");
+        System.out.println(ConsoleColors.BLUE + "Info :: \t"+ str + ConsoleColors.RESET + " \n");
     }
 }
