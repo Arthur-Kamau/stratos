@@ -13,7 +13,7 @@ import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * @author Konstantin Bulenkov
+ * @author Arthur Kamau
  */
 public class StratosFacetConfiguration implements FacetConfiguration, PersistentStateComponent<StratosModuleSettings> {
   private StratosModuleSettings mySettings = new StratosModuleSettings();

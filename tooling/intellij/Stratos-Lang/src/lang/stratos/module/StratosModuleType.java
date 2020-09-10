@@ -16,7 +16,7 @@ import lang.stratos.icons.StratosIcons;
 import javax.swing.*;
 
 /**
- * @author Konstantin Bulenkov
+ * @author Arthur Kamau
  */
 public class StratosModuleType extends ModuleType<StratosModuleBuilder> {
     private static final StratosModuleType INSTANCE = new StratosModuleType();
@@ -34,18 +34,13 @@ public class StratosModuleType extends ModuleType<StratosModuleBuilder> {
 
     @Override
     public String getName() {
-        return "Redline Smalltalk";
+        return "Stratos";
     }
 
     @Override
     public String getDescription() {
-        return "Add support for Redline Smalltalk";
+        return "Add support for Stratos ";
     }
-
-//    @Override
-//    public Icon getBigIcon() {
-//        return null;
-//    }
 
     @Override
     public Icon getNodeIcon(@Deprecated boolean isOpened) {

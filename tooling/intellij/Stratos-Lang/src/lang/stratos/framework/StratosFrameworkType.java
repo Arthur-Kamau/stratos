@@ -1,4 +1,4 @@
-package lang.stratos.module;
+package lang.stratos.framework;
 
 import com.intellij.framework.FrameworkTypeEx;
 import com.intellij.framework.addSupport.FrameworkSupportInModuleProvider;
@@ -11,7 +11,7 @@ import javax.swing.*;
  * @author Arthur_Kamau
  */
 public class StratosFrameworkType extends FrameworkTypeEx {
-  public static final String ID = "Stratos Smalltalk";
+  public static final String ID = "Stratos ";
 
   protected StratosFrameworkType() {
     super(ID);

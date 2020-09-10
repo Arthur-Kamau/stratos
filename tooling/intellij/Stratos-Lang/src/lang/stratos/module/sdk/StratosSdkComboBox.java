@@ -1,4 +1,4 @@
-package lang.stratos.module;
+package lang.stratos.module.sdk;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -15,7 +15,7 @@ import java.awt.event.ActionListener;
 import java.util.List;
 
 /**
- * @author Konstantin Bulenkov
+ * @author Arthur Kamau
  */
 public class StratosSdkComboBox extends ComboboxWithBrowseButton {
 

@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 
 /**
- * @author Konstantin Bulenkov
+ * @author Arthur Kamau
  */
 public class StratosFacetType extends FacetType<StratosFacet, StratosFacetConfiguration> {
   public final static FacetTypeId<StratosFacet> FACET_TYPE_ID = new FacetTypeId<StratosFacet>("RedlineSmalltalk");

@@ -1,4 +1,4 @@
-package lang.stratos.module;
+package lang.stratos.module.sdk;
 
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * @author Konstantin Bulenkov
+ * @author Arthur Kamau
  */
 public class StratosSdkPanel extends JPanel {
 
@@ -37,11 +37,12 @@ public class StratosSdkPanel extends JPanel {
 
   public StratosSdkPanel() {
     super(new BorderLayout());
+    myRoot = new JPanel();
     add(myRoot, BorderLayout.CENTER);
   }
 
   private void createUIComponents() {
-    myDownloadLink = new ActionLink("Download and Install Redline Smalltalk", new AnAction() {
+    myDownloadLink = new ActionLink("Download and Install  Stratos", new AnAction() {
       @Override
       public void actionPerformed(AnActionEvent anActionEvent) {
         FileChooserDescriptor descriptor = new FileChooserDescriptor(false, true, false, false, false, false);

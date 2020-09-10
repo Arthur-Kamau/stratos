@@ -1,11 +1,11 @@
-package lang.stratos.module;
+package lang.stratos.module.sdk;
 
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.projectRoots.SdkAdditionalData;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 
 /**
- * @author Konstantin Bulenkov
+ * @author Arthur Kamau
  */
 @SuppressWarnings("UnusedDeclaration")
 public class StratosSdkData implements SdkAdditionalData, PersistentStateComponent<StratosSdkData> {

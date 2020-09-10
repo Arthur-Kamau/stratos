@@ -8,7 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * @author Konstantin Bulenkov
+ * @author Arthur Kamau
  */
 public class StratosFacet extends Facet<StratosFacetConfiguration> {
   public StratosFacet(@NotNull final FacetType facetType,

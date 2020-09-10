@@ -1,4 +1,4 @@
-package lang.stratos.module;
+package lang.stratos.module.sdk;
 
 import com.intellij.openapi.projectRoots.*;
 import com.intellij.openapi.vfs.LocalFileSystem;
@@ -12,17 +12,17 @@ import javax.swing.*;
 import java.io.File;
 
 /**
- * @author Konstantin Bulenkov
+ * @author Arthur Kamau
  */
 public class StratosSdkType extends SdkType {
   public StratosSdkType() {
-    super("redline");
+    super("stratos");
   }
 
   @Nullable
   @Override
   public String suggestHomePath() {
-    return System.getenv().get("REDLINE_HOME");
+    return System.getenv().get("STRATOS_HOME");
   }
 
   @Override

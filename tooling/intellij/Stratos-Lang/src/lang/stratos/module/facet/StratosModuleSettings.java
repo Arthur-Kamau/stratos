@@ -1,6 +1,6 @@
 package lang.stratos.module.facet;
 /**
- * @author Konstantin Bulenkov
+ * @author Arthur Kamau
  */
 public class StratosModuleSettings {
   public static final String FACET_ID = "RedlineSmalltalk";

@@ -5,14 +5,14 @@ import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.projectRoots.ProjectJdkTable;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.util.text.StringUtil;
-import lang.stratos.module.StratosSdkPanel;
+import lang.stratos.module.sdk.StratosSdkPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
 /**
- * @author Konstantin Bulenkov
+ * @author Arthur Kamau
  */
 public class StratosFacetEditorTab extends FacetEditorTab {
 
@@ -27,7 +27,7 @@ public class StratosFacetEditorTab extends FacetEditorTab {
   @Nls
   @Override
   public String getDisplayName() {
-    return "Redline Smalltalk";
+    return "Stratos Smalltalk";
   }
 
   @Nullable

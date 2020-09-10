@@ -1,4 +1,4 @@
-package lang.stratos.module;
+package lang.stratos.framework;
 
 import com.intellij.framework.FrameworkTypeEx;
 import com.intellij.framework.addSupport.FrameworkSupportInModuleConfigurable;
@@ -6,10 +6,12 @@ import com.intellij.framework.addSupport.FrameworkSupportInModuleProvider;
 import com.intellij.ide.util.frameworkSupport.FrameworkSupportModel;
 import com.intellij.openapi.module.JavaModuleType;
 import com.intellij.openapi.module.ModuleType;
+import lang.stratos.framework.StratosFrameworkType;
+import lang.stratos.framework.StratosModuleConfigurable;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * @author Konstantin Bulenkov
+ * @author Arthur Kamau
  */
 public class StratosModuleProvider extends FrameworkSupportInModuleProvider {
   public StratosModuleProvider() {
