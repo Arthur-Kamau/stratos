@@ -30,7 +30,7 @@
 			"include":"#constants-and-special-vars"
 		},
 		{
-			"begin": "^\\w*\\b(use|import|part|export)\\b",
+			"begin": "^\\w*\\b(package|use|import|part|export)\\b",
 			"beginCaptures": {
 				"0": {
 					"name": "keyword.other.import.stratos"
@@ -102,7 +102,7 @@
 					"name": "keyword.control.stratos"
 				},
 				{
-					"match": "(?<!\\$)\\b(static|final|const|required|late)\\b(?!\\$)",
+					"match": "(?<!\\$)\\b(static|mut|final|const|required|late)\\b(?!\\$)",
 					"name": "storage.modifier.stratos"
 				}
 			]
@@ -144,7 +144,7 @@
 					}
 				},
 				{
-					"match": "\\b(fun)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\(([A-Za-z0-9,\\s]*)\\)",
+					"match": "\\b(function)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\(([A-Za-z0-9,\\s]*)\\)",
 					"captures": {
 						"1": {
 							"name":"storage.type.function.stratos"
@@ -198,6 +198,23 @@
 				},
 				{
 					"match": "\\b(struct)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(<)\\s*([A-Za-z_][A-Za-z0-9_]*))?\\b",
+					"captures": {
+						"1": {
+							"name": "storage.type.class.stratos"
+						},
+						"2": {
+							"name": "entity.name.type.class.stratos"
+						},
+						"3": {
+							"name": "storage.modifier.stratos"
+						},
+						"4": {
+							"name": "entity.name.type.class.stratos"
+						}
+					}
+				},
+				{
+					"match": "\\b(data)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(<)\\s*([A-Za-z_][A-Za-z0-9_]*))?\\b",
 					"captures": {
 						"1": {
 							"name": "storage.type.class.stratos"
