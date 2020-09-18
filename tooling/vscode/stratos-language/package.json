@@ -4,12 +4,13 @@
     "description": "stratos language support.",
     "icon": "icons/images.jpg",
     "publisher": "arthurKamau",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "engines": {
         "vscode": "^1.45.0"
     },
     "categories": [
-        "Programming Languages"
+        "Programming Languages",
+        "Snippets"
     ],
     "contributes": {
         "languages": [{
@@ -22,7 +23,14 @@
             "language": "stratos",
             "scopeName": "source.stratos",
             "path": "./syntaxes/stratos.tmLanguage.json"
-        }]
+        }],
+        
+        "snippets": [
+            {
+                "language": "stratos",
+                "path": "./snippets/stratos.json"
+            }
+        ]
     }, 
 	"keywords": [
 		"Stratos",

@@ -4,10 +4,13 @@ package main;
 function hello(){
    print ("hello world ")
 }
+function nn() {
+  
+}
 
 // function with parameters
 function printName(val name : String){
-   print ("hello $name  ")
+   print("hello $name  ")
 }
 
 // function with multiple  parameters
@@ -21,12 +24,12 @@ function returnAge(val name : String){
 }
 
 // function with parameters and return type
-function printHelloNameAndReturnHight(val name : String) int {
-   print ("hello $name  ")
+function printHelloNameAndReturnHight(val name : String ) int {
+   print("hello $name  ")
    return 170
 }
 
-function main(){ 
+function m(){
    // call function
    hello();
    // parameter 
@@ -37,6 +40,6 @@ function main(){
    val me = returnAge();
    print("my age $age");
    // parameter and return 
-   val h = returnAge();
+   val h : int = returnAge();
    print("my height $h");
 }

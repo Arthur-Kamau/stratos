@@ -34,7 +34,7 @@ struct Person {
 }
 
 // A class can implement a struct
-class Student implements Person{
+class Student() implements Person{
   override getName():  string{
       return "Student"
    }
@@ -52,6 +52,7 @@ class Arthur extends Student{
    //overide isExpelled method in Student class
    override isExpelled():  bool{
       return false
+      
    }
 }
 
