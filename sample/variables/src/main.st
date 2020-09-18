@@ -4,6 +4,7 @@ package main;
 *  types =>  int, number, double , string , bool, char
 *  
 */
+
 function main(){
 
    // mutable  and nullable 
