@@ -1,116 +1,44 @@
-use "system";
-import "";
-part "";
+package main;
 
-class nname implements kamau {
- if(kam)  
+
+struct User {
+   var age : int;
+   val name : string ;
+   // declare default value 
+   let isAudible = true; 
+   // function return a string 
+    getNationality() :string ;
+    // function return a nothing 
+    isAdult() : unit ;
 }
-part of ex 
-// kama
-/** */
-/**
-**
-* au
-* use of namespace, Enum, Class , Constructors (create), Destructors (destroy), Contional (When)
-*/
-try{
-   true ;
-   "kama"
-}
-true nil 
-true 
- if ()
-'name'
-"""kamau """
-return 
-let me = ",ll    "
-nil null 
-#region
-#endregion
-namespace Species{
-struct space {
+// a class can impliment a struct
+class student implements User {
    
-}
-    enum Race {
-       African , Asian , Europian, American
-    }
-    class Mammals{
+   
+   val age = 22;
+   val name = "User";
 
-          // create getter and setter for class properties
-          data limbs: int;
-          data hasHooves: bool;
-false 
-          /**
-           *default constructor
-           *  you could als create is ussing
-           *    ``` create mamalia(){}```
-           *   or
-           *    ``` create { }````
-           *  args 0
-           *  return none
-           */
-          create(){
-            print("constructor")
-            // asign limbs
-            limbs =4
-            // has hooves
-            hasHooves = false
-          }
+   override getNationality():  string{
+      return "kenya"
+   }
 
+    override isAdult(){
+       // evluates to true
+      val isAdult  age > 18;
+      // print is adult
+      print(" is the user adult $isAdult ")
 
-
-          // non default constructor
-          create biped(){
-             println("Non default  constructot")
-          }
-let me = true 
-
-           /**
-             *  default destructor
-             *
-             */
-          destroy {
-
-          }
-return nil
-    }
-}
-print()
-
-#region
-class kamau {
-
-val name = true
-this 
+   }
 }
 
-namespace me{
-
-}
-
-
-
-#endregion
-
-
-
-
-fn main (args :vargs){
-        // gettter for limbs
-       val res = Species::Mammals().limbs
-
-       // try and reassign val will throw errri
-       // val res = 44  // will cause error
-
-       let mut race  = Race.African
-
-       when (race){
-          African -> {
-          }
-          else ->{
-          }
-       }
-
+function main(){ 
+ 
+   let me = User {
+      age = 20,
+      name = "Alex"
+   }
+   // should print name and defailt value
+   print("User name is ${me.name}  is audible ${me.isAudible}") 
 
 
 
