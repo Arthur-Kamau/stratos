@@ -31,13 +31,15 @@
 
 StratosFile ::= Definition*
 
-Definition ::= PackageDefinition | (EnumType)+ | (StructType)+ | (FunctionDefinition)+
+Definition ::= PackageDefinition | (EnumType)+ | (StructType)+ | (FunctionDefinition)+ | (ClassDefinition)+
 
 PackageDefinition ::= TypePackage IDENTIFIER* ';'
 
 TypePackage  ::= package
 
-FunctionDefinition ::= function IDENTIFIER '(' ')' (returns Type)? '{' FunctionBody '}'
+ClassDefinition ::= class IDENTIFIER ('(' ( Type IDENTIFIER ','? )+  ')' )?   '{' FunctionBody | (FunctionDefinition)* '}'
+
+FunctionDefinition ::= function IDENTIFIER '(' (( Type IDENTIFIER ','? )+ )? ')' (returns Type)? '{' FunctionBody '}'
 
 FunctionBody ::= Statement*
 
