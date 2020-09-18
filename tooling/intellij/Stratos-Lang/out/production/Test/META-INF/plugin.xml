@@ -22,6 +22,7 @@
   <!-- please see https://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
        on how to target different products -->
   <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
 
   <extensions defaultExtensionNs="com.intellij">
 <!--     create project in intellij wizard-->
@@ -31,6 +32,13 @@
     <!--file type recognition-->
     <fileType name="Stratos" implementationClass="lang.stratos.language.StratosFileType"
               fieldName="INSTANCE" language="stratos" extensions="st"/>
+<!--language parser-->
+    <lang.parserDefinition language="stratos" implementationClass="org.intellij.sdk.language.SimpleParserDefinition"/>
+    <lang.syntaxHighlighterFactory language="stratos"
+                                   implementationClass="lang.stratos.language.StratosSyntaxHighlighterFactory"/>
+    <colorSettingsPage implementation="lang.stratos.language.StratosColorSettingsPage"/>
+
+
   </extensions>
 
   <projectListeners>
