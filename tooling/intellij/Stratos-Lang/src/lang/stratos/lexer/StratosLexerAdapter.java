@@ -7,7 +7,7 @@ import com.intellij.lexer.FlexAdapter;
 public class StratosLexerAdapter extends FlexAdapter {
 
     public StratosLexerAdapter() {
-        super(new StratosLexer(null));
+        super(new _StratosLexer());
     }
 
 }

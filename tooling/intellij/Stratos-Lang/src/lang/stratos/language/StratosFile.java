@@ -45,8 +45,10 @@ public class StratosFile extends PsiFileBase implements StratosExecutionScope {
                                        @NotNull ResolveState state,
                                        PsiElement lastParent,
                                        @NotNull PsiElement place) {
-        return StratosPsiCompositeElementImpl.processDeclarationsImpl(this, processor, state, lastParent)
-                && super.processDeclarations(processor, state, lastParent, place);
+//        return StratosPsiCompositeElementImpl.processDeclarationsImpl(this, processor, state, lastParent)
+//                && super.processDeclarations(processor, state, lastParent, place);
+
+        return false;
     }
 
     @Override

@@ -27,7 +27,7 @@ public class StratosFacetEditorTab extends FacetEditorTab {
   @Nls
   @Override
   public String getDisplayName() {
-    return "Stratos Smalltalk";
+    return "Stratos ";
   }
 
   @Nullable

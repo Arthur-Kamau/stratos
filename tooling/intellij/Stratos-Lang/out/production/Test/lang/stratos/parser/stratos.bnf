@@ -31,27 +31,29 @@
 
 StratosFile ::= Definition*
 
-Definition ::= PackageDefinition | (EnumType)+ | (StructType)+ | (FunctionDefinition)+
+Definition ::= PackageDefinition | (EnumType)+ | (StructType)+ | (FunctionDefinition)+ | (ClassDefinition)+
 
 PackageDefinition ::= TypePackage IDENTIFIER* ';'
 
 TypePackage  ::= package
 
-FunctionDefinition ::= function IDENTIFIER '(' ')' (returns Type)? '{' FunctionBody '}'
+ClassDefinition ::= class IDENTIFIER ('(' ( VariableType IDENTIFIER  ':' Type ','? )+  ')' )?   '{' FunctionBody | (FunctionDefinition)* '}'
+
+FunctionDefinition ::= function IDENTIFIER '(' (( VariableType IDENTIFIER ':' Type ','? )+ )? ')' (returns Type)? '{' FunctionBody '}'
 
 FunctionBody ::= Statement*
 
-Statement ::= VariableDefinition | AssignmentStatement | FunctionInvocation | EnumType | StructType
+Statement ::= BasicVariableDefinition | AssignmentStatement | FunctionInvocation | EnumType | StructType
 
-VariableDefinition ::= Type IDENTIFIER (';' | ('=' (FunctionInvocation | IDENTIFIER* ))?)
-
-BasicVariableDefinition ::= Type IDENTIFIER (';' | ('='  IDENTIFIER* )?)
+BasicVariableDefinition ::= VariableType IDENTIFIER (':' Type)? (';' | ('='   IDENTIFIER  ('(' (IDENTIFIER ','? )* ')')?   )?)
 
 EnumType ::= TypeWrapper IDENTIFIER '{'  (IDENTIFIER ','? )* '}'
 
 StructType ::= TypeWrapper IDENTIFIER '{' BasicVariableDefinition* '}'
 
-Type ::= int | string | number | double
+VariableType ::= let | val | var
+
+Type ::= int | string | number | double | bool
 
 TypeWrapper ::= enum | struct
 

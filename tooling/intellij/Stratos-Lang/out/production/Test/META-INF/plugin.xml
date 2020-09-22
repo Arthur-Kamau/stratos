@@ -25,6 +25,8 @@
     <depends>com.intellij.modules.java</depends>
 
   <extensions defaultExtensionNs="com.intellij">
+
+      <sdkType implementation="lang.stratos.module.sdk.StratosSdkType"/>
 <!--     create project in intellij wizard-->
     <moduleType id="STRATOS_LANG_MODULE" implementationClass="lang.stratos.module.StratosModuleType"/>
     <applicationService serviceImplementation="lang.stratos.services.StratosApplicationService"/>
@@ -33,7 +35,7 @@
     <fileType name="Stratos" implementationClass="lang.stratos.language.StratosFileType"
               fieldName="INSTANCE" language="stratos" extensions="st"/>
 <!--language parser-->
-    <lang.parserDefinition language="stratos" implementationClass="org.intellij.sdk.language.SimpleParserDefinition"/>
+<!--    <lang.parserDefinition language="stratos" implementationClass="org.intellij.sdk.language.SimpleParserDefinition"/>-->
     <lang.syntaxHighlighterFactory language="stratos"
                                    implementationClass="lang.stratos.language.StratosSyntaxHighlighterFactory"/>
     <colorSettingsPage implementation="lang.stratos.language.StratosColorSettingsPage"/>

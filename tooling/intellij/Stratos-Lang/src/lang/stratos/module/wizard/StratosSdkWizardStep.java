@@ -15,14 +15,14 @@ import lang.stratos.module.sdk.StratosSdkPanel;
 
 import javax.swing.*;
 
-public class StratosModuleWizardStep extends ModuleWizardStep {
+public class StratosSdkWizardStep extends ModuleWizardStep {
 
-//  private final StratosSdkPanel sdkPanel = new StratosSdkPanel();
+  private final StratosSdkPanel sdkPanel = new StratosSdkPanel();
   @Override
   public JComponent getComponent() {
 
-//    return sdkPanel;
-    return new JLabel("Stratos Project Types ( project / script / library) ");
+    return sdkPanel;
+//    return new JLabel("Stratos Project Types ( project / script / library) ");
   }
 
   @Override

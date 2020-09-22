@@ -78,6 +78,10 @@
         [
             "'",
             "'"
+        ],
+        [
+            "/**",
+            "*/"
         ]
     ],
     "wordPattern": {
@@ -89,5 +93,9 @@
             "start": "^\\s*//\\s*#region",
             "end": "^\\s*//\\s*#endregion"
         }
-    }
+    },
+    "indentationRules": {
+        "increaseIndentPattern": "^((?!\\/\\/).)*(\\{[^}\"'`]*|\\([^)\"'`]*|\\[[^\\]\"'`]*)$",
+        "decreaseIndentPattern": "^((?!.*?\\/\\*).*\\*/)?\\s*[\\}\\]].*$"
+      }
 }

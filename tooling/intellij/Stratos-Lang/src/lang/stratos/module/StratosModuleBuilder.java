@@ -1,17 +1,18 @@
 package lang.stratos.module;
 
 
-import com.intellij.facet.FacetManager;
-import com.intellij.facet.FacetType;
-import com.intellij.facet.FacetTypeRegistry;
 import com.intellij.ide.util.projectWizard.*;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.roots.ContentEntry;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.projectRoots.ProjectJdkTable;
 import com.intellij.openapi.roots.ModifiableRootModel;
+import com.intellij.openapi.roots.ui.configuration.ModulesProvider;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import lang.stratos.module.facet.StratosFacetType;
-import lang.stratos.module.wizard.StratosModuleWizardStep;
+import lang.stratos.module.sdk.StratosSdkType;
+import lang.stratos.module.wizard.StratosProjectTypeWizardStep;
+import lang.stratos.module.wizard.StratosSdkWizardStep;
+import lang.stratos.module.wizard.StratosWizardInputField;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jps.model.serialization.PathMacroUtil;
@@ -19,13 +20,12 @@ import org.jetbrains.jps.model.serialization.PathMacroUtil;
 import java.io.File;
 import java.io.IOException;
 
-import static com.intellij.openapi.vfs.VfsUtilCore.isEqualOrAncestor;
-
 
 /**
  * @author Arthur Kamau
  */
-public  class StratosModuleBuilder  extends ModuleBuilder {
+//public  class StratosModuleBuilder  extends ModuleBuilder {
+public  class StratosModuleBuilder extends  JavaModuleBuilder implements ModuleBuilderListener {
 
     @Override
     public void setupRootModel(@NotNull ModifiableRootModel model) {
@@ -75,13 +75,54 @@ public  class StratosModuleBuilder  extends ModuleBuilder {
         return StratosModuleType.getInstance();
     }
 
+    @Override
+    public String getDescription() {
+        if (ProjectJdkTable.getInstance().getSdksOfType(StratosSdkType.getInstance()).isEmpty()) {
+            return "<html><body>Before you start make sure you have Stratos compiler installed." +
+                    "<br/>Download <a href='https://github.com/redline-smalltalk/redline-smalltalk.github.com/raw/master/assets/redline-deploy.zip'>the latest version</a>" +
+                    "<br/>Unpack the zip file to any folder and run the installer " +
+                    "<br/>Make sure the installer is in system path " +
+                    "</body></html>";
+        } else {
+            return "Stratos Project";
+        }
+    }
+
+    @Override
+    public ModuleWizardStep[] createWizardSteps(@NotNull WizardContext wizardContext, @NotNull ModulesProvider modulesProvider) {
+//        return super.createWizardSteps(wizardContext, modulesProvider);
+
+        return new ModuleWizardStep[]{new StratosProjectTypeWizardStep() };
+
+    }
+
     @Nullable
     @Override
     public ModuleWizardStep getCustomOptionsStep(WizardContext context, Disposable parentDisposable) {
-        return new StratosModuleWizardStep();
+//        return super.getCustomOptionsStep(context, parentDisposable);
+        return new StratosSdkWizardStep();
     }
+    //    @Nullable
+//    @Override
+//    public ModuleWizardStep getCustomOptionsStep(WizardContext context, Disposable parentDisposable) {
+//        return new StratosModuleWizardStep();
+//    }
+
+//    @Override
+//    public ModuleWizardStep[] createWizardSteps(WizardContext wizardContext, ModulesProvider modulesProvider) {
+////        return new ModuleWizardStep[]{new RsModuleWizardStep(this)};
+//    }
 
 
+    @Override
+    public void moduleCreated(@NotNull Module module) {
+
+        System.out.println("------------------------------------");
+        System.out.println("------------------------------------");
+        System.out.println("Module created   "+ module.toString());
+        System.out.println("------------------------------------");
+        System.out.println("------------------------------------");
+    }
 }
 
 //public class StratosModuleBuilder  JavaModuleBuilder implements ModuleBuilderListener {

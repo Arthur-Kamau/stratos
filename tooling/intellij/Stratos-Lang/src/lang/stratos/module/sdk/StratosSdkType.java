@@ -27,21 +27,22 @@ public class StratosSdkType extends SdkType {
 
   @Override
   public boolean isValidSdkHome(String s) {
-    VirtualFile home = LocalFileSystem.getInstance().findFileByIoFile(new File(s));
-    if (home != null && home.exists() && home.isDirectory()) {
-      VirtualFile lib = home.findChild("lib");
-      VirtualFile rt = home.findChild("rt");
-      if (lib != null && lib.isDirectory() && rt != null && rt.isDirectory()) {
-        return true;
-      }
-    }
-
-    return false;
+//    VirtualFile home = LocalFileSystem.getInstance().findFileByIoFile(new File(s));
+//    if (home != null && home.exists() && home.isDirectory()) {
+//      VirtualFile lib = home.findChild("lib");
+//      VirtualFile rt = home.findChild("rt");
+//      if (lib != null && lib.isDirectory() && rt != null && rt.isDirectory()) {
+//        return true;
+//      }
+//    }
+//
+//    return false;
+    return true;
   }
 
   @Override
   public String suggestSdkName(String s, String s2) {
-    return "Redline SDK";
+    return "Stratos SDK";
   }
 
   @Nullable
@@ -52,7 +53,7 @@ public class StratosSdkType extends SdkType {
 
   @Override
   public String getPresentableName() {
-    return "Redline Smalltalk SDK";
+    return "Stratos Compiler SDK";
   }
 
   @Override
@@ -84,25 +85,26 @@ public class StratosSdkType extends SdkType {
   @Nullable
   @Override
   public String getVersionString(Sdk sdk) {
-    String path = sdk.getHomePath();
-    if (path == null) return null;
-
-    File file = new File(path);
-    VirtualFile home = LocalFileSystem.getInstance().findFileByIoFile(file);
-    if (home != null) {
-      VirtualFile lib = home.findChild("lib");
-      if (lib != null) {
-        for (VirtualFile jar : lib.getChildren()) {
-          String name = jar.getName();
-          if (name.startsWith("redline-") && "jar".equalsIgnoreCase(jar.getExtension())) {
-            name = name.substring(8);
-            name = name.replace("-SNAPSHOT", "");
-            name = name.replace(".jar", "");
-            return name;
-          }
-        }
-      }
-    }
-    return null;
+    return "Read .conf file";
+//    String path = sdk.getHomePath();
+//    if (path == null) return null;
+//
+//    File file = new File(path);
+//    VirtualFile home = LocalFileSystem.getInstance().findFileByIoFile(file);
+//    if (home != null) {
+//      VirtualFile lib = home.findChild("lib");
+//      if (lib != null) {
+//        for (VirtualFile jar : lib.getChildren()) {
+//          String name = jar.getName();
+//          if (name.startsWith("redline-") && "jar".equalsIgnoreCase(jar.getExtension())) {
+//            name = name.substring(8);
+//            name = name.replace("-SNAPSHOT", "");
+//            name = name.replace(".jar", "");
+//            return name;
+//          }
+//        }
+//      }
+//    }
+//    return null;
   }
 }
