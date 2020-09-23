@@ -25,7 +25,10 @@
     <depends>com.intellij.modules.java</depends>
 
   <extensions defaultExtensionNs="com.intellij">
-
+<!--run configuration-->
+      <programRunner implementation="lang.stratos.project.StratosRunner"/>
+    <configurationType implementation="lang.stratos.project.StratosRunConfigurationType"/>
+<!--    stratos sdk details-->
       <sdkType implementation="lang.stratos.module.sdk.StratosSdkType"/>
 <!--     create project in intellij wizard-->
     <moduleType id="STRATOS_LANG_MODULE" implementationClass="lang.stratos.module.StratosModuleType"/>

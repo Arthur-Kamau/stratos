@@ -1,4 +1,4 @@
-package lang.stratos.module.facet;
+package lang.stratos.facet;
 
 import com.intellij.facet.ui.FacetEditorTab;
 import com.intellij.openapi.options.ConfigurationException;
@@ -11,9 +11,7 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
-/**
- * @author Arthur Kamau
- */
+
 public class StratosFacetEditorTab extends FacetEditorTab {
 
   private final StratosSdkPanel mySdkPanel;
@@ -27,7 +25,7 @@ public class StratosFacetEditorTab extends FacetEditorTab {
   @Nls
   @Override
   public String getDisplayName() {
-    return "Stratos ";
+    return "Stratos Project";
   }
 
   @Nullable
