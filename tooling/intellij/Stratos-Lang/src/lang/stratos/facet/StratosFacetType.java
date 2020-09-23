@@ -1,4 +1,4 @@
-package lang.stratos.module.facet;
+package lang.stratos.facet;
 
 import com.intellij.facet.Facet;
 import com.intellij.facet.FacetType;
@@ -12,11 +12,9 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 
-/**
- * @author Arthur Kamau
- */
+
 public class StratosFacetType extends FacetType<StratosFacet, StratosFacetConfiguration> {
-  public final static FacetTypeId<StratosFacet> FACET_TYPE_ID = new FacetTypeId<StratosFacet>("RedlineSmalltalk");
+  public final static FacetTypeId<StratosFacet> FACET_TYPE_ID = new FacetTypeId<StratosFacet>("StratosFacet");
 
   public StratosFacetType() {
     super(FACET_TYPE_ID, StratosModuleSettings.FACET_ID, StratosModuleSettings.FACET_NAME);

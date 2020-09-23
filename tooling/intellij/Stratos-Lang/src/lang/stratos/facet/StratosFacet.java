@@ -1,4 +1,4 @@
-package lang.stratos.module.facet;
+package lang.stratos.facet;
 
 import com.intellij.facet.Facet;
 import com.intellij.facet.FacetManager;
@@ -7,9 +7,7 @@ import com.intellij.openapi.module.Module;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * @author Arthur Kamau
- */
+
 public class StratosFacet extends Facet<StratosFacetConfiguration> {
   public StratosFacet(@NotNull final FacetType facetType,
                       @NotNull final Module module,

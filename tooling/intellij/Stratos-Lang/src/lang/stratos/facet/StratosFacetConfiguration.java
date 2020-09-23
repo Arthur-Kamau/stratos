@@ -1,4 +1,4 @@
-package lang.stratos.module.facet;
+package lang.stratos.facet;
 
 import com.intellij.facet.FacetConfiguration;
 import com.intellij.facet.ui.FacetEditorContext;
@@ -13,7 +13,7 @@ import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * @author Arthur Kamau
+ * @author Konstantin Bulenkov
  */
 public class StratosFacetConfiguration implements FacetConfiguration, PersistentStateComponent<StratosModuleSettings> {
   private StratosModuleSettings mySettings = new StratosModuleSettings();
