@@ -1,4 +1,4 @@
-enum Direction {
+enum Declaration {
 	VariableDeclaration ,
 	TypeAliasDeclaration,
 	ImportDeclaration,
