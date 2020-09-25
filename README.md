@@ -13,11 +13,15 @@ A Fast and fun to write programming language.
 ## Status.
 <img src="https://img.shields.io/badge/Status-In%20Development-green?style=for-the-badge&logo=appveyor">
 <br>
-<img src="./icons/work.jpeg" height="25">
+<p float="left">
+ <img src="./icons/work.jpeg" height="25">
 
 <img src="./icons/work.jpeg" height="25">
 
 <img src="./icons/work.jpeg" height="25">
+</p>
+
+
 
 The Compiler is in development,follow the repo and get notified of the alpha release.
 More detailed decription on progress `https://arthur-kamau.github.io/stratos/`
