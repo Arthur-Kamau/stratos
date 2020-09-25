@@ -12,6 +12,10 @@
         "Programming Languages",
         "Snippets"
     ],
+    "activationEvents": [
+		"onLanguage:stratos"
+    ],
+    "main": "./client/out/extension",
     "contributes": {
         "languages": [{
             "id": "stratos",
@@ -19,6 +23,12 @@
             "extensions": [".sts",".st",".srt"],
             "configuration": "./language-configuration.json"
         }],
+        "commands": [
+			{
+				"command": "extension.runApplication",
+				"title": "Run Application"
+			}
+		],
         "grammars": [{
             "language": "stratos",
             "scopeName": "source.stratos",
@@ -46,5 +56,19 @@
     "repository": {
 		"type": "git",
 		"url": "git+https://github.com:Arthur-Kamau/stratos.git"
+    },
+    "scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p ./",
+		"lint": "eslint . --ext .ts,.tsx",
+		"watch": "tsc -watch -p ./"
+	},
+	"devDependencies": {
+		"@types/node": "^12.12.0",
+		"@types/vscode": "^1.34.0",
+		"@typescript-eslint/eslint-plugin": "^3.0.2",
+		"@typescript-eslint/parser": "^3.0.2",
+		"eslint": "^7.1.0",
+		"typescript": "^4.0.2"
 	}
 }
