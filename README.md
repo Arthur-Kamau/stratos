@@ -20,6 +20,7 @@ A Fast and fun to write programming language.
 <img src="./icons/work.jpeg" height="25">
 
 The Compiler is in development,follow the repo and get notified of the alpha release.
+More detailed decription on progress `https://arthur-kamau.github.io/stratos/`
 <br>
 <br>
 
