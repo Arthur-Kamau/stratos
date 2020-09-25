@@ -14,10 +14,12 @@ A Fast and fun to write programming language.
 <img src="https://img.shields.io/badge/Status-In%20Development-green?style=for-the-badge&logo=appveyor">
 <br>
 <img src="./icons/work.jpeg" height="25">
-&nbsp;
+
 <img src="./icons/work.jpeg" height="25">
-&nbsp;
+
 <img src="./icons/work.jpeg" height="25">
+
+The Compiler is in development,follow the repo and get notified of the alpha release.
 <br>
 <br>
 
