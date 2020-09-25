@@ -1,0 +1,79 @@
+.. Stratos Documentation documentation master file, created by
+   sphinx-quickstart on Fri Sep 25 08:32:02 2020.
+   You can adapt this file completely to your liking, but it should at least
+   contain the root `toctree` directive.
+
+Welcome to Stratos Documentation's documentation!
+=================================================
+
+   ## Introduction.
+      This is mainly the user facing documentation.
+      This documentaion in part is meant for the non techy people.
+      To understand how to navigate the project folder structure please chack the main `README.md` file.
+
+   ## Inspirations.
+      Stratos has borowed rom From oop languages such as CPP, JAVA and C# (`constructors`, `destructors`, `structs`, `classes`, `objects`).Language guarantes such as scoping and safety accessor (`some` and `none`) from Rust.A flexible type system from Kotlin (`data  types(a class is a type)`, `var`, `val`).
+      Maliable from functional language example get to specify project entry point other than main  and pipes `|>`  from elixir/erlang.
+
+
+   ### Language basic
+      compile to binary or genrate bytecode to run in an interpreter
+      File extensions are `.st` or `.sts`<br>
+      * `.st` files are for compilation (aot)
+      * `.srt` files  that require a runtime (jit)
+
+      however passed in compiler arguments overide the file extension type inference. 
+
+   ### Design & docs
+      Thoughts and desions made. 
+
+      <br>
+      <br>
+
+   ### Tooling
+      tooling there will be a cli tool called `toolman` 
+      (inspired by go in golang and cargo in rust). To get packages , test , build and run the language
+      for more info check `/stratos/tooling/toolman/README.md`
+
+   ### Projects directory
+      projects can be located anywhere.
+      the project has
+      1. `app.conf` file describing the project , project name, dependancies and verisons.
+         check HOCON(Human-Optimized Config Object Notation)
+      
+      2. a `src` folder with `main.st` with hello world boiler plate code ie :
+
+         `use System;` <br> 
+         `fn main (){` <br> 
+         &emsp; `print("hello world");` <br>
+         `}` 
+
+         To know more read the `stratos/design/design.md` file for the language design.
+
+      3. a `bin` for the debug executables.
+      4. `dist` distributable binaries. 
+
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   installing
+   tooling
+   folder_structure
+   contribute
+   help
+   license
+   disclaimer
+   copyright
+   extra
+
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
