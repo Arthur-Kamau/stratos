@@ -1,3 +1,4 @@
+import {SyntaxKind } from "./types";
 /**
  * Base class for all nodes / declarations / imports / etc. in the extension.
  * Contains basic information about the node.
@@ -5,7 +6,7 @@
  * @export
  * @interface Node
  */
-export interface Node {
+export interface LanguageNode {
     /**
      * The starting character of the node in the document.
      *
@@ -21,4 +22,7 @@ export interface Node {
      * @memberof Node
      */
     end?: number;
+    line?: number ;
+    type ?: SyntaxKind;
+    value? : string;
 }

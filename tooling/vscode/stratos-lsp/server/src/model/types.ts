@@ -1,4 +1,4 @@
-enum SyntaxKind {
+export enum SyntaxKind {
 	VariableDeclaration ,
 	TypeAliasDeclaration,
 	ImportDeclaration,

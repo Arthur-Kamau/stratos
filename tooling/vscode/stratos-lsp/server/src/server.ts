@@ -16,9 +16,12 @@ import {
 	TextDocumentSyncKind,
 	InitializeResult
 	// WorkspaceEdit,
-    // WorkspaceFolder
+	// WorkspaceFolder
 } from 'vscode-languageserver';
 
+import { FileUtils }  from './utils/file_util';
+import { CommentsCheck }  from './language/comments';
+import { LanguageTokens }  from './language/token';
 import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
@@ -67,6 +70,8 @@ connection.onInitialize((params: InitializeParams) => {
 			}
 		};
 	}
+
+	connection.console.log('Stratos Language Server initialize  ');
 	return result;
 });
 
@@ -77,11 +82,11 @@ connection.onInitialized(() => {
 	}
 	if (hasWorkspaceFolderCapability) {
 		connection.workspace.onDidChangeWorkspaceFolders(_event => {
-			
-			
+
+
 			connection.console.log('Workspace folder change event received.');
 		});
-	
+
 	}
 });
 
@@ -105,7 +110,7 @@ connection.onDidChangeConfiguration(change => {
 		documentSettings.clear();
 	} else {
 		globalSettings = <StratosLspSettings>(
-			(change.settings.languageServerExample || defaultSettings)
+			(change.settings.stratosLanguageServer || defaultSettings)
 		);
 	}
 
@@ -121,7 +126,7 @@ function getDocumentSettings(resource: string): Thenable<StratosLspSettings> {
 	if (!result) {
 		result = connection.workspace.getConfiguration({
 			scopeUri: resource,
-			section: 'languageServerExample'
+			section: 'stratosLanguageServer'
 		});
 		documentSettings.set(resource, result);
 	}
@@ -130,6 +135,7 @@ function getDocumentSettings(resource: string): Thenable<StratosLspSettings> {
 
 // Only keep settings for open documents
 documents.onDidClose(e => {
+	connection.console.log('Close Uri  ' + e.document.uri);
 	documentSettings.delete(e.document.uri);
 });
 
@@ -143,44 +149,137 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	// In this simple example we get the settings for every validate run.
 	let settings = await getDocumentSettings(textDocument.uri);
 
-	// The validator creates diagnostics for all uppercase words length 2 and more
-	let text = textDocument.getText();
-	let pattern = /\b[A-Z]{2,}\b/g;
-	let m: RegExpExecArray | null;
+	connection.console.log('Uri  ' + textDocument.uri);
 
+	// The validator creates diagnostics for all uppercase words length 2 and more
+	// let text = textDocument.getText();
+	// let pattern = /\b[A-Z]{2,}\b/g;
+	// let m: RegExpExecArray | null;
+
+
+	// let lines = textDocument.getText().split(/\r?\n/g);
 	let problems = 0;
 	let diagnostics: Diagnostic[] = [];
-	while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
-		problems++;
-		let diagnostic: Diagnostic = {
-			severity: DiagnosticSeverity.Warning,
-			range: {
-				start: textDocument.positionAt(m.index),
-				end: textDocument.positionAt(m.index + m[0].length)
-			},
-			message: `${m[0]} is all uppercase.`,
-			source: 'ex'
-		};
-		if (hasDiagnosticRelatedInformationCapability) {
-			diagnostic.relatedInformation = [
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range)
-					},
-					message: 'Spelling matters'
-				},
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range)
-					},
-					message: 'Particularly for names'
-				}
-			];
-		}
-		diagnostics.push(diagnostic);
-	}
+
+	// // first line should start with a package 
+	// let firstLine = lines[0]
+	// let charsOfFirstLine = firstLine.split(' ');
+	// let characterArraysFirstLine: string[] = [];
+	
+	// the package name should be
+	let folderName = new FileUtils().getFileDirectoryName(textDocument.uri)
+	let tokenList = new LanguageTokens().getTokenList(textDocument.uri);
+
+	
+	let diagnostic: Diagnostic = {
+		severity: DiagnosticSeverity.Warning,
+		range: {
+			start: textDocument.positionAt(0),
+			end: textDocument.positionAt(10)
+		},
+		message:  `folder ${folderName} line ${tokenList.length}`,//`${textDocument.uri}`,
+		source: 'ex'
+	};
+	diagnostics.push(diagnostic);
+	
+	// let charArrayWithoutComments  = new CommentsCheck().removecomments(textDocument.uri.split(' '));
+	// let charArrayWithoutCommentsAndSpaces  = new CommentsCheck().removeSpaceCharacter(charArrayWithoutComments);
+	
+	// let fileTextWithoutComments = charArrayWithoutComments.join(' ');  
+	// let lines = fileTextWithoutComments.split(/\r?\n/g);
+
+	//  if(charArrayWithoutCommentsAndSpaces[0] != "package"){
+	// 	let diagnostic: Diagnostic = {
+	// 		severity: DiagnosticSeverity.Warning,
+	// 		range: {
+	// 			start: textDocument.positionAt(0),
+	// 			end: textDocument.positionAt(charsOfFirstLine[0].length)
+	// 		},
+	// 		message: `package expected as first line`,
+	// 		source: 'ex'
+	// 	};
+	//  }
+
+
+
+	// remove space charcter in line
+	// for (let index = 0; index < charsOfFirstLine.length; index++) {
+	// 	const item  = charsOfFirstLine[index];
+	// 	if(item != ' '){
+	// 		characterArraysFirstLine.push(item)
+	// 	}
+	// }
+
+	// if (characterArraysFirstLine[0] != "package") {
+		// let diagnostic: Diagnostic = {
+		// 	severity: DiagnosticSeverity.Warning,
+		// 	range: {
+		// 		start: textDocument.positionAt(0),
+		// 		end: textDocument.positionAt(charsOfFirstLine[0].length)
+		// 	},
+		// 	message: `package expected as first line`,
+		// 	source: 'ex'
+		// };
+	// 	if (hasDiagnosticRelatedInformationCapability) {
+	// 		diagnostic.relatedInformation = [
+	// 			{
+	// 				location: {
+	// 					uri: textDocument.uri,
+	// 					range: Object.assign({}, diagnostic.range)
+	// 				},
+	// 				message: 'set package  to '
+	// 			},
+
+	// 		];
+	// 	}
+	// 	diagnostics.push(diagnostic);
+	// }
+
+	
+	
+	// // get if package name is appropriate
+	// // get the next non space charater 
+     
+	
+	
+
+
+
+	// for (var i = 0; i < lines.length && problems < settings.maxNumberOfProblems; i++) {
+
+	// }
+
+	// while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
+	// 	problems++;
+	// let diagnostic: Diagnostic = {
+	// 	severity: DiagnosticSeverity.Warning,
+	// 	range: {
+	// 		start: textDocument.positionAt(m.index),
+	// 		end: textDocument.positionAt(m.index + m[0].length)
+	// 	},
+	// 	message: `${m[0]} is all uppercase.`,
+	// 	source: 'ex'
+	// };
+	// 	if (hasDiagnosticRelatedInformationCapability) {
+	// 		diagnostic.relatedInformation = [
+	// 			{
+	// 				location: {
+	// 					uri: textDocument.uri,
+	// 					range: Object.assign({}, diagnostic.range)
+	// 				},
+	// 				message: 'Spelling matters'
+	// 			},
+	// 			{
+	// 				location: {
+	// 					uri: textDocument.uri,
+	// 					range: Object.assign({}, diagnostic.range)
+	// 				},
+	// 				message: 'Particularly for names'
+	// 			}
+	// 		];
+	// 	}
+	// 	diagnostics.push(diagnostic);
+	// }
 
 	// Send the computed diagnostics to VSCode.
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
