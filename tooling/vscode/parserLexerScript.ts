@@ -4,7 +4,7 @@ const anExampleVariable = "Hello World"
 console.log(anExampleVariable)
 
 var keySignsArray: Array<string> = [
-	'%', '/', '*', '+', '-', '(', ')', '{', '}', '[', ']'
+	'%', '/', '*', '+', '-', '(', ')', '{', '}', '[', ']',"\"",":",";"
 ]
 var keyWordsArray: Array<string> = [
 	'let', 'var', 'val',
@@ -73,7 +73,10 @@ enum NodeType {
 
 	// comment
 	LineComment,
-	MultiLineComment
+	MultiLineComment, 
+
+	// stirn 
+	QuotationNode
 
 }
 interface LanguageNode {
@@ -100,11 +103,24 @@ function getkeySignsNodeType(word: string): NodeType {
 		return NodeType.ColonNode;
 	} else if (word == ';') {
 		return NodeType.SemiColonNode;
-	} else if (word = ' ') {
-		return NodeType.SpaceNode
-	} else {
+	} else if (word = '"') {
+		return NodeType.QuotationNode ;
+	} else if (word = '(') {
+		return NodeType.CurvedBracketOpenNode ;
+	}  else if (word = ')') {
+		return NodeType.CurvedBracketCloseNode ;
+	}  else if (word = '{') {
+		return NodeType.CurlyBracketOpenNode ;
+	}   else if (word = '}') {
+		return NodeType.CurlyBracketCloseNode ;
+	}   else if (word = '[') {
+		return NodeType.SquareBracketOpenNode ;
+	}else if (word = ']') {
+		return NodeType.SquareBracketCloseNode ;
+	}  else {
 		return NodeType.UnknownSignNodeNode;
 	}
+
 }
 function getKeyWordNodeType(word: string): NodeType {
 	if (word == 'if') {
@@ -223,33 +239,38 @@ class LanguageTokens {
 							documentNode.push(n);
 
 							if (charaArray.length > 0) {
+								console.log("pushh "+charaArray)
 								var x: LanguageNode = {
 									line_start: lineIndex,
 									line_end: lineIndex,
-									char_start: charIndex,
-									char_end: charIndex + charaArray.length,
+									char_start: charIndex != 0 ?  charIndex - charaArray.length : 0,
+									char_end: charIndex ,
 									type: getCharNodeType(charaArray),
 									value: charaArray
 								};
 								documentNode.push(x);
 							} else {
-								console.log("character array empty " + lineCharArray[charIndex])
+								console.log("character array empty " + lineCharArray[charIndex] + " line "+ lineIndex)
 							}
 
-						} else if (lineCharArray[charIndex] == " ") {
+							charaArray = "";
+
+						} else if (lineCharArray[charIndex] == " " || lineCharArray[charIndex] == "\t") {
 
 
 							if (charaArray.length > 0) {
-								console.log("char array " + charaArray);
+								
 								var x: LanguageNode = {
 									line_start: lineIndex,
 									line_end: lineIndex,
-									char_start: charIndex,
-									char_end: charIndex + charaArray.length,
+									char_start: charIndex-charaArray.length,
+									char_end:  charaArray.length,
 									type: getCharNodeType(charaArray),
 									value: charaArray
 								};
 								documentNode.push(x);
+
+								charaArray = "";
 							} else {
 								console.log(" line " + lineIndex + " character array empty  item space " + lineCharArray[charIndex])
 							}
@@ -261,11 +282,11 @@ class LanguageTokens {
 								char_start: charIndex,
 								char_end: charIndex + lineCharArray[charIndex].length,
 								type: NodeType.SpaceNode,
-								value: charaArray
+								value: " "
 							};
 							documentNode.push(x);
 
-							charaArray = "";
+							
 						} else {
 
 							charaArray += lineCharArray[charIndex]
@@ -302,30 +323,10 @@ function start(){
 }
 `);
 
-// console.log(`data ${r} `);
-// //lets orders 
-// var sortedList :  LanguageNode[] = [];
+
 for (let tokenIndex = 0; tokenIndex < r.length; tokenIndex++) {
 	console.log(`-> ${JSON.stringify(r[tokenIndex])}`);
-	// 	var currItem = r[tokenIndex] ;
 
-	// 	if(sortedList.length == 0){
-	// 		sortedList.push(currItem);
-	// 	}else{
-	// 		// do not mutate list while iterating
-	// 		var sortedListCopy  :  LanguageNode[] =sortedList;
-	// 		for (let tokenSortedIndex = 0; tokenSortedIndex < sortedListCopy.length; tokenSortedIndex++) {
-	// 			if(sortedListCopy[tokenSortedIndex].line >currItem.line ){
-
-	// 			}else if (sortedListCopy[tokenSortedIndex].line == currItem.line){
-
-	// 			}
-	// 		}
-	// 		//var firstItem = sortedList[0];
-	//         // if(currItem.line > firstItem){}
-	// 		//myArray.splice(index, 0, item);
-
-	// 	}
 }
 
 
