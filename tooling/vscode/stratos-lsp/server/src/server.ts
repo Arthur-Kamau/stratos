@@ -19,9 +19,8 @@ import {
 	// WorkspaceFolder
 } from 'vscode-languageserver';
 
-import { FileUtils }  from './utils/file_util';
-import { CommentsCheck }  from './language/comments';
-import { LanguageTokens }  from './language/token';
+import { FileUtils }  from './util/file_util';
+import {LanguageTokens } from './token/tokenizer';
 import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
@@ -167,9 +166,8 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	// let characterArraysFirstLine: string[] = [];
 	
 	// the package name should be
-	let folderName = new FileUtils().getFileDirectoryName(textDocument.uri)
-	let tokenList = new LanguageTokens().getTokenList(textDocument.uri);
-
+	let folderName = new FileUtils().getFileDirectoryName(textDocument.uri);
+	var tokenList: LanguageNode[] = new LanguageTokens().getTokenList(textDocument.uri);
 	
 	let diagnostic: Diagnostic = {
 		severity: DiagnosticSeverity.Warning,

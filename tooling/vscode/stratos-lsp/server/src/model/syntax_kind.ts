@@ -1,5 +1,5 @@
-export enum SyntaxKind {
-	VariableDeclaration ,
+enum SyntaxKind {
+	VariableDeclaration,
 	TypeAliasDeclaration,
 	ImportDeclaration,
 	ClassDeclaration,
@@ -11,4 +11,4 @@ export enum SyntaxKind {
 	StructDeclaration,
 	FunctionDeclaration,
 	PackageDeclaration
-  }
+}

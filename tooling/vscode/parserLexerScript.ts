@@ -323,6 +323,8 @@ class LanguageTokens {
 		}
 		return documentNode;
 	}
+
+
 }
 
 
@@ -346,6 +348,40 @@ function start(){
 
 for (let tokenIndex = 0; tokenIndex < r.length; tokenIndex++) {
 	console.log(`-> ${JSON.stringify(r[tokenIndex])}`);
+
+}
+
+export class MainScopeRulesRules  {
+	 nodes: LanguageNode[] ;
+	 cleanNodes: LanguageNode[] = [];
+	 folderName:  string ;
+
+	constructor( nodes: LanguageNode[], folderName: string) {
+		this.nodes = nodes;
+		this.folderName = folderName;
+		this.cleanNode();
+	}
+
+	// rmove comments
+	cleanNode(){
+		for (let tokenIndex = 0; tokenIndex < r.length; tokenIndex++) {
+			
+		     if(r[tokenIndex].type == NodeType.NewLine || r[tokenIndex].type == NodeType.SpaceNode || r[tokenIndex].type == NodeType.LineComment || r[tokenIndex].type == NodeType.MultiLineComment    ){
+				 console.log("Removing node "+r[tokenIndex].value);
+			 }else{
+				this.cleanNodes.push(r[tokenIndex]);
+			 }
+		}
+	}
+
+	//get errors
+	checkForErrors(){
+	   // check if starts with package 
+	   //  we can read the first three tokens 
+	  
+	}
+
+
 
 }
 
