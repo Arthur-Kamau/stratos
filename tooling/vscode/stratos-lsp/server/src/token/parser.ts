@@ -1,9 +1,9 @@
 
 class LanguageToken {
 
-	children: LanguageToken;
-	tokenGroup: NodeType[];
-	constructor(children: LanguageToken, tokenGroup: NodeType[]) {
+	children: LanguageToken[];
+	tokenGroup: LanguageNode[];
+	constructor(children: LanguageToken[], tokenGroup: LanguageNode[]) {
 		this.children = children;
 		this.tokenGroup = tokenGroup;
 
@@ -33,9 +33,9 @@ export class LanguageParser {
 
 				srcTokens.push(new LanguageToken([], tokenNodes))
 				tokenNodes = [] ;
-			} else if (cleanNodes[nodeItem].type == NodeType.CurlyBracketOpenNode) {
+			// } else if (cleanNodes[nodeItem].type == NodeType.CurlyBracketOpenNode) {
 
-			} else if (cleanNodes[nodeItem].type == NodeType.CurlyBracketCloseNode) {
+			// } else if (cleanNodes[nodeItem].type == NodeType.CurlyBracketCloseNode) {
 
 
 			} else {
@@ -53,7 +53,7 @@ export class LanguageParser {
 		var cleanNodes: LanguageNode[] = []
 		for (let tokenIndex = 0; tokenIndex < nodes.length; tokenIndex++) {
 
-			if (nodes[tokenIndex].type == NodeType.NewLine || nodes[tokenIndex].type == NodeType.SpaceNode || r[tokenIndex].type == NodeType.LineComment || r[tokenIndex].type == NodeType.MultiLineComment) {
+			if (nodes[tokenIndex].type == NodeType.NewLine || nodes[tokenIndex].type == NodeType.SpaceNode || nodes[tokenIndex].type == NodeType.LineComment || nodes[tokenIndex].type == NodeType.MultiLineComment) {
 				console.log("Removing node " + nodes[tokenIndex].value);
 			} else {
 				cleanNodes.push(nodes[tokenIndex]);
