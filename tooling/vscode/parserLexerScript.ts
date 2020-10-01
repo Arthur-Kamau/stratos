@@ -4,7 +4,7 @@ const anExampleVariable = "Hello World"
 console.log(anExampleVariable)
 
 var keySignsArray: Array<string> = [
-	'%', '/', '*', '+', '-', '(', ')', '{', '}', '[', ']',"\"",":",";"
+	'%', '/', '*', '+', '-', '(', ')', '{', '}', '[', ']', "\"", ":", ";"
 ]
 var keyWordsArray: Array<string> = [
 	'let', 'var', 'val',
@@ -73,10 +73,13 @@ enum NodeType {
 
 	// comment
 	LineComment,
-	MultiLineComment, 
+	MultiLineComment,
 
 	// stirn 
-	QuotationNode
+	QuotationNode,
+
+	//new 
+	NewLine
 
 }
 interface LanguageNode {
@@ -104,20 +107,20 @@ function getkeySignsNodeType(word: string): NodeType {
 	} else if (word == ';') {
 		return NodeType.SemiColonNode;
 	} else if (word = '"') {
-		return NodeType.QuotationNode ;
+		return NodeType.QuotationNode;
 	} else if (word = '(') {
-		return NodeType.CurvedBracketOpenNode ;
-	}  else if (word = ')') {
-		return NodeType.CurvedBracketCloseNode ;
-	}  else if (word = '{') {
-		return NodeType.CurlyBracketOpenNode ;
-	}   else if (word = '}') {
-		return NodeType.CurlyBracketCloseNode ;
-	}   else if (word = '[') {
-		return NodeType.SquareBracketOpenNode ;
-	}else if (word = ']') {
-		return NodeType.SquareBracketCloseNode ;
-	}  else {
+		return NodeType.CurvedBracketOpenNode;
+	} else if (word = ')') {
+		return NodeType.CurvedBracketCloseNode;
+	} else if (word = '{') {
+		return NodeType.CurlyBracketOpenNode;
+	} else if (word = '}') {
+		return NodeType.CurlyBracketCloseNode;
+	} else if (word = '[') {
+		return NodeType.SquareBracketOpenNode;
+	} else if (word = ']') {
+		return NodeType.SquareBracketCloseNode;
+	} else {
 		return NodeType.UnknownSignNodeNode;
 	}
 
@@ -228,6 +231,25 @@ class LanguageTokens {
 
 					if (!inMultiLineComment) {
 						if (isUniqueSign(lineCharArray[charIndex])) {
+
+							console.log("add  " + lineCharArray[charIndex])
+							
+
+							if (charaArray.length > 0) {
+								
+								var x: LanguageNode = {
+									line_start: lineIndex,
+									line_end: lineIndex,
+									char_start: charIndex != 0 ? charIndex - charaArray.length : 0,
+									char_end: charIndex,
+									type: getCharNodeType(charaArray),
+									value: charaArray
+								};
+								documentNode.push(x);
+							} else {
+								console.log("character array empty " + lineCharArray[charIndex] + " line " + lineIndex)
+							}
+
 							var n: LanguageNode = {
 								line_start: lineIndex,
 								line_end: lineIndex,
@@ -238,33 +260,18 @@ class LanguageTokens {
 							};
 							documentNode.push(n);
 
-							if (charaArray.length > 0) {
-								console.log("pushh "+charaArray)
-								var x: LanguageNode = {
-									line_start: lineIndex,
-									line_end: lineIndex,
-									char_start: charIndex != 0 ?  charIndex - charaArray.length : 0,
-									char_end: charIndex ,
-									type: getCharNodeType(charaArray),
-									value: charaArray
-								};
-								documentNode.push(x);
-							} else {
-								console.log("character array empty " + lineCharArray[charIndex] + " line "+ lineIndex)
-							}
-
 							charaArray = "";
 
 						} else if (lineCharArray[charIndex] == " " || lineCharArray[charIndex] == "\t") {
 
 
 							if (charaArray.length > 0) {
-								
+
 								var x: LanguageNode = {
 									line_start: lineIndex,
 									line_end: lineIndex,
-									char_start: charIndex-charaArray.length,
-									char_end:  charaArray.length,
+									char_start: charIndex - charaArray.length,
+									char_end: charaArray.length,
 									type: getCharNodeType(charaArray),
 									value: charaArray
 								};
@@ -286,7 +293,7 @@ class LanguageTokens {
 							};
 							documentNode.push(x);
 
-							
+
 						} else {
 
 							charaArray += lineCharArray[charIndex]
@@ -297,9 +304,22 @@ class LanguageTokens {
 					}
 
 				}
+
+
 			} else {
 				//console.log("Empty line number "+lineIndex);
 			}
+
+			var n: LanguageNode = {
+				line_start: lineIndex,
+				line_end: lineIndex,
+				char_start: lines[lineIndex].length-1,
+				char_end: lines[lineIndex].length,
+				type: NodeType.NewLine,
+				value: "\n",
+			};
+			documentNode.push(n);
+
 		}
 		return documentNode;
 	}
@@ -328,6 +348,8 @@ for (let tokenIndex = 0; tokenIndex < r.length; tokenIndex++) {
 	console.log(`-> ${JSON.stringify(r[tokenIndex])}`);
 
 }
+
+
 
 
 
