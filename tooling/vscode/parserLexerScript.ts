@@ -4,7 +4,7 @@ const anExampleVariable = "Hello World"
 console.log(anExampleVariable)
 
 var keySignsArray: Array<string> = [
-	'%', '/', '*', '+', '-', ' '
+	'%', '/', '*', '+', '-', '(', ')', '{', '}', '[', ']'
 ]
 var keyWordsArray: Array<string> = [
 	'let', 'var', 'val',
@@ -77,9 +77,10 @@ enum NodeType {
 
 }
 interface LanguageNode {
-	start?: number;
-	end?: number;
-	line?: number;
+	char_start?: number;
+	char_end?: number;
+	line_start?: number;
+	line_end?: number;
 	type?: NodeType;
 	value?: string;
 }
@@ -142,6 +143,7 @@ function isKeyWord(word: string): boolean {
 }
 
 function getCharNodeType(word: string): NodeType {
+	console.log("tyepe " + word);
 	if (isKeyWord(word)) {
 		return getKeyWordNodeType(word)
 	} else {
@@ -151,27 +153,14 @@ function getCharNodeType(word: string): NodeType {
 
 class LanguageTokens {
 
-	getCharToken(charaArray: string, line: number, start: number, stop: number): LanguageNode | null {
-		if (charaArray.length > 0) {
-			var x: LanguageNode = {
-				line: line,
-				start: start,
-				end: stop,
-				type: getCharNodeType(charaArray),
-				value: charaArray
-			};
-			return x;
-		} else {
-			return null;
-		}
 
-	}
 
 	getTokenList(text: string): LanguageNode[] {
 		var documentNode: LanguageNode[] = []
 		let lines = text.split(/\r?\n/g);
 		let inMultiLineComment: boolean = false
 		let multiLineCommet: string = "";
+		let linemultiLineCommetStart: number = 0;
 		for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
 
 			if (lines[lineIndex].length > 0) {
@@ -180,72 +169,109 @@ class LanguageTokens {
 				var charaArray: string = "";
 
 				for (let charIndex = 0; charIndex < lineCharArray.length; charIndex++) {
-
+					var tempcharIndex = charIndex;
 
 					if (lineCharArray[charIndex] == "/" && lineCharArray[charIndex + 1] == "/") {
 
 						var n: LanguageNode = {
-							start: charIndex,
-							end: lines[lineIndex].length,
-							line: lineIndex,
+							line_start: lineIndex,
+							line_end: lineIndex,
+							char_start: charIndex,
+							char_end: lines[lineIndex].length,
 							type: NodeType.LineComment,
 							value: lines[lineIndex].substr(charIndex, lines[lineIndex].length),
 						};
 						documentNode.push(n);
 						break;
-					} else if (lineCharArray[charIndex] == "/" && lineCharArray[charIndex + 1] == "*") {
-						console.log("start mulit Comment ")
+					} else if (lineCharArray[charIndex] == "/" && lineCharArray[tempcharIndex + 1] == "*") {
+
 						inMultiLineComment = true;
+						linemultiLineCommetStart = lineIndex;
 
 						multiLineCommet += lineCharArray[charIndex];
-					} else if (lineCharArray[charIndex] == "/" && lineCharArray[charIndex - 1] == "*") {
-						console.log("end mulit Comment ")
+					} else if (lineCharArray[charIndex] == "/" && lineCharArray[tempcharIndex - 1] == "*") {
+
 						inMultiLineComment = false;
 
 						multiLineCommet += lineCharArray[charIndex];
 
 						var n: LanguageNode = {
-							start: charIndex,
-							end: charIndex + lineCharArray[charIndex].length,
-							line: lineIndex,
+							line_start: linemultiLineCommetStart,
+							line_end: lineIndex,
+							char_start: charIndex,
+							char_end: charIndex + lineCharArray[charIndex].length,  // ,
 							type: NodeType.MultiLineComment,
-							value: multiLineCommet 
+							value: multiLineCommet
 						};
 						documentNode.push(n);
 
 						multiLineCommet = "";
+						linemultiLineCommetStart = 0;
 
-						for (let tokenIndex = 0; tokenIndex < documentNode.length; tokenIndex++) {
-							console.log(`check comment-> ${JSON.stringify(documentNode[tokenIndex])}`);
-						}
 					}
 
 					if (!inMultiLineComment) {
 						if (isUniqueSign(lineCharArray[charIndex])) {
 							var n: LanguageNode = {
-								start: charIndex,
-								end: charIndex + lineCharArray[charIndex].length,
-								line: lineIndex,
+								line_start: lineIndex,
+								line_end: lineIndex,
+								char_start: charIndex,
+								char_end: charIndex + lineCharArray[charIndex].length,
 								type: getkeySignsNodeType(lineCharArray[charIndex]),
 								value: lineCharArray[charIndex],
 							};
 							documentNode.push(n);
 
-							var res = this.getCharToken(
-								charaArray,
-								lineIndex,
-								charIndex,
-								lineCharArray[charIndex].length
-							);
-							if (res != null) {
-								documentNode.push(res);
+							if (charaArray.length > 0) {
+								var x: LanguageNode = {
+									line_start: lineIndex,
+									line_end: lineIndex,
+									char_start: charIndex,
+									char_end: charIndex + charaArray.length,
+									type: getCharNodeType(charaArray),
+									value: charaArray
+								};
+								documentNode.push(x);
+							} else {
+								console.log("character array empty " + lineCharArray[charIndex])
 							}
+
+						} else if (lineCharArray[charIndex] == " ") {
+
+
+							if (charaArray.length > 0) {
+								console.log("char array " + charaArray);
+								var x: LanguageNode = {
+									line_start: lineIndex,
+									line_end: lineIndex,
+									char_start: charIndex,
+									char_end: charIndex + charaArray.length,
+									type: getCharNodeType(charaArray),
+									value: charaArray
+								};
+								documentNode.push(x);
+							} else {
+								console.log(" line " + lineIndex + " character array empty  item space " + lineCharArray[charIndex])
+							}
+
+
+							var x: LanguageNode = {
+								line_start: lineIndex,
+								line_end: lineIndex,
+								char_start: charIndex,
+								char_end: charIndex + lineCharArray[charIndex].length,
+								type: NodeType.SpaceNode,
+								value: charaArray
+							};
+							documentNode.push(x);
+
+							charaArray = "";
 						} else {
 
 							charaArray += lineCharArray[charIndex]
 						}
 
-					}else{
+					} else {
 						multiLineCommet += lineCharArray[charIndex];
 					}
 
