@@ -33,11 +33,14 @@ export class LanguageParser {
 
 				srcTokens.push(new LanguageToken([], tokenNodes))
 				tokenNodes = [] ;
-			// } else if (cleanNodes[nodeItem].type == NodeType.CurlyBracketOpenNode) {
+			} else if (cleanNodes[nodeItem].type == NodeType.CurlyBracketOpenNode) {
+            
+			   var tokenScope = nodes.slice( nodeItem , nodes.length );
+			   var resToken : LanguageToken [] = this.createTokens(tokenScope);
+				srcTokens.push( new LanguageToken(resToken ,[]) )
+			} else if (cleanNodes[nodeItem].type == NodeType.CurlyBracketCloseNode) {
 
-			// } else if (cleanNodes[nodeItem].type == NodeType.CurlyBracketCloseNode) {
-
-
+				return srcTokens ; 
 			} else {
 				tokenNodes.push(cleanNodes[nodeItem])
 			}

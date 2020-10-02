@@ -12,7 +12,16 @@ var keyWordsArray: Array<string> = [
 	'double', 'string', 'char', 'private',
 	'if', 'else', 'when',
 ];
+class LanguageToken {
 
+	children: LanguageToken[];
+	tokenGroup: LanguageNode[];
+	constructor(children: LanguageToken[], tokenGroup: LanguageNode[]) {
+		this.children = children;
+		this.tokenGroup = tokenGroup;
+
+	}
+}
 
 
 enum SyntaxKind {
@@ -162,7 +171,7 @@ function isKeyWord(word: string): boolean {
 }
 
 function getCharNodeType(word: string): NodeType {
-	console.log("tyepe " + word);
+
 	if (isKeyWord(word)) {
 		return getKeyWordNodeType(word)
 	} else {
@@ -232,11 +241,9 @@ class LanguageTokens {
 					if (!inMultiLineComment) {
 						if (isUniqueSign(lineCharArray[charIndex])) {
 
-							console.log("add  " + lineCharArray[charIndex])
-							
 
 							if (charaArray.length > 0) {
-								
+
 								var x: LanguageNode = {
 									line_start: lineIndex,
 									line_end: lineIndex,
@@ -247,7 +254,7 @@ class LanguageTokens {
 								};
 								documentNode.push(x);
 							} else {
-								console.log("character array empty " + lineCharArray[charIndex] + " line " + lineIndex)
+								//	console.log("character array empty " + lineCharArray[charIndex] + " line " + lineIndex)
 							}
 
 							var n: LanguageNode = {
@@ -279,7 +286,7 @@ class LanguageTokens {
 
 								charaArray = "";
 							} else {
-								console.log(" line " + lineIndex + " character array empty  item space " + lineCharArray[charIndex])
+								//console.log(" line " + lineIndex + " character array empty  item space " + lineCharArray[charIndex])
 							}
 
 
@@ -313,7 +320,7 @@ class LanguageTokens {
 			var n: LanguageNode = {
 				line_start: lineIndex,
 				line_end: lineIndex,
-				char_start: lines[lineIndex].length-1,
+				char_start: lines[lineIndex].length - 1,
 				char_end: lines[lineIndex].length,
 				type: NodeType.NewLine,
 				value: "\n",
@@ -328,65 +335,130 @@ class LanguageTokens {
 }
 
 
-var r: LanguageNode[] = new LanguageTokens().getTokenList(`
-// dummy line
-
-/* 
-multi line 
-dada
- */
-package main;
-
-function start(){
- 
-  print("Hey there");
 
 
+
+class MainScopeRulesRules {
+
+
+	// rmove comments
+	cleanNode(nodes: LanguageNode[]): LanguageNode[] {
+		var cleanNodes: LanguageNode[] = []
+		for (let tokenIndex = 0; tokenIndex < nodes.length; tokenIndex++) {
+
+			if (nodes[tokenIndex].value == "\n") {// || nodes[tokenIndex].type == NodeType.SpaceNode || nodes[tokenIndex].type == NodeType.LineComment || nodes[tokenIndex].type == NodeType.MultiLineComment) {
+				// console.log("Removing node " + nodes[tokenIndex].value);
+			} else {
+				cleanNodes.push(nodes[tokenIndex]);
+			}
+		}
+
+		return cleanNodes;
+	}
+
+
+	findClosingCurleyBrace(nodes: LanguageNode[], openCurlyBracePos: number) {
+		var closCurlyBracePos = openCurlyBracePos;
+		var counter: number = 1;
+
+		while (counter > 0) {
+			var item = nodes[++closCurlyBracePos];
+			if (item.value == '{') {
+				counter++
+			} else if (item.value == '}') {
+				counter--;
+			}
+		}
+
+
+		return closCurlyBracePos;
+
+
+	}
+
+	createTokens(nodes: LanguageNode[]): LanguageToken[] {
+		var children: LanguageToken[] = [];
+			var nodesTemp: LanguageNode[] = [];
+
+		var cleanNodes = this.cleanNode(nodes);
+		var skipTokens = false;
+		var skipTo = 0;
+
+		for (let nodeItem = 0; nodeItem < cleanNodes.length; nodeItem++) {
+			//console.log("token item " + JSON.stringify(nodes[nodeItem]));
+			if (skipTokens == false) {
+				if (nodes[nodeItem].value == ";") {
+
+					children.push(new LanguageToken([], nodesTemp))
+					nodesTemp = [];
+				} else if (nodes[nodeItem].value == '{') {
+
+					var endCurly = this.findClosingCurleyBrace(nodes, nodeItem);
+
+					skipTokens = true;
+					skipTo = endCurly;
+
+					// console.log("Print to " + JSON.stringify(nodes[endCurly]));
+
+					var tokenScope = nodes.slice(nodeItem + 1, endCurly);
+				    	console.log("token scope to " +  JSON.stringify(tokenScope));
+
+					var items = this.createTokens(tokenScope);
+					console.log("token " +  JSON.stringify(items));
+
+					//tokenNodes.push(items )//new LanguageToken(, []))
+
+					children.push(new LanguageToken(items, nodesTemp))
+				} else if (nodes[nodeItem].value == '}') {
+					//console.log("=======> Return " + JSON.stringify(srcTokens) + "\n\n");
+					// return srcTokens;
+				} else {
+					console.log("add " + nodes[nodeItem].value);
+					nodesTemp.push(nodes[nodeItem])
+				}
+			} else {
+				console.log("Skip to  print character number " + nodeItem + " should skip to " + skipTo);
+				if (nodeItem == skipTo) {
+					skipTokens = false;
+					skipTo = 0;
+
+				}
+			}
+			
+
+		}
+		// console.log("Length "+tokenNodes.length);
+		return children;
+
+	}
 }
-`);
+
+// package main;
+// import data; 
+// function start(){
+//   print("Hey there");
+// }
+
+var r: LanguageNode[] = new LanguageTokens().getTokenList(`function start(){ print ; }`);
+
+
 
 
 for (let tokenIndex = 0; tokenIndex < r.length; tokenIndex++) {
-	console.log(`-> ${JSON.stringify(r[tokenIndex])}`);
-
-}
-
-export class MainScopeRulesRules  {
-	 nodes: LanguageNode[] ;
-	 cleanNodes: LanguageNode[] = [];
-	 folderName:  string ;
-
-	constructor( nodes: LanguageNode[], folderName: string) {
-		this.nodes = nodes;
-		this.folderName = folderName;
-		this.cleanNode();
-	}
-
-	// rmove comments
-	cleanNode(){
-		for (let tokenIndex = 0; tokenIndex < r.length; tokenIndex++) {
-			
-		     if(r[tokenIndex].type == NodeType.NewLine || r[tokenIndex].type == NodeType.SpaceNode || r[tokenIndex].type == NodeType.LineComment || r[tokenIndex].type == NodeType.MultiLineComment    ){
-				 console.log("Removing node "+r[tokenIndex].value);
-			 }else{
-				this.cleanNodes.push(r[tokenIndex]);
-			 }
-		}
-	}
-
-	//get errors
-	checkForErrors(){
-	   // check if starts with package 
-	   //  we can read the first three tokens 
-	  
-	}
-
-
+	console.log(`node -> ${JSON.stringify(r[tokenIndex])}`);
 
 }
 
 
+var tokenItem = new MainScopeRulesRules();
+// var resi = tokenItem.cleanNode(r);
+var toke = tokenItem.createTokens(r);
 
+
+for (let tokenIndex = 0; tokenIndex < toke.length; tokenIndex++) {
+	console.log(`token  -> ${JSON.stringify(toke[tokenIndex])}`);
+
+}
 
 
 
