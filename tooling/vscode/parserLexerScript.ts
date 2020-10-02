@@ -25,70 +25,72 @@ class LanguageToken {
 
 
 enum SyntaxKind {
-	VariableDeclaration,
-	TypeAliasDeclaration,
-	ImportDeclaration,
-	ClassDeclaration,
-	ImportClause,
-	Parameter,
-	PropertyDeclaration,
-	BinaryExpression,
-	EnumDeclaration,
-	StructDeclaration,
-	FunctionDeclaration,
-	PackageDeclaration
+	VariableDeclaration = 1,
+	TypeAliasDeclaration = 2,
+	ImportDeclaration = 3,
+	ClassDeclaration = 4,
+	ImportClause = 5,
+	Parameter = 6,
+	PropertyDeclaration = 7,
+	BinaryExpression = 8,
+	EnumDeclaration = 9,
+	StructDeclaration = 10,
+	FunctionDeclaration = 11,
+	PackageDeclaration = 12
 }
 enum NodeType {
-	IntTypeNode,
-	DoubleTypeNode,
-	StringTypeNode,
-	CharTypeNode,
-	WhenNode,
-	IfNode,
-	ElseNode,
-	PackageNode,
-	ImportNode,
-	EnumNode,
-	StructNode,
-	ClassNode,
-	FunctionNode,
-	PrivateNode,
-	ValNode, VarNode, LetNode,
-	CharArrayNode,
-	UnknownKeyWordNode,
-	UnknownSignNodeNode,
+	IntTypeNode = 1,
+	DoubleTypeNode = 2,
+	StringTypeNode = 3,
+	CharTypeNode = 4,
+	WhenNode = 5,
+	IfNode = 6,
+	ElseNode = 7,
+	PackageNode = 8,
+	ImportNode = 9,
+	EnumNode = 10,
+	StructNode = 11,
+	ClassNode = 12,
+	FunctionNode = 13,
+	PrivateNode = 14,
+	ValNode = 15,
+	VarNode = 16,
+	LetNode = 17,
+	CharArrayNode = 18,
+	UnknownKeyWordNode = 19,
+	UnknownSignNodeNode = 20,
 
 	// math symobols
-	ModulusNode,
-	AddNode,
-	MinusNode,
-	DivideNode,
-	SubtractNode,
-	MultiplyNode,
+	ModulusNode = 21,
+	AddNode = 22,
+	MinusNode = 23,
+	DivideNode = 24,
+	SubtractNode = 25,
+	MultiplyNode = 26,
 
 	// space Node
-	SpaceNode,
+	SpaceNode = 27,
 
 	// unif signs
-	SquareBracketOpenNode,
-	SquareBracketCloseNode,
-	CurvedBracketOpenNode,
-	CurvedBracketCloseNode,
-	CurlyBracketOpenNode,
-	CurlyBracketCloseNode,
+	SquareBracketOpenNode = 28,
+	SquareBracketCloseNode = 29,
+	CurvedBracketOpenNode = 30,
+	CurvedBracketCloseNode = 31,
+	CurlyBracketOpenNode = 32,
+	CurlyBracketCloseNode = 33,
 
-	SemiColonNode,
-	ColonNode,
+	SemiColonNode = 34,
+	ColonNode = 35,
 
 	// comment
-	LineComment,
-	MultiLineComment,
+	LineComment = 36,
+	MultiLineComment = 37,
 
 	// stirn 
-	QuotationNode,
+	QuotationNode = 38,
 
 	//new 
-	NewLine
+	NewLine = 39
 
 }
 interface LanguageNode {
@@ -199,7 +201,9 @@ class LanguageTokens {
 				for (let charIndex = 0; charIndex < lineCharArray.length; charIndex++) {
 					var tempcharIndex = charIndex;
 
-					if (lineCharArray[charIndex] == "/" && lineCharArray[charIndex + 1] == "/") {
+					if (lineCharArray[charIndex] == "/" && lineCharArray[tempcharIndex - 1] == "/") {
+// fall through if 
+					} else if (lineCharArray[charIndex] == "/" && lineCharArray[tempcharIndex + 1] == "/") {
 
 						var n: LanguageNode = {
 							line_start: lineIndex,
@@ -211,18 +215,20 @@ class LanguageTokens {
 						};
 						documentNode.push(n);
 						break;
-					} else if (lineCharArray[charIndex] == "/" && lineCharArray[tempcharIndex + 1] == "*") {
+					} else if (lineCharArray[charIndex] == "/" && lineCharArray[charIndex + 1] == "*") {
 
 						inMultiLineComment = true;
 						linemultiLineCommetStart = lineIndex;
 
+						// multiLineCommet += lineCharArray[charIndex];
+					} else if (lineCharArray[charIndex] == "/" && lineCharArray[charIndex - 1] == "*") {
+
+					
+
 						multiLineCommet += lineCharArray[charIndex];
-					} else if (lineCharArray[charIndex] == "/" && lineCharArray[tempcharIndex - 1] == "*") {
-
-						inMultiLineComment = false;
-
-						multiLineCommet += lineCharArray[charIndex];
-
+						console.log("comment " + multiLineCommet);
+						console.log("data  " + lineCharArray[charIndex])
+						console.log("char str  " + charaArray)
 						var n: LanguageNode = {
 							line_start: linemultiLineCommetStart,
 							line_end: lineIndex,
@@ -233,6 +239,7 @@ class LanguageTokens {
 						};
 						documentNode.push(n);
 
+						inMultiLineComment = false;
 						multiLineCommet = "";
 						linemultiLineCommetStart = 0;
 
@@ -307,6 +314,7 @@ class LanguageTokens {
 						}
 
 					} else {
+						console.log("check /" + lineCharArray[charIndex]);
 						multiLineCommet += lineCharArray[charIndex];
 					}
 
@@ -346,7 +354,7 @@ class MainScopeRulesRules {
 		var cleanNodes: LanguageNode[] = []
 		for (let tokenIndex = 0; tokenIndex < nodes.length; tokenIndex++) {
 
-			if (nodes[tokenIndex].value == "\n") {// || nodes[tokenIndex].type == NodeType.SpaceNode || nodes[tokenIndex].type == NodeType.LineComment || nodes[tokenIndex].type == NodeType.MultiLineComment) {
+			if (nodes[tokenIndex].value == "\n") {// || nodes[tokenIndex].value == " " || nodes[tokenIndex].type == NodeType.LineComment || nodes[tokenIndex].type == NodeType.MultiLineComment) {
 				// console.log("Removing node " + nodes[tokenIndex].value);
 			} else {
 				cleanNodes.push(nodes[tokenIndex]);
@@ -378,7 +386,7 @@ class MainScopeRulesRules {
 
 	createTokens(nodes: LanguageNode[]): LanguageToken[] {
 		var children: LanguageToken[] = [];
-			var nodesTemp: LanguageNode[] = [];
+		var nodesTemp: LanguageNode[] = [];
 
 		var cleanNodes = this.cleanNode(nodes);
 		var skipTokens = false;
@@ -401,10 +409,10 @@ class MainScopeRulesRules {
 					// console.log("Print to " + JSON.stringify(nodes[endCurly]));
 
 					var tokenScope = nodes.slice(nodeItem + 1, endCurly);
-				    	console.log("token scope to " +  JSON.stringify(tokenScope));
+					console.log("token scope to " + JSON.stringify(tokenScope));
 
 					var items = this.createTokens(tokenScope);
-					console.log("token " +  JSON.stringify(items));
+					console.log("token " + JSON.stringify(items));
 
 					//tokenNodes.push(items )//new LanguageToken(, []))
 
@@ -424,7 +432,7 @@ class MainScopeRulesRules {
 
 				}
 			}
-			
+
 
 		}
 		// console.log("Length "+tokenNodes.length);
@@ -439,7 +447,11 @@ class MainScopeRulesRules {
 //   print("Hey there");
 // }
 
-var r: LanguageNode[] = new LanguageTokens().getTokenList(`function start(){ print ; }`);
+var r: LanguageNode[] = new LanguageTokens().getTokenList(`
+/* data man **/
+
+package main; 
+function start(){ print ("kamau"); }`);
 
 
 
@@ -450,15 +462,20 @@ for (let tokenIndex = 0; tokenIndex < r.length; tokenIndex++) {
 }
 
 
-var tokenItem = new MainScopeRulesRules();
-// var resi = tokenItem.cleanNode(r);
-var toke = tokenItem.createTokens(r);
+// var tokenItem = new MainScopeRulesRules();
+// // var resi = tokenItem.cleanNode(r);
+// var toke = tokenItem.createTokens(r);
+
+// console.log("Error " + toke.length);
+
+// for (let tokenIndex = 0; tokenIndex < toke.length; tokenIndex++) {
+// 	console.log(`token  -> ${JSON.stringify(toke[tokenIndex])}`);
+
+// }
 
 
-for (let tokenIndex = 0; tokenIndex < toke.length; tokenIndex++) {
-	console.log(`token  -> ${JSON.stringify(toke[tokenIndex])}`);
+//check the first token if its package
 
-}
 
 
 

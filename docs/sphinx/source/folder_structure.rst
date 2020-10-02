@@ -1,4 +1,4 @@
-Folder Structure
+Table of contents
 ==================
 
 
