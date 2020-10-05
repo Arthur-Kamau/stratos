@@ -1,53 +1,56 @@
+
 enum NodeType {
-	IntTypeNode,
-	DoubleTypeNode,
-	StringTypeNode,
-	CharTypeNode,
-	WhenNode,
-	IfNode,
-	ElseNode,
-	PackageNode,
-	ImportNode,
-	EnumNode,
-	StructNode,
-	ClassNode,
-	FunctionNode,
-	PrivateNode,
-	ValNode, VarNode, LetNode,
-	CharArrayNode,
-	UnknownKeyWordNode,
-	UnknownSignNodeNode,
+	IntTypeNode = 1,
+	DoubleTypeNode = 2,
+	StringTypeNode = 3,
+	CharTypeNode = 4,
+	WhenNode = 5,
+	IfNode = 6,
+	ElseNode = 7,
+	PackageNode = 8,
+	ImportNode = 9,
+	EnumNode = 10,
+	StructNode = 11,
+	ClassNode = 12,
+	FunctionNode = 13,
+	PrivateNode = 14,
+	ValNode = 15,
+	VarNode = 16,
+	LetNode = 17,
+	CharArrayNode = 18,
+	UnknownKeyWordNode = 19,
+	UnknownSignNodeNode = 20,
 
 	// math symobols
-	ModulusNode,
-	AddNode,
-	MinusNode,
-	DivideNode,
-	SubtractNode,
-	MultiplyNode,
+	ModulusNode = 21,
+	AddNode = 22,
+	MinusNode = 23,
+	DivideNode = 24,
+	SubtractNode = 25,
+	MultiplyNode = 26,
 
 	// space Node
-	SpaceNode,
+	SpaceNode = 27,
 
 	// unif signs
-	SquareBracketOpenNode,
-	SquareBracketCloseNode,
-	CurvedBracketOpenNode,
-	CurvedBracketCloseNode,
-	CurlyBracketOpenNode,
-	CurlyBracketCloseNode,
+	SquareBracketOpenNode = 28,
+	SquareBracketCloseNode = 29,
+	CurvedBracketOpenNode = 30,
+	CurvedBracketCloseNode = 31,
+	CurlyBracketOpenNode = 32,
+	CurlyBracketCloseNode = 33,
 
-	SemiColonNode,
-	ColonNode,
+	SemiColonNode = 34,
+	ColonNode = 35,
 
 	// comment
-	LineComment,
-	MultiLineComment,
+	LineComment = 36,
+	MultiLineComment = 37,
 
 	// stirn 
-	QuotationNode,
+	QuotationNode = 38,
 
 	//new 
-	NewLine
+	NewLine = 39
 
 }

@@ -20,7 +20,7 @@ import {
 } from 'vscode-languageserver';
 
 import { FileUtils }  from './util/file_util';
-import {LanguageTokens } from './token/tokenizer';
+import {LanguageTokens } from './token/lexer';
 import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';

@@ -10,7 +10,7 @@ var keyWordsArray: Array<string> = [
 	'let', 'var', 'val',
 	'import', 'package', 'function', 'class',
 	'double', 'string', 'char', 'private',
-	'if', 'else', 'when',
+	'if', 'else', 'when','loop', 'for', 'It'
 ];
 class LanguageToken {
 
@@ -136,6 +136,7 @@ function getkeySignsNodeType(word: string): NodeType {
 	}
 
 }
+
 function getKeyWordNodeType(word: string): NodeType {
 	if (word == 'if') {
 		return NodeType.IfNode;
@@ -181,7 +182,7 @@ function getCharNodeType(word: string): NodeType {
 	}
 }
 
-class LanguageTokens {
+class LanguageLexer {
 
 
 
@@ -447,7 +448,7 @@ class MainScopeRulesRules {
 //   print("Hey there");
 // }
 
-var r: LanguageNode[] = new LanguageTokens().getTokenList(`
+var r: LanguageNode[] = new LanguageLexer().getTokenList(`
 /* data man **/
 
 package main; 

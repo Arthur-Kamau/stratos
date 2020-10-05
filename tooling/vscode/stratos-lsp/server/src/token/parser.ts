@@ -1,14 +1,5 @@
 
-class LanguageToken {
-
-	children: LanguageToken[];
-	tokenGroup: LanguageNode[];
-	constructor(children: LanguageToken[], tokenGroup: LanguageNode[]) {
-		this.children = children;
-		this.tokenGroup = tokenGroup;
-
-	}
-}
+import { LanguageToken } from "../model/language_token";
 
 export class LanguageParser {
 
@@ -65,4 +56,9 @@ export class LanguageParser {
 
 		return cleanNodes;
 	}
+
+
+	
+
+
 }

@@ -35,7 +35,6 @@ export function getkeySignsNodeType(word: string): NodeType {
 	}
 
 }
-
 export function getKeyWordNodeType(word: string): NodeType {
 	if (word == 'if') {
 		return NodeType.IfNode;
@@ -64,9 +63,8 @@ export function getKeyWordNodeType(word: string): NodeType {
 	}
 }
 
-
 export function isUniqueSign(word: string): boolean {
-	return new KeyWords().keySignsArray.indexOf(word) > -1
+	return  new KeyWords().keySignsArray.indexOf(word) > -1
 }
 
 export function isKeyWord(word: string): boolean {
@@ -74,9 +72,12 @@ export function isKeyWord(word: string): boolean {
 }
 
 export function getCharNodeType(word: string): NodeType {
+
 	if (isKeyWord(word)) {
 		return getKeyWordNodeType(word)
 	} else {
 		return NodeType.CharArrayNode;
 	}
 }
+
+

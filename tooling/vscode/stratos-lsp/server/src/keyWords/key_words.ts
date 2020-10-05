@@ -6,7 +6,6 @@ export class KeyWords {
 		'let', 'var', 'val',
 		'import', 'package', 'function', 'class',
 		'double', 'string', 'char', 'private',
-		'if', 'else', 'when',
+		'if', 'else', 'when','loop', 'for', 'It'
 	];
-	
 } 

@@ -1,7 +1,6 @@
 import {getCharNodeType , isUniqueSign , getkeySignsNodeType } from "../util/lookup_node";
 
-export class LanguageTokens {
-
+export class LanguageLexer {
 
 
 	getTokenList(text: string): LanguageNode[] {
@@ -20,7 +19,9 @@ export class LanguageTokens {
 				for (let charIndex = 0; charIndex < lineCharArray.length; charIndex++) {
 					var tempcharIndex = charIndex;
 
-					if (lineCharArray[charIndex] == "/" && lineCharArray[charIndex + 1] == "/") {
+					if (lineCharArray[charIndex] == "/" && lineCharArray[tempcharIndex - 1] == "/") {
+// fall through if 
+					} else if (lineCharArray[charIndex] == "/" && lineCharArray[tempcharIndex + 1] == "/") {
 
 						var n: LanguageNode = {
 							line_start: lineIndex,
@@ -32,18 +33,20 @@ export class LanguageTokens {
 						};
 						documentNode.push(n);
 						break;
-					} else if (lineCharArray[charIndex] == "/" && lineCharArray[tempcharIndex + 1] == "*") {
+					} else if (lineCharArray[charIndex] == "/" && lineCharArray[charIndex + 1] == "*") {
 
 						inMultiLineComment = true;
 						linemultiLineCommetStart = lineIndex;
 
+						// multiLineCommet += lineCharArray[charIndex];
+					} else if (lineCharArray[charIndex] == "/" && lineCharArray[charIndex - 1] == "*") {
+
+					
+
 						multiLineCommet += lineCharArray[charIndex];
-					} else if (lineCharArray[charIndex] == "/" && lineCharArray[tempcharIndex - 1] == "*") {
-
-						inMultiLineComment = false;
-
-						multiLineCommet += lineCharArray[charIndex];
-
+						console.log("comment " + multiLineCommet);
+						console.log("data  " + lineCharArray[charIndex])
+						console.log("char str  " + charaArray)
 						var n: LanguageNode = {
 							line_start: linemultiLineCommetStart,
 							line_end: lineIndex,
@@ -54,6 +57,7 @@ export class LanguageTokens {
 						};
 						documentNode.push(n);
 
+						inMultiLineComment = false;
 						multiLineCommet = "";
 						linemultiLineCommetStart = 0;
 
@@ -62,11 +66,9 @@ export class LanguageTokens {
 					if (!inMultiLineComment) {
 						if (isUniqueSign(lineCharArray[charIndex])) {
 
-							console.log("add  " + lineCharArray[charIndex])
-							
 
 							if (charaArray.length > 0) {
-								
+
 								var x: LanguageNode = {
 									line_start: lineIndex,
 									line_end: lineIndex,
@@ -77,7 +79,7 @@ export class LanguageTokens {
 								};
 								documentNode.push(x);
 							} else {
-								console.log("character array empty " + lineCharArray[charIndex] + " line " + lineIndex)
+								//	console.log("character array empty " + lineCharArray[charIndex] + " line " + lineIndex)
 							}
 
 							var n: LanguageNode = {
@@ -109,7 +111,7 @@ export class LanguageTokens {
 
 								charaArray = "";
 							} else {
-								console.log(" line " + lineIndex + " character array empty  item space " + lineCharArray[charIndex])
+								//console.log(" line " + lineIndex + " character array empty  item space " + lineCharArray[charIndex])
 							}
 
 
@@ -130,6 +132,7 @@ export class LanguageTokens {
 						}
 
 					} else {
+						console.log("check /" + lineCharArray[charIndex]);
 						multiLineCommet += lineCharArray[charIndex];
 					}
 
@@ -143,7 +146,7 @@ export class LanguageTokens {
 			var n: LanguageNode = {
 				line_start: lineIndex,
 				line_end: lineIndex,
-				char_start: lines[lineIndex].length-1,
+				char_start: lines[lineIndex].length - 1,
 				char_end: lines[lineIndex].length,
 				type: NodeType.NewLine,
 				value: "\n",
@@ -153,6 +156,5 @@ export class LanguageTokens {
 		}
 		return documentNode;
 	}
-
 
 }
