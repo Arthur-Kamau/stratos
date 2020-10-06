@@ -1,3 +1,4 @@
+import { LanguageNode } from './language_node';
 
 export class LanguageToken {
 

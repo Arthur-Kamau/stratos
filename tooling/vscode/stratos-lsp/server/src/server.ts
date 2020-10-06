@@ -15,15 +15,21 @@ import {
 	TextDocumentPositionParams,
 	TextDocumentSyncKind,
 	InitializeResult
+
 	// WorkspaceEdit,
 	// WorkspaceFolder
 } from 'vscode-languageserver';
 
 import { FileUtils }  from './util/file_util';
-import {LanguageTokens } from './token/lexer';
+import {LanguageLexer } from './token/lexer';
 import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
+import {NodeType} from "./model/node_type";
+import { LanguageLookUp } from './token/lookup';
+import { LanguageParser } from './token/parser';
+import { LanguageToken } from './model/language_token';
+import { LanguageNode } from './model/language_node';
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -149,115 +155,28 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	let settings = await getDocumentSettings(textDocument.uri);
 
 	connection.console.log('Uri  ' + textDocument.uri);
-
-	// The validator creates diagnostics for all uppercase words length 2 and more
-	// let text = textDocument.getText();
-	// let pattern = /\b[A-Z]{2,}\b/g;
-	// let m: RegExpExecArray | null;
-
-
-	// let lines = textDocument.getText().split(/\r?\n/g);
-	let problems = 0;
-	let diagnostics: Diagnostic[] = [];
-
-	// // first line should start with a package 
-	// let firstLine = lines[0]
-	// let charsOfFirstLine = firstLine.split(' ');
-	// let characterArraysFirstLine: string[] = [];
 	
-	// the package name should be
-	let folderName = new FileUtils().getFileDirectoryName(textDocument.uri);
-	var tokenList: LanguageNode[] = new LanguageTokens().getTokenList(textDocument.uri);
+	var diagnostics : Diagnostic [] = [];
+	let text = textDocument.getText();
+	var fileNodes: LanguageNode[] = new LanguageLexer().getFileNode(text);
+	console.log("nodes "+ JSON.stringify(fileNodes))
+    var fileTokens : LanguageToken [] = new LanguageParser().createTokens(fileNodes  );
+	console.log("Token "+JSON.stringify(fileTokens))
+	var diagnosticsFile : Diagnostic [] = new LanguageLookUp().langugeRules(fileTokens ,textDocument.uri )
 	
-	let diagnostic: Diagnostic = {
-		severity: DiagnosticSeverity.Warning,
-		range: {
-			start: textDocument.positionAt(0),
-			end: textDocument.positionAt(10)
-		},
-		message:  `folder ${folderName} line ${tokenList.length}`,//`${textDocument.uri}`,
-		source: 'ex'
-	};
-	diagnostics.push(diagnostic);
-	
-	// let charArrayWithoutComments  = new CommentsCheck().removecomments(textDocument.uri.split(' '));
-	// let charArrayWithoutCommentsAndSpaces  = new CommentsCheck().removeSpaceCharacter(charArrayWithoutComments);
-	
-	// let fileTextWithoutComments = charArrayWithoutComments.join(' ');  
-	// let lines = fileTextWithoutComments.split(/\r?\n/g);
-
-	//  if(charArrayWithoutCommentsAndSpaces[0] != "package"){
-	// 	let diagnostic: Diagnostic = {
-	// 		severity: DiagnosticSeverity.Warning,
-	// 		range: {
-	// 			start: textDocument.positionAt(0),
-	// 			end: textDocument.positionAt(charsOfFirstLine[0].length)
-	// 		},
-	// 		message: `package expected as first line`,
-	// 		source: 'ex'
-	// 	};
-	//  }
-
-
-
-	// remove space charcter in line
-	// for (let index = 0; index < charsOfFirstLine.length; index++) {
-	// 	const item  = charsOfFirstLine[index];
-	// 	if(item != ' '){
-	// 		characterArraysFirstLine.push(item)
-	// 	}
-	// }
-
-	// if (characterArraysFirstLine[0] != "package") {
-		// let diagnostic: Diagnostic = {
-		// 	severity: DiagnosticSeverity.Warning,
-		// 	range: {
-		// 		start: textDocument.positionAt(0),
-		// 		end: textDocument.positionAt(charsOfFirstLine[0].length)
-		// 	},
-		// 	message: `package expected as first line`,
-		// 	source: 'ex'
-		// };
-	// 	if (hasDiagnosticRelatedInformationCapability) {
-	// 		diagnostic.relatedInformation = [
-	// 			{
-	// 				location: {
-	// 					uri: textDocument.uri,
-	// 					range: Object.assign({}, diagnostic.range)
-	// 				},
-	// 				message: 'set package  to '
-	// 			},
-
-	// 		];
-	// 	}
-	// 	diagnostics.push(diagnostic);
-	// }
-
-	
-	
-	// // get if package name is appropriate
-	// // get the next non space charater 
-     
-	
-	
-
-
-
-	// for (var i = 0; i < lines.length && problems < settings.maxNumberOfProblems; i++) {
-
-	// }
-
-	// while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
-	// 	problems++;
+	console.log("erros "+diagnosticsFile.length)
 	// let diagnostic: Diagnostic = {
 	// 	severity: DiagnosticSeverity.Warning,
 	// 	range: {
-	// 		start: textDocument.positionAt(m.index),
-	// 		end: textDocument.positionAt(m.index + m[0].length)
+	// 		start: textDocument.positionAt(0),
+	// 		end: textDocument.positionAt(10)
 	// 	},
-	// 	message: `${m[0]} is all uppercase.`,
+	// 	message:  `length ${[1,2,3].length}`,//`${textDocument.uri}`,
 	// 	source: 'ex'
 	// };
+	diagnostics.push(...diagnosticsFile);
+	
+
 	// 	if (hasDiagnosticRelatedInformationCapability) {
 	// 		diagnostic.relatedInformation = [
 	// 			{

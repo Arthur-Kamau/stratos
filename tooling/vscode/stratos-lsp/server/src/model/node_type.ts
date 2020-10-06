@@ -1,5 +1,5 @@
 
-enum NodeType {
+export enum NodeType {
 	IntTypeNode = 1,
 	DoubleTypeNode = 2,
 	StringTypeNode = 3,

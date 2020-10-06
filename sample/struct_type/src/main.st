@@ -1,6 +1,7 @@
 package main;
 
 
+
 struct User {
    var age : int;
    val name : string ;

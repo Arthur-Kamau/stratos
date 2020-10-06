@@ -1,9 +1,10 @@
 import {getCharNodeType , isUniqueSign , getkeySignsNodeType } from "../util/lookup_node";
-
+import {NodeType} from "../model/node_type";
+import { LanguageNode } from '../model/language_node';
 export class LanguageLexer {
 
 
-	getTokenList(text: string): LanguageNode[] {
+	getFileNode(text: string): LanguageNode[] {
 		var documentNode: LanguageNode[] = []
 		let lines = text.split(/\r?\n/g);
 		let inMultiLineComment: boolean = false

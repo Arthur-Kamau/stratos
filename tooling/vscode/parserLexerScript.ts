@@ -352,17 +352,17 @@ class MainScopeRulesRules {
 
 	// rmove comments
 	cleanNode(nodes: LanguageNode[]): LanguageNode[] {
-		var cleanNodes: LanguageNode[] = []
+		var cleanNodeItems: LanguageNode[] = []
 		for (let tokenIndex = 0; tokenIndex < nodes.length; tokenIndex++) {
 
-			if (nodes[tokenIndex].value == "\n") {// || nodes[tokenIndex].value == " " || nodes[tokenIndex].type == NodeType.LineComment || nodes[tokenIndex].type == NodeType.MultiLineComment) {
-				// console.log("Removing node " + nodes[tokenIndex].value);
+			if (nodes[tokenIndex].type == NodeType.NewLine || nodes[tokenIndex].type == NodeType.SpaceNode ||  nodes[tokenIndex].type ==NodeType.SpaceNode  || nodes[tokenIndex].type == NodeType.LineComment || nodes[tokenIndex].type == NodeType.MultiLineComment) {
+				console.log("Removing node " + nodes[tokenIndex].value +" type "+ nodes[tokenIndex].type + "  Remeber [ newline =" +NodeType.NewLine+ ", Space = "+NodeType.SpaceNode  +" ,  line comme ="+NodeType.LineComment+"  , multilicoomet= "+NodeType.MultiLineComment+" ]");
 			} else {
-				cleanNodes.push(nodes[tokenIndex]);
+				cleanNodeItems.push(nodes[tokenIndex]);
 			}
 		}
 
-		return cleanNodes;
+		return cleanNodeItems;
 	}
 
 
@@ -422,7 +422,7 @@ class MainScopeRulesRules {
 					//console.log("=======> Return " + JSON.stringify(srcTokens) + "\n\n");
 					// return srcTokens;
 				} else {
-					console.log("add " + nodes[nodeItem].value);
+					//console.log("add " + nodes[nodeItem].value);
 					nodesTemp.push(nodes[nodeItem])
 				}
 			} else {
@@ -450,29 +450,28 @@ class MainScopeRulesRules {
 
 var r: LanguageNode[] = new LanguageLexer().getTokenList(`
 /* data man **/
-
-package main; 
-function start(){ print ("kamau"); }`);
-
+package ms;
+`);
 
 
 
-for (let tokenIndex = 0; tokenIndex < r.length; tokenIndex++) {
-	console.log(`node -> ${JSON.stringify(r[tokenIndex])}`);
 
-}
+// for (let tokenIndex = 0; tokenIndex < r.length; tokenIndex++) {
+// 	console.log(`node -> ${JSON.stringify(r[tokenIndex])}`);
+
+// }
 
 
-// var tokenItem = new MainScopeRulesRules();
-// // var resi = tokenItem.cleanNode(r);
-// var toke = tokenItem.createTokens(r);
+var tokenItem = new MainScopeRulesRules();
+var resi = tokenItem.cleanNode(r);
+var toke = tokenItem.createTokens(resi);
 
 // console.log("Error " + toke.length);
 
-// for (let tokenIndex = 0; tokenIndex < toke.length; tokenIndex++) {
-// 	console.log(`token  -> ${JSON.stringify(toke[tokenIndex])}`);
+for (let tokenIndex = 0; tokenIndex < toke.length; tokenIndex++) {
+	console.log(`token  -> ${JSON.stringify(toke[tokenIndex])}`);
 
-// }
+}
 
 
 //check the first token if its package

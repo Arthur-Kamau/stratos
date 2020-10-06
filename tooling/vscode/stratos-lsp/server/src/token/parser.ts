@@ -1,5 +1,7 @@
 
+import { LanguageNode } from '../model/language_node';
 import { LanguageToken } from "../model/language_token";
+import {NodeType} from "../model/node_type";
 
 export class LanguageParser {
 
@@ -13,48 +15,96 @@ export class LanguageParser {
 	/// when we ecnounter } we should remove a score of the depth state 
 	// to ensure variables can only be accessed if appropriate depth
 
-	createTokens(nodes: LanguageNode[]): LanguageToken[] {
-		var srcTokens: LanguageToken[] = [];
-		var tokenNodes: LanguageNode[] = [];
+	createTokens(nodesPar: LanguageNode[]): LanguageToken[] {
+		var children: LanguageToken[] = [];
+		var nodesTemp: LanguageNode[] = [];
 
-		var cleanNodes = this.cleanNode(nodes);
-		for (let nodeItem = 0; nodeItem < cleanNodes.length; nodeItem++) {
+		var cleanNodesItems = this.cleanNode(nodesPar);
+		var skipTokens = false;
+		var skipTo = 0;
 
-			if (cleanNodes[nodeItem].type == NodeType.SemiColonNode) {
+		for (let nodeItem = 0; nodeItem < cleanNodesItems.length; nodeItem++) {
+		//	console.log("token item " + JSON.stringify(cleanNodesItems[nodeItem]));
+			if (skipTokens == false) {
+				if (cleanNodesItems[nodeItem].value == ";") {
 
-				srcTokens.push(new LanguageToken([], tokenNodes))
-				tokenNodes = [] ;
-			} else if (cleanNodes[nodeItem].type == NodeType.CurlyBracketOpenNode) {
-            
-			   var tokenScope = nodes.slice( nodeItem , nodes.length );
-			   var resToken : LanguageToken [] = this.createTokens(tokenScope);
-				srcTokens.push( new LanguageToken(resToken ,[]) )
-			} else if (cleanNodes[nodeItem].type == NodeType.CurlyBracketCloseNode) {
+					children.push(new LanguageToken([], nodesTemp))
+					nodesTemp = [];
+				} else if (cleanNodesItems[nodeItem].value == '{') {
 
-				return srcTokens ; 
+					var endCurly = this.findClosingCurleyBrace(cleanNodesItems, nodeItem);
+
+					skipTokens = true;
+					skipTo = endCurly;
+
+					// console.log("Print to " + JSON.stringify(nodes[endCurly]));
+
+					var tokenScope = cleanNodesItems.slice(nodeItem + 1, endCurly);
+					console.log("token scope to " + JSON.stringify(tokenScope));
+
+					var items = this.createTokens(tokenScope);
+					console.log("token " + JSON.stringify(items));
+
+					//tokenNodes.push(items )//new LanguageToken(, []))
+
+					children.push(new LanguageToken(items, nodesTemp))
+				} else if (cleanNodesItems[nodeItem].value == '}') {
+					//console.log("=======> Return " + JSON.stringify(srcTokens) + "\n\n");
+					// return srcTokens;
+				} else {
+				//	console.log("add " + nodes[nodeItem].value);
+					nodesTemp.push(cleanNodesItems[nodeItem])
+				}
 			} else {
-				tokenNodes.push(cleanNodes[nodeItem])
+				//console.log("Skip to  print character number " + nodeItem + " should skip to " + skipTo);
+				if (nodeItem == skipTo) {
+					skipTokens = false;
+					skipTo = 0;
+
+				}
 			}
 
+
 		}
-		return srcTokens;
+		console.log("Length "+children.length);
+		return children;
 
 	}
 
 
 	// rmove comments
 	cleanNode(nodes: LanguageNode[]): LanguageNode[] {
-		var cleanNodes: LanguageNode[] = []
+		var cleanNodeItems: LanguageNode[] = []
 		for (let tokenIndex = 0; tokenIndex < nodes.length; tokenIndex++) {
 
-			if (nodes[tokenIndex].type == NodeType.NewLine || nodes[tokenIndex].type == NodeType.SpaceNode || nodes[tokenIndex].type == NodeType.LineComment || nodes[tokenIndex].type == NodeType.MultiLineComment) {
-				console.log("Removing node " + nodes[tokenIndex].value);
+			if (nodes[tokenIndex].type == NodeType.NewLine || nodes[tokenIndex].type == NodeType.SpaceNode ||  nodes[tokenIndex].type ==NodeType.SpaceNode  || nodes[tokenIndex].type == NodeType.LineComment || nodes[tokenIndex].type == NodeType.MultiLineComment) {
+				console.log("Removing node " + nodes[tokenIndex].value +" type "+ nodes[tokenIndex].type + "  Remeber [ newline =" +NodeType.NewLine+ ", Space = "+NodeType.SpaceNode  +" ,  line comme ="+NodeType.LineComment+"  , multilicoomet= "+NodeType.MultiLineComment+" ]");
 			} else {
-				cleanNodes.push(nodes[tokenIndex]);
+				cleanNodeItems.push(nodes[tokenIndex]);
 			}
 		}
 
-		return cleanNodes;
+		return cleanNodeItems;
+	}
+
+
+	findClosingCurleyBrace(nodes: LanguageNode[], openCurlyBracePos: number) {
+		var closCurlyBracePos = openCurlyBracePos;
+		var counter: number = 1;
+
+		while (counter > 0) {
+			var item = nodes[++closCurlyBracePos];
+			if (item.value == '{') {
+				counter++
+			} else if (item.value == '}') {
+				counter--;
+			}
+		}
+
+
+		return closCurlyBracePos;
+
+
 	}
 
 

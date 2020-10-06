@@ -1,5 +1,6 @@
 
 import {KeyWords} from "../keyWords/key_words";
+import {NodeType} from "../model/node_type";
 
 export function getkeySignsNodeType(word: string): NodeType {
 	if (word == '*') {
