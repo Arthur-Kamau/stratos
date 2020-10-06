@@ -1,6 +1,16 @@
 import { SyntaxKindType } from "./syntax_kind";
 import { ParameterTypes } from "./syntax_kind"
 
+
+export class LanguageTokenSyntaxGroup {
+
+	children: LanguageTokenSyntaxGroup[];
+	tokenGroup: LanguageTokenSyntax[];
+	constructor(children: LanguageTokenSyntaxGroup[], tokenGroup: LanguageTokenSyntax[]) {
+		this.children = children;
+		this.tokenGroup = tokenGroup;
+	}
+}
 export class LanguageTokenSyntax {
 	type: SyntaxKindType;
 
