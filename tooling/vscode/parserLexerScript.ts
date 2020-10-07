@@ -366,6 +366,25 @@ class MainScopeRulesRules {
 	}
 
 
+	findClosingQuotes(nodes: LanguageNode[], openCurlyBracePos: number) {
+		var closCurlyBracePos = openCurlyBracePos;
+		var counter: number = 1;
+
+		while (counter > 0) {
+			var item = nodes[++closCurlyBracePos];
+			console.log("item "+ JSON.stringify(item));
+			if (item.value == '"') {
+				counter--
+			}
+			
+		}
+
+
+		return closCurlyBracePos;
+
+
+	}
+
 	findClosingCurleyBrace(nodes: LanguageNode[], openCurlyBracePos: number) {
 		var closCurlyBracePos = openCurlyBracePos;
 		var counter: number = 1;
@@ -385,31 +404,48 @@ class MainScopeRulesRules {
 
 	}
 
-	createTokens(nodes: LanguageNode[]): LanguageToken[] {
+	createTokens(nodesPar: LanguageNode[]): LanguageToken[] {
 		var children: LanguageToken[] = [];
 		var nodesTemp: LanguageNode[] = [];
 
-		var cleanNodes = this.cleanNode(nodes);
+		var cleanNodesItems = this.cleanNode(nodesPar);
 		var skipTokens = false;
 		var skipTo = 0;
 
-		for (let nodeItem = 0; nodeItem < cleanNodes.length; nodeItem++) {
-			//console.log("token item " + JSON.stringify(nodes[nodeItem]));
+		for (let nodeItem = 0; nodeItem < cleanNodesItems.length; nodeItem++) {
+			//	console.log("token item " + JSON.stringify(cleanNodesItems[nodeItem]));
 			if (skipTokens == false) {
-				if (nodes[nodeItem].value == ";") {
+				if (cleanNodesItems[nodeItem].value == ";") {
 
-					children.push(new LanguageToken([], nodesTemp))
+					nodesTemp.push(cleanNodesItems[nodeItem]);
+					children.push(new LanguageToken([], nodesTemp));
+
 					nodesTemp = [];
-				} else if (nodes[nodeItem].value == '{') {
+				} else if (cleanNodesItems[nodeItem].value == '"') {
 
-					var endCurly = this.findClosingCurleyBrace(nodes, nodeItem);
+					var endCloseQuotes = this.findClosingQuotes(cleanNodesItems, nodeItem);
+
+					skipTokens = true;
+					skipTo = endCloseQuotes;
+
+					var tokenScope = cleanNodesItems.slice(nodeItem + 1, endCloseQuotes);
+					console.log("token scope to " + JSON.stringify(tokenScope));
+
+					var items = this.createTokens(tokenScope);
+					console.log("token " + JSON.stringify(items));
+
+					children.push(new LanguageToken(items, nodesTemp));
+					nodesTemp = [];
+				} else if (cleanNodesItems[nodeItem].value == '{') {
+
+					var endCurly = this.findClosingCurleyBrace(cleanNodesItems, nodeItem);
 
 					skipTokens = true;
 					skipTo = endCurly;
 
 					// console.log("Print to " + JSON.stringify(nodes[endCurly]));
 
-					var tokenScope = nodes.slice(nodeItem + 1, endCurly);
+					var tokenScope = cleanNodesItems.slice(nodeItem + 1, endCurly);
 					console.log("token scope to " + JSON.stringify(tokenScope));
 
 					var items = this.createTokens(tokenScope);
@@ -417,16 +453,17 @@ class MainScopeRulesRules {
 
 					//tokenNodes.push(items )//new LanguageToken(, []))
 
-					children.push(new LanguageToken(items, nodesTemp))
-				} else if (nodes[nodeItem].value == '}') {
+					children.push(new LanguageToken(items, nodesTemp));
+					nodesTemp = [];
+				} else if (cleanNodesItems[nodeItem].value == '}') {
 					//console.log("=======> Return " + JSON.stringify(srcTokens) + "\n\n");
 					// return srcTokens;
 				} else {
-					//console.log("add " + nodes[nodeItem].value);
-					nodesTemp.push(nodes[nodeItem])
+					//	console.log("add " + nodes[nodeItem].value);
+					nodesTemp.push(cleanNodesItems[nodeItem])
 				}
 			} else {
-				console.log("Skip to  print character number " + nodeItem + " should skip to " + skipTo);
+				//console.log("Skip to  print character number " + nodeItem + " should skip to " + skipTo);
 				if (nodeItem == skipTo) {
 					skipTokens = false;
 					skipTo = 0;
@@ -436,10 +473,11 @@ class MainScopeRulesRules {
 
 
 		}
-		// console.log("Length "+tokenNodes.length);
+		console.log("Length " + children.length);
 		return children;
 
 	}
+
 }
 
 // package main;
@@ -451,6 +489,7 @@ class MainScopeRulesRules {
 var r: LanguageNode[] = new LanguageLexer().getTokenList(`
 /* data man **/
 package ms;
+import "test/src";
 `);
 
 

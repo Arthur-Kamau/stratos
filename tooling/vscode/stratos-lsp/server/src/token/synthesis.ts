@@ -11,8 +11,10 @@ export class LanguageSynthesis {
 		let diagnostics: Diagnostic[] = [];
 
 		console.log("tokenNodes length " + tokenNodes.length);
+
 		//rich tokens
 		let richTokens: [LanguageTokenSyntaxGroup[], Diagnostic[]] = this.generateRichTokens(tokenNodes, filePath);
+		console.log("found errors  langugeRules  "+richTokens[1].length);
 		diagnostics.push(...richTokens[1]);
 
 		// warning and usage serch etc
@@ -28,7 +30,8 @@ export class LanguageSynthesis {
 		let richTokens: LanguageTokenSyntaxGroup[] = [];
 		let diagnostics: Diagnostic[] = [];
 		for (let tokensIndex = 0; tokensIndex < languageTokens.length; tokensIndex++) {
-			console.log("===================== loop =================");
+			console.log("===================== loop "+JSON.stringify(languageTokens[tokensIndex])+" =================");
+			
 			var childrenObject: [LanguageTokenSyntaxGroup[], Diagnostic[]];
 
 			var tokenGroupsItem: LanguageTokenSyntaxGroup[] = [];
@@ -40,12 +43,14 @@ export class LanguageSynthesis {
 				tokenGroupsItem.push(...childrenObject[0])
 			}
 			var languageNodes: LanguageNode[] = languageTokens[tokensIndex].tokenGroup;
+			console.log("tokenNodes length " + JSON.stringify(languageNodes));
+
 			var tokensGroup = this.inspectNodesForTokenType(languageNodes, filePath);
 			// check childres
 			var richTokensItem: LanguageTokenSyntaxGroup = new LanguageTokenSyntaxGroup(tokenGroupsItem,
 				tokensGroup[0]);
 			richTokens.push(richTokensItem);
-
+			diagnostics.push(...tokensGroup[1])
 
 		}
 
@@ -55,7 +60,7 @@ export class LanguageSynthesis {
 
 
 	inspectNodesForTokenType(node: LanguageNode[], filePath: string): [LanguageTokenSyntax, Diagnostic[]] {
-		let diagnostics: Diagnostic[] = [];
+		//let diagnostics: Diagnostic[] = [];
 		if (node.length == 0) {
 			console.log("found zero  ====  ");
 			return [new LanguageTokenSyntax(SyntaxKindType.UnknownDeclaration, []), []];
@@ -68,7 +73,8 @@ export class LanguageSynthesis {
 				console.log("package length ");
 				var erros: Diagnostic[] = new PackageAnalyzer().packageRules(node, filePath);
 				var syntax: LanguageTokenSyntax = new PackageAnalyzer().createPackageTokenSytax(node);
-				diagnostics.push(...erros);
+				//diagnostics.push(...erros);
+				console.log("found errors  ====  "+erros.length);
 				return [syntax, erros];
 			} else if (this.containsKeyword(node, "import")) {
 				return [new LanguageTokenSyntax(SyntaxKindType.UnknownDeclaration, []), []];

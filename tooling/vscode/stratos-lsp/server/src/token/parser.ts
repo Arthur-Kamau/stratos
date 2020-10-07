@@ -1,7 +1,7 @@
 
 import { LanguageNode } from '../model/language_node';
 import { LanguageToken } from "../model/language_token";
-import {NodeType} from "../model/node_type";
+import { NodeType } from "../model/node_type";
 
 export class LanguageParser {
 
@@ -24,11 +24,28 @@ export class LanguageParser {
 		var skipTo = 0;
 
 		for (let nodeItem = 0; nodeItem < cleanNodesItems.length; nodeItem++) {
-		//	console.log("token item " + JSON.stringify(cleanNodesItems[nodeItem]));
+			//	console.log("token item " + JSON.stringify(cleanNodesItems[nodeItem]));
 			if (skipTokens == false) {
 				if (cleanNodesItems[nodeItem].value == ";") {
 
-					children.push(new LanguageToken([], nodesTemp))
+					nodesTemp.push(cleanNodesItems[nodeItem]);
+					children.push(new LanguageToken([], nodesTemp));
+
+					nodesTemp = [];
+				} else if (cleanNodesItems[nodeItem].value == '"') {
+
+					var endCloseQuotes = this.findClosingCurleyBrace(cleanNodesItems, nodeItem);
+
+					skipTokens = true;
+					skipTo = endCloseQuotes;
+
+					var tokenScope = cleanNodesItems.slice(nodeItem + 1, endCloseQuotes);
+					console.log("token scope to " + JSON.stringify(tokenScope));
+
+					var items = this.createTokens(tokenScope);
+					console.log("token " + JSON.stringify(items));
+
+					children.push(new LanguageToken(items, nodesTemp));
 					nodesTemp = [];
 				} else if (cleanNodesItems[nodeItem].value == '{') {
 
@@ -47,12 +64,13 @@ export class LanguageParser {
 
 					//tokenNodes.push(items )//new LanguageToken(, []))
 
-					children.push(new LanguageToken(items, nodesTemp))
+					children.push(new LanguageToken(items, nodesTemp));
+					nodesTemp = [];
 				} else if (cleanNodesItems[nodeItem].value == '}') {
 					//console.log("=======> Return " + JSON.stringify(srcTokens) + "\n\n");
 					// return srcTokens;
 				} else {
-				//	console.log("add " + nodes[nodeItem].value);
+					//	console.log("add " + nodes[nodeItem].value);
 					nodesTemp.push(cleanNodesItems[nodeItem])
 				}
 			} else {
@@ -66,7 +84,7 @@ export class LanguageParser {
 
 
 		}
-		console.log("Length "+children.length);
+		console.log("Length " + children.length);
 		return children;
 
 	}
@@ -77,8 +95,8 @@ export class LanguageParser {
 		var cleanNodeItems: LanguageNode[] = []
 		for (let tokenIndex = 0; tokenIndex < nodes.length; tokenIndex++) {
 
-			if (nodes[tokenIndex].type == NodeType.NewLine || nodes[tokenIndex].type == NodeType.SpaceNode ||  nodes[tokenIndex].type ==NodeType.SpaceNode  || nodes[tokenIndex].type == NodeType.LineComment || nodes[tokenIndex].type == NodeType.MultiLineComment) {
-				console.log("Removing node " + nodes[tokenIndex].value +" type "+ nodes[tokenIndex].type + "  Remeber [ newline =" +NodeType.NewLine+ ", Space = "+NodeType.SpaceNode  +" ,  line comme ="+NodeType.LineComment+"  , multilicoomet= "+NodeType.MultiLineComment+" ]");
+			if (nodes[tokenIndex].type == NodeType.NewLine || nodes[tokenIndex].type == NodeType.SpaceNode || nodes[tokenIndex].type == NodeType.SpaceNode || nodes[tokenIndex].type == NodeType.LineComment || nodes[tokenIndex].type == NodeType.MultiLineComment) {
+				console.log("Removing node " + nodes[tokenIndex].value + " type " + nodes[tokenIndex].type + "  Remeber [ newline =" + NodeType.NewLine + ", Space = " + NodeType.SpaceNode + " ,  line comme =" + NodeType.LineComment + "  , multilicoomet= " + NodeType.MultiLineComment + " ]");
 			} else {
 				cleanNodeItems.push(nodes[tokenIndex]);
 			}
@@ -108,7 +126,7 @@ export class LanguageParser {
 	}
 
 
-	
+
 
 
 }
