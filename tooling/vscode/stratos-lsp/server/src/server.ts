@@ -26,7 +26,7 @@ import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
 import {NodeType} from "./model/node_type";
-import { LanguageLookUp } from './token/lookup';
+import { LanguageSynthesis } from './token/synthesis';
 import { LanguageParser } from './token/parser';
 import { LanguageToken } from './model/language_token';
 import { LanguageNode } from './model/language_node';
@@ -152,7 +152,7 @@ documents.onDidChangeContent(change => {
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	// In this simple example we get the settings for every validate run.
-	let settings = await getDocumentSettings(textDocument.uri);
+	//let settings = await getDocumentSettings(textDocument.uri);
 
 	connection.console.log('Uri  ' + textDocument.uri);
 	
@@ -162,7 +162,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	console.log("nodes "+ JSON.stringify(fileNodes))
     var fileTokens : LanguageToken [] = new LanguageParser().createTokens(fileNodes  );
 	console.log("Token "+JSON.stringify(fileTokens))
-	var diagnosticsFile : Diagnostic [] = new LanguageLookUp().langugeRules(fileTokens ,textDocument.uri )
+	var diagnosticsFile : Diagnostic [] = new LanguageSynthesis().langugeRules(fileTokens ,textDocument.uri )
 	
 	console.log("erros "+diagnosticsFile.length)
 	// let diagnostic: Diagnostic = {

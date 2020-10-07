@@ -10,7 +10,8 @@ export enum SyntaxKindType {
 	EnumDeclaration = 9,
 	StructDeclaration = 10,
 	FunctionDeclaration = 11,
-	PackageDeclaration = 12
+	PackageDeclaration = 12,
+	UnknownDeclaration = 13
 }
 
 export class ParameterTypes<T>{

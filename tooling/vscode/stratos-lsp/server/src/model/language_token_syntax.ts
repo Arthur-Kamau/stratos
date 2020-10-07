@@ -1,3 +1,4 @@
+import { LanguageNode } from './language_node';
 import { SyntaxKindType } from "./syntax_kind";
 import { ParameterTypes } from "./syntax_kind"
 
@@ -5,17 +6,18 @@ import { ParameterTypes } from "./syntax_kind"
 export class LanguageTokenSyntaxGroup {
 
 	children: LanguageTokenSyntaxGroup[];
-	tokenGroup: LanguageTokenSyntax[];
-	constructor(children: LanguageTokenSyntaxGroup[], tokenGroup: LanguageTokenSyntax[]) {
+	tokenGroup: LanguageTokenSyntax;
+	constructor(children: LanguageTokenSyntaxGroup[], tokenGroup: LanguageTokenSyntax) {
 		this.children = children;
 		this.tokenGroup = tokenGroup;
 	}
 }
 export class LanguageTokenSyntax {
 	type: SyntaxKindType;
-
-	constructor(type: SyntaxKindType) {
+	nodes: LanguageNode[];
+	constructor(type: SyntaxKindType, nodes: LanguageNode[]) {
 		this.type = type;
+		this.nodes = nodes;
 	}
 
 }
@@ -24,10 +26,11 @@ export class LanguageTokenSyntaxClass extends LanguageTokenSyntax {
 	name: string;
 	memberFunctions: LanguageTokenSyntaxFunctionDeclaration[];
 	constructos: LanguageTokenSyntaxFunctionDeclaration[];
-
-	constructor(name: string, memberFunctions: LanguageTokenSyntaxFunctionDeclaration[], constructos: LanguageTokenSyntaxFunctionDeclaration[]) {
-		super(SyntaxKindType.ClassDeclaration);
+	nodes: LanguageNode[];
+	constructor(name: string, memberFunctions: LanguageTokenSyntaxFunctionDeclaration[], constructos: LanguageTokenSyntaxFunctionDeclaration[], 	nodes: LanguageNode[]) {
+		super(SyntaxKindType.ClassDeclaration,nodes );
 		this.name = name;
+		this.nodes = nodes;
 		this.memberFunctions = memberFunctions;
 		this.constructos = constructos;
 	}
@@ -40,14 +43,16 @@ export class LanguageTokenSyntaxFunctionDeclaration extends LanguageTokenSyntax 
 	isPrivate: boolean;
 	returnType: string;
 	parameters: ParameterTypes<string>[];
-
+	nodes: LanguageNode[];
 	constructor(
 		name: string,
 		isPrivate: boolean,
 		returnType: string,
-		parameters: ParameterTypes<string>[]
+		parameters: ParameterTypes<string>[],
+		nodes: LanguageNode[]
 	) {
-		super(SyntaxKindType.FunctionDeclaration);
+		super(SyntaxKindType.FunctionDeclaration, nodes);
+		this.nodes = nodes;
 		this.name = name;
 		this.isPrivate = isPrivate;
 		this.returnType = returnType;
@@ -60,7 +65,13 @@ export class LanguageTokenSyntaxFunctionInvoking extends LanguageTokenSyntax {
 }
 
 export class LanguageTokenSyntaxPackage extends LanguageTokenSyntax {
-
+	nodes: LanguageNode[];
+	name: string;
+	constructor(name : string ,nodes: LanguageNode[]){
+		super(SyntaxKindType.PackageDeclaration, nodes);
+		this.name = name;
+		this.nodes = nodes;
+	}
 }
 
 export class LanguageTokenSyntaxImport extends LanguageTokenSyntax {
