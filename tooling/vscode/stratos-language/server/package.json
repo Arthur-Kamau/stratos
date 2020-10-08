@@ -1,0 +1,15 @@
+{
+	"name": "stratos-semantic-language-server",
+	"description": "Implementation of a LSP for Stratos",
+	"version": "0.0.0",
+	"author": {
+        "name": "Arthur-Kamau"
+    },
+	"engines": {
+		"node": "*"
+	},
+	"dependencies": {
+		"vscode-languageserver": "^4.1.3"
+	},
+	"scripts": {}
+}

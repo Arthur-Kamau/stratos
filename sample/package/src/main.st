@@ -2,7 +2,7 @@ package main;
 
 // import util package 
 // and string package
-import './util';
+import "./util";
 
 // files in src belong to main package
 function main(){ 

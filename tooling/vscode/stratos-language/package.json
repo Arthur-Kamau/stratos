@@ -8,6 +8,9 @@
     "engines": {
         "vscode": "^1.45.0"
     },
+    "author": {
+        "name": "Arthur-Kamau"
+    },
     "categories": [
         "Programming Languages",
         "Snippets"
@@ -58,10 +61,18 @@
 		"url": "git+https://github.com:Arthur-Kamau/stratos.git"
     },
     "scripts": {
-		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p ./",
-		"lint": "eslint . --ext .ts,.tsx",
-		"watch": "tsc -watch -p ./"
+        "vscode:prepublish": "cd client && npm run update-vscode && cd .. && npm run compile",
+        "compile": "tsc -b",
+		"compile-old": "tsc -p ./",
+        "lint": "eslint . --ext .ts,.tsx",
+        "watch": "tsc -b -w",
+        "watch-old": "tsc -watch -p ./",
+        "postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+        "test": "sh ./scripts/e2e.sh"
+    },
+    "dependencies": {
+		"request": "^2.88.0",
+		"which": "^1.3.1"
 	},
 	"devDependencies": {
 		"@types/node": "^12.12.0",

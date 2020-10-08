@@ -4,13 +4,13 @@ const anExampleVariable = "Hello World"
 console.log(anExampleVariable)
 
 var keySignsArray: Array<string> = [
-	'%', '/', '*', '+', '-', '(', ')', '{', '}', '[', ']', "\"", ":", ";"
+	'%', '/', '*', '+', '-', '(', ')', '{', '}', '[', ']', ":", ";"
 ]
 var keyWordsArray: Array<string> = [
 	'let', 'var', 'val',
 	'import', 'package', 'function', 'class',
 	'double', 'string', 'char', 'private',
-	'if', 'else', 'when','loop', 'for', 'It'
+	'if', 'else', 'when', 'loop', 'for', 'It'
 ];
 class LanguageToken {
 
@@ -186,10 +186,13 @@ class LanguageLexer {
 
 
 
-	getTokenList(text: string): LanguageNode[] {
+	getFileNode(text: string): LanguageNode[] {
 		var documentNode: LanguageNode[] = []
 		let lines = text.split(/\r?\n/g);
-		let inMultiLineComment: boolean = false
+		let inString: boolean = false;
+		let stringCharacters: string = "";
+		let inMultiLineComment: boolean = false;
+		
 		let multiLineCommet: string = "";
 		let linemultiLineCommetStart: number = 0;
 		for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
@@ -203,7 +206,7 @@ class LanguageLexer {
 					var tempcharIndex = charIndex;
 
 					if (lineCharArray[charIndex] == "/" && lineCharArray[tempcharIndex - 1] == "/") {
-// fall through if 
+						// fall through if 
 					} else if (lineCharArray[charIndex] == "/" && lineCharArray[tempcharIndex + 1] == "/") {
 
 						var n: LanguageNode = {
@@ -224,7 +227,7 @@ class LanguageLexer {
 						// multiLineCommet += lineCharArray[charIndex];
 					} else if (lineCharArray[charIndex] == "/" && lineCharArray[charIndex - 1] == "*") {
 
-					
+
 
 						multiLineCommet += lineCharArray[charIndex];
 						console.log("comment " + multiLineCommet);
@@ -247,71 +250,93 @@ class LanguageLexer {
 					}
 
 					if (!inMultiLineComment) {
-						if (isUniqueSign(lineCharArray[charIndex])) {
+						if (!inString) {
+							if (isUniqueSign(lineCharArray[charIndex])) {
 
 
-							if (charaArray.length > 0) {
+								if (charaArray.length > 0) {
+
+									var x: LanguageNode = {
+										line_start: lineIndex,
+										line_end: lineIndex,
+										char_start: charIndex != 0 ? charIndex - charaArray.length : 0,
+										char_end: charIndex,
+										type: getCharNodeType(charaArray),
+										value: charaArray
+									};
+									documentNode.push(x);
+								} else {
+									//	console.log("character array empty " + lineCharArray[charIndex] + " line " + lineIndex)
+								}
+
+								var n: LanguageNode = {
+									line_start: lineIndex,
+									line_end: lineIndex,
+									char_start: charIndex,
+									char_end: charIndex + lineCharArray[charIndex].length,
+									type: getkeySignsNodeType(lineCharArray[charIndex]),
+									value: lineCharArray[charIndex],
+								};
+								documentNode.push(n);
+
+								charaArray = "";
+
+							} else if (lineCharArray[charIndex] == " " || lineCharArray[charIndex] == "\t") {
+
+
+								if (charaArray.length > 0) {
+
+									var x: LanguageNode = {
+										line_start: lineIndex,
+										line_end: lineIndex,
+										char_start: charIndex - charaArray.length,
+										char_end: charaArray.length,
+										type: getCharNodeType(charaArray),
+										value: charaArray
+									};
+									documentNode.push(x);
+
+									charaArray = "";
+								} else {
+									//console.log(" line " + lineIndex + " character array empty  item space " + lineCharArray[charIndex])
+								}
+
 
 								var x: LanguageNode = {
 									line_start: lineIndex,
 									line_end: lineIndex,
-									char_start: charIndex != 0 ? charIndex - charaArray.length : 0,
-									char_end: charIndex,
-									type: getCharNodeType(charaArray),
-									value: charaArray
+									char_start: charIndex,
+									char_end: charIndex + lineCharArray[charIndex].length,
+									type: NodeType.SpaceNode,
+									value: " "
 								};
 								documentNode.push(x);
+
+
+							} else if (lineCharArray[charIndex] == "\""){
+								inString = true
 							} else {
-								//	console.log("character array empty " + lineCharArray[charIndex] + " line " + lineIndex)
+
+								charaArray += lineCharArray[charIndex]
 							}
-
-							var n: LanguageNode = {
-								line_start: lineIndex,
-								line_end: lineIndex,
-								char_start: charIndex,
-								char_end: charIndex + lineCharArray[charIndex].length,
-								type: getkeySignsNodeType(lineCharArray[charIndex]),
-								value: lineCharArray[charIndex],
-							};
-							documentNode.push(n);
-
-							charaArray = "";
-
-						} else if (lineCharArray[charIndex] == " " || lineCharArray[charIndex] == "\t") {
-
-
-							if (charaArray.length > 0) {
-
+						} else {
+							if (lineCharArray[charIndex] == "\""){
+								inString=false;
 								var x: LanguageNode = {
 									line_start: lineIndex,
 									line_end: lineIndex,
 									char_start: charIndex - charaArray.length,
 									char_end: charaArray.length,
-									type: getCharNodeType(charaArray),
-									value: charaArray
+									type: NodeType.StringTypeNode,//getCharNodeType(charaArray),
+									value: stringCharacters
 								};
 								documentNode.push(x);
 
 								charaArray = "";
-							} else {
-								//console.log(" line " + lineIndex + " character array empty  item space " + lineCharArray[charIndex])
+							}else{
+								stringCharacters+= lineCharArray[charIndex]
 							}
-
-
-							var x: LanguageNode = {
-								line_start: lineIndex,
-								line_end: lineIndex,
-								char_start: charIndex,
-								char_end: charIndex + lineCharArray[charIndex].length,
-								type: NodeType.SpaceNode,
-								value: " "
-							};
-							documentNode.push(x);
-
-
-						} else {
-
-							charaArray += lineCharArray[charIndex]
+							
 						}
 
 					} else {
@@ -355,8 +380,8 @@ class MainScopeRulesRules {
 		var cleanNodeItems: LanguageNode[] = []
 		for (let tokenIndex = 0; tokenIndex < nodes.length; tokenIndex++) {
 
-			if (nodes[tokenIndex].type == NodeType.NewLine || nodes[tokenIndex].type == NodeType.SpaceNode ||  nodes[tokenIndex].type ==NodeType.SpaceNode  || nodes[tokenIndex].type == NodeType.LineComment || nodes[tokenIndex].type == NodeType.MultiLineComment) {
-				console.log("Removing node " + nodes[tokenIndex].value +" type "+ nodes[tokenIndex].type + "  Remeber [ newline =" +NodeType.NewLine+ ", Space = "+NodeType.SpaceNode  +" ,  line comme ="+NodeType.LineComment+"  , multilicoomet= "+NodeType.MultiLineComment+" ]");
+			if (nodes[tokenIndex].type == NodeType.NewLine || nodes[tokenIndex].type == NodeType.SpaceNode || nodes[tokenIndex].type == NodeType.SpaceNode || nodes[tokenIndex].type == NodeType.LineComment || nodes[tokenIndex].type == NodeType.MultiLineComment) {
+				console.log("Removing node " + nodes[tokenIndex].value + " type " + nodes[tokenIndex].type + "  Remeber [ newline =" + NodeType.NewLine + ", Space = " + NodeType.SpaceNode + " ,  line comme =" + NodeType.LineComment + "  , multilicoomet= " + NodeType.MultiLineComment + " ]");
 			} else {
 				cleanNodeItems.push(nodes[tokenIndex]);
 			}
@@ -366,24 +391,6 @@ class MainScopeRulesRules {
 	}
 
 
-	findClosingQuotes(nodes: LanguageNode[], openCurlyBracePos: number) {
-		var closCurlyBracePos = openCurlyBracePos;
-		var counter: number = 1;
-
-		while (counter > 0) {
-			var item = nodes[++closCurlyBracePos];
-			console.log("item "+ JSON.stringify(item));
-			if (item.value == '"') {
-				counter--
-			}
-			
-		}
-
-
-		return closCurlyBracePos;
-
-
-	}
 
 	findClosingCurleyBrace(nodes: LanguageNode[], openCurlyBracePos: number) {
 		var closCurlyBracePos = openCurlyBracePos;
@@ -420,21 +427,6 @@ class MainScopeRulesRules {
 					nodesTemp.push(cleanNodesItems[nodeItem]);
 					children.push(new LanguageToken([], nodesTemp));
 
-					nodesTemp = [];
-				} else if (cleanNodesItems[nodeItem].value == '"') {
-
-					var endCloseQuotes = this.findClosingQuotes(cleanNodesItems, nodeItem);
-
-					skipTokens = true;
-					skipTo = endCloseQuotes;
-
-					var tokenScope = cleanNodesItems.slice(nodeItem + 1, endCloseQuotes);
-					console.log("token scope to " + JSON.stringify(tokenScope));
-
-					var items = this.createTokens(tokenScope);
-					console.log("token " + JSON.stringify(items));
-
-					children.push(new LanguageToken(items, nodesTemp));
 					nodesTemp = [];
 				} else if (cleanNodesItems[nodeItem].value == '{') {
 
@@ -486,8 +478,7 @@ class MainScopeRulesRules {
 //   print("Hey there");
 // }
 
-var r: LanguageNode[] = new LanguageLexer().getTokenList(`
-/* data man **/
+var r: LanguageNode[] = new LanguageLexer().getFileNode(`
 package ms;
 import "test/src";
 `);
@@ -496,21 +487,21 @@ import "test/src";
 
 
 // for (let tokenIndex = 0; tokenIndex < r.length; tokenIndex++) {
-// 	console.log(`node -> ${JSON.stringify(r[tokenIndex])}`);
-
+// console.log(`node -> ${JSON.stringify(r[tokenIndex])}`);
+// 
 // }
 
 
-var tokenItem = new MainScopeRulesRules();
-var resi = tokenItem.cleanNode(r);
-var toke = tokenItem.createTokens(resi);
+// var tokenItem = new MainScopeRulesRules();
+// var resi = tokenItem.cleanNode(r);
+// var toke = tokenItem.createTokens(resi);
 
 // console.log("Error " + toke.length);
 
-for (let tokenIndex = 0; tokenIndex < toke.length; tokenIndex++) {
-	console.log(`token  -> ${JSON.stringify(toke[tokenIndex])}`);
+// for (let tokenIndex = 0; tokenIndex < toke.length; tokenIndex++) {
+// 	console.log(`token  -> ${JSON.stringify(toke[tokenIndex])}`);
 
-}
+// }
 
 
 //check the first token if its package

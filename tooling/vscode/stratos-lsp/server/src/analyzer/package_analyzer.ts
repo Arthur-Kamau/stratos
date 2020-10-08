@@ -56,6 +56,11 @@ export class PackageAnalyzer {
 			diagnostics.push(diagnostic);
 		}
 		if (folderName == "src") {
+
+			
+
+
+
 			if (nodes[1].value != "main") {
 				let diagnostic: Diagnostic = {
 					severity: DiagnosticSeverity.Error,

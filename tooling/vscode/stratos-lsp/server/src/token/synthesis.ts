@@ -4,6 +4,7 @@ import { PackageAnalyzer } from '../analyzer/package_analyzer';
 import { LanguageTokenSyntax, LanguageTokenSyntaxGroup } from '../model/language_token_syntax';
 import { LanguageNode } from '../model/language_node';
 import { SyntaxKindType } from '../model/syntax_kind';
+import { ImportAnalyzer } from '../analyzer/import_analyzer';
 
 export class LanguageSynthesis {
 
@@ -14,7 +15,7 @@ export class LanguageSynthesis {
 
 		//rich tokens
 		let richTokens: [LanguageTokenSyntaxGroup[], Diagnostic[]] = this.generateRichTokens(tokenNodes, filePath);
-		console.log("found errors  langugeRules  "+richTokens[1].length);
+		console.log("found errors  langugeRules  " + richTokens[1].length);
 		diagnostics.push(...richTokens[1]);
 
 		// warning and usage serch etc
@@ -30,8 +31,8 @@ export class LanguageSynthesis {
 		let richTokens: LanguageTokenSyntaxGroup[] = [];
 		let diagnostics: Diagnostic[] = [];
 		for (let tokensIndex = 0; tokensIndex < languageTokens.length; tokensIndex++) {
-			console.log("===================== loop "+JSON.stringify(languageTokens[tokensIndex])+" =================");
-			
+			console.log("===================== loop " + JSON.stringify(languageTokens[tokensIndex]) + " =================");
+
 			var childrenObject: [LanguageTokenSyntaxGroup[], Diagnostic[]];
 
 			var tokenGroupsItem: LanguageTokenSyntaxGroup[] = [];
@@ -69,15 +70,18 @@ export class LanguageSynthesis {
 			//console.log("Inspect language nodes  " + node.length + "confirm 0" + node[0]);
 			//	var letters = /^[0-9a-zA-Z]+$/;
 			// check if containts package 
-			if (this.containsKeyword(node, "package")) {
-				console.log("package length ");
+			if (node[0].value == "package") {
+
 				var erros: Diagnostic[] = new PackageAnalyzer().packageRules(node, filePath);
 				var syntax: LanguageTokenSyntax = new PackageAnalyzer().createPackageTokenSytax(node);
-				//diagnostics.push(...erros);
-				console.log("found errors  ====  "+erros.length);
+
+				console.log("package found errors  ====  " + erros.length);
 				return [syntax, erros];
-			} else if (this.containsKeyword(node, "import")) {
-				return [new LanguageTokenSyntax(SyntaxKindType.UnknownDeclaration, []), []];
+			} else if (node[0].value == "import") {
+
+				var erros: Diagnostic[] = new ImportAnalyzer().importRules(node, filePath);
+				console.log("import found errors  ====  " + erros.length);
+				return [new LanguageTokenSyntax(SyntaxKindType.UnknownDeclaration, []), erros];
 			} else if (this.containsKeyword(node, "function")) {
 				return [new LanguageTokenSyntax(SyntaxKindType.UnknownDeclaration, []), []];
 			} else if (this.containsKeyword(node, "var")) {

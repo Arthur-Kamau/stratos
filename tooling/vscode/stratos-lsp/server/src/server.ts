@@ -160,20 +160,14 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	let text = textDocument.getText();
 	var fileNodes: LanguageNode[] = new LanguageLexer().getFileNode(text);
 	console.log("nodes "+ JSON.stringify(fileNodes))
-    var fileTokens : LanguageToken [] = new LanguageParser().createTokens(fileNodes  );
-	console.log("Token "+JSON.stringify(fileTokens))
-	var diagnosticsFile : Diagnostic [] = new LanguageSynthesis().langugeRules(fileTokens ,textDocument.uri )
+    var fileTokensAndErrors : [LanguageToken [] , Diagnostic []] = new LanguageParser().createTokens(fileNodes  );
+ 
+	console.log("Token "+JSON.stringify(fileTokensAndErrors[0]))
+	var diagnosticsFile : Diagnostic [] = new LanguageSynthesis().langugeRules(fileTokensAndErrors[0] ,textDocument.uri )
 	
 	console.log("erros "+diagnosticsFile.length)
-	// let diagnostic: Diagnostic = {
-	// 	severity: DiagnosticSeverity.Warning,
-	// 	range: {
-	// 		start: textDocument.positionAt(0),
-	// 		end: textDocument.positionAt(10)
-	// 	},
-	// 	message:  `length ${[1,2,3].length}`,//`${textDocument.uri}`,
-	// 	source: 'ex'
-	// };
+	
+	diagnostics.push(...fileTokensAndErrors[1]);
 	diagnostics.push(...diagnosticsFile);
 	
 

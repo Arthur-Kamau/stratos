@@ -7,7 +7,10 @@ export class LanguageLexer {
 	getFileNode(text: string): LanguageNode[] {
 		var documentNode: LanguageNode[] = []
 		let lines = text.split(/\r?\n/g);
-		let inMultiLineComment: boolean = false
+		let inString: boolean = false;
+		let stringCharacters: string = "";
+		let inMultiLineComment: boolean = false;
+		
 		let multiLineCommet: string = "";
 		let linemultiLineCommetStart: number = 0;
 		for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
@@ -21,7 +24,7 @@ export class LanguageLexer {
 					var tempcharIndex = charIndex;
 
 					if (lineCharArray[charIndex] == "/" && lineCharArray[tempcharIndex - 1] == "/") {
-// fall through if 
+						// fall through if 
 					} else if (lineCharArray[charIndex] == "/" && lineCharArray[tempcharIndex + 1] == "/") {
 
 						var n: LanguageNode = {
@@ -42,7 +45,7 @@ export class LanguageLexer {
 						// multiLineCommet += lineCharArray[charIndex];
 					} else if (lineCharArray[charIndex] == "/" && lineCharArray[charIndex - 1] == "*") {
 
-					
+
 
 						multiLineCommet += lineCharArray[charIndex];
 						console.log("comment " + multiLineCommet);
@@ -65,71 +68,93 @@ export class LanguageLexer {
 					}
 
 					if (!inMultiLineComment) {
-						if (isUniqueSign(lineCharArray[charIndex])) {
+						if (!inString) {
+							if (isUniqueSign(lineCharArray[charIndex])) {
 
 
-							if (charaArray.length > 0) {
+								if (charaArray.length > 0) {
+
+									var x: LanguageNode = {
+										line_start: lineIndex,
+										line_end: lineIndex,
+										char_start: charIndex != 0 ? charIndex - charaArray.length : 0,
+										char_end: charIndex,
+										type: getCharNodeType(charaArray),
+										value: charaArray
+									};
+									documentNode.push(x);
+								} else {
+									//	console.log("character array empty " + lineCharArray[charIndex] + " line " + lineIndex)
+								}
+
+								var n: LanguageNode = {
+									line_start: lineIndex,
+									line_end: lineIndex,
+									char_start: charIndex,
+									char_end: charIndex + lineCharArray[charIndex].length,
+									type: getkeySignsNodeType(lineCharArray[charIndex]),
+									value: lineCharArray[charIndex],
+								};
+								documentNode.push(n);
+
+								charaArray = "";
+
+							} else if (lineCharArray[charIndex] == " " || lineCharArray[charIndex] == "\t") {
+
+
+								if (charaArray.length > 0) {
+
+									var x: LanguageNode = {
+										line_start: lineIndex,
+										line_end: lineIndex,
+										char_start: charIndex - charaArray.length,
+										char_end: charaArray.length,
+										type: getCharNodeType(charaArray),
+										value: charaArray
+									};
+									documentNode.push(x);
+
+									charaArray = "";
+								} else {
+									//console.log(" line " + lineIndex + " character array empty  item space " + lineCharArray[charIndex])
+								}
+
 
 								var x: LanguageNode = {
 									line_start: lineIndex,
 									line_end: lineIndex,
-									char_start: charIndex != 0 ? charIndex - charaArray.length : 0,
-									char_end: charIndex,
-									type: getCharNodeType(charaArray),
-									value: charaArray
+									char_start: charIndex,
+									char_end: charIndex + lineCharArray[charIndex].length,
+									type: NodeType.SpaceNode,
+									value: " "
 								};
 								documentNode.push(x);
+
+
+							} else if (lineCharArray[charIndex] == "\""){
+								inString = true
 							} else {
-								//	console.log("character array empty " + lineCharArray[charIndex] + " line " + lineIndex)
+
+								charaArray += lineCharArray[charIndex]
 							}
-
-							var n: LanguageNode = {
-								line_start: lineIndex,
-								line_end: lineIndex,
-								char_start: charIndex,
-								char_end: charIndex + lineCharArray[charIndex].length,
-								type: getkeySignsNodeType(lineCharArray[charIndex]),
-								value: lineCharArray[charIndex],
-							};
-							documentNode.push(n);
-
-							charaArray = "";
-
-						} else if (lineCharArray[charIndex] == " " || lineCharArray[charIndex] == "\t") {
-
-
-							if (charaArray.length > 0) {
-
+						} else {
+							if (lineCharArray[charIndex] == "\""){
+								inString=false;
 								var x: LanguageNode = {
 									line_start: lineIndex,
 									line_end: lineIndex,
 									char_start: charIndex - charaArray.length,
 									char_end: charaArray.length,
-									type: getCharNodeType(charaArray),
-									value: charaArray
+									type: NodeType.StringTypeNode,//getCharNodeType(charaArray),
+									value: stringCharacters
 								};
 								documentNode.push(x);
 
 								charaArray = "";
-							} else {
-								//console.log(" line " + lineIndex + " character array empty  item space " + lineCharArray[charIndex])
+							}else{
+								stringCharacters+= lineCharArray[charIndex]
 							}
-
-
-							var x: LanguageNode = {
-								line_start: lineIndex,
-								line_end: lineIndex,
-								char_start: charIndex,
-								char_end: charIndex + lineCharArray[charIndex].length,
-								type: NodeType.SpaceNode,
-								value: " "
-							};
-							documentNode.push(x);
-
-
-						} else {
-
-							charaArray += lineCharArray[charIndex]
+							
 						}
 
 					} else {

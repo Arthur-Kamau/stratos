@@ -2,7 +2,7 @@
 import { LanguageNode } from '../model/language_node';
 import { LanguageToken } from "../model/language_token";
 import { NodeType } from "../model/node_type";
-
+import { Diagnostic, DiagnosticSeverity, Position } from 'vscode-languageserver';
 export class LanguageParser {
 
 
@@ -15,8 +15,9 @@ export class LanguageParser {
 	/// when we ecnounter } we should remove a score of the depth state 
 	// to ensure variables can only be accessed if appropriate depth
 
-	createTokens(nodesPar: LanguageNode[]): LanguageToken[] {
+	createTokens(nodesPar: LanguageNode[]): [LanguageToken[], Diagnostic[]] {
 		var children: LanguageToken[] = [];
+		let diagnostics: Diagnostic[] = [];
 		var nodesTemp: LanguageNode[] = [];
 
 		var cleanNodesItems = this.cleanNode(nodesPar);
@@ -32,42 +33,47 @@ export class LanguageParser {
 					children.push(new LanguageToken([], nodesTemp));
 
 					nodesTemp = [];
-				} else if (cleanNodesItems[nodeItem].value == '"') {
-
-					var endCloseQuotes = this.findClosingCurleyBrace(cleanNodesItems, nodeItem);
-
-					skipTokens = true;
-					skipTo = endCloseQuotes;
-
-					var tokenScope = cleanNodesItems.slice(nodeItem + 1, endCloseQuotes);
-					console.log("token scope to " + JSON.stringify(tokenScope));
-
-					var items = this.createTokens(tokenScope);
-					console.log("token " + JSON.stringify(items));
-
-					children.push(new LanguageToken(items, nodesTemp));
-					nodesTemp = [];
 				} else if (cleanNodesItems[nodeItem].value == '{') {
 
 					var endCurly = this.findClosingCurleyBrace(cleanNodesItems, nodeItem);
 
-					skipTokens = true;
-					skipTo = endCurly;
+					if (endCurly == 0) {
+						let diagnostic: Diagnostic = {
+							severity: DiagnosticSeverity.Error,
+							range: {
+								start: {
+									line: cleanNodesItems[nodeItem].line_start!,
+									character: cleanNodesItems[nodeItem].char_start!,
+								}, //Position.create(nodes[0].line_start, ) ,//textDocument.positionAt(0),
+								end: {
+									line: cleanNodesItems[nodeItem].line_start!,// nodes[0].line_start!,
+									character: cleanNodesItems[nodeItem].char_end!
+								}, // textDocument.positionAt(10)
+							},
+							message: `Did not find closing tag }  `,
+							source: 'ex'
+						};
+						diagnostics.push(diagnostic);
+					} else {
+						skipTokens = true;
+						skipTo = endCurly;
 
-					// console.log("Print to " + JSON.stringify(nodes[endCurly]));
+						var tokenScope = cleanNodesItems.slice(nodeItem + 1, endCurly);
+						console.log("token scope to " + JSON.stringify(tokenScope));
 
-					var tokenScope = cleanNodesItems.slice(nodeItem + 1, endCurly);
-					console.log("token scope to " + JSON.stringify(tokenScope));
+						var items = this.createTokens(tokenScope);
+						console.log("token " + JSON.stringify(items));
 
-					var items = this.createTokens(tokenScope);
-					console.log("token " + JSON.stringify(items));
 
-					//tokenNodes.push(items )//new LanguageToken(, []))
+						if (items[1].length > 0) {
+							diagnostics.push(...items[1]);
+						}
+						children.push(new LanguageToken(items[0], nodesTemp));
+						nodesTemp = [];
+					}
 
-					children.push(new LanguageToken(items, nodesTemp));
-					nodesTemp = [];
 				} else if (cleanNodesItems[nodeItem].value == '}') {
-					//console.log("=======> Return " + JSON.stringify(srcTokens) + "\n\n");
+					console.log("=======> Return  sign \n\n");
 					// return srcTokens;
 				} else {
 					//	console.log("add " + nodes[nodeItem].value);
@@ -85,7 +91,7 @@ export class LanguageParser {
 
 		}
 		console.log("Length " + children.length);
-		return children;
+		return [children, diagnostics];
 
 	}
 
@@ -112,10 +118,16 @@ export class LanguageParser {
 
 		while (counter > 0) {
 			var item = nodes[++closCurlyBracePos];
-			if (item.value == '{') {
-				counter++
-			} else if (item.value == '}') {
-				counter--;
+
+			if (item == undefined) {
+				closCurlyBracePos = 0;
+				break;
+			} else {
+				if (item.value == '{') {
+					counter++
+				} else if (item.value == '}') {
+					counter--;
+				}
 			}
 		}
 
