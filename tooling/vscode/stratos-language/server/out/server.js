@@ -98,6 +98,7 @@ function validateTextDocument(textDocument) {
         let settings = yield getDocumentSettings(textDocument.uri);
         // The validator creates diagnostics for all uppercase words length 2 and more 
         let diagnostics = [];
+        console.log("+=======>>> ");
         request.post({ url: 'http://localhost:3000/parse', body: textDocument.getText() }, function optionalCallback(err, httpResponse, body) {
             try {
                 let messages = JSON.parse(body).errors;

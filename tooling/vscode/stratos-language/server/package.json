@@ -3,8 +3,8 @@
 	"description": "Implementation of a LSP for Stratos",
 	"version": "0.0.0",
 	"author": {
-        "name": "Arthur-Kamau"
-    },
+		"name": "Arthur-Kamau"
+	},
 	"engines": {
 		"node": "*"
 	},

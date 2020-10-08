@@ -73,8 +73,13 @@ export async function activate(context: ExtensionContext) {
 
 	client.start();
 
-	let v = vscode.commands.registerCommand('ext.InitProject',
+	const fetchDeps = vscode.commands.registerCommand('extension.fetchDependancies', () => {
+		vscode.window.showInformationMessage('Fetch  project  Dependancies ...');
+	});
+	const createProject = vscode.commands.registerCommand('extension.createProject',
 		() => {
+
+
 
 			const options: vscode.OpenDialogOptions = {
 				canSelectMany: false,
@@ -88,24 +93,52 @@ export async function activate(context: ExtensionContext) {
 				if (fileUri && fileUri[0]) {
 					let dir: string = fileUri[0].fsPath;
 					let configFile: string = path.join(dir, "app.conf");
-					let mainFile: string = path.join(dir, "src/main.st");
+					let srcFolder = path.join(dir, "src");
+					let mainFile = path.join(srcFolder, "main.st");
 
-				
+
 
 					if (!fs.existsSync(configFile)) {
 
-						
 
-						fs.writeFile(configFile, 'module Main\nstart\n\toutput \"Hello World!\";\nend Main.', "utf-8",
-						(err) => {
-							if (err) throw err; console.log("Config file was created");
+						fs.writeFile(configFile, "project = { \n" +
+							"\t# project name\n" +
+							"\tname = \"application\"\n" +
+							"\t# project version\n" +
+							"\tversion = \"0.0.1\"\n" +
+							"\t# project id \n" +
+							"\tid = \"com.stratos.application\"\n" +
+							"\t#keyword for \n" +
+							"\tkeywords = [\"application\"]\n" +
+							"\tdescription=\"\"\"\n" +
+							"\tproject description\n" +
+							"\t\"\"\"\n" +
+
+							"\tdependancies = [\n" +
+
+							"\n " +
+							"\t]\n" +
+							"}\n", "utf-8",
+							(err) => {
+								if (err) throw err; console.log("Config file was created");
+							});
+
+						if (!fs.existsSync(srcFolder)) {
+							fs.mkdirSync(srcFolder)
+						}
+
+						fs.writeFile(mainFile, "package main;\n" +
+							"\n" +
+							"function main(){ \n" +
+							"\t print(\"Hello world\");\n" +
+							" }", "utf-8",
+							(err) => {
+								if (err) throw err; console.log("Main file was created");
+							});
+
+						vscode.workspace.openTextDocument(configFile).then((a: vscode.TextDocument) => {
+							vscode.window.showTextDocument(a, 1, false);
 						});
-
-						fs.writeFile(mainFile, 'module Main\nstart\n\toutput \"Hello World!\";\nend Main.', "utf-8",
-						(err) => {
-							if (err) throw err; console.log("Main file was created");
-						});
-
 						vscode.workspace.openTextDocument(mainFile).then((a: vscode.TextDocument) => {
 							vscode.window.showTextDocument(a, 1, false);
 						});
@@ -117,8 +150,18 @@ export async function activate(context: ExtensionContext) {
 					}
 				}
 			});
+
 		});
-	context.subscriptions.push(v);
+
+	const runApplication = vscode.commands.registerCommand('extension.runApplication', () => {
+		// The code you place here will be executed every time your command is executed
+
+		// Display a message box to the user
+		vscode.window.showInformationMessage('Running Application ...');
+	});
+
+	context.subscriptions.push(createProject, runApplication, fetchDeps);
+	// context.subscriptions.push(createProject);
 }
 
 export function deactivate(): Thenable<void> | undefined {

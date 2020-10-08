@@ -2,12 +2,12 @@
 	"name": "lsp-semantic-language-client",
 	"description": "VSCode part of a language server for Stratos Language",
 	"author": {
-        "name": "Arthur-Kamau"
-    },
+		"name": "Arthur-Kamau"
+	},
 	"version": "0.1.2",
 	"publisher": "arthurKamau",
 	"activationEvents": [
-		"onCommand:ext.InitProject"
+		"onLanguage:stratos"
 	],
 	"engines": {
 		"vscode": "^1.23.0"
