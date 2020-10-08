@@ -1,4 +1,7 @@
 ﻿using System;
+using Microsoft.AspNetCore.Builder;
+// using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,21 +11,27 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace AntlrServer
+namespace StratosServer
 {
-    public class Program
+    class Program
     {
-        public static void Main(string[] args)
+        static void Main(string[] args)
         {
-            var host = new WebHostBuilder()
-                .UseKestrel()
-                .UseContentRoot(Directory.GetCurrentDirectory())
-                .UseIISIntegration()
-                .UseStartup<Startup>()
-                .UseUrls("http://localhost:3000")
-                .Build();
-                
-            host.Run();
+            // Console.WriteLine("Hello World!");
+        var host = new WebHostBuilder()
+          .UseKestrel()
+          .UseStartup<Startup>()
+          .UseIISIntegration()
+          .UseContentRoot(Directory.GetCurrentDirectory())
+          .UseUrls("http://localhost:3000")
+          .ConfigureLogging((hostingContext, logging) =>
+    {
+        logging.AddConfiguration(hostingContext.Configuration.GetSection("Logging"));
+        logging.AddConsole();
+        logging.AddDebug();
+    })
+          .Build();
+        host.Run();
         }
     }
 }
