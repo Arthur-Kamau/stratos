@@ -29,25 +29,19 @@ namespace StratosServer
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
-            var rb = new RouteBuilder(app);
+            app.Run(async (context) =>
+                {
 
-            RequestDelegate factorialRequestHandler =  c =>
-            {
-                
-                return  c.Response.WriteAsync(" Message JSON  .");
-            };
-
-            rb.MapPost("parse", factorialRequestHandler);
-
-            var routes = rb.Build();
-
-            app.UseRouter(routes);
+                   string body = await new StreamReader(context.Request.Body).ReadToEndAsync();
+Console.WriteLine($"Body {body}");
+                    await context.Response.WriteAsync($"Hello World! {body}");
+                });
         }
 
 
