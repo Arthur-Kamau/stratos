@@ -123,39 +123,39 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	let settings = await getDocumentSettings(textDocument.uri);
 	// The validator creates diagnostics for all uppercase words length 2 and more 
 	let diagnostics: Diagnostic[] = [];
-	console.log("+=======>>> ");
-	request.post({ url: 'http://localhost:3000/parse', body: textDocument.getText() }, function optionalCallback(err, httpResponse, body) {
-		try {
-			let messages = JSON.parse(body).errors;
+	console.log("+=======>>> data");
+	// request.post({ url: 'http://localhost:3000/parse', body: textDocument.getText() }, function optionalCallback(err, httpResponse, body) {
+	// 	try {
+	// 		let messages = JSON.parse(body).errors;
 
-			let lines = textDocument.getText().split(/\r?\n/g);
-			let problems = 0;
+	// 		let lines = textDocument.getText().split(/\r?\n/g);
+	// 		let problems = 0;
 
-			for (var i = 0; i < messages.length && problems < settings.maxNumberOfProblems; i++) {
-				problems++;
+	// 		for (var i = 0; i < messages.length && problems < settings.maxNumberOfProblems; i++) {
+	// 			problems++;
 
-				if (messages[i].length === 0) {
-					messages[i].length = lines[i].length - messages[i].character;
-				}
+	// 			if (messages[i].length === 0) {
+	// 				messages[i].length = lines[i].length - messages[i].character;
+	// 			}
 
-				diagnostics.push({
-					severity: DiagnosticSeverity.Error,
-					range: {
-						start: { line: messages[i].line, character: messages[i].character },
-						end: { line: messages[i].line, character: messages[i].character + messages[i].length }
-					},
-					message: messages[i].message,
-					source: 'ex'
-				});
-			}
-			// Send the computed diagnostics to VSCode. 
-			connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
-		}
-		catch (SyntaxError) {
-			console.log("invalid json in server")
-		}
+	// 			diagnostics.push({
+	// 				severity: DiagnosticSeverity.Error,
+	// 				range: {
+	// 					start: { line: messages[i].line, character: messages[i].character },
+	// 					end: { line: messages[i].line, character: messages[i].character + messages[i].length }
+	// 				},
+	// 				message: messages[i].message,
+	// 				source: 'ex'
+	// 			});
+	// 		}
+	// 		// Send the computed diagnostics to VSCode. 
+	// 		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+	// 	}
+	// 	catch (SyntaxError) {
+	// 		console.log("invalid json in server")
+	// 	}
 
-	});
+	// });
 }
 
 connection.onDidChangeWatchedFiles(_change => {

@@ -1,9 +1,9 @@
-package main;
-
+package "main"
+import "&&&";
 
 // import util package
 // imports everything 
-import "&&&";
+
 
 // files in src belong to main package
 function main(){ 

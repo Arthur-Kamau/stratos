@@ -34,7 +34,7 @@ export async function activate(context: ExtensionContext) {
 	// If the extension is launched in debug mode then the debug server options are used
 	// Otherwise the run options are used
 	const dotNetExecutable = await executables.find('dotnet');
-	const serverAssembly = context.asAbsolutePath('csharp/bin/Debug/netcoreapp2.1/AntlrServer.dll');
+	const serverAssembly = context.asAbsolutePath('csharp/bin/Debug/netcoreapp3.1/StratosServer.dll');
 
 	if (dotNetExecutable === null) {
 		vscode.window.showErrorMessage("You don't have .Net Core Support!");
@@ -55,13 +55,14 @@ export async function activate(context: ExtensionContext) {
 
 	// Options to control the language client
 	let clientOptions: LanguageClientOptions = {
-		// Register the server for plain text documents
+		// Register the server for stratos text documents
 		documentSelector: [{ scheme: 'file', language: 'stratos' }],
 		synchronize: {
 			// Notify the server about file changes to '.clientrc files contained in the workspace
 			fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
 		}
 	};
+
 
 	// Create the language client and start the client.
 	client = new LanguageClient(
@@ -76,6 +77,7 @@ export async function activate(context: ExtensionContext) {
 	const fetchDeps = vscode.commands.registerCommand('extension.fetchDependancies', () => {
 		vscode.window.showInformationMessage('Fetch  project  Dependancies ...');
 	});
+	
 	const createProject = vscode.commands.registerCommand('extension.createProject',
 		() => {
 
