@@ -12,8 +12,17 @@
 		"url": "https://github.com/Microsoft/vscode-extension-samples"
 	},
 	"dependencies": {
+		"antlr4": "^4.8.0",
+		"antlr4ts": "^0.5.0-alpha.3",
 		"vscode-languageserver": "^6.1.1",
 		"vscode-languageserver-textdocument": "^1.0.1"
 	},
-	"scripts": {}
+	"scripts": {
+		"gen":"java -jar   antlr-4.8-complete.jar  -visitor  -package StratosServer -o ../generated/ -Dlanguage=JavaScript StratosParser.g4 StratosLexer.g4",
+		
+		"gen-ts": "antlr4ts -visitor  -o src/generated   src/test/antlr/StratosParser.g4  src/test/antlr/StratosLexer.g4"
+	},
+	"devDependencies": {
+		"antlr4ts-cli": "^0.5.0-alpha.3"
+	}
 }

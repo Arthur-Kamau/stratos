@@ -16,6 +16,7 @@ import {
 	CompletionItemKind,
 	TextDocumentPositionParams
 } from 'vscode-languageserver';
+import StratosLanguage from './stratos';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -117,13 +118,15 @@ documents.onDidChangeContent(change => {
 	validateTextDocument(change.document);
 });
 
-var request = require('request');
+// var request = require('request');
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	// In this simple example we get the settings for every validate run. 
 	let settings = await getDocumentSettings(textDocument.uri);
 	// The validator creates diagnostics for all uppercase words length 2 and more 
 	let diagnostics: Diagnostic[] = [];
 	console.log("+=======>>> data");
+	var st =new StratosLanguage();
+	st.check(textDocument.getText());
 	// request.post({ url: 'http://localhost:3000/parse', body: textDocument.getText() }, function optionalCallback(err, httpResponse, body) {
 	// 	try {
 	// 		let messages = JSON.parse(body).errors;

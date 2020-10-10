@@ -20,16 +20,17 @@ import {
 	// WorkspaceFolder
 } from 'vscode-languageserver';
 
-import { FileUtils }  from './util/file_util';
-import {LanguageLexer } from './token/lexer';
+// import { FileUtils }  from './util/file_util';
+// import {LanguageLexer } from './token/lexer';
 import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
-import {NodeType} from "./model/node_type";
-import { LanguageSynthesis } from './token/synthesis';
-import { LanguageParser } from './token/parser';
-import { LanguageToken } from './model/language_token';
-import { LanguageNode } from './model/language_node';
+import StratosLanguage from './test/stratos';
+// import {NodeType} from "./model/node_type";
+// import { LanguageSynthesis } from './token/synthesis';
+// import { LanguageParser } from './token/parser';
+// import { LanguageToken } from './model/language_token';
+// import { LanguageNode } from './model/language_node';
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -157,18 +158,23 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	connection.console.log('Uri  ' + textDocument.uri);
 	
 	var diagnostics : Diagnostic [] = [];
-	let text = textDocument.getText();
-	var fileNodes: LanguageNode[] = new LanguageLexer().getFileNode(text);
-	console.log("nodes "+ JSON.stringify(fileNodes))
-    var fileTokensAndErrors : [LanguageToken [] , Diagnostic []] = new LanguageParser().createTokens(fileNodes  );
+	
+	console.log("+=======>>> data");
+	var st =new StratosLanguage();
+	st.check(textDocument.getText());
+
+	// let text = textDocument.getText();
+	// var fileNodes: LanguageNode[] = new LanguageLexer().getFileNode(text);
+	// console.log("nodes "+ JSON.stringify(fileNodes))
+    // var fileTokensAndErrors : [LanguageToken [] , Diagnostic []] = new LanguageParser().createTokens(fileNodes  );
  
-	console.log("Token "+JSON.stringify(fileTokensAndErrors[0]))
-	var diagnosticsFile : Diagnostic [] = new LanguageSynthesis().langugeRules(fileTokensAndErrors[0] ,textDocument.uri )
+	// console.log("Token "+JSON.stringify(fileTokensAndErrors[0]))
+	// var diagnosticsFile : Diagnostic [] = new LanguageSynthesis().langugeRules(fileTokensAndErrors[0] ,textDocument.uri )
 	
-	console.log("erros "+diagnosticsFile.length)
+	// console.log("erros "+diagnosticsFile.length)
 	
-	diagnostics.push(...fileTokensAndErrors[1]);
-	diagnostics.push(...diagnosticsFile);
+	// diagnostics.push(...fileTokensAndErrors[1]);
+	// diagnostics.push(...diagnosticsFile);
 	
 
 	// 	if (hasDiagnosticRelatedInformationCapability) {
