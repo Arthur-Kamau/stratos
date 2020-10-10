@@ -25,7 +25,7 @@ import {
 import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
-import StratosLanguage from './test/stratos';
+// import StratosLanguage from './test/stratos';
 // import {NodeType} from "./model/node_type";
 // import { LanguageSynthesis } from './token/synthesis';
 // import { LanguageParser } from './token/parser';
@@ -160,8 +160,8 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	var diagnostics : Diagnostic [] = [];
 	
 	console.log("+=======>>> data");
-	var st =new StratosLanguage();
-	st.check(textDocument.getText());
+	// var st =new StratosLanguage();
+	// st.check(textDocument.getText());
 
 	// let text = textDocument.getText();
 	// var fileNodes: LanguageNode[] = new LanguageLexer().getFileNode(text);
