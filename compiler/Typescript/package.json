@@ -9,6 +9,10 @@
     "type": "git",
     "url": "https://github.com/Arthur-Kamau/stratos"
   },
+  "scripts": {
+    "tsc": "tsc",
+    "run": "ts-node stratos.ts"
+  },
   "publisher": "Arthur-Kamau",
   "categories": [],
   "dependencies": {},
