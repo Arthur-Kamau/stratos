@@ -1,4 +1,5 @@
-package main;
+package main ;
+
 
 // function without parameters
 function hello(){

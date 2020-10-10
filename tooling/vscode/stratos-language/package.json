@@ -4,47 +4,125 @@
     "description": "stratos language support.",
     "icon": "icons/images.jpg",
     "publisher": "arthurKamau",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "engines": {
         "vscode": "^1.45.0"
+    },
+    "author": {
+        "name": "Arthur-Kamau"
     },
     "categories": [
         "Programming Languages",
         "Snippets"
     ],
+    "activationEvents": [
+        "onLanguage:stratos",
+        "onCommand:extension.createProject",
+        "onCommand:extension.runApplication"
+    ],
+    "main": "./client/out/extension",
     "contributes": {
-        "languages": [{
-            "id": "stratos",
-            "aliases": ["Stratos", "stratos"],
-            "extensions": [".sts",".st",".srt"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "stratos",
-            "scopeName": "source.stratos",
-            "path": "./syntaxes/stratos.tmLanguage.json"
-        }],
-        
+        "languages": [
+            {
+                "id": "stratos",
+                "aliases": [
+                    "Stratos",
+                    "stratos"
+                ],
+                "extensions": [
+                    ".sts",
+                    ".st",
+                    ".srt"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "commands": [
+            {
+                "command": "extension.createProject",
+                "title": "ST: Create Stratos Project"
+            },
+            {
+                "command": "extension.runApplication",
+                "title": "ST: Run Application"
+            },
+            {
+                "command": "extension.fetchDependancies",
+                "title": "ST: Fetch Dependancies"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "stratos",
+                "scopeName": "source.stratos",
+                "path": "./syntaxes/stratos.tmLanguage.json"
+            }
+        ],
         "snippets": [
             {
                 "language": "stratos",
                 "path": "./snippets/stratos.json"
             }
-        ]
-    }, 
-	"keywords": [
-		"Stratos",
-		"Stratos-language",
-		"vscode",
-		"vscode-extension",
-		"vscode-language"
-	],
-	"bugs": {
-		"url": "https://github.com:Arthur-Kamau/stratos/issues"
-	},
-	"homepage": "https://github.com:Arthur-Kamau/stratos#readme",
+        ],
+        "configuration": {
+            "type": "object",
+            "title": "Example configuration",
+            "properties": {
+                "languageServerExample.maxNumberOfProblems": {
+                    "scope": "resource",
+                    "type": "number",
+                    "default": 100,
+                    "description": "Controls the maximum number of problems produced by the server."
+                },
+                "languageServerExample.trace.server": {
+                    "scope": "window",
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "messages",
+                        "verbose"
+                    ],
+                    "default": "off",
+                    "description": "Traces the communication between VS Code and the language server."
+                }
+            }
+        }
+    },
+    "keywords": [
+        "Stratos",
+        "Stratos-language",
+        "vscode",
+        "vscode-extension",
+        "vscode-language"
+    ],
+    "bugs": {
+        "url": "https://github.com:Arthur-Kamau/stratos/issues"
+    },
+    "homepage": "https://github.com:Arthur-Kamau/stratos#readme",
     "repository": {
-		"type": "git",
-		"url": "git+https://github.com:Arthur-Kamau/stratos.git"
-	}
+        "type": "git",
+        "url": "git+https://github.com:Arthur-Kamau/stratos.git"
+    },
+    "scripts": {
+        "vscode:prepublish": "cd client && npm run update-vscode && cd .. && npm run compile",
+        "compile": "tsc -b",
+        "compile-old": "tsc -p ./",
+        "lint": "eslint . --ext .ts,.tsx",
+        "watch": "tsc -b -w",
+        "watch-old": "tsc -watch -p ./",
+        "postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+        "test": "sh ./scripts/e2e.sh"
+    },
+    "dependencies": {
+        "request": "^2.88.0",
+        "which": "^1.3.1"
+    },
+    "devDependencies": {
+        "@types/node": "^12.12.0",
+        "@types/vscode": "^1.34.0",
+        "@typescript-eslint/eslint-plugin": "^3.0.2",
+        "@typescript-eslint/parser": "^3.0.2",
+        "eslint": "^7.1.0",
+        "typescript": "^4.0.2"
+    }
 }

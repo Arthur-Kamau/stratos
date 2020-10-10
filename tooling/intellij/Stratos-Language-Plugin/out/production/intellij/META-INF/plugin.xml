@@ -1,0 +1,81 @@
+<!-- Copyright 2000-2020 JetBrains s.r.o. and other contributors. Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file. -->
+
+<idea-plugin>
+
+  <!-- Unique id for this plugin. Must stay constant for the life of the plugin. -->
+  <id>stratos-lang</id>
+  <version>0.2.0</version>
+
+  <!-- Text to display as name on Preferences/Settings | Plugin page -->
+  <name>Stratos Language</name>
+
+  <idea-version since-build="193.0"/>
+
+  <!-- Product and plugin compatibility requirements -->
+  <depends>com.intellij.modules.platform</depends>
+  <depends>com.intellij.modules.java</depends>
+
+  <!-- Text to display as description on Preferences/Settings | Plugin page -->
+  <description>
+    <![CDATA[
+     <i>Stratos language</i>
+     Plugin for stratos Language development.It include.
+     1. Syntax highlighting.
+     2. Create Project.
+     3. Create File.
+     4. Run configuration.
+      <a href="https://arthur-kamau.github.io/stratos/">Stratos
+      Language Tutorial</a> for more information.
+    ]]>
+  </description>
+
+  <change-notes>
+    <![CDATA[
+      <ul>
+        <li><b>0.0.2</b> Bug Fixes and Run configuration.</li>
+        <li><b>0.0.1</b> Initial Release.</li>
+      </ul>
+    ]]>
+  </change-notes>
+
+  <!-- Text to display as company information on Preferences/Settings | Plugin page -->
+  <vendor email="kamaukenn11@gmail.com.com" url="https://github.com/Arthur-Kamau/stratos">Stratos</vendor>
+
+
+  <extensions defaultExtensionNs="com.intellij">
+    <fileType name="Stratos File" implementationClass="org.stratos.sdk.language.file.StratosFileType" fieldName="INSTANCE"
+              language="stratos-lang" />
+    <!--
+      Only required for versions of the IntelliJ Platform prior to v2019.2.
+      Use 'com.intellij.fileTypeFactory' extension point INSTEAD of above 'com.intellij.fileType'.
+      <fileTypeFactory implementation="org.intellij.sdk.language.StratosFileTypeFactory"/>
+    -->
+    <lang.parserDefinition language="stratos-lang" implementationClass="org.stratos.sdk.language.StratosParserDefinition"/>
+    <lang.syntaxHighlighterFactory language="stratos-lang"
+                                   implementationClass="org.stratos.sdk.highlighter.StratosSyntaxHighlighterFactory"/>
+    <colorSettingsPage implementation="org.stratos.sdk.highlighter.StratosColorSettingsPage"/>
+   
+
+    <lang.psiStructureViewFactory language="stratos-lang"
+                                  implementationClass="org.stratos.sdk.project.StratosStructureViewFactory"/>
+    <codeStyleSettingsProvider implementation="org.stratos.sdk.codeStyle.SimpleCodeStyleSettingsProvider"/>
+    <langCodeStyleSettingsProvider implementation="org.stratos.sdk.codeStyle.StratosLanguageCodeStyleSettingsProvider"/>
+    <lang.commenter language="stratos-lang" implementationClass="org.stratos.sdk.language.StratosCommenter"/>
+ 
+  </extensions>
+
+ <projectListeners>
+    <listener class="org.stratos.sdk.listener.StratosProjectManagerListener"
+              topic="com.intellij.openapi.project.ProjectManagerListener"/>
+  </projectListeners>
+
+<actions>
+    <!-- Add your actions here -->
+
+    <action id="org.Stratos.NewFile" class="org.stratos.sdk.action.NewStratosFileAction"
+            text="New Stratos File" description="Create A New Stratos file">
+      <add-to-group group-id="NewGroup" anchor="before" relative-to-action="NewFromTemplate"/>
+    </action>
+  </actions>
+
+</idea-plugin>

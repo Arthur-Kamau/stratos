@@ -23,17 +23,14 @@ Welcome to Stratos Documentation's documentation!
 
       however passed in compiler arguments (.conf file) overide the file extension type inference. 
 
-   *  Design.
+   * Design.
       This contains the disgn notes when building or making decision involving the language, standard libraries or compiler.
-
-
       <br>
-      <br>
-
-   *  Tooling
+      
+   * Tooling
       Tooling there will be a cli tool called `toolman` 
-      (inspired by go in golang and cargo in rust). To get packages , test , build and run the language
-      for more info check `/stratos/tooling/toolman/README.md`
+       (inspired by go in golang and cargo in rust). To get packages , test , build and run the language
+       for more info check `/stratos/tooling/toolman/README.md`
 
    * Projects directory
       Projects can be located anywhere.
@@ -59,9 +56,10 @@ Welcome to Stratos Documentation's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   folder_structure
    installing
    tooling
-   folder_structure
+   syntax
    contribute
    help
    license

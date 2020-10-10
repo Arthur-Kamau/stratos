@@ -1,0 +1,42 @@
+Syntax 
+===========
+
+    *   Comments
+        ===========
+
+    *   Types
+        ==========
+
+    *   Functions
+        ===========
+
+    *   classes
+        =========
+
+    *   package 
+        ==========
+
+    *   structs
+        ==========
+
+    *   Enums
+        =======
+
+    *   Variables
+        =============
+
+        for an example check `/sample/variables` project
+
+    *   Conditions
+        ============
+        1. `If`, `Else` Conditions
+        
+        2. `When` Condition
+
+    *   loops
+        =========
+        1. ``
+
+    
+
+ 

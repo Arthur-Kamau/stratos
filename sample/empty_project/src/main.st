@@ -1,4 +1,4 @@
-use "system";
+package "system";
 import "";
 part "";
 

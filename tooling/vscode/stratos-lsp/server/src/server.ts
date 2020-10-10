@@ -15,13 +15,22 @@ import {
 	TextDocumentPositionParams,
 	TextDocumentSyncKind,
 	InitializeResult
+
 	// WorkspaceEdit,
-    // WorkspaceFolder
+	// WorkspaceFolder
 } from 'vscode-languageserver';
 
+// import { FileUtils }  from './util/file_util';
+// import {LanguageLexer } from './token/lexer';
 import {
 	TextDocument
 } from 'vscode-languageserver-textdocument';
+// import StratosLanguage from './test/stratos';
+// import {NodeType} from "./model/node_type";
+// import { LanguageSynthesis } from './token/synthesis';
+// import { LanguageParser } from './token/parser';
+// import { LanguageToken } from './model/language_token';
+// import { LanguageNode } from './model/language_node';
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -67,6 +76,8 @@ connection.onInitialize((params: InitializeParams) => {
 			}
 		};
 	}
+
+	connection.console.log('Stratos Language Server initialize  ');
 	return result;
 });
 
@@ -77,11 +88,11 @@ connection.onInitialized(() => {
 	}
 	if (hasWorkspaceFolderCapability) {
 		connection.workspace.onDidChangeWorkspaceFolders(_event => {
-			
-			
+
+
 			connection.console.log('Workspace folder change event received.');
 		});
-	
+
 	}
 });
 
@@ -105,7 +116,7 @@ connection.onDidChangeConfiguration(change => {
 		documentSettings.clear();
 	} else {
 		globalSettings = <StratosLspSettings>(
-			(change.settings.languageServerExample || defaultSettings)
+			(change.settings.stratosLanguageServer || defaultSettings)
 		);
 	}
 
@@ -121,7 +132,7 @@ function getDocumentSettings(resource: string): Thenable<StratosLspSettings> {
 	if (!result) {
 		result = connection.workspace.getConfiguration({
 			scopeUri: resource,
-			section: 'languageServerExample'
+			section: 'stratosLanguageServer'
 		});
 		documentSettings.set(resource, result);
 	}
@@ -130,6 +141,7 @@ function getDocumentSettings(resource: string): Thenable<StratosLspSettings> {
 
 // Only keep settings for open documents
 documents.onDidClose(e => {
+	connection.console.log('Close Uri  ' + e.document.uri);
 	documentSettings.delete(e.document.uri);
 });
 
@@ -141,46 +153,50 @@ documents.onDidChangeContent(change => {
 
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	// In this simple example we get the settings for every validate run.
-	let settings = await getDocumentSettings(textDocument.uri);
+	//let settings = await getDocumentSettings(textDocument.uri);
 
-	// The validator creates diagnostics for all uppercase words length 2 and more
-	let text = textDocument.getText();
-	let pattern = /\b[A-Z]{2,}\b/g;
-	let m: RegExpExecArray | null;
+	connection.console.log('Uri  ' + textDocument.uri);
+	
+	var diagnostics : Diagnostic [] = [];
+	
+	console.log("+=======>>> data");
+	// var st =new StratosLanguage();
+	// st.check(textDocument.getText());
 
-	let problems = 0;
-	let diagnostics: Diagnostic[] = [];
-	while ((m = pattern.exec(text)) && problems < settings.maxNumberOfProblems) {
-		problems++;
-		let diagnostic: Diagnostic = {
-			severity: DiagnosticSeverity.Warning,
-			range: {
-				start: textDocument.positionAt(m.index),
-				end: textDocument.positionAt(m.index + m[0].length)
-			},
-			message: `${m[0]} is all uppercase.`,
-			source: 'ex'
-		};
-		if (hasDiagnosticRelatedInformationCapability) {
-			diagnostic.relatedInformation = [
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range)
-					},
-					message: 'Spelling matters'
-				},
-				{
-					location: {
-						uri: textDocument.uri,
-						range: Object.assign({}, diagnostic.range)
-					},
-					message: 'Particularly for names'
-				}
-			];
-		}
-		diagnostics.push(diagnostic);
-	}
+	// let text = textDocument.getText();
+	// var fileNodes: LanguageNode[] = new LanguageLexer().getFileNode(text);
+	// console.log("nodes "+ JSON.stringify(fileNodes))
+    // var fileTokensAndErrors : [LanguageToken [] , Diagnostic []] = new LanguageParser().createTokens(fileNodes  );
+ 
+	// console.log("Token "+JSON.stringify(fileTokensAndErrors[0]))
+	// var diagnosticsFile : Diagnostic [] = new LanguageSynthesis().langugeRules(fileTokensAndErrors[0] ,textDocument.uri )
+	
+	// console.log("erros "+diagnosticsFile.length)
+	
+	// diagnostics.push(...fileTokensAndErrors[1]);
+	// diagnostics.push(...diagnosticsFile);
+	
+
+	// 	if (hasDiagnosticRelatedInformationCapability) {
+	// 		diagnostic.relatedInformation = [
+	// 			{
+	// 				location: {
+	// 					uri: textDocument.uri,
+	// 					range: Object.assign({}, diagnostic.range)
+	// 				},
+	// 				message: 'Spelling matters'
+	// 			},
+	// 			{
+	// 				location: {
+	// 					uri: textDocument.uri,
+	// 					range: Object.assign({}, diagnostic.range)
+	// 				},
+	// 				message: 'Particularly for names'
+	// 			}
+	// 		];
+	// 	}
+	// 	diagnostics.push(diagnostic);
+	// }
 
 	// Send the computed diagnostics to VSCode.
 	connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });

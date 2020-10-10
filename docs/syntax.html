@@ -1,0 +1,302 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Syntax &mdash; Stratos Documentation 0.0.1 documentation</title>
+  
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+
+  
+  
+  
+  
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="copyright" title="Copyright" href="copyright.html" />
+    <link rel="next" title="Contributing" href="contribute.html" />
+    <link rel="prev" title="Tooling" href="tooling.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home" alt="Documentation Home"> Stratos Documentation
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="folder_structure.html">Table of contents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installing.html">Installing Stratos Compiler</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tooling.html">Tooling</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Syntax</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#a-comments">A. comments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#b-types">B. Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#c-functions">C. Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#d-classes">D. classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#e-package">E. package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#f-structs">F. structs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#g-enums">G. Enums</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#h-variables">H. Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#i-conditions">I. Conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#j-loops">J loops</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contribute.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="help.html">Help</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">Licence</a></li>
+<li class="toctree-l1"><a class="reference internal" href="disclaimer.html">Disclaimer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="copyright.html">Copyright</a></li>
+<li class="toctree-l1"><a class="reference internal" href="extra.html">Extra.</a></li>
+</ul>
+
+            
+          
+        </div>
+        
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Stratos Documentation</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+        
+      <li>Syntax</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/syntax.md.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="syntax">
+<h1>Syntax<a class="headerlink" href="#syntax" title="Permalink to this headline">¶</a></h1>
+<p>Stratos Syntax is closely related to Kotlin/C# and Java.</p>
+<div class="section" id="a-comments">
+<h2>A. comments<a class="headerlink" href="#a-comments" title="Permalink to this headline">¶</a></h2>
+<p>comments could be:</p>
+<ol class="simple">
+<li><p>Multi line comment.<br/>
+This encapsulate everthing between the start of the comment and thge end of the comment ie <code class="docutils literal notranslate"><span class="pre">/*</span></code> start of the comment and <code class="docutils literal notranslate"><span class="pre">*/</span></code> end of the comment.</p></li>
+<li><p>Single line comments.<br/>
+Single line comment start with <code class="docutils literal notranslate"><span class="pre">//</span></code> upto the line</p></li>
+</ol>
+</div>
+<div class="section" id="b-types">
+<h2>B. Types<a class="headerlink" href="#b-types" title="Permalink to this headline">¶</a></h2>
+<p>the language basic data types are;</p>
+<ol class="simple">
+<li><p>strings.</p></li>
+<li><p>characters</p></li>
+<li><p>double</p></li>
+<li><p>integer/ number</p></li>
+</ol>
+</div>
+<div class="section" id="c-functions">
+<h2>C. Functions<a class="headerlink" href="#c-functions" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="d-classes">
+<h2>D. classes<a class="headerlink" href="#d-classes" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="e-package">
+<h2>E. package<a class="headerlink" href="#e-package" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="f-structs">
+<h2>F. structs<a class="headerlink" href="#f-structs" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="g-enums">
+<h2>G. Enums<a class="headerlink" href="#g-enums" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="h-variables">
+<h2>H. Variables<a class="headerlink" href="#h-variables" title="Permalink to this headline">¶</a></h2>
+<p>for an example check <code class="docutils literal notranslate"><span class="pre">/sample/variables</span></code> project</p>
+</div>
+<div class="section" id="i-conditions">
+<h2>I. Conditions<a class="headerlink" href="#i-conditions" title="Permalink to this headline">¶</a></h2>
+<ol class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">If</span></code>, <code class="docutils literal notranslate"><span class="pre">Else</span></code> Conditions</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">When</span></code> Condition</p></li>
+</ol>
+</div>
+<div class="section" id="j-loops">
+<h2>J loops<a class="headerlink" href="#j-loops" title="Permalink to this headline">¶</a></h2>
+<p>There are two main types of loops</p>
+<ol class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">for</span></code> loop(commonly called foreach loop)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">loop</span></code></p></li>
+</ol>
+<p>a for loop is used to loop within ranges example<br>
+<code class="docutils literal notranslate"><span class="pre">for(x</span> <span class="pre">in</span> <span class="pre">a..z){</span></code><br><code class="docutils literal notranslate"> </code>  <code class="docutils literal notranslate"><span class="pre">print(x);</span></code><br>
+  <code class="docutils literal notranslate"><span class="pre">//</span> <span class="pre">prints</span> <span class="pre">a</span> <span class="pre">,</span> <span class="pre">b</span> <span class="pre">,c</span> <span class="pre">to</span> <span class="pre">z</span> </code><br>
+<code class="docutils literal notranslate"><span class="pre">}</span></code>
+<br> or <br>
+<code class="docutils literal notranslate"><span class="pre">for(x</span> <span class="pre">in</span> <span class="pre">1..100){</span></code><br><code class="docutils literal notranslate"> </code>  <code class="docutils literal notranslate"><span class="pre">print(x);</span></code><br><code class="docutils literal notranslate"> </code>  <code class="docutils literal notranslate"><span class="pre">//</span> <span class="pre">prints</span> <span class="pre">1</span> <span class="pre">to</span> <span class="pre">100</span> </code><br><code class="docutils literal notranslate"> <span class="pre">}</span></code></p>
+<p>a loop without paramters equates to a while true loop ie <code class="docutils literal notranslate"><span class="pre">loop{</span> <span class="pre">print(&quot;hello&quot;)}</span></code>  will print hello forever.</p>
+<p>looping through a list is eassy using loop.Using the keyword <code class="docutils literal notranslate"><span class="pre">it</span></code> to get the current index and the current value
+example
+<code class="docutils literal notranslate"> <span class="pre">var</span> <span class="pre">mList</span> <span class="pre">=</span> <span class="pre">[1,2,3,4]</span></code><br><code class="docutils literal notranslate"> <span class="pre">loop</span> <span class="pre">mList{</span></code><br><code class="docutils literal notranslate"> </code>  <code class="docutils literal notranslate"><span class="pre">val</span>&#160; <span class="pre">value</span> <span class="pre">=it.value</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; </code><br><code class="docutils literal notranslate"> </code>  <code class="docutils literal notranslate"><span class="pre">val</span>&#160; <span class="pre">index</span> <span class="pre">=it.index</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; </code><br><code class="docutils literal notranslate"> </code>  <code class="docutils literal notranslate"><span class="pre">print</span> <span class="pre">(&quot;</span> <span class="pre">at</span> <span class="pre">index</span> <span class="pre">$index</span> <span class="pre">the</span> <span class="pre">value</span> <span class="pre">is</span> <span class="pre">$value</span> <span class="pre">&quot;)</span>&#160;&#160;&#160;&#160; <span class="pre">;</span>&#160; </code><br><code class="docutils literal notranslate"> <span class="pre">}</span></code></p>
+<p>for an example check <code class="docutils literal notranslate"><span class="pre">/sample/loops</span></code> project</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="contribute.html" class="btn btn-neutral float-right" title="Contributing" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="tooling.html" class="btn btn-neutral float-left" title="Tooling" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        
+        
+        &copy; <a href="copyright.html">Copyright</a> 2020, Arthur-Kamau
+
+    </p>
+  </div>
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

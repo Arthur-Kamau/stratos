@@ -1,4 +1,5 @@
-package main;
+package test;
+
 
 
 struct User {
