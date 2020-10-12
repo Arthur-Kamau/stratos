@@ -1,0 +1,1 @@
+{"version":3,"file":"language_token.js","sourceRoot":"","sources":["../../src/model/language_token.ts"],"names":[],"mappings":";;;AAEA,MAAa,aAAa;IAIzB,YAAY,QAAyB,EAAE,UAA0B;QAChE,IAAI,CAAC,QAAQ,GAAG,QAAQ,CAAC;QACzB,IAAI,CAAC,UAAU,GAAG,UAAU,CAAC;IAE9B,CAAC;CACD;AATD,sCASC"}
