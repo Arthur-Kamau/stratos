@@ -23,3 +23,7 @@ generated/*/**
 out/
 */out/**
 out/*/**
+#intellij gen
+gen/
+*/gen/**
+gen/*/**
