@@ -1,15 +1,16 @@
 package com.araizen.com;
 
-import com.araizen.com.lexer.Scanner;
-import com.araizen.com.lexer.Token;
-import com.araizen.com.util.print.Log;
+import com.araizen.com.Config.AppConfigFile;
+import com.araizen.com.model.ProjectConfigOptions;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
+import java.util.Properties;
 
 public class Main {
 
@@ -17,46 +18,74 @@ public class Main {
         // write your code here
         System.out.println("Stratos compiler");
 
-         String path=   System.getProperty("user.dir");
-        String f = path+"/example/basic_example/src/main.st";
+        String path = System.getProperty("user.dir");
+        String f = path + "/example/basic_example";
 
-        runFile(f);
-//        if (args.length > 1) {
-//            System.out.println("more than one arg Error");
-//            System.exit(64);
-//        } else if (args.length == 1) {
-//            System.out.println("One Command Line Arg fount than one arg Error");
-//            // runFile(args[0]);
-//            String f = "/home/arthur-kamau/Development/Stratos/compiler/example/basic_example/src/main.st";
-//            runFile(f);
-//        } else {
-//            runPrompt();
-//        }
-    }
+        File file = new File(path);
+        if (file.isDirectory()) {
+            try {
+                runProject(path);
+            } catch (Exception ex) {
+                System.out.println("File error \n Cause " + ex.getCause() + "\n Message " + ex.getMessage() + " \n Stack trace" + ex.getStackTrace());
+                ex.printStackTrace();
+            }
+        } else {
 
-    private static void runFile(String path) throws IOException {
+            try {
+                runFile(f);
+            } catch (Exception ex) {
+                System.out.println("File error \n Cause " + ex.getCause() + "\n Message " + ex.getMessage() + " \n Stack trace" + ex.getStackTrace());
+                ex.printStackTrace();
+            }
+        }
 
-        byte[] byt = Files.readAllBytes(Paths.get(path));
-        run(new String(byt, Charset.defaultCharset()));
-    }
-
-    private static void run(String src) {
-        Scanner scn = new Scanner(src);
-
-        List<Token> tokens = scn.scanTokens();
-        /* Scanning run < Parsing Expressions print-ast
-
-            // For now, just print the tokens.
-
-        */
-//        for (Token token : tokens) {
-//            Log.process(token.toString());
-//        } For now, just print the tokens.
-//
-        // Parser parser = new Parser(tokens);
-    }
-
-    private static void runPrompt() {
 
     }
+
+    private static void runFile(String path) throws Exception {
+
+
+    }
+
+    private static void runProject(String path) throws Exception {
+
+        File file = new File(path);
+        boolean hasConfFile = false;
+        boolean hasSrcFolder = false;
+        if (file.exists()) {
+            // check if the run folder has a conf file
+            for (final File fileEntry : Objects.requireNonNull(file.listFiles())) {
+                if (fileEntry.isDirectory()) {
+
+                    if (fileEntry.getName().equals("src")) {
+                        hasSrcFolder = true;
+                    }
+                } else {
+
+                    if (fileEntry.getName().equals("app.conf")) {
+
+                        hasConfFile = true;
+                    }
+
+                }
+            }
+
+            if (hasConfFile && hasSrcFolder) {
+
+                ProjectConfigOptions conf = new AppConfigFile().parse(path);
+
+
+            } else {
+                if (!hasConfFile) {
+                    System.out.println("app.conf file not found in " + path);
+                } else {
+                    System.out.println("src folder not found");
+                }
+            }
+        } else {
+            System.out.println("Project does not exist");
+        }
+    }
+
+
 }
