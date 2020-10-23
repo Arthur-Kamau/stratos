@@ -1,0 +1,44 @@
+{
+    "name": "stratos-laguage",
+    "displayName": "stratos-laguage",
+    "description": "stratos language support",
+    "icon": "icons/images.jpg",
+    "version": "0.0.1",
+    "bugs": {
+        "url": "https://github.com:Arthur-Kamau/stratos/issues"
+    },
+    "author": {
+        "name": "Arthur-Kamau"
+    },
+    "categories": [
+        "Programming Languages",
+        "Snippets"
+    ],
+    "homepage": "https://github.com:Arthur-Kamau/stratos#readme",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com:Arthur-Kamau/stratos.git"
+    },
+    "engines": {
+        "vscode": "^1.50.0"
+    },
+    "contributes": {
+        "languages": [{
+            "id": "stratos",
+            "aliases": ["Stratos", "stratos"],
+            "extensions": ["st"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "stratos",
+            "scopeName": "source.stratos",
+            "path": "./syntaxes/stratos.tmLanguage.json"
+        }],
+        "snippets": [
+            {
+                "language": "stratos",
+                "path": "./snippets/stratos.json"
+            }
+        ]
+    }
+}
