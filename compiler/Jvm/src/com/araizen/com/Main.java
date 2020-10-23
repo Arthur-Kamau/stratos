@@ -1,6 +1,8 @@
 package com.araizen.com;
 
 import com.araizen.com.Config.AppConfigFile;
+import com.araizen.com.Lexer.Lexer;
+import com.araizen.com.model.Node;
 import com.araizen.com.model.ProjectConfigOptions;
 import com.araizen.com.util.StringUtil.StringUtil;
 
@@ -19,8 +21,6 @@ public class Main {
         // write your code here
         System.out.println("Stratos compiler");
 
-        System.out.println(new StringUtil().isAlphaNumeric("100101"));;
-        System.out.println(new StringUtil().isAlphaNumeric("1#%"));;
 
         String path = System.getProperty("user.dir");
         String f = path + "/example/basic_example";
@@ -78,6 +78,11 @@ public class Main {
 
                 ProjectConfigOptions conf = new AppConfigFile().parse(path);
 
+                List<Node> nodesList = new Lexer().generateNodes(path+"/src/main.st");
+
+                for (int i = 0; i < nodesList.size(); i++) {
+                    System.out.println(" Token "+ nodesList.get(i).toString());
+                }
 
             } else {
                 if (!hasConfFile) {
