@@ -1,6 +1,7 @@
 package com.araizen.com.Parser;
 
 import com.araizen.com.model.*;
+import com.araizen.com.util.node.NodeUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,16 +40,18 @@ public class Parser {
                 nodeGroupItem.clear();
             }
         } else if (n.getType() == NodeType.CurlyBracketOpenNode) {
-            System.out.println("\n Curly \n ");
-            int closingNode = findClosingCurlyBrace(nodes.subList(current, nodes.size()));
+            System.out.println("\n Curly  token tree unhandled \n ");
+            int stepsToClosingCurlyNode = new NodeUtil().findClosingCurlyBrace(nodes.subList(nodes.indexOf(n), nodes.size()));
+            int closingNode = stepsToClosingCurlyNode +current;
+            System.out.println("steps "+stepsToClosingCurlyNode+" closing node "+closingNode + " current " + current);
             if (0 == closingNode) {
                 diagnostics.add(new Diagnostics("Unable to find closing Curly brace", SeverityLevel.Critical, n.getNodeLineStart(), n.getNodeLineEnd(), n.getNodeStart(), getLastNode().getNodeEnd()));
             } else {
-                List<Node> subListNodes = nodes.subList(current, closingNode);
-                for (Node nx : subListNodes
-                ) {
-                    System.out.println("item " + nx);
+
+                for (int i = 0; i <stepsToClosingCurlyNode ; i++) {
+                    nodeGroupItem.add(advance());
                 }
+
             }
 
         } else {
@@ -57,17 +60,20 @@ public class Parser {
             while (currentNode().getType() != NodeType.SemiColonNode && currentNode().getType() != NodeType.NewLineNode && currentNode().getType() != NodeType.EndOfFileNode) {
                 Node n2 = advance();
                 if (n2.getType() == NodeType.CurlyBracketOpenNode) {
-                    System.out.println("\n Curly \n ");
-                    int closingNode = findClosingCurlyBrace(nodes.subList(current, nodes.size()));
+
+                    int stepsToClosingCurlyNode = new NodeUtil().findClosingCurlyBrace(nodes.subList(nodes.indexOf(n2), nodes.size()));
+                    int closingNode = stepsToClosingCurlyNode +current;
+                    System.out.println("steps "+stepsToClosingCurlyNode+" closing node "+closingNode + " current " + current);
                     if (0 == closingNode) {
                         diagnostics.add(new Diagnostics("Unable to find closing Curly brace", SeverityLevel.Critical, n.getNodeLineStart(), n.getNodeLineEnd(), n.getNodeStart(), getLastNode().getNodeEnd()));
                     } else {
-                        List<Node> subListNodes = nodes.subList(current, closingNode);
-                        for (Node nx : subListNodes
-                        ) {
-                            System.out.println("item " + nx);
+
+                        for (int i = 0; i <stepsToClosingCurlyNode ; i++) {
+                            nodeGroupItem.add(advance());
                         }
+
                     }
+
                 } else {
                     nodeGroupItem.add(n2);
                 }
@@ -146,43 +152,25 @@ public class Parser {
     }
 
 
-    private int findClosingCurlyBrace(List<Node> nodes) {
-        int closingCurlyBracePosition = 0;
-        int _counter = 1;
-        while (_counter > 0) {
-            Node node = advance();
-            if (node.getType() == NodeType.CurlyBracketOpenNode) {
-                _counter += 1;
-            } else if (node.getType() == NodeType.CurlyBracketCloseNode) {
-                _counter -= 1;
-            } else if (node.getType() == NodeType.EndOfFileNode) {
-                System.out.println("Unexpected end of file node");
-                break;
-            } else {
-                System.out.println("ignore node " + node.toString());
-            }
-        }
-        return closingCurlyBracePosition;
-    }
 
-    private int findClosingCurlyBrace() {
-        int closingCurlyBracePosition = current;
-        int counter = 1;
-        while (counter > 0) {
-            Node node = advance();
-            if (node.getType() == NodeType.CurlyBracketOpenNode) {
-                counter += 1;
-            } else if (node.getType() == NodeType.CurlyBracketCloseNode) {
-                counter -= 1;
-            } else if (node.getType() == NodeType.EndOfFileNode) {
-                System.out.println("Unexpected end of file node");
-                break;
-            } else {
-                System.out.println("ignore node " + node.toString());
-            }
-        }
-        return closingCurlyBracePosition;
-    }
+//    private int findClosingCurlyBrace() {
+//        int closingCurlyBracePosition = current;
+//        int counter = 1;
+//        while (counter > 0) {
+//            Node node = advance();
+//            if (node.getType() == NodeType.CurlyBracketOpenNode) {
+//                counter += 1;
+//            } else if (node.getType() == NodeType.CurlyBracketCloseNode) {
+//                counter -= 1;
+//            } else if (node.getType() == NodeType.EndOfFileNode) {
+//                System.out.println("Unexpected end of file node");
+//                break;
+//            } else {
+//                System.out.println("ignore node " + node.toString());
+//            }
+//        }
+//        return closingCurlyBracePosition;
+//    }
 
     private Node getLastNode() {
         return nodes.get(nodes.size() - 1);

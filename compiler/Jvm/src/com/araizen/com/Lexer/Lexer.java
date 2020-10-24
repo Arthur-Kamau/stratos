@@ -99,7 +99,7 @@ public class Lexer {
                         currentLineCharacter,
                         lineNumber,
                         lineNumber,
-                        NodeType.CurlyBracketOpenNode,
+                        NodeType.CurvedBracketOpenNode,
                         "("
                 ));
                 break;
@@ -109,7 +109,7 @@ public class Lexer {
                         currentLineCharacter,
                         lineNumber,
                         lineNumber,
-                        NodeType.CurlyBracketCloseNode,
+                        NodeType.CurvedBracketCloseNode,
                         ")"
                 ));
                 break;
@@ -151,7 +151,7 @@ public class Lexer {
                         currentLineCharacter,
                         lineNumber,
                         lineNumber,
-                        NodeType.CurvedBracketCloseNode,
+                        NodeType.CurlyBracketCloseNode,
                         "}"
                 ));
                 break;

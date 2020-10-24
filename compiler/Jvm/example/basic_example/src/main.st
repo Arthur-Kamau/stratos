@@ -1,6 +1,12 @@
-package main;
-import man
+fpackage main;
+ import man
 
-function n(){
-  int was;
+class mna{
+   int m
 }
+
+
+
+ function n(){
+   int was;
+ }
