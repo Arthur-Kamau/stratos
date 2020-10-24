@@ -29,6 +29,7 @@ public class Lexer {
         sourceCode = new String(bytes, Charset.defaultCharset());
         while (!isAtEnd()) {
 
+
             scanFileData();
 
         }
@@ -61,6 +62,16 @@ public class Lexer {
                     ));
                 }
 
+                break;
+            case ';':
+                nodesList.add(new Node(
+                        currentLineCharacter,
+                        currentLineCharacter,
+                        lineNumber,
+                        lineNumber,
+                        NodeType.SemiColonNode,
+                        ";"
+                ));
                 break;
             case '(':
                 nodesList.add(new Node(
@@ -152,7 +163,7 @@ public class Lexer {
 
                     String negativeInteger = "";
                     int negativeIntegerLineCharacterStart = currentLineCharacter;
-                    while (peek() != '{' || peek() != '}' || peek() != '[' || peek() != ']' || peek() != '(' || peek() != ')' || peek() != ';' || peek() != '\t' || peek() != '\r' || peek() != '\n' || peek() != ' ') {
+                    while (peek() != '{' && peek() != '}' && peek() != '[' && peek() != ']' && peek() != '(' && peek() != ')' && peek() != ';' && peek() != '\t' && peek() != '\r' && peek() != '\n' && peek() != ' ') {
 
                         negativeInteger += advance();
                     }
@@ -280,10 +291,15 @@ public class Lexer {
                 String alphanumeric = "";
                 int alphaLineCharacterStart = currentLineCharacter;
                 if (isAlpha(c)) {
-                    while (peek() != '{' || peek() != '}' || peek() != '[' || peek() != ']' || peek() != '(' || peek() != ')' || peek() != ';' || peek() != '\t' || peek() != '\r' || peek() != '\n' || peek() != ' ') {
 
-                        alphanumeric += advance();
+                    alphanumeric += c;
+
+                    while (peek() != '{' && peek() != '}' && peek() != '[' && peek() != ']' && peek() != '(' && peek() != ')' && peek() != ';' && peek() != '\t' && peek() != '\r' && peek() != '\n' && peek() != ' ' && peek() != '\0') {
+                        char c2 = advance();
+                        System.out.println("charater "+c2);
+                        alphanumeric += c2;
                     }
+
                     if (new StringUtil().isNumeric(alphanumeric)) {
                         nodesList.add(new Node(
                                 alphaLineCharacterStart,
@@ -303,13 +319,16 @@ public class Lexer {
                                 alphanumeric
                         ));
                     }
+                } else if (c == '\0') {
+                    System.out.println("endline  token " + c);
+                    break;
                 } else if (c == '\n') {
                     currentLineCharacter = 0;
                     lineNumber++;
                 } else if (c == '\r' || c == '\t' || c == ' ') {
                     System.out.println("empty space token");
                 } else {
-
+                    System.out.println("unknown  token " + c);
                 }
 
                 break;
@@ -319,17 +338,27 @@ public class Lexer {
     }
 
     private char advance() {
-        currentLineCharacter++;
-        currentCharacter++;
-        return sourceCode.charAt(currentCharacter - 1);
+        if (isAtEnd()) {
+            return '\0';
+        } else {
+            currentLineCharacter++;
+            currentCharacter++;
+            return sourceCode.charAt(currentCharacter - 1);
+
+        }
     }
 
     private char peek() {
-        return sourceCode.charAt(currentCharacter + 1);
+        if (isAtEnd()) {
+            System.out.println("peek is at end");
+            return '\0';
+        } else {
+            return sourceCode.charAt(currentCharacter );
+        }
     }
 
     private char peekDouble() {
-        return sourceCode.charAt(currentCharacter + 2);
+        return sourceCode.charAt(currentCharacter + 1);
     }
 
     private boolean isAlpha(char c) {
@@ -350,7 +379,10 @@ public class Lexer {
 
 
     private boolean isAtEnd() {
-        return currentCharacter >= sourceCode.length();
+
+        boolean st = currentCharacter >= sourceCode.length();
+        System.out.println("is at end "+currentCharacter + "length "+ sourceCode.length() +  "is at end " +st);
+        return  st;
     }
 
 

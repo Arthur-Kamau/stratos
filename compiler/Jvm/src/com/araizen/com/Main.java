@@ -22,8 +22,8 @@ public class Main {
         System.out.println("Stratos compiler");
 
 
-        String path = System.getProperty("user.dir");
-        String f = path + "/example/basic_example";
+        String projePath = System.getProperty("user.dir");
+        String path = projePath + "/example/basic_example";
 
         File file = new File(path);
         if (file.isDirectory()) {
@@ -36,7 +36,7 @@ public class Main {
         } else {
 
             try {
-                runFile(f);
+                runFile(path);
             } catch (Exception ex) {
                 System.out.println("File error \n Cause " + ex.getCause() + "\n Message " + ex.getMessage() + " \n Stack trace" + ex.getStackTrace());
                 ex.printStackTrace();

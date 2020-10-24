@@ -4,6 +4,7 @@ import com.araizen.com.model.ProjectConfigOptions;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Properties;
 
@@ -19,11 +20,15 @@ public class AppConfigFile {
         try {
             InputStream is = new FileInputStream(filename);
             prop.load(is);
-            List<String> propertNames = (List<String>) prop.propertyNames();
-            propertNames.removeAll(mandatoryFields);
-            if (propertNames.contains("name")) {
-                throw new Exception("Name not exists in config file");
-            }
+            Enumeration<?> propertNames =  prop.propertyNames();
+//            for ( Object v:propertNames
+//                 ) {
+//
+//            }
+//            propertNames.removeAll(mandatoryFields);
+//            if (propertNames.contains("name")) {
+//                throw new Exception("Name not exists in config file");
+//            }
 
         } catch (FileNotFoundException ex) {
             System.out.println("File error \n Cause " + ex.getCause() + "\n Message " + ex.getMessage() + " \n Stack trace" + ex.getStackTrace());

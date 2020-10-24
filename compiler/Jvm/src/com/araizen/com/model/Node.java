@@ -65,4 +65,16 @@ public class Node {
     public void setValue(String value) {
         this.value = value;
     }
+
+    @Override
+    public String toString() {
+        return "Node{" +
+                "nodeStart=" + nodeStart +
+                ", nodeEnd=" + nodeEnd +
+                ", nodeLineStart=" + nodeLineStart +
+                ", nodeLineEnd=" + nodeLineEnd +
+                ", type=" + type +
+                ", value='" + value + '\'' +
+                '}';
+    }
 }
