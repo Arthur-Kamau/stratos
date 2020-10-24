@@ -5,24 +5,19 @@ import java.util.List;
 
 public class Token {
     List<List<Node>> nodesGroup;
-    List<Token> children;
+
 
     @Override
     public String toString() {
         return "Token{" +
                 "nodesGroup=" + nodesGroup +
-                ", children=" + children +
                 '}';
     }
 
-//    public Token() {
-//        this.nodesGroup = new ArrayList<>();
-//        this.children = new ArrayList<>();
-//    }
 
-    public Token(List<List<Node>> nodesGroup, List<Token> children) {
+    public Token(List<List<Node>> nodesGroup) {
         this.nodesGroup = nodesGroup;
-        this.children = children;
+
     }
 
     public List<List<Node>> getnodesGroup() {
@@ -33,11 +28,4 @@ public class Token {
         this.nodesGroup = nodesGroup;
     }
 
-    public List<Token> getChildren() {
-        return children;
-    }
-
-    public void setChildren(List<Token> children) {
-        this.children = children;
-    }
 }

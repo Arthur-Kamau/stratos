@@ -1,7 +1,4 @@
-fpackage main;
- import man
-
-class mna{
+package main;import man class mna{
    int m
 }
 

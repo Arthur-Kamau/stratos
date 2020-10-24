@@ -8,7 +8,6 @@ import java.util.List;
 
 public class Parser {
 
-    List<Token> children = new ArrayList<Token>();
     List<List<Node>> nodeGroup = new ArrayList();
     List<Node> nodes;
 
@@ -25,13 +24,12 @@ public class Parser {
 
 
         return new Token(
-                nodeGroup,
-                children
+                nodeGroup
         );
     }
 
 
-    void createTokenTree(Node n) {
+   private void createTokenTree(Node n) {
 
         List<Node> nodeGroupItem = new ArrayList();
         if (n.getType() == NodeType.SemiColonNode || n.getType() == NodeType.NewLineNode || n.getType() == NodeType.EndOfFileNode) {
@@ -88,42 +86,6 @@ public class Parser {
     }
 
 
-    List<Token> createChildTokens(List<Node> subListNodes) {
-        List<Token> token = new ArrayList<Token>();
-        System.out.println("sub list nodes ");
-
-        for (Node n : subListNodes
-        ) {
-            System.out.println("item " + n);
-        }
-        return token;
-    }
-
-
-//    Token createChildTokens(List<Node> nodeList) {
-//        Token token = new Token();
-//        int _currentItem =0;
-//        for (int i = 0; i < nodeList.size() ; i++) {
-//
-//        }
-//        while (_currentItem > nodeList.size()){
-//            Node n = nodeList.get(_currentItem);
-//            if (n.getType() == NodeType.CurlyBracketOpenNode) {
-
-//            } else {
-//                List<Node> tokenNodes = token.getNodes();
-//                tokenNodes.add(n);
-//                token.setNodes(tokenNodes);
-//            }
-//            _currentItem++;
-//        }
-////        for (int i = 0; i < nodeList.size(); i++) {
-//
-////        }
-//
-//
-//        return token;
-//    }
 
     public List<Diagnostics> getDiagnostics() {
         return diagnostics;
@@ -151,26 +113,6 @@ public class Parser {
         return r;
     }
 
-
-
-//    private int findClosingCurlyBrace() {
-//        int closingCurlyBracePosition = current;
-//        int counter = 1;
-//        while (counter > 0) {
-//            Node node = advance();
-//            if (node.getType() == NodeType.CurlyBracketOpenNode) {
-//                counter += 1;
-//            } else if (node.getType() == NodeType.CurlyBracketCloseNode) {
-//                counter -= 1;
-//            } else if (node.getType() == NodeType.EndOfFileNode) {
-//                System.out.println("Unexpected end of file node");
-//                break;
-//            } else {
-//                System.out.println("ignore node " + node.toString());
-//            }
-//        }
-//        return closingCurlyBracePosition;
-//    }
 
     private Node getLastNode() {
         return nodes.get(nodes.size() - 1);
