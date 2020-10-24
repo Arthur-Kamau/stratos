@@ -58,6 +58,7 @@ NotNodeType,
 NumericNode,
 NegativeNumericNode,
 AlphaNumericNode,
+    EndOfFileNode,
     UnknownNode,
 
 }

@@ -33,6 +33,15 @@ public class Lexer {
             scanFileData();
 
         }
+
+        nodesList.add(new Node(
+                currentLineCharacter,
+                currentLineCharacter,
+                lineNumber,
+                lineNumber,
+                NodeType.EndOfFileNode,
+                "\0"
+        ));
         return nodesList;
     }
 
@@ -71,6 +80,16 @@ public class Lexer {
                         lineNumber,
                         NodeType.SemiColonNode,
                         ";"
+                ));
+                break;
+            case '\n':
+                nodesList.add(new Node(
+                        currentLineCharacter,
+                        currentLineCharacter,
+                        lineNumber,
+                        lineNumber,
+                        NodeType.NewLineNode,
+                        "\\n"
                 ));
                 break;
             case '(':
