@@ -1,5 +1,6 @@
 package com.araizen.com.Lexer;
 
+import com.araizen.com.LanguageData.LanguageData;
 import com.araizen.com.model.Node;
 import com.araizen.com.model.NodeType;
 import com.araizen.com.util.StringUtil.StringUtil;
@@ -140,7 +141,7 @@ public class Lexer {
                         currentLineCharacter,
                         lineNumber,
                         lineNumber,
-                        NodeType.CurvedBracketOpenNode,
+                        NodeType.CurlyBracketOpenNode,
                         "{"
                 ));
                 break;
@@ -315,7 +316,7 @@ public class Lexer {
 
                     while (peek() != '{' && peek() != '}' && peek() != '[' && peek() != ']' && peek() != '(' && peek() != ')' && peek() != ';' && peek() != '\t' && peek() != '\r' && peek() != '\n' && peek() != ' ' && peek() != '\0') {
                         char c2 = advance();
-                        System.out.println("charater "+c2);
+
                         alphanumeric += c2;
                     }
 
@@ -329,25 +330,36 @@ public class Lexer {
                                 alphanumeric
                         ));
                     } else {
-                        nodesList.add(new Node(
-                                alphaLineCharacterStart,
-                                currentLineCharacter,
-                                lineNumber,
-                                lineNumber,
-                                NodeType.AlphaNumericNode,
-                                alphanumeric
-                        ));
+                        LanguageData languageData = new LanguageData();
+
+                            nodesList.add(new Node(
+                                    alphaLineCharacterStart,
+                                    currentLineCharacter,
+                                    lineNumber,
+                                    lineNumber,
+                                    languageData.getKeyWordNodeType(alphanumeric),
+                                    alphanumeric
+                            ));
+
                     }
                 } else if (c == '\0') {
-                    System.out.println("endline  token " + c);
+                    //System.out.println("endline  token " + c);
                     break;
                 } else if (c == '\n') {
                     currentLineCharacter = 0;
                     lineNumber++;
                 } else if (c == '\r' || c == '\t' || c == ' ') {
-                    System.out.println("empty space token");
+                   // System.out.println("empty space token");
                 } else {
-                    System.out.println("unknown  token " + c);
+                   // System.out.println("unknown  token " + c);
+                    nodesList.add(new Node(
+                            alphaLineCharacterStart,
+                            currentLineCharacter,
+                            lineNumber,
+                            lineNumber,
+                            NodeType.UnknownNode,
+                            ""+c
+                    ));
                 }
 
                 break;
@@ -369,7 +381,7 @@ public class Lexer {
 
     private char peek() {
         if (isAtEnd()) {
-            System.out.println("peek is at end");
+
             return '\0';
         } else {
             return sourceCode.charAt(currentCharacter );
@@ -400,7 +412,7 @@ public class Lexer {
     private boolean isAtEnd() {
 
         boolean st = currentCharacter >= sourceCode.length();
-        System.out.println("is at end "+currentCharacter + "length "+ sourceCode.length() +  "is at end " +st);
+        //System.out.println("is at end "+currentCharacter + "length "+ sourceCode.length() +  "is at end " +st);
         return  st;
     }
 

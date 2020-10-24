@@ -2,8 +2,11 @@ package com.araizen.com;
 
 import com.araizen.com.Config.AppConfigFile;
 import com.araizen.com.Lexer.Lexer;
+import com.araizen.com.Parser.Parser;
+import com.araizen.com.model.Diagnostics;
 import com.araizen.com.model.Node;
 import com.araizen.com.model.ProjectConfigOptions;
+import com.araizen.com.model.Token;
 import com.araizen.com.util.StringUtil.StringUtil;
 
 import java.io.*;
@@ -81,8 +84,25 @@ public class Main {
                 List<Node> nodesList = new Lexer().generateNodes(path+"/src/main.st");
 
                 for (int i = 0; i < nodesList.size(); i++) {
-                    System.out.println(" Token "+ nodesList.get(i).toString());
+                    System.out.println(" Node "+ nodesList.get(i).toString());
                 }
+                Parser p = new Parser();
+
+                Token tokenList = p.parse(nodesList);
+                List<Diagnostics>  diagnostics =  p.getDiagnostics();
+
+//                for (int i = 0; i < tokenList.getnodesGroup().size(); i++) {
+//                    System.out.println("  size  "+tokenList.getnodesGroup().size()+"  Root node  "+ tokenList.getnodesGroup().get(i).toString());
+//                }
+//
+//                for (int i = 0; i < tokenList.getChildren().size(); i++) {
+//                    System.out.println(" Root Children  "+ tokenList.getChildren().get(i).toString());
+//                }
+//
+//                for (int i = 0; i < diagnostics.size(); i++) {
+//                    System.out.println(" diagnostics  "+ diagnostics.get(i).toString());
+//                }
+
 
             } else {
                 if (!hasConfFile) {

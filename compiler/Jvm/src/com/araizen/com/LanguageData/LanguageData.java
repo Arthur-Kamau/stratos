@@ -56,7 +56,7 @@ public class LanguageData {
                 return NodeType.ReturnNode;
             case "package":
                 return NodeType.PackageNode;
-            case "imports":
+            case "import":
                 return NodeType.ImportNode;
             case "implements":
                 return NodeType.ImplimentsNode;
