@@ -4,11 +4,9 @@ import com.araizen.com.Analysis.SemanticAnalysis;
 import com.araizen.com.Config.AppConfigFile;
 import com.araizen.com.Lexer.Lexer;
 import com.araizen.com.Parser.Parser;
-import com.araizen.com.model.Diagnostics;
-import com.araizen.com.model.Node;
-import com.araizen.com.model.ProjectConfigOptions;
+import com.araizen.com.Parser.ParseTree;
+import com.araizen.com.model.*;
 import com.araizen.com.model.Statement.Statement;
-import com.araizen.com.model.Token;
 import com.araizen.com.util.StringUtil.StringUtil;
 
 import java.io.*;
@@ -90,19 +88,25 @@ public class Main {
 //                }
 
                 Parser p = new Parser();
+                ParseTree parserTree = new ParseTree();
                 Token tokenList = p.parse(nodesList);
 
 //                for (int i = 0; i < tokenList.getnodesGroup().size(); i++) {
 //                    System.out.println("Token  size  "+tokenList.getnodesGroup().size()+"  Root node  "+ tokenList.getnodesGroup().get(i).toString());
 //                }
+                List<TokenTree> tokenTree = parserTree.parse(tokenList);
 
-                SemanticAnalysis  semanticAnalysis = new SemanticAnalysis();
-                List<Statement> statements = semanticAnalysis.analysis(tokenList);
-
-
-                for (int i = 0; i < statements.size(); i++) {
-                    System.out.println(" statements  "+ statements.get(i).toString());
+                for (int i = 0; i < tokenTree.size(); i++) {
+                    System.out.println("  size  "+tokenTree.size()+" index "+ i +"  Root node  "+ tokenTree.get(i).toString());
                 }
+
+//                SemanticAnalysis  semanticAnalysis = new SemanticAnalysis();
+//                List<Statement> statements = semanticAnalysis.analysis(tokenList);
+//
+//
+//                for (int i = 0; i < statements.size(); i++) {
+//                    System.out.println(" statements  "+ statements.get(i).toString());
+//                }
 
 
             } else {

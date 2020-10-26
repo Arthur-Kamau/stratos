@@ -27,6 +27,9 @@ public class SemanticAnalysis {
         public Statement nodesAnalysis(List<Node> nodes) {
             this.nodes = nodes;
 
+            while (!isAtEnd()){
+
+            }
             return new Statement();
         }
 
@@ -35,11 +38,11 @@ public class SemanticAnalysis {
             return peek().getType() == type;
         }
 
-        private Node consume(NodeType type, String message) {
-            if (check(type)) return advance();
-
+//        private Node consume(NodeType type, String message) {
+//            if (check(type)) return advance();
+//
 //            throw error(peek(), message);
-        }
+//        }
 
         private Node peek() {
             return nodes.get(current);

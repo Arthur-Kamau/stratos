@@ -17,10 +17,12 @@ public class Parser {
     public Token parse(List<Node> nodes) {
         this.nodes = nodes;
         System.out.println("start parsing ");
+
         while (!isAtEnd()) {
             Node n = advance();
             createTokenTree(n);
         }
+
 
 
         return new Token(
@@ -41,7 +43,8 @@ public class Parser {
             System.out.println("\n Curly  token tree unhandled \n ");
             int stepsToClosingCurlyNode = new NodeUtil().findClosingCurlyBrace(nodes.subList(nodes.indexOf(n), nodes.size()));
             int closingNode = stepsToClosingCurlyNode +current;
-            System.out.println("steps "+stepsToClosingCurlyNode+" closing node "+closingNode + " current " + current);
+//            System.out.println("steps "+stepsToClosingCurlyNode+" closing node "+closingNode + " current " + current);
+            nodeGroupItem.add(n);
             if (0 == closingNode) {
                 diagnostics.add(new Diagnostics("Unable to find closing Curly brace", SeverityLevel.Critical, n.getNodeLineStart(), n.getNodeLineEnd(), n.getNodeStart(), getLastNode().getNodeEnd()));
             } else {
@@ -61,7 +64,8 @@ public class Parser {
 
                     int stepsToClosingCurlyNode = new NodeUtil().findClosingCurlyBrace(nodes.subList(nodes.indexOf(n2), nodes.size()));
                     int closingNode = stepsToClosingCurlyNode +current;
-                    System.out.println("steps "+stepsToClosingCurlyNode+" closing node "+closingNode + " current " + current);
+//                    System.out.println("steps "+stepsToClosingCurlyNode+" closing node "+closingNode + " current " + current);
+                    nodeGroupItem.add(n2);
                     if (0 == closingNode) {
                         diagnostics.add(new Diagnostics("Unable to find closing Curly brace", SeverityLevel.Critical, n.getNodeLineStart(), n.getNodeLineEnd(), n.getNodeStart(), getLastNode().getNodeEnd()));
                     } else {
