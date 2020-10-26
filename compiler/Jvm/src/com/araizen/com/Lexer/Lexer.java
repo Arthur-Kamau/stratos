@@ -255,20 +255,40 @@ public class Lexer {
                 } else if (peek() == '*') {
                     // read the extra  * that both make  start of multi comment
                     advance();
-                    String multiLineComment = "";
-                    while (peek() != '*' && peekDouble() != '/') {
+                    int startLineCharcter = currentLineCharacter;
+                    int currentNumber = lineNumber;
+                    System.out.println("start of multi line comment " +currentCharacter + " peek "+peek() ) ;
+                    String multiLineComment = ""+c;
+                    while ( peekDouble() != '/'  && !isAtEnd()) {
+
                         char c1 = advance();
                         if (c1 == '\n') {
                             currentLineCharacter = 0;
                             lineNumber++;
                         }
+
                         multiLineComment += c1;
+                        System.out.println("comment "+multiLineComment);
 
                     }
 
+
                     // consume  * and /  that make end of multi line comment
-                    advance();
-                    advance();
+                    multiLineComment +=  advance();
+
+                    multiLineComment += advance();
+
+
+                    System.out.println("end of multi line comment \n " +multiLineComment);
+
+                    nodesList.add(new Node(
+                            startLineCharcter,
+                            currentLineCharacter,
+                            currentNumber,
+                            lineNumber,
+                            NodeType.MultiLineCommentNode,
+                            multiLineComment
+                    ));
 
                 } else {
                     nodesList.add(new Node(

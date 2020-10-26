@@ -87,18 +87,18 @@ public class Main {
 //                    System.out.println(i+" Node "+ nodesList.get(i).toString());
 //                }
 
-                Parser p = new Parser();
-                ParseTree parserTree = new ParseTree();
-                Token tokenList = p.parse(nodesList);
+//                Parser p = new Parser();
+//                ParseTree parserTree = new ParseTree();
+//                Token tokenList = p.parse(nodesList);
 
 //                for (int i = 0; i < tokenList.getnodesGroup().size(); i++) {
 //                    System.out.println("Token  size  "+tokenList.getnodesGroup().size()+"  Root node  "+ tokenList.getnodesGroup().get(i).toString());
 //                }
-                List<TokenTree> tokenTree = parserTree.parse(tokenList);
-
-                for (int i = 0; i < tokenTree.size(); i++) {
-                    System.out.println("  size  "+tokenTree.size()+" index "+ i +"  Root node  "+ tokenTree.get(i).toString());
-                }
+//                List<TokenTree> tokenTree = parserTree.parse(tokenList);
+//
+//                for (int i = 0; i < tokenTree.size(); i++) {
+//                    System.out.println("  size  "+tokenTree.size()+" index "+ i +"  Root node  "+ tokenTree.get(i).toString());
+//                }
 
 //                SemanticAnalysis  semanticAnalysis = new SemanticAnalysis();
 //                List<Statement> statements = semanticAnalysis.analysis(tokenList);

@@ -1,11 +1,14 @@
 package main;
+// test comment
 import man ;
+ /** multiline comment*/
  class mna{
-   int m
+
+   int m =23;
+    function n(){
+      int was;
+    }
 }
 
 
 
- function n(){
-   int was;
- }

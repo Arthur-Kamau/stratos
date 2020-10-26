@@ -74,7 +74,6 @@ public class ParseTree {
 
                 } else {
                     System.out.println("adding "+n.toString());
-
                     tokenTreeNodes.add(n);
                 }
 
