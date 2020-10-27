@@ -36,8 +36,8 @@ More detailed decription on progress `https://arthur-kamau.github.io/stratos/`
     &emsp;-> vs code plugin `https://marketplace.visualstudio.com/  items?itemName=arthurKamau.stratos-language`
 - Lexer & Parser (Anlysisys).<br>
     &emsp;-> JVM Implementation
-- Semantic Analyss and Syntax analysis && 
-- Stratos IR  & Code Generation.
+- Semantic Analys  Syntax validation 
+- Stratos IR  (Code Generation).
 - Stratos WorkMan Tool.
 - Priting the front end to CPP.
   
