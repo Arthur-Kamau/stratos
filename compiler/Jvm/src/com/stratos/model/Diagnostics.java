@@ -8,6 +8,18 @@ public class Diagnostics {
     int characterStart;
     int characterEnd;
 
+    @Override
+    public String toString() {
+        return "Diagnostics{" +
+                "message='" + message + '\'' +
+                ", severityLevel=" + severityLevel +
+                ", lineNumberStart=" + lineNumberStart +
+                ", lineNumberEnd=" + lineNumberEnd +
+                ", characterStart=" + characterStart +
+                ", characterEnd=" + characterEnd +
+                '}';
+    }
+
     public Diagnostics(String message, SeverityLevel severityLevel, int lineNumberStart, int lineNumberEnd, int characterStart, int characterEnd) {
         this.message = message;
         this.severityLevel = severityLevel;

@@ -1,4 +1,4 @@
-package com.stratos.analysys.custom.Parser;
+package com.stratos.analysis.custom.Parser;
 
 import com.stratos.model.*;
 import com.stratos.util.node.NodeUtil;

@@ -1,11 +1,17 @@
-package com.stratos.util.LanguageData;
+package com.stratos.util.Language;
 
 import com.stratos.model.NodeType;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class LanguageData {
+public class Language {
+    public List<String> getAppConfigKeyDetails() {
+        String[] array = {"name", "version", "description","author", "dependencies","keywords"};
+        List<String> list = Arrays.asList(array);
+        return list;
+    }
+
     public List<String> getKeyWords() {
         String[] array = {"val","let","var","list" ,"enum","struct","double", "int", "private" ,"string", "char", "alias", "class", "then", "or", "and", "function", "some", "none", "return", "package", "import", "implements", "extends"};
         List<String> list = Arrays.asList(array);

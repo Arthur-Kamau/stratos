@@ -1,6 +1,6 @@
-package com.stratos.analysys.custom.Lexer;
+package com.stratos.analysis.custom.Lexer;
 
-import com.stratos.util.LanguageData.LanguageData;
+import com.stratos.util.Language.Language;
 import com.stratos.model.Node;
 import com.stratos.model.NodeType;
 import com.stratos.util.StringUtil.StringUtil;
@@ -346,14 +346,14 @@ public class Lexer {
                                 alphanumeric
                         ));
                     } else {
-                        LanguageData languageData = new LanguageData();
+                        Language language = new Language();
 
                             nodesList.add(new Node(
                                     alphaLineCharacterStart,
                                     currentLineCharacter,
                                     lineNumber,
                                     lineNumber,
-                                    languageData.getKeyWordNodeType(alphanumeric),
+                                    language.getKeyWordNodeType(alphanumeric),
                                     alphanumeric
                             ));
 

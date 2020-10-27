@@ -1,36 +1,40 @@
 package com.stratos;
 
 import com.stratos.Config.AppConfigFile;
-import com.stratos.analysys.custom.Lexer.Lexer;
-import com.stratos.analysys.custom.Parser.Parser;
-import com.stratos.model.Node;
-import com.stratos.model.ProjectConfigOptions;
-import com.stratos.model.Token;
+import com.stratos.model.Diagnostics;
+import com.typesafe.config.Config;
 
-import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
+
 /***
- * In the project there are two analysys ie Lexer and parser implimentations
+ *  First read the project app.config
+ * In the project there are two analysis ie Lexer and parser implementations
  * 1. is custom parser and lexer
  * 2. is Antlr parser and lexer
  *
  */
 public class Compiler {
     public void RunProject(String projectPath) throws Exception {
-        ProjectConfigOptions conf = new AppConfigFile().parse(projectPath);
+        AppConfigFile confi=   new AppConfigFile();
+        Config conf = confi.parse(projectPath);
+        List<Diagnostics> dd = confi.validateConfigFile(conf);
+
+        for (Diagnostics dig : dd){
+            System.out.println(" diagonistics "+ dig.toString() );
+        }
+
         //String mainFile = projectPath+"/src/main.st";
-        List<String> projectFiles  = walk(projectPath);
+//        List<String> projectFiles  = walk(projectPath);
         //read all the files
 
-        for (String file : projectFiles){
-            List<Node> nodesList = new Lexer().generateNodes(file);
-            Parser p = new Parser();
-            Token tokenList = p.parse(nodesList);
-
-
-        }
+//        for (String file : projectFiles){
+//            List<Node> nodesList = new Lexer().generateNodes(file);
+//            Parser p = new Parser();
+//            Token tokenList = p.parse(nodesList);
+//
+//
+//        }
 
 
 
@@ -65,27 +69,7 @@ public class Compiler {
 //                }
     }
 
-    public List<String> walk( String path ) {
-        List<String> files =  new ArrayList<>();
-        File root = new File( path );
-        File[] list = root.listFiles();
 
-        if (list == null) {
-            return  files;
-        }
-
-        for ( File f : list ) {
-            if ( f.isDirectory() ) {
-                walk( f.getAbsolutePath() );
-                System.out.println( "Dir:" + f.getAbsoluteFile() );
-            }
-            else {
-                System.out.println( "File:" + f.getAbsoluteFile() );
-                files.add(f.getAbsolutePath());
-            }
-        }
-        return  files;
-    }
 }
 
 // todo check antlr
