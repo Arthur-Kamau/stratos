@@ -1,13 +1,13 @@
 # Stratos.
-A Fast and fun to write programming language.
+A fast , type safe, compiled and  fun to write programming language.
 
 ## Objective
 
-* fast
-* low level
-* mix of functional and oopparadigms
-* flexible.
-* compiled language.
+* fast 
+* low level (access memory addresses )
+* mix of functional and oop-paradigms
+* flexible (write scripts, huge monolith projects)
+* compiled language 
 * Ability to generate static binaries.
 
 ## Status.
