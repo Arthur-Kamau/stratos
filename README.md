@@ -30,10 +30,14 @@ More detailed decription on progress `https://arthur-kamau.github.io/stratos/`
 
 ## Plan  <br>
 
-- Focus now is in tooling. ✅
-- Parser.
-- Lexer.
-- Stratos IR.
+- Language design and documentations ✅<br>
+    &emsp;-> `https://arthur-kamau.github.io/stratos/`
+- Tooling. ✅<br>
+    &emsp;-> vs code plugin `https://marketplace.visualstudio.com/  items?itemName=arthurKamau.stratos-language`
+- Lexer & Parser (Anlysisys).<br>
+    &emsp;-> JVM Implementation
+- Semantic Analyss and Syntax analysis && 
+- Stratos IR  & Code Generation.
 - Stratos WorkMan Tool.
 - Priting the front end to CPP.
   
