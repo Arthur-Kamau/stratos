@@ -264,7 +264,6 @@ public class Lexer {
                         }
 
                         multiLineComment += c1;
-                        System.out.println("comment "+multiLineComment);
 
                     }
 
@@ -275,7 +274,6 @@ public class Lexer {
                     multiLineComment += advance();
 
 
-                    System.out.println("end of multi line comment \n " +multiLineComment);
 
                     nodesList.add(new Node(
                             startLineCharcter,

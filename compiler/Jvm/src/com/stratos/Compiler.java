@@ -1,7 +1,18 @@
 package com.stratos;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import com.stratos.Config.AppConfigFile;
+import com.stratos.Semantics.SemanticAnalysis;
+import com.stratos.analysis.custom.AST.ASTGenerator;
+import com.stratos.analysis.custom.Lexer.Lexer;
+import com.stratos.analysis.custom.Parser.Parser;
 import com.stratos.model.Diagnostics;
+import com.stratos.model.Node;
+import com.stratos.model.NodeList;
+import com.stratos.model.Statement.Statement;
+import com.stratos.model.Token;
+import com.stratos.util.ProjectFiles.ProjectFiles;
 import com.typesafe.config.Config;
 
 import java.util.List;
@@ -25,28 +36,63 @@ public class Compiler {
         }
 
         //String mainFile = projectPath+"/src/main.st";
-//        List<String> projectFiles  = walk(projectPath);
+        List<String> projectFiles  = new ProjectFiles().walk(projectPath+"/src");
         //read all the files
 
-//        for (String file : projectFiles){
-//            List<Node> nodesList = new Lexer().generateNodes(file);
-//            Parser p = new Parser();
-//            Token tokenList = p.parse(nodesList);
-//
-//
-//        }
+        for (String file : projectFiles){
+            List<Node> nodesList = new Lexer().generateNodes(file);
+            NodeList nodeList = new Parser().parse(nodesList);
+//            for (List<Node> n: nodeList.getnodesGroup()) {
+//                //Creating the ObjectMapper object
+//                ObjectMapper mapper = new ObjectMapper();
+//                //Converting the Object to JSONString
+//                String jsonString = mapper.writeValueAsString(n);
+//                System.out.println("==>"+jsonString);
+//            }
+
+
+            List<Token> tokenList = new ASTGenerator(nodeList).generate();
+
+            for (Token n: tokenList) {
+                //Creating the ObjectMapper object
+                ObjectMapper mapper = new ObjectMapper();
+                //Converting the Object to JSONString
+                String jsonString = mapper.writeValueAsString(n);
+                System.out.println("==>"+jsonString);
+            }
+
+
+
+//            List<Statement> statements = new SemanticAnalysis().analysis(tokenList);
 
 
 
 
-//
+//            for (int i = 0; i < tokenList.getnodesGroup().size(); i++) {
+//                System.out.println("  size  "+tokenList.getnodesGroup().size()+" index "+ i +"  Root node  "+ tokenList.getnodesGroup().get(i).toString());
+//            }
 
-
-//        ParseTree parserTree = new ParseTree();
-
-//                for (int i = 0; i < nodesList.size(); i++) {
-//                    System.out.println(i+" Node "+ nodesList.get(i).toString());
+//            OldParseTree parserTree = new OldParseTree();
+//            List<TokenTree> tokenTrees =parserTree.parse(tokenList);
+//            for (int i = 0; i < tokenTrees.size(); i++) {
+//               Log.cyan(i+" Token trees "+ tokenTrees.get(i).toString());
+//                if(tokenTrees.get(i).getNodesChildren() != null){
+//                    int size= tokenTrees.get(i).getNodesChildren().getNodes().size();
+//                    for (int j = 0; j < size ; j++) {
+//                        Log.blue(" Child "+ tokenTrees.get(i).getNodesChildren().getNodes().get(j) );
+//                    }
 //                }
+//            }
+
+
+        }
+
+
+
+
+//
+
+
 
 
 //

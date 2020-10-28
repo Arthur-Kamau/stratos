@@ -1,4 +1,6 @@
-package com.stratos.model;
+package com.stratos.analysis.custom.Parser;
+
+import com.stratos.model.Node;
 
 import java.util.List;
 

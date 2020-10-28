@@ -40,7 +40,7 @@ public class AppConfigFile {
        reqFields.addAll(new Language().getAppConfigKeyDetails());
 
         for (Map.Entry<String, ConfigValue> entry: data.root().entrySet()) {
-            System.out.println("Root key = " + entry.getKey() + " value "+ entry.getValue());
+//            System.out.println("Root key = " + entry.getKey() + " value "+ entry.getValue());
             reqFields.remove(entry.getKey());
 
         }

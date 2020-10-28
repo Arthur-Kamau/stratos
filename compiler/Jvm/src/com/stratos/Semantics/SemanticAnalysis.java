@@ -3,6 +3,7 @@ package com.stratos.Semantics;
 import com.stratos.model.Node;
 import com.stratos.model.NodeType;
 import com.stratos.model.Statement.Statement;
+import com.stratos.model.NodeList;
 import com.stratos.model.Token;
 
 import java.util.ArrayList;
@@ -11,11 +12,11 @@ import java.util.List;
 public class SemanticAnalysis {
     List<Statement> statementList = new ArrayList<>();
 
-    public List<Statement> analysis(Token tokens) {
-        for (List<Node> item : tokens.getnodesGroup()) {
-            Statement statement = new nodeAnalysis().nodesAnalysis(item);
-            statementList.add(statement);
-        }
+    public List<Statement> analysis(List<Token> tokens) {
+//        for (List<Node> item : tokens.getnodesGroup()) {
+//            Statement statement = new nodeAnalysis().nodesAnalysis(item);
+//            statementList.add(statement);
+//        }
         return statementList;
     }
 

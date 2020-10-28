@@ -2,16 +2,15 @@ package com.stratos.analysis.custom.Parser;
 
 import com.stratos.model.Node;
 import com.stratos.model.NodeType;
-import com.stratos.model.Token;
-import com.stratos.model.TokenTree;
+import com.stratos.model.NodeList;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ParseTree {
+public class OldParseTree {
     List<TokenTree> tokenTrees = new ArrayList<>();
 
-    public List<TokenTree> parse(Token item) {
+    public List<TokenTree> parse(NodeList item) {
         for (List<Node> items : item.getnodesGroup()) {
             boolean isScopped = isScopedToken(items);
             if (isScopped) {

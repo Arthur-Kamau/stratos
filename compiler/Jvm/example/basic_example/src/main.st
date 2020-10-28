@@ -2,11 +2,14 @@ package main;
 // test comment
 import man ;
  /** multiline comment*/
- class mna{
+ class kenn{
 
-   int m =23;
-    function n(){
-      int was;
+    function kamau(){
+      int one="11";
+    }
+
+    function also(){
+          int two="11";
     }
 }
 

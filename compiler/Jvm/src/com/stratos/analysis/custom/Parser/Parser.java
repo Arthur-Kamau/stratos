@@ -14,7 +14,7 @@ public class Parser {
     List<Diagnostics> diagnostics = new ArrayList<>();
     private int current = 0;
 
-    public Token parse(List<Node> nodes) {
+    public NodeList parse(List<Node> nodes) {
         this.nodes = nodes;
         System.out.println("start parsing ");
 
@@ -25,7 +25,7 @@ public class Parser {
 
 
 
-        return new Token(
+        return new NodeList(
                 nodeGroup
         );
     }
@@ -90,7 +90,6 @@ public class Parser {
     }
 
 
-
     public List<Diagnostics> getDiagnostics() {
         return diagnostics;
     }
@@ -112,7 +111,7 @@ public class Parser {
     }
 
     private boolean isAtEnd() {
-        boolean r = currentNode().getType() == NodeType.EndOfFileNode;
+        boolean r = currentNode().getType() == NodeType.EndOfFileNode || current+1 == nodes.size();
 
         return r;
     }

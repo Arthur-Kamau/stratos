@@ -3,28 +3,35 @@ package com.stratos.model;
 import java.util.List;
 
 public class Token {
-    List<List<Node>> nodesGroup;
+    List<Node> nodes;
+    List<Token> child;
 
+    public Token(List<Node> nodes, List<Token> child) {
+        this.nodes = nodes;
+        this.child = child;
+    }
+
+    public List<Node> getNodes() {
+        return nodes;
+    }
+
+    public void setNodes(List<Node> nodes) {
+        this.nodes = nodes;
+    }
+
+    public List<Token> getChild() {
+        return child;
+    }
+
+    public void setChild(List<Token> child) {
+        this.child = child;
+    }
 
     @Override
     public String toString() {
         return "Token{" +
-                "nodesGroup=" + nodesGroup +
+                "nodes=" + nodes +
+                ", child=" + child +
                 '}';
     }
-
-
-    public Token(List<List<Node>> nodesGroup) {
-        this.nodesGroup = nodesGroup;
-
-    }
-
-    public List<List<Node>> getnodesGroup() {
-        return nodesGroup;
-    }
-
-    public void setnodesGroup(List<List<Node>> nodesGroup) {
-        this.nodesGroup = nodesGroup;
-    }
-
 }
