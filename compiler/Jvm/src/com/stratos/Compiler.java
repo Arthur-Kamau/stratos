@@ -1,9 +1,8 @@
 package com.stratos;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import com.stratos.Config.AppConfigFile;
-import com.stratos.Semantics.SemanticAnalysis;
+import com.stratos.Semantics.LanguageStatement;
 import com.stratos.analysis.custom.AST.ASTGenerator;
 import com.stratos.analysis.custom.Lexer.Lexer;
 import com.stratos.analysis.custom.Parser.Parser;
@@ -31,9 +30,9 @@ public class Compiler {
         Config conf = confi.parse(projectPath);
         List<Diagnostics> dd = confi.validateConfigFile(conf);
 
-        for (Diagnostics dig : dd){
-            System.out.println(" diagonistics "+ dig.toString() );
-        }
+//        for (Diagnostics dig : dd){
+//            System.out.println(" diagonistics "+ dig.toString() );
+//        }
 
         //String mainFile = projectPath+"/src/main.st";
         List<String> projectFiles  = new ProjectFiles().walk(projectPath+"/src");
@@ -47,7 +46,7 @@ public class Compiler {
 //                ObjectMapper mapper = new ObjectMapper();
 //                //Converting the Object to JSONString
 //                String jsonString = mapper.writeValueAsString(n);
-//                System.out.println("==>"+jsonString);
+//                System.out.println("node list ==>"+jsonString);
 //            }
 
 
@@ -58,14 +57,21 @@ public class Compiler {
                 ObjectMapper mapper = new ObjectMapper();
                 //Converting the Object to JSONString
                 String jsonString = mapper.writeValueAsString(n);
-                System.out.println("==>"+jsonString);
+                System.out.println("Token list ==>"+jsonString);
             }
 
 
 
-            List<Statement> statements = new SemanticAnalysis().analysis(tokenList);
+//            List<Statement> statements = new LanguageStatement().analysis(tokenList);
 
 
+//            for (Statement n: statements) {
+//                //Creating the ObjectMapper object
+//                ObjectMapper mapper = new ObjectMapper();
+//                //Converting the Object to JSONString
+//                String jsonString = mapper.writeValueAsString(n);
+//                System.out.println("Statement "+n.toString());
+//            }
 
 
 //            for (int i = 0; i < tokenList.getnodesGroup().size(); i++) {

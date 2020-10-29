@@ -1,3 +1,1 @@
-int one="11";
-man one="11";
-
+var x = 2*2
