@@ -138,7 +138,7 @@ public class ASTGenerator {
                     if(_counter == 0){
 
                         closingCurlyBracePosition = i;
-                        System.out.println("closing "+closingCurlyBracePosition);
+                       // System.out.println("closing "+closingCurlyBracePosition);
                         break;
                     }
                 }

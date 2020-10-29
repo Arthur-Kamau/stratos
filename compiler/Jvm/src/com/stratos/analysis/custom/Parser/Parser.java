@@ -16,7 +16,7 @@ public class Parser {
 
     public NodeList parse(List<Node> nodes) {
         this.nodes = nodes;
-        System.out.println("start parsing ");
+//        System.out.println("start parsing ");
 
         while (!isAtEnd()) {
             Node n = advance();

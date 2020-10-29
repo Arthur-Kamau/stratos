@@ -63,7 +63,7 @@ public class Compiler {
 
 
 
-//            List<Statement> statements = new SemanticAnalysis().analysis(tokenList);
+            List<Statement> statements = new SemanticAnalysis().analysis(tokenList);
 
 
 
@@ -90,7 +90,7 @@ public class Compiler {
 
 
 
-//
+
 
 
 

@@ -318,6 +318,8 @@ public class Lexer {
                         stringData
                 ));
 
+                // consume the closing "
+                advance();
 
                 break;
             default:
@@ -328,10 +330,17 @@ public class Lexer {
 
                     alphanumeric += c;
 
-                    while (peek() != '{' && peek() != '}' && peek() != '[' && peek() != ']' && peek() != '(' && peek() != ')' && peek() != ';' && peek() != '\t' && peek() != '\r' && peek() != '\n' && peek() != ' ' && peek() != '\0') {
-                        char c2 = advance();
+//                    while (peek() != '{' && peek() != '}' && peek() != '[' && peek() != ']' && peek() != '(' && peek() != ')' && peek() != ';' && peek() != '\t' && peek() != '\r' && peek() != '\n' && peek() != ' ' && peek() != '\0' && peek() !='=') {
+                        while(!isAtEnd() ){
+                            if(peek() != '{' && peek() != '}' && peek() != '[' && peek() != ']' && peek() != '(' && peek() != ')' && peek() != ';' && peek() != '\t' && peek() != '\r' && peek() != '\n' && peek() != ' ' && peek() != '\0' && peek() !='='){
+                                char c2 = advance();
+                                alphanumeric += c2;
+                            }else{
+                                break;
+                            }
 
-                        alphanumeric += c2;
+
+
                     }
 
                     if (new StringUtil().isNumeric(alphanumeric)) {
@@ -354,6 +363,7 @@ public class Lexer {
                                     language.getKeyWordNodeType(alphanumeric),
                                     alphanumeric
                             ));
+
 
                     }
                 } else if (c == '\0') {
