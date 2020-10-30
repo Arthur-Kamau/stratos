@@ -1,1 +1,2 @@
-var x = 2*2
+package man;
+package "love"

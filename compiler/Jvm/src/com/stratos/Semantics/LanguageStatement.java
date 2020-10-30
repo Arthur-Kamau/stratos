@@ -12,7 +12,7 @@ public class LanguageStatement {
     List<Statement> statementList = new ArrayList<>();
     List<Diagnostics> diagnostics = new ArrayList<>();
 
-    public List<Statement> analysis(List<Token> tokens) {
+    public List<Statement> analysis(List<Token> tokens) throws Exception {
         for (Token item : tokens) {
 
             List<Statement> statement = new LanguageStatementAnalysis().nodesAnalysis(item);
@@ -22,68 +22,40 @@ public class LanguageStatement {
     }
 
     private class LanguageStatementAnalysis {
-        Token token;
-        List<Node> nodes = new ArrayList<>();
+
         List<Statement> statements = new ArrayList<>();
-        int current = 0;
+        List<Node> node;
 
-        public List<Statement> nodesAnalysis(Token token) {
-            this.token = token;
-            nodes.addAll(token.getNodes());
+        public List<Statement> nodesAnalysis(Token token) throws Exception {
 
-            while (!isAtEnd()) {
-                Node c = advance();
-                if (c.getType() == NodeType.PackageNode) {
-
-                    if (peek().getType() == NodeType.AlphaNumericNode || peek().getType() == NodeType.StringNode) {
-
-                        Node packageName = advance();
-                        statements.add(new PackageStatement(
-                                packageName,
-                                c
-                        ));
-                    } else {
-                        Log.error("No alpanumeric " +peek().toString());
-                    }
-
+            if (token.getNodes() != null) {
+                node = token.getNodes();
+                if (contains(NodeType.PackageNode)) {
+                    statements.add(new PackageSemantics().execute(token));
+                } else if (contains(NodeType.FunctionNode)) {
+                    throw new Exception("unimplemented ....... ");
+                } else if (contains(NodeType.ClassNode)) {
+                    throw new Exception("unimplemented ....... ");
+                } else if (contains(NodeType.ModulasNode) || contains(NodeType.DivideNode) || contains(NodeType.SubtractNode) || contains(NodeType.AddNode) || contains(NodeType.MultiplyNode)) {
+                    statements.add(new OperationSemantics().execute(token));
                 }
+            } else {
+                Log.error("Token contains empty nodes");
             }
-
-//            if (token.getChild() != null) {
-//                List<Statement> items =  new LanguageStatementAnalysis().nodesAnalysis()
-//            }
             return statements;
         }
 
-        private boolean check(NodeType type) {
-            if (isAtEnd()) return false;
-            return peek().getType() == type;
-        }
 
-
-        private Node peek() {
-            return nodes.get(current);
-        }
-
-        private Node advance() {
-            if (!isAtEnd()) {
-
-                current++;
+        protected boolean contains(NodeType type) {
+            boolean containsNode = false;
+            for (Node item : node) {
+                if (item.getType() == type) {
+                    containsNode = true;
+                    break;
+                }
             }
-            return previous();
+            return containsNode;
         }
-
-        private Node previous() {
-            return nodes.get(current - 1);
-        }
-
-
-        private boolean isAtEnd() {
-            boolean r = current+1 == nodes.size();
-
-            return r;
-        }
-
 
 
     }
