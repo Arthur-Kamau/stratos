@@ -174,9 +174,166 @@ loops
             }
 
 
+    3. ``while``
+        tradional while loop 
 
+     Example : 
+
+        .. code-block:: java
+
+            var x =10
+            while (x > 0) {
+                x--
+            }
+
+    Stratos supports ``break`` and ``continue`` in loops.
 
 
 ++++++++++++++++++++++++++++++++
 Conditions
 ++++++++++++++++++++++++++++++++
+
+    conditions include
+
+   1. if
+      takes a condition.can have multiple else if conditions 
+
+    Example : 
+
+        .. code-block:: java
+            
+            // variable of type string
+            let  age : int = 19
+            
+            // some other operations
+
+            if(age < 10){
+              print("user is child")
+            }else if (age > 20){
+              print("user is adult")
+            }else{
+                print("person is tennager")
+            }
+
+    2. When 
+    if condition on steroids.
+
+    Example : 
+
+        .. code-block:: java
+            
+            // variable of type string
+            let  age : int = 19
+            
+            // some other operations
+
+            when (age){
+                 
+                1..10 ->{
+                    print("child")
+                } 
+                10..20 ->{
+                    print("teeneger" )
+                }
+                else ->{
+                    print("adult")
+                }
+            }
+
+++++++++++++++
+Enums
+++++++++++++++
+    Enums are types 
+
+    Example : 
+
+            .. code-block:: java
+
+                Enum Race {
+                afrian, asian,  american
+                }
+
+                var  userType : Race = Race.african 
+            
+
++++++++++++
+functions
++++++++++++
+    used to represent a scope of  logic.
+    function can start with decorator ie static or private which is optional.
+    the function keyword , parameters wrapped in curved braces  , colon return type 
+    Example : 
+
+        .. code-block:: java
+
+            private function  name () : bool  {
+                
+                return true
+            }
+
+
++++++++
+Class
++++++++
+    A class extends another class.
+    A class implements a struct.
+    A class with **()** indicates a constructor.
+    only private decorator is allowed for classes
+    Example : 
+
+        .. code-block:: java
+
+            // class with default constructor with no parameters
+            class  man () {
+                
+            }
+
+            // class with custrutor and logic
+            class pupile{
+                // cannot have both default constructor and  a constructo function
+                constructor(age: int, height : double){
+
+                }
+            }
+
+++++++++++++++++++++++++++++++++
+structs
+++++++++++++++++++++++++++++++++
+    Define properties , functions to be implemented 
+    **note** ->  let and val have to initialized when used, but you can leave out variable decralation and it will default to var.
+
+    Example : 
+
+        .. code-block:: java
+
+            enum Gender {
+                male, female
+            }
+            struct User{
+                age:int,
+                // function is optional , anything with () is assumed to be a function
+                hasparents() :bool,
+                gender: Gender ,
+                let isHuman =true
+            }
+
+            class Student impliments User{
+
+                @overides
+                function hasparents() :bool{
+                    // variable from struct
+                    age = 23;
+                    // .... logic here
+                    return false
+                }
+            }
+
+            class PrePrimary(name: String) extends Student {
+
+
+            }
+
+
+
+
+
