@@ -53,7 +53,7 @@ Welcome to Stratos Documentation's documentation!
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Contents:
 
    folder_structure

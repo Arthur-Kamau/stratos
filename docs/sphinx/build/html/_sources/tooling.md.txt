@@ -1,9 +1,7 @@
-Tooling
-=========
+# Tooling
 
-+++++++++++++++
-Project Management
-+++++++++++++++
+## Project Management
+
 In stratos there is a tool called toolman.
 toolman is used to create, test, run and build stratos applications.
 
@@ -35,9 +33,9 @@ toolman is used to create, test, run and build stratos applications.
 * `toolman analysis`
     This command checks code for vulnrable packages, pedantic code(You followed good practises), dead code inference ,
     
-+++++++++++++++
-Code editing
-+++++++++++++++
+
+## Code editing
+
 Editing Stratos Code.Check out.
 
 * Vs code Language Plugin.

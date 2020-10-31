@@ -173,13 +173,10 @@ loops
                  print($"{it.index} country {it.item}")
             }
 
-    3.map
-
-    4.foreach
-
-    5.filter 
-     
 
 
 
 
+++++++++++++++++++++++++++++++++
+Conditions
+++++++++++++++++++++++++++++++++

@@ -2,11 +2,10 @@ Table of contents
 ==================
 
 
-
 This repository contains the tooling, compiler, language design notes, sample & examples of the stratos programming  language.
 Each subsection has `README.md` or `*.md` files  going a level deeper into discussing the subseection.
 
-Folder breakdown <br>
+Folder breakdown 
 
 * `Stratos.md` -> More Highlevel overview of the language, file extenstion, config file type, comipiler commands and tooling. A great place to get started if interested in the project as a whole.
 * `Comipler` -> The stratos compiler.

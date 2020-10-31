@@ -4,14 +4,30 @@
 Stratos Syntax is closely related to Kotlin/C# and Java.
 
 
-### A. comments
+### comments
 comments could be:
 1. Multi line comment.<br/>
    This encapsulate everthing between the start of the comment and thge end of the comment ie `/*` start of the comment and `*/` end of the comment.
 2. Single line comments.<br/>
    Single line comment start with `//` upto the line
 
-### B. Types
+   ```java
+   
+   /**
+   * multi line 
+   * comment 
+   */
+
+     // single line comment
+   ```
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+
+
+###  Types
 the language basic data types are;
 1.  strings.
 2.  characters
