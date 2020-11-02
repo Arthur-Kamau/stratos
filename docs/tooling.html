@@ -87,7 +87,11 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="folder_structure.html">Table of contents</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installing.html">Installing Stratos Compiler</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Tooling</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tooling</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#project-management">Project Management</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#code-editing">Code editing</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="syntax.html">Syntax</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contribute.html">Contributing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="help.html">Help</a></li>
@@ -147,7 +151,7 @@
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/tooling.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/tooling.md.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -162,11 +166,44 @@
             
   <div class="section" id="tooling">
 <h1>Tooling<a class="headerlink" href="#tooling" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="project-management">
+<h2>Project Management<a class="headerlink" href="#project-management" title="Permalink to this headline">¶</a></h2>
+<p>In stratos there is a tool called toolman.
+toolman is used to create, test, run and build stratos applications.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">toolman</span> <span class="pre">create</span> <span class="pre">app_name</span></code><br/>
+The  above command creates a stratos application project.An application project involves,<br/></p>
+<ol class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">bin</span></code> folder for the application binaries these are the binraies compiled and run in debug mode.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src</span></code> folder fo the application source code.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">app.conf</span></code> file for the application configurations.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">src/main.st</span></code> file with main function that prints out a line</p></li>
+</ol>
+<p>An additional optional parameter can be added to specify the project location if none is provided the <code class="docutils literal notranslate"><span class="pre">pwd</span></code>(current working directory) is used</p>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">toolman</span> <span class="pre">run</span> </code>
+The command runs the application using the configurations provided in the <code class="docutils literal notranslate"><span class="pre">app.conf</span></code>, this is for debugging as there is a stack trace dump,no/little optimizations.<br/>
+The current architecture binary is  generated, dumped into the <code class="docutils literal notranslate"><span class="pre">bin</span></code> folder/</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">toolman</span> <span class="pre">get</span>&#160; <span class="pre">git_url/local_path</span></code>
+The command get packages from the local path or git url and stores them in a <code class="docutils literal notranslate"><span class="pre">.cache</span></code> folder in the compiler path, adds the file in <code class="docutils literal notranslate"><span class="pre">app.conf.lock</span></code> file.<br/>
+Provided without parameters it will loop through the dependencies in the <code class="docutils literal notranslate"><span class="pre">app.conf</span></code> file doing a refetch if  version does not match in <code class="docutils literal notranslate"><span class="pre">app.conf.lock</span></code> file or is a new dependancy.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">toolman</span> <span class="pre">build</span> </code>
+This command build static binaries for the specified target platforms,applying compiler optimizations.<br/>
+The command creates a <code class="docutils literal notranslate"><span class="pre">dist</span></code> folder, with different subfolders for the different architeres specified in the <code class="docutils literal notranslate"><span class="pre">app.conf</span></code> file.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">toolman</span> <span class="pre">test</span> </code>
+This command runs test.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">toolman</span> <span class="pre">analysis</span></code>
+This command checks code for vulnrable packages, pedantic code(You followed good practises), dead code inference ,</p></li>
+</ul>
+</div>
+<div class="section" id="code-editing">
+<h2>Code editing<a class="headerlink" href="#code-editing" title="Permalink to this headline">¶</a></h2>
 <p>Editing Stratos Code.Check out.</p>
 <ul class="simple">
 <li><p>Vs code Language Plugin.</p></li>
 <li><p>Intellij Plugin (Comming soon)</p></li>
 </ul>
+</div>
 </div>
 
 

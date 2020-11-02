@@ -89,16 +89,18 @@
 <li class="toctree-l1"><a class="reference internal" href="installing.html">Installing Stratos Compiler</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tooling.html">Tooling</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Syntax</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#a-comments">A. comments</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#b-types">B. Types</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#c-functions">C. Functions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#d-classes">D. classes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#e-package">E. package</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#f-structs">F. structs</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#g-enums">G. Enums</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#h-variables">H. Variables</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#i-conditions">I. Conditions</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#j-loops">J loops</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#comments">Comments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#package">Package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#import">Import</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#variable-declaration">Variable declaration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#data-types">Data Types</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#type-decorators">Type decorators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#loops">loops</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#conditions">Conditions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#enums">Enums</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#functions">functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#class">Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#structs">structs</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="contribute.html">Contributing</a></li>
@@ -159,7 +161,7 @@
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/syntax.md.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/syntax.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -174,71 +176,387 @@
             
   <div class="section" id="syntax">
 <h1>Syntax<a class="headerlink" href="#syntax" title="Permalink to this headline">¶</a></h1>
-<p>Stratos Syntax is closely related to Kotlin/C# and Java.</p>
-<div class="section" id="a-comments">
-<h2>A. comments<a class="headerlink" href="#a-comments" title="Permalink to this headline">¶</a></h2>
-<p>comments could be:</p>
-<ol class="simple">
-<li><p>Multi line comment.<br/>
-This encapsulate everthing between the start of the comment and thge end of the comment ie <code class="docutils literal notranslate"><span class="pre">/*</span></code> start of the comment and <code class="docutils literal notranslate"><span class="pre">*/</span></code> end of the comment.</p></li>
-<li><p>Single line comments.<br/>
-Single line comment start with <code class="docutils literal notranslate"><span class="pre">//</span></code> upto the line</p></li>
+<p>The syntax is closely based to kotlin and c#.But with an approach to code layout  similar to golang.
+If you are familiar with above languages it easy to pick up Stratos syntax.</p>
+<div class="section" id="comments">
+<h2>Comments<a class="headerlink" href="#comments" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>Comments could be:</p>
+<ol class="arabic simple">
+<li><p>Multi line comment.</p></li>
 </ol>
-</div>
-<div class="section" id="b-types">
-<h2>B. Types<a class="headerlink" href="#b-types" title="Permalink to this headline">¶</a></h2>
-<p>the language basic data types are;</p>
-<ol class="simple">
-<li><p>strings.</p></li>
-<li><p>characters</p></li>
-<li><p>double</p></li>
-<li><p>integer/ number</p></li>
+<p>This encapsulate everthing between the start of the comment and thge end of the comment ie <code class="docutils literal notranslate"><span class="pre">/*</span></code> start of the comment and <code class="docutils literal notranslate"><span class="pre">*/</span></code> end of the comment.</p>
+<ol class="arabic simple" start="2">
+<li><p>Single line comments.</p></li>
 </ol>
+<p>Single line comment start with <code class="docutils literal notranslate"><span class="pre">//</span></code> upto the line</p>
+<p>Example :</p>
+<blockquote>
+<div><div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="cm">/**</span>
+<span class="cm">* multi line</span>
+<span class="cm">* comment</span>
+<span class="cm">*/</span>
+
+<span class="c1">// single line comment</span>
+</pre></div>
 </div>
-<div class="section" id="c-functions">
-<h2>C. Functions<a class="headerlink" href="#c-functions" title="Permalink to this headline">¶</a></h2>
+</div></blockquote>
+<p>Find an example project under <code class="docutils literal notranslate"><span class="pre">sample/comments_and_documentation</span></code></p>
+</div></blockquote>
 </div>
-<div class="section" id="d-classes">
-<h2>D. classes<a class="headerlink" href="#d-classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="package">
+<h2>Package<a class="headerlink" href="#package" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>A package is a collection of source files in the same directory that are compiled together. Functions,Classes and Variables defined in one source file are visible to all other source files within the same package.</p>
+<p>A package should be the first declaration in  a file, based on the folder name but if in src the package name is src.</p>
+</div></blockquote>
 </div>
-<div class="section" id="e-package">
-<h2>E. package<a class="headerlink" href="#e-package" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="import">
+<h2>Import<a class="headerlink" href="#import" title="Permalink to this headline">¶</a></h2>
+<p>The import keyword is used to import a package, class or struct.that exists in a different package.
+for imported package the import declaration should be the name of the dependency, the name is part of the object specied in the app.config file</p>
 </div>
-<div class="section" id="f-structs">
-<h2>F. structs<a class="headerlink" href="#f-structs" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="variable-declaration">
+<h2>Variable declaration<a class="headerlink" href="#variable-declaration" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>There are three ways to declare variables there is <code class="docutils literal notranslate"><span class="pre">var</span></code>, <code class="docutils literal notranslate"><span class="pre">val</span></code>, <code class="docutils literal notranslate"><span class="pre">let</span></code>.This is followed by a variable name a colon and the variable type wich is optional.</p>
+<p>for more information view <code class="docutils literal notranslate"><span class="pre">sample/variables</span></code></p>
+</div></blockquote>
 </div>
-<div class="section" id="g-enums">
-<h2>G. Enums<a class="headerlink" href="#g-enums" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="h-variables">
-<h2>H. Variables<a class="headerlink" href="#h-variables" title="Permalink to this headline">¶</a></h2>
-<p>for an example check <code class="docutils literal notranslate"><span class="pre">/sample/variables</span></code> project</p>
-</div>
-<div class="section" id="i-conditions">
-<h2>I. Conditions<a class="headerlink" href="#i-conditions" title="Permalink to this headline">¶</a></h2>
-<ol class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">If</span></code>, <code class="docutils literal notranslate"><span class="pre">Else</span></code> Conditions</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">When</span></code> Condition</p></li>
+<div class="section" id="data-types">
+<h2>Data Types<a class="headerlink" href="#data-types" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>The  language has 8 basic data types are;</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><dl class="simple">
+<dt>Byte</dt><dd><p>The byte data type is an 8-bit signed two’s complement integer. It has a minimum value of -128 and a maximum value of 127 (inclusive)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Strings.</dt><dd><p>A sequence of characters.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Character</dt><dd><p>A  UTF-16 code units.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Double</dt><dd><p>A double-precision floating point number.Stratos doubles are 64-bit floating-point numbers as specified in the IEEE 754 standard.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Integer</dt><dd><p>is 64-bit</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Boolean.</dt><dd><p>The boolean data type has only two possible values: true and false. Use this data type for simple flags that track true/false conditions</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Option</dt><dd><ol class="loweralpha simple">
+<li><dl class="simple">
+<dt>Some</dt><dd><p>Used to indicate that data is contained in a variable</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>None</dt><dd><p>Used to represent empty, nothing.”null”</p>
+</dd>
+</dl>
+</li>
 </ol>
-</div>
-<div class="section" id="j-loops">
-<h2>J loops<a class="headerlink" href="#j-loops" title="Permalink to this headline">¶</a></h2>
-<p>There are two main types of loops</p>
-<ol class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">for</span></code> loop(commonly called foreach loop)</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">loop</span></code></p></li>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Any</dt><dd><p>This is a container for an unknown data type.</p>
+</dd>
+</dl>
+</li>
 </ol>
-<p>a for loop is used to loop within ranges example<br>
-<code class="docutils literal notranslate"><span class="pre">for(x</span> <span class="pre">in</span> <span class="pre">a..z){</span></code><br><code class="docutils literal notranslate"> </code>  <code class="docutils literal notranslate"><span class="pre">print(x);</span></code><br>
-  <code class="docutils literal notranslate"><span class="pre">//</span> <span class="pre">prints</span> <span class="pre">a</span> <span class="pre">,</span> <span class="pre">b</span> <span class="pre">,c</span> <span class="pre">to</span> <span class="pre">z</span> </code><br>
-<code class="docutils literal notranslate"><span class="pre">}</span></code>
-<br> or <br>
-<code class="docutils literal notranslate"><span class="pre">for(x</span> <span class="pre">in</span> <span class="pre">1..100){</span></code><br><code class="docutils literal notranslate"> </code>  <code class="docutils literal notranslate"><span class="pre">print(x);</span></code><br><code class="docutils literal notranslate"> </code>  <code class="docutils literal notranslate"><span class="pre">//</span> <span class="pre">prints</span> <span class="pre">1</span> <span class="pre">to</span> <span class="pre">100</span> </code><br><code class="docutils literal notranslate"> <span class="pre">}</span></code></p>
-<p>a loop without paramters equates to a while true loop ie <code class="docutils literal notranslate"><span class="pre">loop{</span> <span class="pre">print(&quot;hello&quot;)}</span></code>  will print hello forever.</p>
-<p>looping through a list is eassy using loop.Using the keyword <code class="docutils literal notranslate"><span class="pre">it</span></code> to get the current index and the current value
-example
-<code class="docutils literal notranslate"> <span class="pre">var</span> <span class="pre">mList</span> <span class="pre">=</span> <span class="pre">[1,2,3,4]</span></code><br><code class="docutils literal notranslate"> <span class="pre">loop</span> <span class="pre">mList{</span></code><br><code class="docutils literal notranslate"> </code>  <code class="docutils literal notranslate"><span class="pre">val</span>&#160; <span class="pre">value</span> <span class="pre">=it.value</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; </code><br><code class="docutils literal notranslate"> </code>  <code class="docutils literal notranslate"><span class="pre">val</span>&#160; <span class="pre">index</span> <span class="pre">=it.index</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160; </code><br><code class="docutils literal notranslate"> </code>  <code class="docutils literal notranslate"><span class="pre">print</span> <span class="pre">(&quot;</span> <span class="pre">at</span> <span class="pre">index</span> <span class="pre">$index</span> <span class="pre">the</span> <span class="pre">value</span> <span class="pre">is</span> <span class="pre">$value</span> <span class="pre">&quot;)</span>&#160;&#160;&#160;&#160; <span class="pre">;</span>&#160; </code><br><code class="docutils literal notranslate"> <span class="pre">}</span></code></p>
-<p>for an example check <code class="docutils literal notranslate"><span class="pre">/sample/loops</span></code> project</p>
+</div></blockquote>
+<dl class="simple">
+<dt>There are secondary data types based on the primary types</dt><dd><ol class="arabic simple">
+<li><dl class="simple">
+<dt>Map.</dt><dd><p>A collection of key value objects.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>List.</dt><dd><p>A collection of objects .</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Set</dt><dd><p>A collection of objects in which each object can occur only once.</p>
+</dd>
+</dl>
+</li>
+</ol>
+</dd>
+</dl>
+<p><strong>Note</strong>  Stratos has a strong type inference as such specifying the data type is mostly optional.
+The follwing example are used to illustrate data type.</p>
+<p>Example :</p>
+<blockquote>
+<div><div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="c1">// variable of type string</span>
+<span class="n">let</span>  <span class="n">name</span> <span class="o">:</span> <span class="n">String</span> <span class="o">=</span> <span class="s">&quot;Arthur&quot;</span>
+<span class="c1">// or</span>
+<span class="n">let</span> <span class="n">name</span> <span class="o">=</span><span class="s">&quot;Arthur&quot;</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>for more information view <code class="docutils literal notranslate"><span class="pre">sample/variables</span></code></p>
+</div></blockquote>
+</div>
+<div class="section" id="type-decorators">
+<h2>Type decorators<a class="headerlink" href="#type-decorators" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ol class="arabic">
+<li><dl class="simple">
+<dt><cite>static</cite></dt><dd><p>Variables or functions to be refenced do not require an instance</p>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><cite>private</cite></dt><dd><p>Variables , functions or classes denoted with private keyword cannot be used outside the scope they are declared
+example:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>a private class cannot be used outside the package scope if declared in main packages only classes in the main package can use the class</p></li>
+<li><p>if a function is declared private only function</p></li>
+</ul>
+</div></blockquote>
+</dd>
+</dl>
+</li>
+</ol>
+</div></blockquote>
+</div>
+<div class="section" id="loops">
+<h2>loops<a class="headerlink" href="#loops" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>loops include</p>
+<ol class="arabic simple">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">For</span></code> loop</dt><dd><p>For loop is used to iterate an enumarable
+example</p>
+</dd>
+</dl>
+</li>
+</ol>
+<dl>
+<dt>Example :</dt><dd><div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="n">var</span> <span class="n">countries</span> <span class="o">=</span> <span class="o">[</span><span class="s">&quot;Kenya&quot;</span><span class="o">,</span> <span class="s">&quot;Uganda&quot;</span> <span class="o">,</span> <span class="s">&quot;Rwanda&quot;</span><span class="o">,</span> <span class="s">&quot;Tanzania&quot;</span><span class="o">,</span> <span class="s">&quot;Burundi&quot;</span> <span class="o">]</span>
+
+<span class="k">for</span><span class="o">(</span><span class="n">var</span> <span class="n">country</span> <span class="n">in</span> <span class="n">countries</span><span class="o">){</span>
+    <span class="c1">// it is a keyword</span>
+    <span class="n">print</span><span class="o">(</span><span class="n">$</span><span class="s">&quot;{it.index} country {country}&quot;</span><span class="o">)</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<ol class="arabic simple" start="2">
+<li><p><code class="docutils literal notranslate"><span class="pre">loop</span></code>
+similar to while loop</p></li>
+</ol>
+<blockquote>
+<div><dl>
+<dt>Example :</dt><dd><div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="c1">// to create an infinite list</span>
+<span class="n">loop</span> <span class="o">{</span>
+    <span class="n">print</span><span class="o">(</span> <span class="n">$</span><span class="s">&quot;{it.index} will print forever&quot;</span><span class="o">)</span>
+<span class="o">}</span>
+
+<span class="c1">// loop over a list</span>
+<span class="n">var</span> <span class="n">countries</span> <span class="o">=</span> <span class="o">[</span><span class="s">&quot;Kenya&quot;</span><span class="o">,</span> <span class="s">&quot;Uganda&quot;</span> <span class="o">,</span> <span class="s">&quot;Rwanda&quot;</span><span class="o">,</span> <span class="s">&quot;Tanzania&quot;</span><span class="o">,</span> <span class="s">&quot;Burundi&quot;</span> <span class="o">]</span>
+
+<span class="n">loop</span> <span class="n">countries</span> <span class="o">{</span>
+     <span class="n">print</span><span class="o">(</span><span class="n">$</span><span class="s">&quot;{it.index} country {it.item}&quot;</span><span class="o">)</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</div></blockquote>
+<ol class="arabic simple" start="3">
+<li><dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">while</span></code></dt><dd><p>tradional while loop</p>
+</dd>
+</dl>
+</li>
+</ol>
+<blockquote>
+<div><p>Example :</p>
+<blockquote>
+<div><div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="n">var</span> <span class="n">x</span> <span class="o">=</span><span class="mi">10</span>
+<span class="k">while</span> <span class="o">(</span><span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">x</span><span class="o">--</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div></blockquote>
+<p>Stratos supports <code class="docutils literal notranslate"><span class="pre">break</span></code> and <code class="docutils literal notranslate"><span class="pre">continue</span></code> in loops.</p>
+</div></blockquote>
+</div>
+<div class="section" id="conditions">
+<h2>Conditions<a class="headerlink" href="#conditions" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><blockquote>
+<div><p>conditions include</p>
+</div></blockquote>
+<ol class="arabic simple">
+<li><p>if
+takes a condition.can have multiple else if conditions</p></li>
+</ol>
+<blockquote>
+<div><p>Example :</p>
+<blockquote>
+<div><div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="c1">// variable of type string</span>
+<span class="n">let</span>  <span class="n">age</span> <span class="o">:</span> <span class="kt">int</span> <span class="o">=</span> <span class="mi">19</span>
+
+<span class="c1">// some other operations</span>
+
+<span class="k">if</span><span class="o">(</span><span class="n">age</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="o">){</span>
+  <span class="n">print</span><span class="o">(</span><span class="s">&quot;user is child&quot;</span><span class="o">)</span>
+<span class="o">}</span><span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">age</span> <span class="o">&gt;</span> <span class="mi">20</span><span class="o">){</span>
+  <span class="n">print</span><span class="o">(</span><span class="s">&quot;user is adult&quot;</span><span class="o">)</span>
+<span class="o">}</span><span class="k">else</span><span class="o">{</span>
+    <span class="n">print</span><span class="o">(</span><span class="s">&quot;person is tennager&quot;</span><span class="o">)</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p>2. When
+if condition on steroids.</p>
+<p>Example :</p>
+<blockquote>
+<div><div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="c1">// variable of type string</span>
+<span class="n">let</span>  <span class="n">age</span> <span class="o">:</span> <span class="kt">int</span> <span class="o">=</span> <span class="mi">19</span>
+
+<span class="c1">// some other operations</span>
+
+<span class="n">when</span> <span class="o">(</span><span class="n">age</span><span class="o">){</span>
+
+    <span class="mf">1..10</span> <span class="o">-&gt;{</span>
+        <span class="n">print</span><span class="o">(</span><span class="s">&quot;child&quot;</span><span class="o">)</span>
+    <span class="o">}</span>
+    <span class="mf">10..20</span> <span class="o">-&gt;{</span>
+        <span class="n">print</span><span class="o">(</span><span class="s">&quot;teeneger&quot;</span> <span class="o">)</span>
+    <span class="o">}</span>
+    <span class="k">else</span> <span class="o">-&gt;{</span>
+        <span class="n">print</span><span class="o">(</span><span class="s">&quot;adult&quot;</span><span class="o">)</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div></blockquote>
+</div></blockquote>
+</div>
+<div class="section" id="enums">
+<h2>Enums<a class="headerlink" href="#enums" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>Enums are types</p>
+<p>Example :</p>
+<blockquote>
+<div><div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="n">Enum</span> <span class="n">Race</span> <span class="o">{</span>
+<span class="n">afrian</span><span class="o">,</span> <span class="n">asian</span><span class="o">,</span>  <span class="n">american</span>
+<span class="o">}</span>
+
+<span class="n">var</span>  <span class="n">userType</span> <span class="o">:</span> <span class="n">Race</span> <span class="o">=</span> <span class="n">Race</span><span class="o">.</span><span class="na">african</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div></blockquote>
+</div>
+<div class="section" id="functions">
+<h2>functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>used to represent a scope of  logic.
+function can start with decorator ie static or private which is optional.
+the function keyword , parameters wrapped in curved braces  , colon return type
+Example :</p>
+<blockquote>
+<div><div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="kd">private</span> <span class="n">function</span>  <span class="nf">name</span> <span class="o">()</span> <span class="o">:</span> <span class="n">bool</span>  <span class="o">{</span>
+
+    <span class="k">return</span> <span class="kc">true</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div></blockquote>
+</div>
+<div class="section" id="class">
+<h2>Class<a class="headerlink" href="#class" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>A class extends another class.
+A class implements a struct.
+A class with <strong>()</strong> indicates a constructor.
+only private decorator is allowed for classes
+Example :</p>
+<blockquote>
+<div><div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="c1">// class with default constructor with no parameters</span>
+<span class="kd">class</span>  <span class="nf">man</span> <span class="o">()</span> <span class="o">{</span>
+
+<span class="o">}</span>
+
+<span class="c1">// class with custrutor and logic</span>
+<span class="kd">class</span> <span class="nc">pupile</span><span class="o">{</span>
+    <span class="c1">// cannot have both default constructor and  a constructo function</span>
+    <span class="n">constructor</span><span class="o">(</span><span class="n">age</span><span class="o">:</span> <span class="kt">int</span><span class="o">,</span> <span class="n">height</span> <span class="o">:</span> <span class="kt">double</span><span class="o">){</span>
+
+    <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div></blockquote>
+</div>
+<div class="section" id="structs">
+<h2>structs<a class="headerlink" href="#structs" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>Define properties , functions to be implemented
+<strong>note</strong> -&gt;  let and val have to initialized when used, but you can leave out variable decralation and it will default to var.</p>
+<p>Example :</p>
+<blockquote>
+<div><div class="highlight-java notranslate"><div class="highlight"><pre><span></span><span class="kd">enum</span> <span class="n">Gender</span> <span class="o">{</span>
+    <span class="n">male</span><span class="o">,</span> <span class="n">female</span>
+<span class="o">}</span>
+<span class="n">struct</span> <span class="n">User</span><span class="o">{</span>
+    <span class="n">age</span><span class="o">:</span><span class="kt">int</span><span class="o">,</span>
+    <span class="c1">// function is optional , anything with () is assumed to be a function</span>
+    <span class="n">hasparents</span><span class="o">()</span> <span class="o">:</span><span class="n">bool</span><span class="o">,</span>
+    <span class="n">gender</span><span class="o">:</span> <span class="n">Gender</span> <span class="o">,</span>
+    <span class="n">let</span> <span class="n">isHuman</span> <span class="o">=</span><span class="kc">true</span>
+<span class="o">}</span>
+
+<span class="kd">class</span> <span class="nc">Student</span> <span class="n">impliments</span> <span class="n">User</span><span class="o">{</span>
+
+    <span class="nd">@overides</span>
+    <span class="n">function</span> <span class="nf">hasparents</span><span class="o">()</span> <span class="o">:</span><span class="n">bool</span><span class="o">{</span>
+        <span class="c1">// variable from struct</span>
+        <span class="n">age</span> <span class="o">=</span> <span class="mi">23</span><span class="o">;</span>
+        <span class="c1">// .... logic here</span>
+        <span class="k">return</span> <span class="kc">false</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="kd">class</span> <span class="nf">PrePrimary</span><span class="o">(</span><span class="n">name</span><span class="o">:</span> <span class="n">String</span><span class="o">)</span> <span class="kd">extends</span> <span class="n">Student</span> <span class="o">{</span>
+
+
+<span class="o">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+</div></blockquote>
 </div>
 </div>
 
