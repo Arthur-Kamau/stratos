@@ -1,5 +1,11 @@
 package com.stratos.Validators;
 
+import com.stratos.model.Statement.Statement;
+import com.stratos.model.Diagnostics;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Validate expressions
  * Validations include
@@ -11,7 +17,15 @@ package com.stratos.Validators;
  */
 public class Validators {
 
+    List<Diagnostics> diagnostics = new ArrayList<>();
+    public List<Statement>  validate(List<Statement> statements){
 
 
+        return  statements;
+    }
+
+    public List<Diagnostics> getDiagnostics() {
+        return diagnostics;
+    }
 }
 

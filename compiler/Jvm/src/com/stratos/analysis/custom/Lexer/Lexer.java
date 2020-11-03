@@ -213,6 +213,50 @@ public class Lexer {
                 }
 
                 break;
+            case '<':
+                if (peek() == '=') {
+                    advance();
+                    nodesList.add(new Node(
+                            currentLineCharacter,
+                            currentLineCharacter,
+                            lineNumber,
+                            lineNumber,
+                            NodeType.LessThanOrEqualTo,
+                            "<="
+                    ));
+                } else {
+                    nodesList.add(new Node(
+                            currentLineCharacter,
+                            currentLineCharacter,
+                            lineNumber,
+                            lineNumber,
+                            NodeType.LessThan,
+                            "<"
+                    ));
+                }
+                break;
+            case '>':
+                if (peek() == '=') {
+                    advance();
+                    nodesList.add(new Node(
+                            currentLineCharacter,
+                            currentLineCharacter,
+                            lineNumber,
+                            lineNumber,
+                            NodeType.GreaterThanOrEqualTo,
+                            ">="
+                    ));
+                } else {
+                    nodesList.add(new Node(
+                            currentLineCharacter,
+                            currentLineCharacter,
+                            lineNumber,
+                            lineNumber,
+                            NodeType.GreaterThan,
+                            ">"
+                    ));
+                }
+                break;
             case '=':
                 if (peek() == '=') {
                     advance();

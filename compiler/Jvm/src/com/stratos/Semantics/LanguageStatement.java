@@ -12,9 +12,9 @@ public class LanguageStatement {
     List<Statement> statementList = new ArrayList<>();
     List<Diagnostics> diagnostics = new ArrayList<>();
 
-    public List<Statement> analysis(List<Token> tokens) throws Exception {
+    public List<Statement> createStatements(List<Token> tokens) throws Exception {
         for (Token item : tokens) {
-
+            System.out.println("lang statements .... ");
             List<Statement> statement = new LanguageStatementAnalysis().nodesAnalysis(item);
             statementList.addAll(statement);
         }
@@ -38,6 +38,18 @@ public class LanguageStatement {
                     throw new Exception("unimplemented ....... ");
                 } else if (contains(NodeType.ModulasNode) || contains(NodeType.DivideNode) || contains(NodeType.SubtractNode) || contains(NodeType.AddNode) || contains(NodeType.MultiplyNode)) {
                     statements.add(new OperationSemantics().execute(token));
+                } else if (contains(NodeType.ValNode) || contains(NodeType.VarNode) || contains(NodeType.LetNode)) {
+                    throw new Exception("unimplemented ....... ");
+                } else if (contains(NodeType.WhenNode)) {
+                    throw new Exception("unimplemented ....... ");
+                } else if (contains(NodeType.IfNode)) {
+                    throw new Exception("unimplemented ....... ");
+                }else if (contains(NodeType.ElseNode)) {
+                    throw new Exception("unimplemented ....... ");
+                } else if (contains(NodeType.AssignNode)) {
+                    throw new Exception("unimplemented ....... ");
+                } else if (contains(NodeType.EquateNode) || contains(NodeType.NotEqualToNode) || contains(NodeType.GreaterThanOrEqualTo) || contains(NodeType.LessThanOrEqualTo)) {
+                    throw new Exception("unimplemented ....... ");
                 }
             } else {
                 Log.error("Token contains empty nodes");
@@ -49,7 +61,7 @@ public class LanguageStatement {
         protected boolean contains(NodeType type) {
             boolean containsNode = false;
             for (Node item : node) {
-                if (item.getType() == type) {
+                        if (item.getType() == type) {
                     containsNode = true;
                     break;
                 }

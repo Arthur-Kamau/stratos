@@ -13,7 +13,7 @@ public class Language {
     }
 
     public List<String> getKeyWords() {
-        String[] array = {"val","let","var","list" ,"enum","struct","double", "int", "private" ,"string", "char", "alias", "class", "then", "or", "and", "function", "some", "none", "return", "package", "import", "implements", "extends"};
+        String[] array = {"val","let","var","list" , "if", "else", "when","enum","struct","double", "int", "private" ,"string", "char", "alias", "class", "then", "or", "and", "function", "some", "none", "return", "package", "import", "implements", "extends"};
         List<String> list = Arrays.asList(array);
         return list;
     }
@@ -27,10 +27,16 @@ public class Language {
                 return NodeType.VarNode;
             case "val":
                 return NodeType.ValNode;
+            case "when":
+                return NodeType.WhenNode;
             case "let":
                 return NodeType.LetNode;
             case "list":
                 return NodeType.ListNode;
+            case "if":
+                return NodeType.IfNode;
+            case "else":
+                return NodeType.ElseNode;
             case "enum":
                 return NodeType.EnumNode;
             case "strut":
@@ -66,7 +72,7 @@ public class Language {
             case "import":
                 return NodeType.ImportNode;
             case "implements":
-                return NodeType.ImplimentsNode;
+                return NodeType.ImplementsNode;
             case "extends":
                 return NodeType.ExtendsNode;
             case "private":
