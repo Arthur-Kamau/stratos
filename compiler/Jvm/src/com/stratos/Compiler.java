@@ -2,20 +2,19 @@ package com.stratos;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stratos.Config.AppConfigFile;
-import com.stratos.Semantics.LanguageStatement;
+import com.stratos.Executor.Executor;
+import com.stratos.Semantics.LanguageStatementSemantics;
 import com.stratos.Validators.Validators;
 import com.stratos.analysis.custom.AST.ASTGenerator;
 import com.stratos.analysis.custom.Lexer.Lexer;
 import com.stratos.analysis.custom.Parser.Parser;
-import com.stratos.model.Diagnostics;
-import com.stratos.model.Node;
-import com.stratos.model.NodeList;
+import com.stratos.model.*;
 
 import com.stratos.model.Statement.Statement;
-import com.stratos.model.Token;
 import com.stratos.util.ProjectFiles.ProjectFiles;
 import com.typesafe.config.Config;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -40,6 +39,7 @@ public class Compiler {
         List<String> projectFiles = new ProjectFiles().walk(projectPath + "/src");
         //read all the files
 
+        List<ExecutionTree> executionTrees = new ArrayList<>();
         for (String file : projectFiles) {
             List<Node> nodesList = new Lexer().generateNodes(file);
             NodeList nodeList = new Parser().parse(nodesList);
@@ -52,18 +52,20 @@ public class Compiler {
             }
 
 
+            System.out.println("\n\n ================= \n\n ");
+
             List<Token> tokenList = new ASTGenerator(nodeList).generate();
 
-//            for (Token n: tokenList) {
-//                //Creating the ObjectMapper object
-//                ObjectMapper mapper = new ObjectMapper();
-//                //Converting the Object to JSONString
-//                String jsonString = mapper.writeValueAsString(n);
-//                System.out.println("Token list ==>"+jsonString);
-//            }
+            for (Token n: tokenList) {
+                //Creating the ObjectMapper object
+                ObjectMapper mapper = new ObjectMapper();
+                //Converting the Object to JSONString
+                String jsonString = mapper.writeValueAsString(n);
+                System.out.println("Token list ==>"+jsonString);
+            }
 
 
-            List<Statement> statements = new LanguageStatement().createStatements(tokenList);
+            List<Statement> statements = new LanguageStatementSemantics().createStatements(tokenList);
 
 
 //            for (Statement n : statements) {
@@ -78,11 +80,29 @@ public class Compiler {
 
             Validators validators = new Validators();
             List<Statement> validatedStatements = validators.validate(statements);
-            diagnostics.addAll(validators.getDiagnostics());
+
+            List<Diagnostics> validationDiagonistics = validators.getDiagnostics();
+            diagnostics.addAll(validationDiagonistics);
+
+
+            executionTrees.add(new ExecutionTree(
+                    file,
+                    false,
+                    false,
+                    validatedStatements
+            ));
+
 
         }
 
+        Executor executor =  new Executor();
+        executor.execute(executionTrees,  conf);
+
     }
+
+
+
+
 
 }
 

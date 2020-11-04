@@ -13,7 +13,7 @@ import java.util.List;
 
 public class Lexer {
     List<Node> nodesList = new ArrayList<>();
-    int lineNumber = 0;
+    int lineNumber = 1;
     int currentLineCharacter = 0;
     int currentCharacter;
     String sourceCode;
@@ -37,7 +37,8 @@ public class Lexer {
                 lineNumber,
                 lineNumber,
                 NodeType.EndOfFileNode,
-                "\0"
+                "\0",
+                false
         ));
         return nodesList;
     }
@@ -55,7 +56,8 @@ public class Lexer {
                             lineNumber,
                             lineNumber,
                             NodeType.NotEqualToNode,
-                            "!="
+                            "!=" ,
+                            false
                     ));
                 } else {
                     nodesList.add(new Node(
@@ -64,7 +66,8 @@ public class Lexer {
                             lineNumber,
                             lineNumber,
                             NodeType.NotNodeType,
-                            "!"
+                            "!" ,
+                            false
                     ));
                 }
 
@@ -76,7 +79,8 @@ public class Lexer {
                         lineNumber,
                         lineNumber,
                         NodeType.SemiColonNode,
-                        ";"
+                        ";" ,
+                        false
                 ));
                 break;
             case '\n':
@@ -86,8 +90,11 @@ public class Lexer {
                         lineNumber,
                         lineNumber,
                         NodeType.NewLineNode,
-                        "\\n"
+                        "\\n" ,
+                        false
                 ));
+
+                lineNumber++;
                 break;
             case '(':
                 nodesList.add(new Node(
@@ -96,7 +103,8 @@ public class Lexer {
                         lineNumber,
                         lineNumber,
                         NodeType.CurvedBracketOpenNode,
-                        "("
+                        "(" ,
+                        false
                 ));
                 break;
             case ')':
@@ -106,7 +114,8 @@ public class Lexer {
                         lineNumber,
                         lineNumber,
                         NodeType.CurvedBracketCloseNode,
-                        ")"
+                        ")" ,
+                        false
                 ));
                 break;
 
@@ -117,7 +126,8 @@ public class Lexer {
                         lineNumber,
                         lineNumber,
                         NodeType.SquareBracketOpenNode,
-                        "["
+                        "[" ,
+                        false
                 ));
                 break;
             case ']':
@@ -127,7 +137,8 @@ public class Lexer {
                         lineNumber,
                         lineNumber,
                         NodeType.SquareBracketCloseNode,
-                        "]"
+                        "]" ,
+                        false
                 ));
                 break;
 
@@ -138,7 +149,8 @@ public class Lexer {
                         lineNumber,
                         lineNumber,
                         NodeType.CurlyBracketOpenNode,
-                        "{"
+                        "{" ,
+                        false
                 ));
                 break;
             case '}':
@@ -148,7 +160,8 @@ public class Lexer {
                         lineNumber,
                         lineNumber,
                         NodeType.CurlyBracketCloseNode,
-                        "}"
+                        "}" ,
+                        false
                 ));
                 break;
 
@@ -159,7 +172,8 @@ public class Lexer {
                         lineNumber,
                         lineNumber,
                         NodeType.ModulasNode,
-                        "%"
+                        "%" ,
+                        false
                 ));
                 break;
             case '*':
@@ -169,7 +183,8 @@ public class Lexer {
                         lineNumber,
                         lineNumber,
                         NodeType.MultiplyNode,
-                        "*"
+                        "*" ,
+                        false
                 ));
                 break;
             case '+':
@@ -179,7 +194,8 @@ public class Lexer {
                         lineNumber,
                         lineNumber,
                         NodeType.AddNode,
-                        "+"
+                        "+" ,
+                        false
                 ));
                 break;
 
@@ -199,7 +215,8 @@ public class Lexer {
                             lineNumber,
                             lineNumber,
                             NodeType.NegativeNumericNode,
-                            negativeInteger
+                            negativeInteger ,
+                            false
                     ));
                 } else {
                     nodesList.add(new Node(
@@ -208,7 +225,8 @@ public class Lexer {
                             lineNumber,
                             lineNumber,
                             NodeType.SubtractNode,
-                            "-"
+                            "-" ,
+                            false
                     ));
                 }
 
@@ -222,7 +240,8 @@ public class Lexer {
                             lineNumber,
                             lineNumber,
                             NodeType.LessThanOrEqualTo,
-                            "<="
+                            "<=" ,
+                            false
                     ));
                 } else {
                     nodesList.add(new Node(
@@ -231,7 +250,8 @@ public class Lexer {
                             lineNumber,
                             lineNumber,
                             NodeType.LessThan,
-                            "<"
+                            "<" ,
+                            false
                     ));
                 }
                 break;
@@ -244,7 +264,8 @@ public class Lexer {
                             lineNumber,
                             lineNumber,
                             NodeType.GreaterThanOrEqualTo,
-                            ">="
+                            ">=",
+                            false
                     ));
                 } else {
                     nodesList.add(new Node(
@@ -253,7 +274,8 @@ public class Lexer {
                             lineNumber,
                             lineNumber,
                             NodeType.GreaterThan,
-                            ">"
+                            ">" ,
+                            false
                     ));
                 }
                 break;
@@ -266,7 +288,8 @@ public class Lexer {
                             lineNumber,
                             lineNumber,
                             NodeType.EquateNode,
-                            "=="
+                            "==" ,
+                            false
                     ));
                 } else {
                     nodesList.add(new Node(
@@ -275,7 +298,8 @@ public class Lexer {
                             lineNumber,
                             lineNumber,
                             NodeType.AssignNode,
-                            "="
+                            "=" ,
+                            false
                     ));
                 }
 
@@ -300,7 +324,8 @@ public class Lexer {
                             lineNumber,
                             lineNumber,
                             NodeType.LineCommentNode,
-                            "//" + commentLine
+                            "//" + commentLine ,
+                            false
                     ));
                 } else if (peek() == '*') {
                     // read the extra  * that both make  start of multi comment
@@ -334,7 +359,8 @@ public class Lexer {
                             currentNumber,
                             lineNumber,
                             NodeType.MultiLineCommentNode,
-                            multiLineComment
+                            multiLineComment,
+                            false
                     ));
 
                 } else {
@@ -344,7 +370,8 @@ public class Lexer {
                             lineNumber,
                             lineNumber,
                             NodeType.DivideNode,
-                            "/"
+                            "/",
+                            false
                     ));
 
                 }
@@ -368,7 +395,8 @@ public class Lexer {
                         stringLineStart,
                         lineNumber,
                         NodeType.StringValue,
-                        stringData
+                        stringData,
+                        false
                 ));
 
                 // consume the closing "
@@ -413,7 +441,8 @@ public class Lexer {
                                 lineNumber,
                                 lineNumber,
                                 NodeType.NumericNode,
-                                alphanumeric
+                                alphanumeric,
+                                false
                         ));
                     } else {
                         Language language = new Language();
@@ -424,7 +453,8 @@ public class Lexer {
                                 lineNumber,
                                 lineNumber,
                                 language.getKeyWordNodeType(alphanumeric),
-                                alphanumeric
+                                alphanumeric,
+                                false
                         ));
 
 
@@ -445,7 +475,8 @@ public class Lexer {
                             lineNumber,
                             lineNumber,
                             NodeType.UnknownNode,
-                            "" + c
+                            "" + c,
+                            false
                     ));
                 }
 

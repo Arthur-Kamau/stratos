@@ -8,7 +8,7 @@ import com.stratos.util.Print.Log;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LanguageStatement {
+public class LanguageStatementSemantics {
     List<Statement> statementList = new ArrayList<>();
     List<Diagnostics> diagnostics = new ArrayList<>();
 

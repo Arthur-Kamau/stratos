@@ -7,7 +7,7 @@ import com.stratos.model.Statement.Statement;
 import com.stratos.model.Token;
 import com.stratos.util.Print.Log;
 
-public class PackageSemantics extends com.stratos.Semantics.Statement {
+public class PackageSemantics extends Semantics {
 
 
     public Statement execute(Token token) {

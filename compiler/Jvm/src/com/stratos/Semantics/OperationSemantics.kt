@@ -7,7 +7,7 @@ import com.stratos.model.Token
 import com.stratos.util.node.NodeUtil
 import java.util.*
 
-class OperationSemantics : Statement() {
+class OperationSemantics : Semantics() {
     @Throws(Exception::class)
     fun execute(token: Token): com.stratos.model.Statement.Statement? {
         super.execute(token.nodes)
@@ -106,7 +106,7 @@ class OperationSemantics : Statement() {
         return foundOperation
     }
 
-    private inner class parseComplexoperation : Statement() {
+    private inner class parseComplexoperation : Semantics() {
         var operationExpressionStatementList: List<OperationExpressionStatement> = ArrayList()
         fun parse(items: List<Node?>?): List<OperationExpressionStatement>? {
             super.execute(items)

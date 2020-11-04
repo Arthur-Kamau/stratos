@@ -6,7 +6,7 @@ import com.stratos.model.Node
 // add, minus, divide, subtract , modulas.
 // presendence BODMAS (brackats, Of , division , multiplication , addition , subtraction
 class OperationExpressionStatement : Statement {
-    var returnValue: Node
+    var returnValue: Node?
     var leftValue: Node
     var operationValue: Node
     var rightValue: Node

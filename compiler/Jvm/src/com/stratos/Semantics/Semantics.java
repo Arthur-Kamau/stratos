@@ -7,7 +7,7 @@ import com.stratos.model.Token;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Statement {
+public class Semantics {
     List<Node> nodes = new ArrayList<>();
 
     int current = 0;
