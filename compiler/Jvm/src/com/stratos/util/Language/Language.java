@@ -7,7 +7,7 @@ import java.util.List;
 
 public class Language {
     public List<String> getAppConfigKeyDetails() {
-        String[] array = {"name", "version", "description","author", "dependencies","keywords"};
+        String[] array = {"name", "version", "description","author", "dependencies","keywords" };
         List<String> list = Arrays.asList(array);
         return list;
     }

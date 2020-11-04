@@ -27,9 +27,9 @@ import java.util.List;
  */
 public class Compiler {
     public void RunProject(String projectPath) throws Exception {
-        AppConfigFile confi = new AppConfigFile();
-        Config conf = confi.parse(projectPath);
-        List<Diagnostics> diagnostics = confi.validateConfigFile(conf);
+        AppConfigFile config = new AppConfigFile();
+        Config conf = config.parse(projectPath);
+        List<Diagnostics> diagnostics = config.validateConfigFile(conf);
 
 //        for (Diagnostics dig : dd){
 //            System.out.println(" diagonistics "+ dig.toString() );
@@ -95,8 +95,8 @@ public class Compiler {
 
         }
 
-        Executor executor =  new Executor();
-        executor.execute(executionTrees,  conf);
+        Executor executor =  new Executor(executionTrees,  conf, projectPath);
+        executor.execute();
 
     }
 
