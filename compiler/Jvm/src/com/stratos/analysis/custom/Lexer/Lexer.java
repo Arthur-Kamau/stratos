@@ -199,6 +199,61 @@ public class Lexer {
                 ));
                 break;
 
+            case '&':
+                if (peek() == '&') {
+
+                    // consume the extra &
+                    advance();
+                    nodesList.add(new Node(
+                            currentLineCharacter,
+                            currentLineCharacter,
+                            lineNumber,
+                            lineNumber,
+                            NodeType.AndAndNode,
+                            "&&" ,
+                            false
+                    ));
+                } else {
+                    nodesList.add(new Node(
+                            currentLineCharacter,
+                            currentLineCharacter,
+                            lineNumber,
+                            lineNumber,
+                            NodeType.BinaryAndNode,
+                            "&" ,
+                            false
+                    ));
+                }
+
+                break;
+
+            case '|':
+                if (peek() == '|') {
+
+                    // consume the extra |
+                    advance();
+                    nodesList.add(new Node(
+                            currentLineCharacter,
+                            currentLineCharacter,
+                            lineNumber,
+                            lineNumber,
+                            NodeType.OrNode,
+                            "||" ,
+                            false
+                    ));
+                } else {
+                    nodesList.add(new Node(
+                            currentLineCharacter,
+                            currentLineCharacter,
+                            lineNumber,
+                            lineNumber,
+                            NodeType.BinaryOrNode,
+                            "|" ,
+                            false
+                    ));
+                }
+
+                break;
 
             case '-':
                 if (isDigit(peek())) {

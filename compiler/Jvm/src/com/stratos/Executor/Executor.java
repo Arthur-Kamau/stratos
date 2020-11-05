@@ -2,6 +2,7 @@ package com.stratos.Executor;
 
 
 import com.stratos.model.ExecutionTree;
+import com.stratos.model.Statement.ExpressionStatement;
 import com.stratos.model.Statement.Statement;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValue;
@@ -11,18 +12,26 @@ import java.util.Map;
 import java.util.Set;
 
 public class Executor {
-    List<ExecutionTree> statementList;
+    List<ExecutionTree> executionTree;
     Config conf;
     String projectPath;
     public Executor(List<ExecutionTree> statementList, Config conf , String projectPath){
-        this.statementList = statementList;
+        this.executionTree = statementList;
         this.conf= conf;
         this.projectPath = projectPath ;
     }
     public void execute(){
 
-       String main = findMain();
-        System.out.println("===== main   ====");
+//        String main = findMain();
+
+
+        for (ExecutionTree tree : executionTree ){
+            for (Statement stm:
+          tree.getStatements()  ) {
+                boolean res = stm instanceof ExpressionStatement ;
+                System.out.println("statement "+res );
+            }
+        }
     }
 
    private String  findMain( ){

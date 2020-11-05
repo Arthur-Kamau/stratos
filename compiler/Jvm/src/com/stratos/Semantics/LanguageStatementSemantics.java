@@ -49,7 +49,9 @@ public class LanguageStatementSemantics {
                 } else if (contains(NodeType.AssignNode)) {
                     throw new Exception("unimplemented ....... ");
                 } else if (contains(NodeType.EquateNode) || contains(NodeType.NotEqualToNode) || contains(NodeType.GreaterThanOrEqualTo) || contains(NodeType.LessThanOrEqualTo)) {
-                    throw new Exception("unimplemented ....... ");
+//                    throw new Exception("unimplemented ....... ");
+                    statements.add(new ExpressionSemantics().execute(token));
+
                 }
             } else {
                 Log.error("Token contains empty nodes");

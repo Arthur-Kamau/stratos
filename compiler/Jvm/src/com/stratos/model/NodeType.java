@@ -1,6 +1,7 @@
 package com.stratos.model;
 
 public enum NodeType {
+
     // keywords
     ValNode,
     VarNode,
@@ -20,7 +21,7 @@ public enum NodeType {
     AndNode,
     AliasNode,
     ThenNode,
-    OrNode,
+
     // types
     IntegerNode,
     DoubleNode,
@@ -32,6 +33,22 @@ public enum NodeType {
     WhenNode,
     ImplementsNode,
     ExtendsNode,
+
+    // operation node
+
+    AndAndNode,
+    OrNode,
+    AndOrNode,
+
+
+    // binary node
+
+    BinaryAndNode ,
+    BinaryOrNode ,
+
+
+
+
     // operators
     DivideNode,
     MultiplyNode,
@@ -45,6 +62,8 @@ public enum NodeType {
     LessThanOrEqualTo,
     GreaterThan,
     GreaterThanOrEqualTo,
+
+
     //    symbols
     SquareBracketOpenNode,
     SquareBracketCloseNode,
