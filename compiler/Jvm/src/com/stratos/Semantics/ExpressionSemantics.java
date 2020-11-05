@@ -22,27 +22,12 @@ public class ExpressionSemantics extends Semantics {
             List<ExpressionStatement> expressionStatementList = new ArrayList<>();
 
 
-            while (!super.isAtEnd()) {
-                Node c = super.advance();
 
-                if (c.getType() == NodeType.StringValue || c.getType() == NodeType.NumericNode || c.getType() == NodeType.AlphaNumericNode
-                        &&
-                        peek().getType() == NodeType.NotEqualToNode || peek().getType() == NodeType.EquateNode ||
-                        peek().getType() == NodeType.LessThan ||
-                        peek().getType() == NodeType.LessThanOrEqualTo ||
-                        peek().getType() == NodeType.GreaterThan ||
-                        peek().getType() == NodeType.GreaterThanOrEqualTo) {
-                    ExpressionStatement expressionStatementTemp = new ExpressionStatement();
-                    expressionStatementTemp.setLeftNode(c);
-                    expressionStatementTemp.setExpressionNode(super.advance());
-                    expressionStatementTemp.setExpressionNode(super.advance());
-                    expressionStatementTemp.setChildren(new ArrayList<>());
-                    expressionStatementTemp.setComplexExpression(false);
-                } else {
-
-                    checkErrors(c);
-                }
+            while (!isAtEnd()){
+                ExpressionStatement expressionStatement =  makeStatement();
+                expressionStatementList.add(expressionStatement);
             }
+
             expressionStatement.setComplexExpression(expressionStatementList);
             expressionStatement.setComplexExpression(false);
 
@@ -64,6 +49,7 @@ public class ExpressionSemantics extends Semantics {
                     expressionStatement.setExpressionNode(super.advance());
                     expressionStatement.setChildren(new ArrayList<>());
                     expressionStatement.setComplexExpression(false);
+                    expressionStatement.setExpressionNode(null);
                 } else {
 
                     checkErrors(c);
@@ -74,6 +60,42 @@ public class ExpressionSemantics extends Semantics {
         return expressionStatement;
     }
 
+    private  ExpressionStatement makeStatement() throws Exception {
+        Node c = super.advance();
+        ExpressionStatement expressionStatementTemp = new ExpressionStatement();
+        if (c.getType() == NodeType.StringValue || c.getType() == NodeType.NumericNode || c.getType() == NodeType.AlphaNumericNode) {
+
+            if (peek().getType() == NodeType.NotEqualToNode || peek().getType() == NodeType.EquateNode ||
+                    peek().getType() == NodeType.LessThan ||
+                    peek().getType() == NodeType.LessThanOrEqualTo ||
+                    peek().getType() == NodeType.GreaterThan ||
+                    peek().getType() == NodeType.GreaterThanOrEqualTo) {
+
+
+                    Node ex = super.advance();
+                    Node ri = super.advance();
+
+                    System.out.println(" ri "+ ex.toString());
+
+                    expressionStatementTemp.setLeftNode(c);
+                    expressionStatementTemp.setExpressionNode(ex);
+                    expressionStatementTemp.setRightNode(ri);
+                    expressionStatementTemp.setChildren(new ArrayList<>());
+                    expressionStatementTemp.setComplexExpression(false);
+//
+                    if(peek().getType() == NodeType.SemiColonNode || peek().getType() == NodeType.NewLineNode || peek().getType() == NodeType.AndAndNode  ||   peek().getType() == NodeType.OrNode  ||  peek().getType() == NodeType.AndOrNode ){
+
+                        expressionStatementTemp.setLogicalOperator(advance());
+                    }else {
+                        throw  new Exception("Expecting  Or (||) ,  And (&&)  , AndOr(&!) , Newline or Semicolon \n Current object "+expressionStatementTemp.toString()+"  \n got  "+ peek().toString());
+                    }
+            }
+        } else {
+
+            checkErrors(c);
+        }
+        return expressionStatementTemp;
+    }
     private void checkErrors(Node c) throws Exception {
         if (peek().getType() != NodeType.NotEqualToNode || peek().getType() != NodeType.EquateNode ||
                 peek().getType() != NodeType.LessThan ||
