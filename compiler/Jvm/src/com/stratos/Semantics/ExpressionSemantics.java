@@ -25,6 +25,7 @@ public class ExpressionSemantics extends Semantics {
 
             while (!isAtEnd()){
                 ExpressionStatement expressionStatement =  makeStatement();
+                System.out.println("stmnt "+ expressionStatement.toString());
                 expressionStatementList.add(expressionStatement);
             }
 
@@ -61,16 +62,15 @@ public class ExpressionSemantics extends Semantics {
     }
 
     private  ExpressionStatement makeStatement() throws Exception {
-        Node c = super.advance();
+        Node c = super.peek();
         ExpressionStatement expressionStatementTemp = new ExpressionStatement();
         if (c.getType() == NodeType.StringValue || c.getType() == NodeType.NumericNode || c.getType() == NodeType.AlphaNumericNode) {
-
-            if (peek().getType() == NodeType.NotEqualToNode || peek().getType() == NodeType.EquateNode ||
-                    peek().getType() == NodeType.LessThan ||
-                    peek().getType() == NodeType.LessThanOrEqualTo ||
-                    peek().getType() == NodeType.GreaterThan ||
-                    peek().getType() == NodeType.GreaterThanOrEqualTo) {
-
+            Node node =  super.advance();
+            if (node.getType() == NodeType.NotEqualToNode || node.getType() == NodeType.EquateNode ||
+                    node.getType() == NodeType.LessThan ||
+                    node.getType() == NodeType.LessThanOrEqualTo ||
+                    node.getType() == NodeType.GreaterThan ||
+                    node.getType() == NodeType.GreaterThanOrEqualTo) {
 
                     Node ex = super.advance();
                     Node ri = super.advance();
@@ -82,18 +82,20 @@ public class ExpressionSemantics extends Semantics {
                     expressionStatementTemp.setRightNode(ri);
                     expressionStatementTemp.setChildren(new ArrayList<>());
                     expressionStatementTemp.setComplexExpression(false);
-//
-                    if(peek().getType() == NodeType.SemiColonNode || peek().getType() == NodeType.NewLineNode || peek().getType() == NodeType.AndAndNode  ||   peek().getType() == NodeType.OrNode  ||  peek().getType() == NodeType.AndOrNode ){
 
-                        expressionStatementTemp.setLogicalOperator(advance());
-                    }else {
-                        throw  new Exception("Expecting  Or (||) ,  And (&&)  , AndOr(&!) , Newline or Semicolon \n Current object "+expressionStatementTemp.toString()+"  \n got  "+ peek().toString());
-                    }
+//                    Node peeks = advance()
+//                    if(peek().getType() == NodeType.SemiColonNode || peek().getType() == NodeType.NewLineNode || peek().getType() == NodeType.AndAndNode  ||   peek().getType() == NodeType.OrNode  ||  peek().getType() == NodeType.AndOrNode ){
+//
+//                        expressionStatementTemp.setLogicalOperator();
+//                    }else {
+//                        throw  new Exception("Expecting  Or (||) ,  And (&&)  , AndOr(&!) , Newline or Semicolon \n Current object "+expressionStatementTemp.toString()+"  \n got  "+ peek().toString());
+//                    }
             }
         } else {
 
             checkErrors(c);
         }
+        System.out.println("expression statement "+expressionStatementTemp.toString());
         return expressionStatementTemp;
     }
     private void checkErrors(Node c) throws Exception {

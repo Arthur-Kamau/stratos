@@ -16,18 +16,17 @@ public class PackageSemantics extends Semantics {
         Statement statement = null;
         while (!super.isAtEnd()) {
             Node c = super.advance();
-            System.out.println(" c "+c.toString());
             if (c.getType() == NodeType.PackageNode ) {
 
                 Node packageName = super.advance();
 
-                if (peek().getType() == NodeType.AlphaNumericNode ) {
+                if (packageName.getType() == NodeType.AlphaNumericNode ) {
 
                     statement = (new PackageStatement(
                             packageName,
                             c
                     ));
-                }else  if( peek().getType() == NodeType.StringValue){
+                }else  if( packageName.getType() == NodeType.StringValue){
                     statement = (new PackageStatement(
                             packageName,
                             c

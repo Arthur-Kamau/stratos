@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="BranchesTreeState">
     <expand>
       <path>
@@ -19,54 +22,358 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="257ce30c-1955-45d2-859b-9ea55c8fcafc" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/src/org/stratos/language/stratos.bnf" beforeDir="false" afterPath="$PROJECT_DIR$/src/org/stratos/language/stratos.bnf" afterDir="false" />
+    <list default="true" id="544043c9-1ad9-4eec-b1ad-cbde4c0c0bc2" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/../../compiler/Jvm/src/com/stratos/Semantics/ExpressionSemantics.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../compiler/Jvm/src/com/stratos/Semantics/ExpressionSemantics.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../compiler/Jvm/src/com/stratos/Semantics/PackageSemantics.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../compiler/Jvm/src/com/stratos/Semantics/PackageSemantics.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../compiler/Jvm/src/com/stratos/Semantics/Semantics.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../compiler/Jvm/src/com/stratos/Semantics/Semantics.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/.idea/uiDesigner.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/Test.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/lexer/_StratosLexer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/parser/StratosParser.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/StratosAssignmentStatement.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/StratosBasicVariableDefinition.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/StratosDefinition.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/StratosEnumType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/StratosFunctionBody.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/StratosFunctionDefinition.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/StratosFunctionInvocation.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/StratosPackageDefinition.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/StratosProperty.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/StratosStatement.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/StratosStructType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/StratosType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/StratosTypePackage.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/StratosTypeWrapper.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/StratosTypes.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/StratosVariableDefinition.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/StratosVisitor.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/impl/StratosAssignmentStatementImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/impl/StratosBasicVariableDefinitionImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/impl/StratosDefinitionImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/impl/StratosEnumTypeImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/impl/StratosFunctionBodyImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/impl/StratosFunctionDefinitionImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/impl/StratosFunctionInvocationImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/impl/StratosPackageDefinitionImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/impl/StratosPropertyImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/impl/StratosStatementImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/impl/StratosStructTypeImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/impl/StratosTypeImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/impl/StratosTypePackageImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/impl/StratosTypeWrapperImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/gen/lang/stratos/psi/impl/StratosVariableDefinitionImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/META-INF/Test.kotlin_module" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/META-INF/plugin.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/com/intellij/uiDesigner/core/AbstractLayout.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/com/intellij/uiDesigner/core/DimensionInfo.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/com/intellij/uiDesigner/core/GridConstraints.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/com/intellij/uiDesigner/core/GridLayoutManager.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/com/intellij/uiDesigner/core/HorizontalInfo.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/com/intellij/uiDesigner/core/LayoutState.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/com/intellij/uiDesigner/core/Spacer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/com/intellij/uiDesigner/core/SupportCode$TextWithMnemonic.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/com/intellij/uiDesigner/core/SupportCode.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/com/intellij/uiDesigner/core/Util.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/com/intellij/uiDesigner/core/VerticalInfo.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/icons/file.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/icons/file_2.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/icons/file_doc.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/icons/stratos-small.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/icons/stratos-xsmall.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/icons/stratos.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/action/NewStratosFileAction$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/action/NewStratosFileAction.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/action/RsFileTemplateUtil$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/action/RsFileTemplateUtil.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/bundle/StratosBundle.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/bundle/StratosBundleKt.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/facet/StratosFacet.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/facet/StratosFacetConfiguration.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/facet/StratosFacetEditorTab.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/facet/StratosFacetType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/facet/StratosModuleSettings.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/framework/StratosFrameworkType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/framework/StratosModuleConfigurable.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/framework/StratosModuleProvider.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/icons/StratosIcons.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/language/StratosColorSettingsPage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/language/StratosElementType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/language/StratosExecutionScope.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/language/StratosFile.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/language/StratosFileType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/language/StratosLanguage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/language/StratosPsiCompositeElement.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/language/StratosSyntaxHighlighter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/language/StratosSyntaxHighlighterColors.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/language/StratosSyntaxHighlighterFactory.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/language/StratosTokenType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/lexer/StratosLexer$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/lexer/StratosLexer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/lexer/StratosLexerAdapter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/lexer/_StratosLexer$State.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/lexer/_StratosLexer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/listeners/StratosProjectManagerListener.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/module/StratosModuleBuilder.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/module/StratosModuleType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/module/StratosModuleTypeBuilder.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/module/projectType/StratosProjectTypePanel.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/module/sdk/StratosSdkComboBox$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/module/sdk/StratosSdkComboBox$2.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/module/sdk/StratosSdkComboBox.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/module/sdk/StratosSdkData.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/module/sdk/StratosSdkPanel.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/module/sdk/StratosSdkType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/module/wizard/StratosProjectTypeWizardStep.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/module/wizard/StratosSdkWizardStep.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/module/wizard/StratosWizardInputField.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/parser/StratosParser.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/parser/StratosParserDefinition.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/parser/stratos.bnf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/project/StratosConfigurationFactory.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/project/StratosProjectStructureDetector.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/project/StratosRunConfiguration$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/project/StratosRunConfiguration.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/project/StratosRunConfigurationSettingsEditor$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/project/StratosRunConfigurationSettingsEditor.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/project/StratosRunConfigurationType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/project/StratosRunner.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/project/StratosSettingsEditor.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosAssignmentStatement.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosBasicVariableDefinition.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosDefinition.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosEnumType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosFunctionBody.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosFunctionDefinition.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosFunctionInvocation.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosPackageDefinition.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosProperty.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosStatement.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosStructType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosTypePackage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosTypeWrapper.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosTypes$Factory.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosTypes.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosVariableDefinition.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/StratosVisitor.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/impl/StratosAssignmentStatementImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/impl/StratosBasicVariableDefinitionImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/impl/StratosDefinitionImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/impl/StratosEnumTypeImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/impl/StratosFunctionBodyImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/impl/StratosFunctionDefinitionImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/impl/StratosFunctionInvocationImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/impl/StratosPackageDefinitionImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/impl/StratosPropertyImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/impl/StratosStatementImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/impl/StratosStructTypeImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/impl/StratosTypeImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/impl/StratosTypePackageImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/impl/StratosTypeWrapperImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/psi/impl/StratosVariableDefinitionImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/services/StratosApplicationService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/services/StratosProjectService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/util/StratosFileBrowser$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/lang/stratos/util/StratosFileBrowser.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/out/production/Test/messages/StratosBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/resources/META-INF/plugin.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/resources/icons/file.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/resources/icons/file_2.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/resources/icons/file_doc.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/resources/icons/stratos-small.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/resources/icons/stratos-xsmall.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/resources/icons/stratos.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/resources/messages/StratosBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/action/NewStratosFileAction.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/action/RsFileTemplateUtil.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/bundle/StratosBundle.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/facet/StratosFacet.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/facet/StratosFacetConfiguration.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/facet/StratosFacetEditorTab.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/facet/StratosFacetType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/facet/StratosModuleSettings.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/framework/StratosFrameworkType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/framework/StratosModuleConfigurable.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/framework/StratosModuleProvider.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/icons/StratosIcons.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/language/StratosColorSettingsPage.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/language/StratosElementType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/language/StratosExecutionScope.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/language/StratosFile.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/language/StratosFileType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/language/StratosLanguage.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/language/StratosPsiCompositeElement.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/language/StratosSyntaxHighlighter.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/language/StratosSyntaxHighlighterColors.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/language/StratosSyntaxHighlighterFactory.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/language/StratosTokenType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/lexer/StratosLexer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/lexer/StratosLexerAdapter.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/lexer/_test.flex" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/lexer/stratos.flex" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/listeners/StratosProjectManagerListener.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/module/StratosModuleBuilder.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/module/StratosModuleType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/module/StratosModuleTypeBuilder.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/module/projectType/StratosProjectTypePanel.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/module/projectType/StratosProjectTypePanel.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/module/sdk/StratosSdkComboBox.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/module/sdk/StratosSdkData.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/module/sdk/StratosSdkPanel.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/module/sdk/StratosSdkPanel.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/module/sdk/StratosSdkType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/module/wizard/StratosProjectTypeWizardStep.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/module/wizard/StratosSdkWizardStep.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/module/wizard/StratosWizardInputField.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/parser/StratosParserDefinition.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/parser/stratos.bnf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/project/StratosConfigurationFactory.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/project/StratosProjectStructureDetector.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/project/StratosRunConfiguration.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/project/StratosRunConfigurationSettingsEditor.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/project/StratosRunConfigurationSettingsEditor.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/project/StratosRunConfigurationType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/project/StratosRunner.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/project/StratosSettingsEditor.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/services/StratosApplicationService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/services/StratosProjectService.kt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Lang/src/lang/stratos/util/StratosFileBrowser.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/.idea/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/_StratosLexer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/parser/StratosParser.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/StratosTypes.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/impl/stratosAssignmentStatementImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/impl/stratosDefinitionImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/impl/stratosFunctionBodyImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/impl/stratosFunctionDefinitionImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/impl/stratosFunctionInvocationImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/impl/stratosStatementImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/impl/stratosTypeImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/impl/stratosVariableDefinitionImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/stratosAssignmentStatement.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/stratosDefinition.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/stratosFunctionBody.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/stratosFunctionDefinition.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/stratosFunctionInvocation.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/stratosStatement.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/stratosType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/stratosVariableDefinition.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/gen/org/stratos/sdk/language/psi/stratosVisitor.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/META-INF/intellij.kotlin_module" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/META-INF/plugin.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/META-INF/pluginIcon.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/icons/file.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/icons/file_doc.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/icons/file_doc_sm.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/icons/jar-gray.png" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/icons/stratos.jpg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/messages/StratosBundle.properties" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/action/NewStratosFileAction$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/action/NewStratosFileAction.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/action/RsFileTemplateUtil$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/action/RsFileTemplateUtil.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/bundle/StratosBundle.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/bundle/StratosBundleKt.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/codeStyle/SimpleCodeStyleSettingsProvider$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/codeStyle/SimpleCodeStyleSettingsProvider$SimpleCodeStyleMainPanel.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/codeStyle/SimpleCodeStyleSettingsProvider.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/codeStyle/StratosCodeStyleSettings.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/codeStyle/StratosLanguageCodeStyleSettingsProvider.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/highlighter/StratosColorSettingsPage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/highlighter/StratosSyntaxHighlighter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/highlighter/StratosSyntaxHighlighterFactory.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/icon/StratosIcons.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/ide/StratosBlock.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/StratosCommenter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/StratosLanguage.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/StratosLexerAdapter.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/StratosParserDefinition.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/_StratosLexer.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/file/StratosFileType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/file/StratosFileTypeFactory.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/parser/Stratos.bnf" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/parser/StratosParser.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/StratosElementType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/StratosFile.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/StratosNamedElement.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/StratosTokenType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/StratosTypes$Factory.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/StratosTypes.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/impl/stratosAssignmentStatementImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/impl/stratosDefinitionImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/impl/stratosFunctionBodyImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/impl/stratosFunctionDefinitionImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/impl/stratosFunctionInvocationImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/impl/stratosStatementImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/impl/stratosTypeImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/impl/stratosVariableDefinitionImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/stratosAssignmentStatement.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/stratosDefinition.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/stratosFunctionBody.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/stratosFunctionDefinition.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/stratosFunctionInvocation.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/stratosStatement.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/stratosType.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/stratosVariableDefinition.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/language/psi/stratosVisitor.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/listener/StratosApplicationService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/listener/StratosProjectManagerListener.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/listener/StratosProjectService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/project/StratosStructureViewElement.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/project/StratosStructureViewFactory$1.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/project/StratosStructureViewFactory.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/out/production/intellij/org/stratos/sdk/project/StratosStructureViewModel.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/src/org/stratos/sdk/action/NewStratosFileAction.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Stratos-Language-Plugin/src/org/stratos/sdk/action/RsFileTemplateUtil.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/documentation/documentation.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../toolman/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../toolman/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../toolman/.idea/toolman.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../toolman/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../toolman/.idea/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../toolman/README.md" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="FileTemplateManagerImpl">
-    <option name="RECENT_TEMPLATES">
-      <list>
-        <option value="FxmlFile" />
-        <option value="Class" />
-      </list>
-    </option>
+  <component name="ComposerSettings">
+    <execution />
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand />
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
   </component>
-  <component name="LogFilters">
-    <option name="FILTER_ERRORS" value="false" />
-    <option name="FILTER_WARNINGS" value="false" />
-    <option name="FILTER_INFO" value="true" />
-    <option name="FILTER_DEBUG" value="true" />
-    <option name="CUSTOM_FILTER" />
-  </component>
-  <component name="MavenImportPreferences">
-    <option name="generalSettings">
-      <MavenGeneralSettings>
-        <option name="mavenHome" value="$APPLICATION_HOME_DIR$/plugins/maven/lib/maven3" />
-      </MavenGeneralSettings>
-    </option>
-  </component>
-  <component name="ProjectId" id="1iuCFwjV9yxg2VanS9sHszhMTsL" />
-  <component name="ProjectLevelVcsManager">
-    <ConfirmationsSetting value="2" id="Add" />
-  </component>
+  <component name="ProjectId" id="1k2kHi8Q5jWVKkRvxVspCjdSKvj" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
-    <property name="Downloaded.Files.Path.Enabled" value="true" />
-    <property name="Repository.Attach.Annotations" value="true" />
-    <property name="Repository.Attach.JavaDocs" value="true" />
-    <property name="Repository.Attach.Sources" value="true" />
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
-    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
@@ -77,37 +384,30 @@
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="nodejs_package_manager_path" value="npm" />
-    <property name="project.structure.last.edited" value="Libraries" />
-    <property name="project.structure.proportion" value="0.0" />
-    <property name="project.structure.side.proportion" value="0.2" />
-    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/resources" />
-    </key>
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/resources/fileTemplates/internal" />
-    </key>
-    <key name="CreateClassDialog.RecentsKey">
-      <recent name="org.Stratos.language.parser" />
-      <recent name="org.stratos.parser" />
+      <recent name="$PROJECT_DIR$/src/main/antlr/org/stratos.lang" />
     </key>
   </component>
   <component name="RunManager">
-    <configuration name="Plugin" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType">
-      <module name="Stratos Language" />
-      <option name="VM_PARAMETERS" value="-Xmx512m -Xms256m -ea" />
-      <option name="PROGRAM_PARAMETERS" />
-      <predefined_log_file enabled="true" id="idea.log" />
+    <configuration default="true" type="ArquillianTestNG" factoryName="" nameIsGenerated="true">
+      <option name="arquillianRunConfiguration">
+        <value>
+          <option name="containerStateName" value="" />
+        </value>
+      </option>
+      <option name="TEST_OBJECT" value="CLASS" />
+      <properties />
+      <listeners />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration default="true" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType">
-      <module name="Stratos Language" />
+    <configuration name="test" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType">
+      <module name="" />
       <option name="VM_PARAMETERS" value="-Xmx512m -Xms256m -ea" />
-      <option name="PROGRAM_PARAMETERS" />
+      <option name="PROGRAM_PARAMETERS" value="" />
       <predefined_log_file enabled="true" id="idea.log" />
       <method v="2">
         <option name="Make" enabled="true" />
@@ -117,19 +417,16 @@
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
-      <changelist id="257ce30c-1955-45d2-859b-9ea55c8fcafc" name="Default Changelist" comment="" />
-      <created>1602747990083</created>
+      <changelist id="544043c9-1ad9-4eec-b1ad-cbde4c0c0bc2" name="Default Changelist" comment="" />
+      <created>1604905987716</created>
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
-      <updated>1602747990083</updated>
-      <workItem from="1602760956565" duration="1501000" />
-      <workItem from="1602765575920" duration="80000" />
-      <workItem from="1602776684970" duration="2007000" />
-      <workItem from="1603111811538" duration="9307000" />
-      <workItem from="1603361439195" duration="3704000" />
-      <workItem from="1603372794330" duration="34000" />
-      <workItem from="1603377027957" duration="1945000" />
-      <workItem from="1603430478514" duration="19000" />
+      <updated>1604905987716</updated>
+      <workItem from="1604905988964" duration="2312000" />
+      <workItem from="1604908460404" duration="1740000" />
+      <workItem from="1604916162597" duration="150000" />
+      <workItem from="1604916347913" duration="2634000" />
+      <workItem from="1604919646124" duration="3167000" />
     </task>
     <servers />
   </component>
@@ -146,60 +443,23 @@
         </entry>
       </map>
     </option>
-    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="607" y="285" key="#com.intellij.fileTypes.FileTypeChooser" timestamp="1603115493749">
+    <state x="420" y="156" width="1079" height="751" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1604906311295">
       <screen x="0" y="0" width="1920" height="1030" />
     </state>
-    <state x="607" y="285" key="#com.intellij.fileTypes.FileTypeChooser/0.0.1920.1030@0.0.1920.1030" timestamp="1603115493749" />
-    <state x="694" y="206" key="FileChooserDialogImpl" timestamp="1602823645354">
+    <state x="420" y="156" width="1079" height="751" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1920.1030@0.0.1920.1030" timestamp="1604906311295" />
+    <state x="695" y="206" key="FileChooserDialogImpl" timestamp="1604916194425">
       <screen x="0" y="0" width="1920" height="1030" />
     </state>
-    <state x="694" y="206" key="FileChooserDialogImpl/0.0.1920.1030@0.0.1920.1030" timestamp="1602823645354" />
-    <state width="1860" height="144" key="GridCell.Tab.0.bottom" timestamp="1603378972903">
+    <state x="695" y="206" key="FileChooserDialogImpl/0.0.1920.1030@0.0.1920.1030" timestamp="1604916194425" />
+    <state x="590" y="172" width="739" height="686" key="find.popup" timestamp="1604922470144">
       <screen x="0" y="0" width="1920" height="1030" />
     </state>
-    <state width="1860" height="144" key="GridCell.Tab.0.bottom/0.0.1920.1030@0.0.1920.1030" timestamp="1603378972903" />
-    <state width="1860" height="144" key="GridCell.Tab.0.center" timestamp="1603378972903">
+    <state x="590" y="172" width="739" height="686" key="find.popup/0.0.1920.1030@0.0.1920.1030" timestamp="1604922470144" />
+    <state x="539" y="0" width="840" height="1034" key="search.everywhere.popup" timestamp="1604909871341">
       <screen x="0" y="0" width="1920" height="1030" />
     </state>
-    <state width="1860" height="144" key="GridCell.Tab.0.center/0.0.1920.1030@0.0.1920.1030" timestamp="1603378972903" />
-    <state width="1860" height="144" key="GridCell.Tab.0.left" timestamp="1603378972903">
-      <screen x="0" y="0" width="1920" height="1030" />
-    </state>
-    <state width="1860" height="144" key="GridCell.Tab.0.left/0.0.1920.1030@0.0.1920.1030" timestamp="1603378972903" />
-    <state width="1860" height="144" key="GridCell.Tab.0.right" timestamp="1603378972903">
-      <screen x="0" y="0" width="1920" height="1030" />
-    </state>
-    <state width="1860" height="144" key="GridCell.Tab.0.right/0.0.1920.1030@0.0.1920.1030" timestamp="1603378972903" />
-    <state width="1860" height="144" key="GridCell.Tab.1.bottom" timestamp="1603378972904">
-      <screen x="0" y="0" width="1920" height="1030" />
-    </state>
-    <state width="1860" height="144" key="GridCell.Tab.1.bottom/0.0.1920.1030@0.0.1920.1030" timestamp="1603378972904" />
-    <state width="1860" height="144" key="GridCell.Tab.1.center" timestamp="1603378972904">
-      <screen x="0" y="0" width="1920" height="1030" />
-    </state>
-    <state width="1860" height="144" key="GridCell.Tab.1.center/0.0.1920.1030@0.0.1920.1030" timestamp="1603378972904" />
-    <state width="1860" height="144" key="GridCell.Tab.1.left" timestamp="1603378972904">
-      <screen x="0" y="0" width="1920" height="1030" />
-    </state>
-    <state width="1860" height="144" key="GridCell.Tab.1.left/0.0.1920.1030@0.0.1920.1030" timestamp="1603378972904" />
-    <state width="1860" height="144" key="GridCell.Tab.1.right" timestamp="1603378972904">
-      <screen x="0" y="0" width="1920" height="1030" />
-    </state>
-    <state width="1860" height="144" key="GridCell.Tab.1.right/0.0.1920.1030@0.0.1920.1030" timestamp="1603378972904" />
-    <state x="320" y="0" width="1271" height="925" key="SettingsEditor" timestamp="1603372824219">
-      <screen x="0" y="0" width="1920" height="1030" />
-    </state>
-    <state x="320" y="0" width="1271" height="925" key="SettingsEditor/0.0.1920.1030@0.0.1920.1030" timestamp="1603372824219" />
-    <state x="575" y="377" key="com.intellij.jarRepository.RepositoryAttachDialog-DOWNLOAD" timestamp="1602764835794">
-      <screen x="0" y="0" width="1920" height="1030" />
-    </state>
-    <state x="575" y="377" key="com.intellij.jarRepository.RepositoryAttachDialog-DOWNLOAD/0.0.1920.1030@0.0.1920.1030" timestamp="1602764835794" />
-    <state x="326" y="0" width="764" height="1030" key="find.popup" timestamp="1603364242127">
-      <screen x="0" y="0" width="1920" height="1030" />
-    </state>
-    <state x="326" y="0" width="764" height="1030" key="find.popup/0.0.1920.1030@0.0.1920.1030" timestamp="1603364242127" />
+    <state x="539" y="0" width="840" height="1034" key="search.everywhere.popup/0.0.1920.1030@0.0.1920.1030" timestamp="1604909871341" />
   </component>
 </project>

@@ -44,7 +44,7 @@ public class Semantics {
 
 
     protected boolean isAtEnd() {
-        boolean r = current+1 == nodes.size();
+        boolean r = current == nodes.size();
 
         return r;
     }
