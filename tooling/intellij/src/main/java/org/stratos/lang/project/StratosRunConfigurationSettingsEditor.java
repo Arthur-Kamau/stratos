@@ -4,7 +4,8 @@ import com.intellij.application.options.ModulesComboBox;
 import com.intellij.execution.ExecutionBundle;
 //import com.intellij.execution.application.ApplicationConfiguration;
 //import com.intellij.execution.ui.AlternativeJREPanel;
-//import com.intellij.execution.ui.CommonJavaParametersPanel;
+import com.intellij.execution.ui.CommandLinePanel;
+import com.intellij.execution.ui.CommonProgramParametersPanel;
 //import com.intellij.execution.ui.ConfigurationModuleSelector;
 //import com.intellij.execution.util.JreVersionDetector;
 import com.intellij.openapi.options.ConfigurationException;
@@ -26,23 +27,24 @@ import java.awt.event.ActionListener;
 /**
 * @author Arthur Kamau
 */
-public class StratosRunConfigurationSettingsEditor{
+public class StratosRunConfigurationSettingsEditor extends JPanel {
 //
 //        extends SettingsEditor<ApplicationConfiguration>
 //implements PanelWithAnchor {
-//    private CommonJavaParametersPanel myCommonProgramParameters;
+    private CommonProgramParametersPanel myCommonProgramParameters;
 //    private LabeledComponent<ComponentWithBrowseButton> myMainClass;
-//    private LabeledComponent<JComboBox> myModule;
-//    private JPanel myWholePanel;
-//
+    private LabeledComponent<LabeledComponent> myMainClass;
+    private LabeledComponent<JComboBox> myModule;
+    private JPanel myWholePanel;
+
 //    private final ConfigurationModuleSelector myModuleSelector;
 //    private AlternativeJREPanel myAlternativeJREPanel;
-//    private JCheckBox myShowSwingInspectorCheckbox;
+    private JCheckBox myShowSwingInspectorCheckbox;
 //    private final JreVersionDetector myVersionDetector;
 //    private final Project myProject;
-//    private JComponent myAnchor;
-//
-//  public StratosRunConfigurationSettingsEditor(final Project project) {
+    private JComponent myAnchor;
+
+  public StratosRunConfigurationSettingsEditor(final Project project) {
 //      myProject = project;
 //
 //      myModuleSelector = new ConfigurationModuleSelector(project, myModule.getComponent());
@@ -56,8 +58,8 @@ public class StratosRunConfigurationSettingsEditor{
 //      myVersionDetector = new JreVersionDetector();
 //
 //      myAnchor = UIUtil.mergeComponentsWithAnchor(myMainClass, myCommonProgramParameters, myAlternativeJREPanel, myModule);
-//    }
-//
+    }
+
 //    public void applyEditorTo(final ApplicationConfiguration configuration) throws ConfigurationException {
 //      myCommonProgramParameters.applyTo(configuration);
 //      myModuleSelector.applyTo(configuration);
@@ -68,7 +70,7 @@ public class StratosRunConfigurationSettingsEditor{
 //
 //      updateShowSwingInspector(configuration);
 //    }
-//
+
 //    public void resetEditorFrom(final ApplicationConfiguration configuration) {
 //      myCommonProgramParameters.reset(configuration);
 //      myModuleSelector.reset(configuration);
@@ -77,7 +79,7 @@ public class StratosRunConfigurationSettingsEditor{
 //
 //      updateShowSwingInspector(configuration);
 //    }
-//
+
 //    private void updateShowSwingInspector(final ApplicationConfiguration configuration) {
 //      if (myVersionDetector.isJre50Configured(configuration) || myVersionDetector.isModuleJre50Configured(configuration)) {
 //        myShowSwingInspectorCheckbox.setEnabled(true);
@@ -90,7 +92,7 @@ public class StratosRunConfigurationSettingsEditor{
 //        myShowSwingInspectorCheckbox.setText(ExecutionBundle.message("show.swing.inspector.disabled"));
 //      }
 //    }
-//
+
 //    public TextFieldWithBrowseButton getMainClassField() {
 //      return (TextFieldWithBrowseButton) myMainClass.getComponent();
 //    }
@@ -107,10 +109,10 @@ public class StratosRunConfigurationSettingsEditor{
 //    public void disposeEditor() {
 //    }
 //
-//    private void createUIComponents() {
+    private void createUIComponents() {
 //      myMainClass = new LabeledComponent<ComponentWithBrowseButton>();
 //      myMainClass.setComponent(new TextFieldWithBrowseButton());
-//    }
+    }
 //
 //    @Override
 //    public JComponent getAnchor() {

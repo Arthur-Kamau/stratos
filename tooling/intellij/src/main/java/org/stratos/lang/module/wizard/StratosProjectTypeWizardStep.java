@@ -12,7 +12,7 @@ public class StratosProjectTypeWizardStep extends ModuleWizardStep {
     @Override
     public JComponent getComponent() {
 
-        return sdkPanel;
+        return   sdkPanel;
 
     }
 

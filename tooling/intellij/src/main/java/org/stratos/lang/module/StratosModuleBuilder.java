@@ -78,7 +78,7 @@ public  class StratosModuleBuilder  extends ModuleBuilder {
     public String getDescription() {
         if (ProjectJdkTable.getInstance().getSdksOfType(StratosSdkType.getInstance()).isEmpty()) {
             return "<html><body>Before you start make sure you have Stratos compiler installed." +
-                    "<br/>Download <a href='https://github.com/redline-smalltalk/redline-smalltalk.github.com/raw/master/assets/redline-deploy.zip'>the latest version</a>" +
+                    "<br/>Download <a href='https://github.com/Arthur-Kamau/stratos'>the latest version</a>" +
                     "<br/>Unpack the zip file to any folder and run the installer " +
                     "<br/>Make sure the installer is in system path " +
                     "</body></html>";
@@ -89,16 +89,15 @@ public  class StratosModuleBuilder  extends ModuleBuilder {
 
     @Override
     public ModuleWizardStep[] createWizardSteps(@NotNull WizardContext wizardContext, @NotNull ModulesProvider modulesProvider) {
-//        return super.createWizardSteps(wizardContext, modulesProvider);
 
         return new ModuleWizardStep[]{new StratosProjectTypeWizardStep() };
 
     }
 
+
     @Nullable
     @Override
     public ModuleWizardStep getCustomOptionsStep(WizardContext context, Disposable parentDisposable) {
-//        return super.getCustomOptionsStep(context, parentDisposable);
         return new StratosSdkWizardStep();
     }
 
