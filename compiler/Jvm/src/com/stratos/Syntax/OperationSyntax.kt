@@ -1,43 +1,51 @@
-package com.stratos.Semantics
+package com.stratos.Syntax
 
 import com.stratos.model.Node
 import com.stratos.model.NodeType
-import com.stratos.model.Statement.OperationExpressionStatement
+import com.stratos.model.Statement.OperationStatement
 import com.stratos.model.Token
 import com.stratos.util.node.NodeUtil
 import java.util.*
 
-class OperationSemantics : Semantics() {
+class OperationSyntax : Syntax() {
     @Throws(Exception::class)
     fun execute(token: Token): com.stratos.model.Statement.Statement? {
         super.execute(token.nodes)
         val operation = containsMoreThanOneOperation(token.nodes)
-        println(" operation $operation")
-        return if (operation == 1) {
-            simpleExpression()
-        } else if (operation > 1) {
-            while (!isAtEnd) {
-                parseExpression()
+        return when {
+            operation == 1 -> {
+                simpleExpression()
             }
-            null
-        } else {
-            throw Exception("Operation not found")
+            operation > 1 -> {
+//            while (!isAtEnd) {
+//                parseExpression()
+//            }
+//            null
+
+                throw Exception("Operation not found")
+            }
+            else -> {
+                throw Exception("Operation not found")
+            }
         }
     }
 
     @Throws(Exception::class)
-    private fun simpleExpression(): OperationExpressionStatement? {
+    private fun simpleExpression(): OperationStatement? {
         val node = advance()
         return if (node.type == NodeType.NumericNode) {
             if (peek().type == NodeType.AddNode || peek().type == NodeType.SubtractNode || peek().type == NodeType.ModulasNode || peek().type == NodeType.MultiplyNode) {
                 val operation = advance()
                 val node2 = advance()
-                //                return new  OperationExpressionStatement(
-//                        node,
-//                        operation,
-//                        node2
-//                );
-                null
+                return OperationStatement(
+                        leftValue = node,
+                        rightValue = node2,
+                        operationValue = operation,
+                        returnValue = null,
+                        complexStatement = false,
+                        operationStatementList = emptyList()
+                );
+
             } else {
                 throw Exception("nopes")
             }
@@ -47,16 +55,16 @@ class OperationSemantics : Semantics() {
     }
 
     @Throws(Exception::class)
-    fun parseExpression(): List<OperationExpressionStatement>? {
-        val operationExpressionStatementList: MutableList<OperationExpressionStatement> = mutableListOf()
+    fun parseExpression(): List<OperationStatement>? {
+        val operationStatementList: MutableList<OperationStatement> = mutableListOf()
         val node = advance()
         if (node.type == NodeType.NumericNode) {
             if (peek().type == NodeType.AddNode || peek().type == NodeType.SubtractNode || peek().type == NodeType.ModulasNode || peek().type == NodeType.MultiplyNode) {
                 val operation = advance()
                 val node2 = advance()
-                                operationExpressionStatementList.add( OperationExpressionStatement(
-                                        returnValue = null,
-                                        leftValue = node, operationValue = operation , rightValue = node2
+                operationStatementList.add(OperationStatement(
+                        returnValue = null,
+                        leftValue = node, operationValue = operation, rightValue = node2
 
                 ));
             } else if (node.type == NodeType.CurvedBracketOpenNode) {
@@ -68,18 +76,18 @@ class OperationSemantics : Semantics() {
                 return when {
                     operation == 1 -> {
 
-                            operationExpressionStatementList.add(
-                                     OperationExpressionStatement(
-                                      returnValue = Node(
-                                              0,0,0,0,NodeType.AlphaNumericNode, "" , isTemp = true
-                                      ),
-                                              leftValue =advance(),
-                                             operationValue = advance(),
-                                             rightValue = advance()
+                        operationStatementList.add(
+                                OperationStatement(
+                                        returnValue = Node(
+                                                0, 0, 0, 0, NodeType.AlphaNumericNode, "", isTemp = true
+                                        ),
+                                        leftValue = advance(),
+                                        operationValue = advance(),
+                                        rightValue = advance()
 
 
-                                    )
-                            );
+                                )
+                        );
                         null
                     }
                     operation > 1 -> {
@@ -93,7 +101,7 @@ class OperationSemantics : Semantics() {
                 throw Exception("nopes")
             }
         }
-        return operationExpressionStatementList
+        return operationStatementList
     }
 
     private fun containsMoreThanOneOperation(nodeItems: List<Node>): Int {
@@ -106,9 +114,9 @@ class OperationSemantics : Semantics() {
         return foundOperation
     }
 
-    private inner class parseComplexoperation : Semantics() {
-        var operationExpressionStatementList: List<OperationExpressionStatement> = ArrayList()
-        fun parse(items: List<Node?>?): List<OperationExpressionStatement>? {
+    private inner class parseComplexoperation : Syntax() {
+        var operationStatementList: List<OperationStatement> = ArrayList()
+        fun parse(items: List<Node?>?): List<OperationStatement>? {
             super.execute(items)
             return null
         }

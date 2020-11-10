@@ -3,7 +3,7 @@ package com.stratos;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stratos.Config.AppConfigFile;
 import com.stratos.Executor.Executor;
-import com.stratos.Semantics.LanguageStatementSemantics;
+import com.stratos.Syntax.StratosSyntax;
 import com.stratos.Validators.Validators;
 import com.stratos.analysis.custom.AST.ASTGenerator;
 import com.stratos.analysis.custom.Lexer.Lexer;
@@ -65,7 +65,7 @@ public class Compiler {
             }
 
 
-            List<Statement> statements = new LanguageStatementSemantics().createStatements(tokenList);
+            List<Statement> statements = new StratosSyntax().createStatements(tokenList);
 
 
 //            for (Statement n : statements) {

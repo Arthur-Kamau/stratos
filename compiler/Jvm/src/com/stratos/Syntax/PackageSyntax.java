@@ -1,4 +1,4 @@
-package com.stratos.Semantics;
+package com.stratos.Syntax;
 
 import com.stratos.model.Node;
 import com.stratos.model.NodeType;
@@ -7,7 +7,7 @@ import com.stratos.model.Statement.Statement;
 import com.stratos.model.Token;
 import com.stratos.util.Print.Log;
 
-public class PackageSemantics extends Semantics {
+public class PackageSyntax extends Syntax {
 
 
     public Statement execute(Token token) {

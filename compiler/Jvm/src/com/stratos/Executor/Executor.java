@@ -3,6 +3,7 @@ package com.stratos.Executor;
 
 import com.stratos.model.ExecutionTree;
 import com.stratos.model.Statement.ExpressionStatement;
+import com.stratos.model.Statement.OperationStatement;
 import com.stratos.model.Statement.Statement;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigValue;
@@ -28,8 +29,14 @@ public class Executor {
         for (ExecutionTree tree : executionTree ){
             for (Statement stm:
           tree.getStatements()  ) {
-                boolean res = stm instanceof ExpressionStatement ;
-                System.out.println("statement "+res );
+              if(stm instanceof OperationStatement){
+                  if(((OperationStatement) stm).isComplexStatement()){
+                      System.out.println("complex stement");
+                  }else{
+
+                      System.out.println("simple ");
+                  }
+              }
             }
         }
     }

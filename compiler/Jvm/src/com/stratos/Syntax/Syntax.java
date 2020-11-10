@@ -1,13 +1,12 @@
-package com.stratos.Semantics;
+package com.stratos.Syntax;
 
 import com.stratos.model.Node;
 import com.stratos.model.NodeType;
-import com.stratos.model.Token;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class Semantics {
+public class Syntax {
     List<Node> nodes = new ArrayList<>();
 
     int current = 0;

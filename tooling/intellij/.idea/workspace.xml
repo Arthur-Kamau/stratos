@@ -25,6 +25,7 @@
     <list default="true" id="544043c9-1ad9-4eec-b1ad-cbde4c0c0bc2" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleBuilder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleTypeBuilder.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/projectType/StratosProjectTypePanel.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/projectType/StratosProjectTypePanel.form" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/projectType/StratosProjectTypePanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/projectType/StratosProjectTypePanel.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkPanel.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkPanel.form" afterDir="false" />
@@ -122,7 +123,7 @@
       <workItem from="1604916347913" duration="2634000" />
       <workItem from="1604919646124" duration="3523000" />
       <workItem from="1604928703855" duration="2643000" />
-      <workItem from="1604932766846" duration="645000" />
+      <workItem from="1604932766846" duration="1004000" />
     </task>
     <servers />
   </component>

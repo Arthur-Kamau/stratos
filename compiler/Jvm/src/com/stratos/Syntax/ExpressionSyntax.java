@@ -1,4 +1,4 @@
-package com.stratos.Semantics;
+package com.stratos.Syntax;
 
 import com.stratos.model.Node;
 import com.stratos.model.NodeType;
@@ -9,7 +9,7 @@ import com.stratos.model.Token;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ExpressionSemantics extends Semantics {
+public class ExpressionSyntax extends Syntax {
 
 
     ExpressionStatement expressionStatement = new ExpressionStatement();

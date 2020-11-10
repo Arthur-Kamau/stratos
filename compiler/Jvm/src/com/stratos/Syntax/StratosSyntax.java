@@ -1,20 +1,19 @@
-package com.stratos.Semantics;
+package com.stratos.Syntax;
 
 import com.stratos.model.*;
-import com.stratos.model.Statement.PackageStatement;
 import com.stratos.model.Statement.Statement;
 import com.stratos.util.Print.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class LanguageStatementSemantics {
+public class StratosSyntax {
     List<Statement> statementList = new ArrayList<>();
     List<Diagnostics> diagnostics = new ArrayList<>();
 
     public List<Statement> createStatements(List<Token> tokens) throws Exception {
         for (Token item : tokens) {
-            System.out.println("lang statements .... ");
+
             List<Statement> statement = new LanguageStatementAnalysis().nodesAnalysis(item);
             statementList.addAll(statement);
         }
@@ -31,13 +30,13 @@ public class LanguageStatementSemantics {
             if (token.getNodes() != null) {
                 node = token.getNodes();
                 if (contains(NodeType.PackageNode)) {
-                    statements.add(new PackageSemantics().execute(token));
+                    statements.add(new PackageSyntax().execute(token));
                 } else if (contains(NodeType.FunctionNode)) {
                     throw new Exception("unimplemented ....... ");
                 } else if (contains(NodeType.ClassNode)) {
                     throw new Exception("unimplemented ....... ");
                 } else if (contains(NodeType.ModulasNode) || contains(NodeType.DivideNode) || contains(NodeType.SubtractNode) || contains(NodeType.AddNode) || contains(NodeType.MultiplyNode)) {
-                    statements.add(new OperationSemantics().execute(token));
+                    statements.add(new OperationSyntax().execute(token));
                 } else if (contains(NodeType.ValNode) || contains(NodeType.VarNode) || contains(NodeType.LetNode)) {
                     throw new Exception("unimplemented ....... ");
                 } else if (contains(NodeType.WhenNode)) {
@@ -50,7 +49,7 @@ public class LanguageStatementSemantics {
                     throw new Exception("unimplemented ....... ");
                 } else if (contains(NodeType.EquateNode) || contains(NodeType.NotEqualToNode) || contains(NodeType.GreaterThanOrEqualTo) || contains(NodeType.LessThanOrEqualTo)) {
 //                    throw new Exception("unimplemented ....... ");
-                    statements.add(new ExpressionSemantics().execute(token));
+                    statements.add(new ExpressionSyntax().execute(token));
 
                 }
             } else {
