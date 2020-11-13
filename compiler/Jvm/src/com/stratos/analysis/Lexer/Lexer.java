@@ -3,14 +3,9 @@ package com.stratos.analysis.Lexer;
 
 import com.stratos.model.Token;
 import com.stratos.model.TokenType;
-import old.stratos.model.Node;
-import old.stratos.model.NodeType;
 
-import static  com.stratos.model.TokenType.*;
+import static com.stratos.model.TokenType.*;
 
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,23 +18,23 @@ public class Lexer {
 
     static {
         keywords = new HashMap<>();
-        keywords.put("and",    AND);
-        keywords.put("class",  CLASS);
-        keywords.put("else",   ELSE);
-        keywords.put("false",  FALSE);
-        keywords.put("for",    FOR);
-        keywords.put("fun",    FUNCTION);
-        keywords.put("if",     IF);
-        keywords.put("none",    NONE);
-        keywords.put("some",    SOME);
-        keywords.put("or",     OR);
-        keywords.put("print",  PRINT);
+        keywords.put("and", AND);
+        keywords.put("class", CLASS);
+        keywords.put("else", ELSE);
+        keywords.put("false", FALSE);
+        keywords.put("for", FOR);
+        keywords.put("fun", FUNCTION);
+        keywords.put("if", IF);
+        keywords.put("none", NONE);
+        keywords.put("some", SOME);
+        keywords.put("or", OR);
+        keywords.put("print", PRINT);
         keywords.put("return", RETURN);
-        keywords.put("super",  SUPER);
-        keywords.put("this",   THIS);
-        keywords.put("true",   TRUE);
-        keywords.put("var",    VAR);
-        keywords.put("while",  WHILE);
+        keywords.put("super", SUPER);
+        keywords.put("this", THIS);
+        keywords.put("true", TRUE);
+        keywords.put("var", VAR);
+        keywords.put("while", WHILE);
     }
     //< keyword-map
 
@@ -54,23 +49,21 @@ public class Lexer {
     Lexer(String source) {
         this.source = source;
     }
+
     //> scan-tokens
-    List<Token> scanTokens() {
+    List<Token> scanTokens() throws Exception {
         while (!isAtEnd()) {
             // We are at the beginning of the next lexeme.
             start = current;
             scanToken();
         }
 
-        tokens.add(new Token(current, current, line, line,EOF,"",null));
+        tokens.add(new Token(current, current, line, line, EOF, "", null));
         return tokens;
     }
 
 
-
-
-
-    private void scanToken() {
+    private void scanToken() throws Exception {
         char c = advance();
 
         switch (c) {
@@ -78,22 +71,22 @@ public class Lexer {
                 if (peek() == '=') {
                     advance();
                     tokens.add(new Token(
-                            current-2,
+                            current - 2,
                             current,
                             line,
                             line,
                             NOTEQUALTO,
-                            "!=" ,
+                            "!=",
                             false
                     ));
                 } else {
                     tokens.add(new Token(
-                            current-1,
+                            current - 1,
                             current,
                             line,
                             line,
                             NOT,
-                            "!" ,
+                            "!",
                             false
                     ));
                 }
@@ -101,24 +94,24 @@ public class Lexer {
                 break;
             case ';':
                 tokens.add(new Token(
-                        current-1,
+                        current - 1,
                         current,
                         line,
                         line,
                         SEMICOLON,
-                        ";" ,
+                        ";",
                         false
                 ));
                 break;
 
             case '\n':
                 tokens.add(new Token(
-                        current-1,
+                        current - 1,
                         current,
                         line,
                         line,
                         NEWLINE,
-                        "\\n" ,
+                        "\\n",
                         false
                 ));
 
@@ -126,15 +119,14 @@ public class Lexer {
                 break;
 
 
-
             case '.':
                 tokens.add(new Token(
-                        current-1,
+                        current - 1,
                         current,
                         line,
                         line,
                         DOT,
-                        "." ,
+                        ".",
                         false
                 ));
 
@@ -143,12 +135,12 @@ public class Lexer {
 
             case ',':
                 tokens.add(new Token(
-                        current-1,
+                        current - 1,
                         current,
                         line,
                         line,
                         COMMA,
-                        "," ,
+                        ",",
                         false
                 ));
 
@@ -157,12 +149,12 @@ public class Lexer {
 
             case '?':
                 tokens.add(new Token(
-                        current-1,
+                        current - 1,
                         current,
                         line,
                         line,
                         QUESTIONMARK,
-                        "?" ,
+                        "?",
                         false
                 ));
 
@@ -172,12 +164,12 @@ public class Lexer {
 
             case ':':
                 tokens.add(new Token(
-                        current-1,
+                        current - 1,
                         current,
                         line,
                         line,
                         COLON,
-                        ";" ,
+                        ";",
                         false
                 ));
 
@@ -185,106 +177,105 @@ public class Lexer {
                 break;
 
 
-
             case '(':
                 tokens.add(new Token(
-                        current-1,
+                        current - 1,
                         current,
                         line,
                         line,
                         LEFT_PAREN,
-                        "(" ,
+                        "(",
                         false
                 ));
                 break;
             case ')':
                 tokens.add(new Token(
-                        current-1,   
+                        current - 1,
                         current,
                         line,
                         line,
                         RIGHT_PAREN,
-                        ")" ,
+                        ")",
                         false
                 ));
                 break;
 
             case '[':
                 tokens.add(new Token(
-                        current-1,   
+                        current - 1,
                         current,
                         line,
                         line,
                         LEFT_SQUARE,
-                        "[" ,
+                        "[",
                         false
                 ));
                 break;
             case ']':
                 tokens.add(new Token(
-                        current-1,   
+                        current - 1,
                         current,
                         line,
                         line,
                         RIGHT_SQUARE,
-                        "]" ,
+                        "]",
                         false
                 ));
                 break;
 
             case '{':
                 tokens.add(new Token(
-                        current-1,   
+                        current - 1,
                         current,
                         line,
                         line,
                         LEFT_BRACE,
-                        "{" ,
+                        "{",
                         false
                 ));
                 break;
             case '}':
                 tokens.add(new Token(
-                        current-1,   
+                        current - 1,
                         current,
                         line,
                         line,
                         RIGHT_BRACE,
-                        "}" ,
+                        "}",
                         false
                 ));
                 break;
 
             case '%':
                 tokens.add(new Token(
-                        current-1,   
+                        current - 1,
                         current,
                         line,
                         line,
                         MODULAS,
-                        "%" ,
+                        "%",
                         false
                 ));
                 break;
             case '*':
                 tokens.add(new Token(
-                        current-1,   
+                        current - 1,
                         current,
                         line,
                         line,
                         MULTIPLY,
-                        "*" ,
+                        "*",
                         false
                 ));
                 break;
             case '+':
                 tokens.add(new Token(
-                        current-1,   
+                        current - 1,
                         current,
                         line,
                         line,
                         ADD,
-                        "+" ,
+                        "+",
                         false
                 ));
                 break;
@@ -295,22 +286,22 @@ public class Lexer {
                     // consume the extra &
                     advance();
                     tokens.add(new Token(
-                            current-1,   
-                        current,
-                        line,
-                        line,
+                            current - 1,
+                            current,
+                            line,
+                            line,
                             AND,
-                            "&&" ,
+                            "&&",
                             false
                     ));
                 } else {
                     tokens.add(new Token(
-                            current-1,   
-                        current,
-                        line,
-                        line,
+                            current - 1,
+                            current,
+                            line,
+                            line,
                             BINARYAND,
-                            "&" ,
+                            "&",
                             false
                     ));
                 }
@@ -323,22 +314,22 @@ public class Lexer {
                     // consume the extra |
                     advance();
                     tokens.add(new Token(
-                            current-1,   
-                        current,
-                        line,
-                        line,
+                            current - 1,
+                            current,
+                            line,
+                            line,
                             OR,
-                            "||" ,
+                            "||",
                             false
                     ));
                 } else {
                     tokens.add(new Token(
-                            current-1,   
-                        current,
-                        line,
-                        line,
+                            current - 1,
+                            current,
+                            line,
+                            line,
                             BINARYOR,
-                            "|" ,
+                            "|",
                             false
                     ));
                 }
@@ -346,48 +337,41 @@ public class Lexer {
                 break;
 
 
-
             case '-':
                 tokens.add(new Token(
-                        current-1,
+                        current - 1,
                         current,
                         line,
                         line,
                         SUBTRACT,
-                        "-" ,
+                        "-",
                         false
                 ));
-        
-
-        break;
 
 
+                break;
 
-
-        
-        
-        
 
             case '<':
                 if (peek() == '=') {
                     advance();
-                     tokens.add(new Token(
-                            current-1,
-                        current,
-                        line,
-                        line,
+                    tokens.add(new Token(
+                            current - 1,
+                            current,
+                            line,
+                            line,
                             LESSTHANOREQUALTO,
-                            "<=" ,
+                            "<=",
                             false
                     ));
                 } else {
-                     tokens.add(new Token(
-                            current-1,
-                        current,
-                        line,
-                        line,
+                    tokens.add(new Token(
+                            current - 1,
+                            current,
+                            line,
+                            line,
                             LESSTHAN,
-                            "<" ,
+                            "<",
                             false
                     ));
                 }
@@ -395,23 +379,23 @@ public class Lexer {
             case '>':
                 if (peek() == '=') {
                     advance();
-                     tokens.add(new Token(
-                            current-2,
-                        current,
-                        line,
-                        line,
+                    tokens.add(new Token(
+                            current - 2,
+                            current,
+                            line,
+                            line,
                             GREATERTHANOREQUALTO,
                             ">=",
                             false
                     ));
                 } else {
-                     tokens.add(new Token(
-                            current-1,
-                        current,
-                        line,
-                        line,
-                             GREATERTHAN,
-                            ">" ,
+                    tokens.add(new Token(
+                            current - 1,
+                            current,
+                            line,
+                            line,
+                            GREATERTHAN,
+                            ">",
                             false
                     ));
                 }
@@ -419,23 +403,23 @@ public class Lexer {
             case '=':
                 if (peek() == '=') {
                     advance();
-                     tokens.add(new Token(
-                            current-1,
-                        current,
-                        line,
-                        line,
+                    tokens.add(new Token(
+                            current - 1,
+                            current,
+                            line,
+                            line,
                             EQUALTO,
-                            "==" ,
+                            "==",
                             false
                     ));
                 } else {
-                     tokens.add(new Token(
-                            current-1,
-                        current,
-                        line,
-                        line,
+                    tokens.add(new Token(
+                            current - 1,
+                            current,
+                            line,
+                            line,
                             ASSIGN,
-                            "=" ,
+                            "=",
                             false
                     ));
                 }
@@ -455,13 +439,13 @@ public class Lexer {
                     while (peek() != '\n') {
                         commentLine += advance();
                     }
-                     tokens.add(new Token(
-                            current-1,
-                             current,
-                             line,
-                             line,
-                             LINECOMMENT,
-                            "//" + commentLine ,
+                    tokens.add(new Token(
+                            current - 1,
+                            current,
+                            line,
+                            line,
+                            LINECOMMENT,
+                            "//" + commentLine,
                             false
                     ));
                 } else if (peek() == '*') {
@@ -490,22 +474,22 @@ public class Lexer {
                     multiLineComment += advance();
 
 
-                     tokens.add(new Token(
+                    tokens.add(new Token(
                             startLineCharcter,
-                             current,
+                            current,
                             currentNumber,
-                             line,
+                            line,
                             MULTILINECOMMENT,
                             multiLineComment,
                             false
                     ));
 
                 } else {
-                     tokens.add(new Token(
-                            current-1,
-                        current,
-                        line,
-                        line,
+                    tokens.add(new Token(
+                            current - 1,
+                            current,
+                            line,
+                            line,
                             DIVIDE,
                             "/",
                             false
@@ -526,14 +510,19 @@ public class Lexer {
                     }
                     stringData += advance();
                 }
-                 tokens.add(new Token(
+                if (isAtEnd()) {
+                    throw new Exception("Unterminated string from " + stringLineCharacterStart);
+
+                }
+
+                tokens.add(new Token(
                         stringLineCharacterStart,
                         current,
                         stringLineStart,
                         line,
-                         STRING,
+                        STRING,
                         stringData,
-                         stringData
+                        stringData
                 ));
 
                 // consume the closing "
@@ -542,22 +531,95 @@ public class Lexer {
                 break;
 
 
-
-
-
-
-
-
-
-
             default:
+
+
+                String alphanumeric = "";
+                int alphaLineCharacterStart = line;
+                if (isAlphaNumeric(c)) {
+
+                    alphanumeric += c;
+                    while (!isAtEnd()) {
+                        if (peek() != '{' &&
+                                peek() != '}' &&
+                                peek() != '[' &&
+                                peek() != ']' &&
+                                peek() != '(' &&
+                                peek() != ')' &&
+                                peek() != '*' &&
+                                peek() != '+' &&
+                                peek() != '%' &&
+                                peek() != '-' &&
+                                peek() != '/' &&
+                                peek() != ';' &&
+                                peek() != '\t' &&
+                                peek() != '\r' && peek() != '\n' && peek() != ' ' && peek() != '\0' && peek() != '=') {
+                            break;
+
+                        } else {
+                            char c2 = advance();
+                            alphanumeric += c2;
+                        }
+
+
+                    }
+
+                    if (isNumeric(alphanumeric)) {
+                        tokens.add(new Token(
+                                alphaLineCharacterStart,
+                                current,
+                                line,
+                                line,
+                                NUMBER,
+                                alphanumeric,
+                                false
+                        ));
+                    } else if (keywords.containsKey(alphanumeric)) {
+                        tokens.add(new Token(
+                                alphaLineCharacterStart,
+                                current,
+                                line,
+                                line,
+                                keywords.get(alphanumeric),
+                                alphanumeric,
+                                false
+                        ));
+
+
+                    } else {
+                        tokens.add(new Token(
+                                alphaLineCharacterStart,
+                                current,
+                                line,
+                                line,
+                                IDENTIFIER,
+                                alphanumeric,
+                                false
+                        ));
+                    }
+                } else if (c == '\0') {
+                    //System.out.println("endline  token " + c);
+                    break;
+                } else if (c == '\r' || c == '\t' || c == ' ') {
+                    // System.out.println("empty space token");
+                } else {
+                    // System.out.println("unknown  token " + c);
+                    tokens.add(new Token(
+                            alphaLineCharacterStart,
+                            current,
+                            line,
+                            line,
+                            UNKNOWN,
+                            "" + c,
+                            false
+                    ));
+                }
 
                 break;
 
+            
+        }
     }
-    }
-
-
 
 
     //> peek
@@ -565,6 +627,7 @@ public class Lexer {
         if (isAtEnd()) return '\0';
         return source.charAt(current);
     }
+
     //< peek
 //> peek-next
     private char peekNext() {
@@ -585,10 +648,17 @@ public class Lexer {
         return isAlpha(c) || isDigit(c);
     }
     //< is-alpha
-//> is-digit
+
+
+    public boolean isNumeric(String text) {
+        return text.matches("^-?[0-9][0-9,\\.]+$");
+    }
+
+    //> is-digit
     private boolean isDigit(char c) {
         return c >= '0' && c <= '9';
     } // [is-digit]
+
     //< is-digit
 //> is-at-end
     private boolean isAtEnd() {
@@ -601,10 +671,7 @@ public class Lexer {
     }
 
 
-
 }
-
-
 
 
 //
