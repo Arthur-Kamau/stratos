@@ -1,37 +1,35 @@
 package com.stratos.model;
 
-import java.util.List;
 
 public class Token {
-    List<Node> nodes;
-    List<Token> child;
+    final int characterStart ;
+    final int characterEnd ;
+    final int lineStart ;
+    final int lineEnd ;
+    final TokenType type;
+    final String lexeme;
+    final Object literal;
 
-    public Token(List<Node> nodes, List<Token> child) {
-        this.nodes = nodes;
-        this.child = child;
-    }
-
-    public List<Node> getNodes() {
-        return nodes;
-    }
-
-    public void setNodes(List<Node> nodes) {
-        this.nodes = nodes;
-    }
-
-    public List<Token> getChild() {
-        return child;
-    }
-
-    public void setChild(List<Token> child) {
-        this.child = child;
+    public Token(int characterStart, int characterEnd, int lineStart, int lineEnd, TokenType type, String lexeme, Object literal) {
+        this.characterStart = characterStart;
+        this.characterEnd = characterEnd;
+        this.lineStart = lineStart;
+        this.lineEnd = lineEnd;
+        this.type = type;
+        this.lexeme = lexeme;
+        this.literal = literal;
     }
 
     @Override
     public String toString() {
         return "Token{" +
-                "nodes=" + nodes +
-                ", child=" + child +
+                "characterStart=" + characterStart +
+                ", characterEnd=" + characterEnd +
+                ", lineStart=" + lineStart +
+                ", lineEnd=" + lineEnd +
+                ", type=" + type +
+                ", lexeme='" + lexeme + '\'' +
+                ", literal=" + literal +
                 '}';
     }
 }
