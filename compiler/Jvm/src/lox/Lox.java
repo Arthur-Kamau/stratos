@@ -21,14 +21,14 @@ public class Lox {
 
 //< Evaluating Expressions had-runtime-error-field
   public static void main(String[] args) throws IOException {
-    if (args.length > 1) {
-      System.out.println("Usage: jlox [script]");
-      System.exit(64); // [64]
-    } else if (args.length == 1) {
-      runFile(args[0]);
-    } else {
-      runPrompt();
-    }
+//    if (args.length > 1) {
+//      System.out.println("Usage: jlox [script]");
+//      System.exit(64); // [64]
+//    } else if (args.length == 1) {
+      runFile("/home/kamau/Development/Stratos/compiler/Jvm/example/basic_example/src/main.st");
+//    } else {
+//      runPrompt();
+//    }
   }
 //> run-file
   private static void runFile(String path) throws IOException {

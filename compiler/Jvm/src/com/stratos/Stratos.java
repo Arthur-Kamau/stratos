@@ -2,9 +2,12 @@ package com.stratos;
 
 
 import com.stratos.analysis.Lexer.Lexer;
+import com.stratos.analysis.Parser.Statement;
+import com.stratos.core.Interpreter;
+import com.stratos.core.Resolver;
 import com.stratos.model.Token;
 import com.stratos.analysis.Parser.Parser;
-import lox.Stmt;
+
 
 
 import java.io.File;
@@ -15,6 +18,9 @@ import java.util.List;
 import java.util.Objects;
 
 public class Stratos {
+
+    private static final Interpreter interpreter = new Interpreter();
+
     public static void main(String[] args) throws IOException {
         // write your code here
         System.out.println("Stratos compiler");
@@ -44,17 +50,39 @@ public class Stratos {
 
     private static void runFile(String path) throws Exception {
         byte[] bytes = Files.readAllBytes(Paths.get(path));
+        String s = new String(bytes);
 
-        Lexer scanner = new Lexer();
-        List<Token> tokens = scanner.scanTokens(path);
+        Lexer scanner = new Lexer(s);
+        List<Token> tokens = scanner.scanTokens();
+
+//        for (Token item: tokens ) {
+//            System.out.println("item "+item.toString());
+//        }
 
         Parser parser = new Parser(tokens);
 
 
-        List<Stmt> statements = parser.parse();
-        for (Stmt item: statements ) {
-            System.out.println(item.toString());
+        List<Statement> statements = parser.parse();
+        for (Statement item: statements ) {
+
+            if (item == null) {
+                System.out.println("null .... ");
+            }else{
+                System.out.println(item.toString());
+            }
         }
+
+
+
+
+        Resolver resolver = new Resolver(interpreter);
+        resolver.resolve(statements);
+
+
+
+        //> Statements and State interpret-statements
+        interpreter.interpret(statements);
+//< Statements and State interpret-statements
 
     }
 

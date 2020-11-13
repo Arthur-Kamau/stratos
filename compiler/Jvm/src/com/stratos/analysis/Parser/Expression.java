@@ -1,6 +1,8 @@
-package com.stratos.model;
+package com.stratos.analysis.Parser;
 
 
+
+import com.stratos.model.Token;
 
 import java.util.List;
 

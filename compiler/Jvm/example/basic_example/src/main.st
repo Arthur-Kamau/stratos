@@ -1,3 +1,1 @@
-package main
-
-33 * 44
+print ( "love");

@@ -46,12 +46,12 @@ public class Lexer {
     private int line = 1;
 //< scan-state
 
-    Lexer(String source) {
+    public Lexer(String source) {
         this.source = source;
     }
 
     //> scan-tokens
-    List<Token> scanTokens() throws Exception {
+    public   List<Token> scanTokens() throws Exception {
         while (!isAtEnd()) {
             // We are at the beginning of the next lexeme.
             start = current;
@@ -449,12 +449,13 @@ public class Lexer {
                             false
                     ));
                 } else if (peek() == '*') {
+                    String multiLineComment = "" + c;
                     // read the extra  * that both make  start of multi comment
-                    advance();
+                    multiLineComment += advance();
                     int startLineCharcter = current;
                     int currentNumber = line;
                     //System.out.println("start of multi line comment " + currentCharacter + " peek " + peek());
-                    String multiLineComment = "" + c;
+
                     while (peekNext() != '/' && !isAtEnd()) {
 
                         char c1 = advance();
@@ -540,20 +541,22 @@ public class Lexer {
 
                     alphanumeric += c;
                     while (!isAtEnd()) {
-                        if (peek() != '{' &&
-                                peek() != '}' &&
-                                peek() != '[' &&
-                                peek() != ']' &&
-                                peek() != '(' &&
-                                peek() != ')' &&
-                                peek() != '*' &&
-                                peek() != '+' &&
-                                peek() != '%' &&
-                                peek() != '-' &&
-                                peek() != '/' &&
-                                peek() != ';' &&
-                                peek() != '\t' &&
-                                peek() != '\r' && peek() != '\n' && peek() != ' ' && peek() != '\0' && peek() != '=') {
+                        System.out.println("at "+alphanumeric + " peek "+peek());
+                        if (peek() == '{' ||
+                                peek() == '}' ||
+                                peek() == '[' ||
+                                peek() == ']' ||
+                                peek() == '(' ||
+                                peek() == ')' ||
+                                peek() == '*' ||
+                                peek() == '+' ||
+                                peek() == '%' ||
+                                peek() == '-' ||
+                                peek() == '/' ||
+                                peek() == ';' ||
+                                peek() == '\t' ||
+                                peek() == '\r' || peek() == '\n' || peek() == ' ' || peek() == '\0' || peek() == '=') {
+
                             break;
 
                         } else {

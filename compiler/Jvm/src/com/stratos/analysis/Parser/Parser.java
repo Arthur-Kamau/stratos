@@ -1,6 +1,4 @@
 package com.stratos.analysis.Parser;
-import com.stratos.model.Expression;
-import com.stratos.model.Statement;
 import com.stratos.model.Token;
 import com.stratos.model.TokenType;
 
@@ -63,8 +61,11 @@ public class Parser {
 //< Functions match-fun
             if (match(VAR)) return varDeclaration();
 
+//            if(match(MULTILINECOMMENT) || match(LINECOMMENT))
+
             return statement();
         } catch (Parser.ParseError error) {
+
             synchronize();
             return null;
         }
@@ -77,7 +78,7 @@ public class Parser {
 //> Inheritance parse-superclass
 
         Expression.Variable superclass = null;
-        if (match(LESS)) {
+        if (match(LESSTHAN)) {
             consume(IDENTIFIER, "Expect superclass name.");
             superclass = new Expression.Variable(previous());
         }
@@ -163,7 +164,7 @@ public class Parser {
             body = new Statement.Block(
                     Arrays.asList(
                             body,
-                            new Statement.Expressionession(increment)));
+                            new Statement.ExpressionStatement(increment)));
         }
 
 //< for-desugar-increment
@@ -221,11 +222,11 @@ public class Parser {
         Token name = consume(IDENTIFIER, "Expect variable name.");
 
         Expression initializer = null;
-        if (match(EQUAL)) {
+        if (match(ASSIGN)) {
             initializer = expression();
         }
 
-        consume(SEMICOLON, "Expect ';' after variable declaration.");
+        consume(NEWLINE, "Expect ';' after variable declaration.");
         return new Statement.Var(name, initializer);
     }
     //< Statements and State parse-var-declaration
@@ -243,7 +244,7 @@ public class Parser {
     private Statement expressionStatement() {
         Expression expr = expression();
         consume(SEMICOLON, "Expect ';' after expression.");
-        return new Statement.Expressionession(expr);
+        return new Statement.ExpressionStatement(expr);
     }
     //< Statements and State parse-expression-statement
 //> Functions parse-function
@@ -293,7 +294,7 @@ public class Parser {
         Expression expr = or();
 //< Control Flow or-in-assignment
 
-        if (match(EQUAL)) {
+        if (match(ASSIGN)) {
             Token equals = previous();
             Expression value = assignment();
 
@@ -343,7 +344,7 @@ public class Parser {
     private Expression equality() {
         Expression expr = comparison();
 
-        while (match(BANG_EQUAL, EQUAL_EQUAL)) {
+        while (match(EQUALTO, NOTEQUALTO)) {
             Token operator = previous();
             Expression right = comparison();
             expr = new Expression.Binary(expr, operator, right);
@@ -356,7 +357,7 @@ public class Parser {
     private Expression comparison() {
         Expression expr = term();
 
-        while (match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL)) {
+        while (match(GREATERTHAN, GREATERTHANOREQUALTO, LESSTHAN, LESSTHANOREQUALTO)) {
             Token operator = previous();
             Expression right = term();
             expr = new Expression.Binary(expr, operator, right);
@@ -382,7 +383,7 @@ public class Parser {
     private Expression factor() {
         Expression expr = unary();
 
-        while (match(SLASH, STAR)) {
+        while (match(DIVIDE, MULTIPLY)) {
             Token operator = previous();
             Expression right = unary();
             expr = new Expression.Binary(expr, operator, right);
@@ -393,7 +394,7 @@ public class Parser {
     //< factor
 //> unary
     private Expression unary() {
-        if (match(BANG, MINUS)) {
+        if (match(NOT, MINUS)) {
             Token operator = previous();
             Expression right = unary();
             return new Expression.Unary(operator, right);
@@ -453,10 +454,10 @@ public class Parser {
     private Expression primary() {
         if (match(FALSE)) return new Expression.Literal(false);
         if (match(TRUE)) return new Expression.Literal(true);
-        if (match(NIL)) return new Expression.Literal(null);
+        if (match(NONE)) return new Expression.Literal(null);
 
         if (match(NUMBER, STRING)) {
-            return new Expression.Literal(previous().literal);
+            return new Expression.Literal(previous().getLiteral());
         }
 //> Inheritance parse-super
 
@@ -552,7 +553,8 @@ public class Parser {
     //< utils
 //> error
     private ParseError error(Token token, String message) {
-        error(token, message);
+       // error(token, message);
+        System.out.println(" Token "+ token.toString() + " message "+  message);
         return new ParseError();
     }
     //< error

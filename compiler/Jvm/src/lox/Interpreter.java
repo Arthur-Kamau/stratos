@@ -14,7 +14,7 @@ import java.util.Map;
 class Interpreter implements Expr.Visitor<Object> {
 */
 //> Statements and State interpreter
-class Interpreter implements Expr.Visitor<Object>,
+public class Interpreter implements Expr.Visitor<Object>,
                              Stmt.Visitor<Void> {
 //< Statements and State interpreter
 /* Statements and State environment-field < Functions global-environment
@@ -31,7 +31,7 @@ class Interpreter implements Expr.Visitor<Object>,
 
 //< Statements and State environment-field
 //> Functions interpreter-constructor
-  Interpreter() {
+public Interpreter() {
     globals.define("clock", new LoxCallable() {
       @Override
       public int arity() { return 0; }

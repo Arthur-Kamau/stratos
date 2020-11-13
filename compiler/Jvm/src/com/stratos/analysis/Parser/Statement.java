@@ -1,6 +1,8 @@
-package com.stratos.model;
+package com.stratos.analysis.Parser;
 
 
+
+import com.stratos.model.Token;
 
 import java.util.List;
 
@@ -60,6 +62,16 @@ public abstract class Statement {
         final Token name;
         final Expression.Variable superclass;
         final List<Function> methods;
+
+
+        @Override
+        public String toString() {
+            return "Class{" +
+                    "name=" + name +
+                    ", superclass=" + superclass +
+                    ", methods=" + methods +
+                    '}';
+        }
     }
 //< stmt-class
 
@@ -75,6 +87,13 @@ public abstract class Statement {
         }
 
         final Expression expression;
+
+        @Override
+        public String toString() {
+            return "ExpressionStatement{" +
+                    "expression=" + expression +
+                    '}';
+        }
     }
     //< stmt-expression
 //> stmt-function
@@ -93,6 +112,15 @@ public abstract class Statement {
         final Token name;
         final List<Token> params;
         final List<Statement> body;
+
+        @Override
+        public String toString() {
+            return "Function{" +
+                    "name=" + name +
+                    ", params=" + params +
+                    ", body=" + body +
+                    '}';
+        }
     }
     //< stmt-function
 
@@ -112,6 +140,16 @@ public abstract class Statement {
         final Expression condition;
         final Statement thenBranch;
         final Statement elseBranch;
+
+
+        @Override
+        public String toString() {
+            return "If{" +
+                    "condition=" + condition +
+                    ", thenBranch=" + thenBranch +
+                    ", elseBranch=" + elseBranch +
+                    '}';
+        }
     }
     //< stmt-if
 
@@ -127,6 +165,13 @@ public abstract class Statement {
         }
 
         final Expression expression;
+
+        @Override
+        public String toString() {
+            return "Print{" +
+                    "expression=" + expression +
+                    '}';
+        }
     }
     //< stmt-print
 //> stmt-return
@@ -191,6 +236,14 @@ public abstract class Statement {
 
         final Expression condition;
         final Statement body;
+
+        @Override
+        public String toString() {
+            return "While{" +
+                    "condition=" + condition +
+                    ", body=" + body +
+                    '}';
+        }
     }
 //< stmt-while
 
