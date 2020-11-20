@@ -23,15 +23,33 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="544043c9-1ad9-4eec-b1ad-cbde4c0c0bc2" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosProjectType.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/InstallSdkAction.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosCreateAdditionalSettings.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosCreateAdditionalSettingsFields.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/utils/StratosSdk.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/utils/StratosSdkUtil.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/utils/SystemUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../sample/function_definition/src/main.st" beforeDir="false" afterPath="$PROJECT_DIR$/../../sample/function_definition/src/main.st" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../sample/function_definition/src/rand/function.st" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../sample/variables/src/main.st" beforeDir="false" afterPath="$PROJECT_DIR$/../../sample/variables/src/main.st" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/Icons.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/StratosIcons.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/StratosColorSettingsPage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/StratosColorSettingsPage.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/StratosFileType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/StratosFileType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/facet/StratosFacetEditorTab.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/facet/StratosFacetEditorTab.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/facet/StratosFacetType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/facet/StratosFacetType.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleBuilder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleTypeBuilder.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/projectType/StratosProjectTypePanel.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/projectType/StratosProjectTypePanel.form" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/projectType/StratosProjectTypePanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/projectType/StratosProjectTypePanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleType.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkPanel.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkPanel.form" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/wizard/StratosProjectTypeWizardStep.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/wizard/StratosProjectTypeWizardStep.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosRunConfigurationSettingsEditor.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosRunConfigurationSettingsEditor.form" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosRunConfigurationSettingsEditor.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosRunConfigurationSettingsEditor.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkPanel.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/wizard/StratosSdkWizardStep.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/wizard/StratosSdkWizardStep.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosRunConfigurationType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosRunConfigurationType.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/psi/SamplePSIFileRoot.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/psi/SamplePSIFileRoot.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/structview/SampleItemPresentation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/structview/SampleItemPresentation.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/structview/SampleRootPresentation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/structview/SampleRootPresentation.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/messages/StratosBundle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/messages/StratosBundle.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,17 +76,27 @@
       </state>
     </system>
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
   </component>
   <component name="ProjectId" id="1k2kHi8Q5jWVKkRvxVspCjdSKvj" />
-  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="UI_DESIGNER_EDITOR_MODE.UIDesignerToolWindowManager.WIDTH" value="508" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../Plugins/intellij/flutter-intellij" />
@@ -86,19 +114,6 @@
     </key>
   </component>
   <component name="RunManager">
-    <configuration default="true" type="ArquillianTestNG" factoryName="" nameIsGenerated="true">
-      <option name="arquillianRunConfiguration">
-        <value>
-          <option name="containerStateName" value="" />
-        </value>
-      </option>
-      <option name="TEST_OBJECT" value="CLASS" />
-      <properties />
-      <listeners />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="test" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType">
       <module name="" />
       <option name="VM_PARAMETERS" value="-Xmx512m -Xms256m -ea" />
@@ -124,6 +139,9 @@
       <workItem from="1604919646124" duration="3523000" />
       <workItem from="1604928703855" duration="2643000" />
       <workItem from="1604932766846" duration="1004000" />
+      <workItem from="1605524468656" duration="5627000" />
+      <workItem from="1605680284304" duration="5122000" />
+      <workItem from="1605791077192" duration="7042000" />
     </task>
     <servers />
   </component>
@@ -147,25 +165,32 @@
       <screen x="0" y="0" width="1920" height="1030" />
     </state>
     <state x="420" y="156" width="1079" height="751" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1920.1030@0.0.1920.1030" timestamp="1604906311295" />
-    <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser" timestamp="1604933412350">
-      <screen x="0" y="0" width="1920" height="1030" />
+    <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser" timestamp="1605527752393">
+      <screen x="0" y="0" width="1920" height="1029" />
     </state>
+    <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1029@0.0.1920.1029" timestamp="1605527752393" />
     <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1030@0.0.1920.1030" timestamp="1604933412350" />
     <state x="695" y="206" key="FileChooserDialogImpl" timestamp="1604930624225">
       <screen x="0" y="0" width="1920" height="1030" />
     </state>
     <state x="695" y="206" key="FileChooserDialogImpl/0.0.1920.1030@0.0.1920.1030" timestamp="1604930624225" />
-    <state x="590" y="172" width="739" height="686" key="find.popup" timestamp="1604933086505">
-      <screen x="0" y="0" width="1920" height="1030" />
+    <state x="445" y="190" key="IDE.errors.dialog" timestamp="1605694370330">
+      <screen x="0" y="0" width="1920" height="1029" />
     </state>
-    <state x="590" y="172" width="739" height="686" key="find.popup/0.0.1920.1030@0.0.1920.1030" timestamp="1604933086505" />
+    <state x="445" y="190" key="IDE.errors.dialog/0.0.1920.1029@0.0.1920.1029" timestamp="1605694370330" />
+    <state x="578" y="0" width="739" height="740" key="find.popup" timestamp="1605798311596">
+      <screen x="0" y="0" width="1920" height="1029" />
+    </state>
+    <state x="578" y="0" width="739" height="740" key="find.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1605798311596" />
+    <state x="590" y="172" width="739" height="686" key="find.popup/0.0.1920.1030@0.0.1920.1030" timestamp="1605345874448" />
     <state x="204" y="169" key="new project wizard" timestamp="1604932806065">
       <screen x="0" y="0" width="1920" height="1030" />
     </state>
     <state x="204" y="169" key="new project wizard/0.0.1920.1030@0.0.1920.1030" timestamp="1604932806065" />
-    <state x="539" y="0" width="840" height="1034" key="search.everywhere.popup" timestamp="1604909871341">
-      <screen x="0" y="0" width="1920" height="1030" />
+    <state x="539" y="0" width="840" height="1033" key="search.everywhere.popup" timestamp="1605797172919">
+      <screen x="0" y="0" width="1920" height="1029" />
     </state>
+    <state x="539" y="0" width="840" height="1033" key="search.everywhere.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1605797172919" />
     <state x="539" y="0" width="840" height="1034" key="search.everywhere.popup/0.0.1920.1030@0.0.1920.1030" timestamp="1604909871341" />
   </component>
 </project>

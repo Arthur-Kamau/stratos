@@ -5,7 +5,7 @@ import com.intellij.openapi.util.IconLoader;
 
 import javax.swing.*;
 
-public class Icons {
+public class StratosIcons {
 	public static final Icon SAMPLE_ICON = AllIcons.FileTypes.Text;
 	public static final Icon FUNC_ICON = IconLoader.getIcon("/org/stratos/lang/f.png");
 }

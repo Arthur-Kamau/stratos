@@ -8,7 +8,7 @@ import com.intellij.openapi.module.ModuleType;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.stratos.lang.Icons;
+import org.stratos.lang.StratosIcons;
 
 import javax.swing.*;
 
@@ -41,7 +41,7 @@ public class StratosFacetType extends FacetType<StratosFacet, StratosFacetConfig
 
   @Override
   public Icon getIcon() {
-    return Icons.SAMPLE_ICON;
+    return StratosIcons.SAMPLE_ICON;
   }
 
   public static StratosFacetType getInstance() {

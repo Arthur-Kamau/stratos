@@ -1,18 +1,9 @@
+/*
+ * Copyright 2016 The Chromium Authors. All rights reserved.
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
 package org.stratos.lang.module.sdk;
-
-
-
-import com.intellij.icons.AllIcons;
-import com.intellij.ide.browsers.BrowserLauncher;
-import com.intellij.ide.util.projectWizard.WizardContext;
-import com.intellij.openapi.ui.Messages;
-import com.intellij.ui.ComboboxWithBrowseButton;
-import com.intellij.ui.components.JBLabel;
-import com.intellij.ui.components.labels.ActionLink;
-import com.intellij.ui.components.labels.LinkLabel;
-//import io.flutter.StratosBundle;
-//import io.flutter.FlutterConstants;
-import org.jetbrains.annotations.NotNull;
 
 import com.intellij.icons.AllIcons;
 //import com.intellij.ide.util.newProjectWizard.AbstractProjectWizard;
@@ -30,12 +21,15 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.labels.LinkLabel;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.xml.util.XmlStringUtil;
-//import io.flutter.StratosBundle;
+//import io.flutter.FlutterBundle;
 //import io.flutter.actions.InstallSdkAction;
 //import io.flutter.sdk.FlutterSdkUtil;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+//import org.stratos.lang.bundle.StratosBundle;
+import org.stratos.lang.module.sdk.InstallSdkAction;
+import org.stratos.lang.utils.StratosSdkUtil;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -44,13 +38,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-
-
-/**
- * @author Arthur Kamau
- */
-public class StratosSdkPanel implements InstallSdkAction.Model {// extends JPanel {
-
+public class StratosGeneratorPeer implements InstallSdkAction.Model {
   private final WizardContext myContext;
   private JPanel myMainPanel;
   private ComboboxWithBrowseButton mySdkPathComboWithBrowse;
@@ -67,10 +55,7 @@ public class StratosSdkPanel implements InstallSdkAction.Model {// extends JPane
   private final InstallSdkAction myInstallSdkAction;
   private InstallSdkAction.CancelActionListener myListener;
 
-
-
-
-  public StratosSdkPanel(WizardContext context) {
+  public StratosGeneratorPeer(WizardContext context) {
     myContext = context;
     myInstallSdkAction = new InstallSdkAction(this);
 
@@ -89,12 +74,13 @@ public class StratosSdkPanel implements InstallSdkAction.Model {// extends JPane
 
   private void init() {
     mySdkPathComboWithBrowse.getComboBox().setEditable(true);
-    System.out.println("addKnownSDKPathsToCombo ...");
-//    FlutterSdkUtil.addKnownSDKPathsToCombo(mySdkPathComboWithBrowse.getComboBox());
+    StratosSdkUtil.addKnownSDKPathsToCombo(mySdkPathComboWithBrowse.getComboBox());
 
-    mySdkPathComboWithBrowse.addBrowseFolderListener("browse", null, null,
-            FileChooserDescriptorFactory.createSingleFolderDescriptor(),
-            TextComponentAccessor.STRING_COMBOBOX_WHOLE_TEXT);
+    mySdkPathComboWithBrowse.addBrowseFolderListener(
+//            StratosBundle.message("flutter.sdk.browse.path.label")
+      "sdk path"      , null, null,
+                                                     FileChooserDescriptorFactory.createSingleFolderDescriptor(),
+                                                     TextComponentAccessor.STRING_COMBOBOX_WHOLE_TEXT);
 
     final JTextComponent editorComponent = (JTextComponent)getSdkEditor().getEditorComponent();
     editorComponent.getDocument().addDocumentListener(new DocumentAdapter() {
@@ -131,7 +117,7 @@ public class StratosSdkPanel implements InstallSdkAction.Model {// extends JPane
   }
 
   @SuppressWarnings("EmptyMethod")
-  void apply() {
+  public void apply() {
   }
 
   @NotNull
@@ -163,7 +149,7 @@ public class StratosSdkPanel implements InstallSdkAction.Model {// extends JPane
     if (StringUtils.isEmpty(sdkPath)) {
       return new ValidationInfo("A Flutter SDK must be specified for project creation.", mySdkPathComboWithBrowse);
     }
-    final String message = "Validate sdk "; //FlutterSdkUtil.getErrorMessageIfWrongSdkRootPath(sdkPath);
+    final String message = StratosSdkUtil.getErrorMessageIfWrongSdkRootPath(sdkPath);
     if (message != null) {
       return new ValidationInfo(message, mySdkPathComboWithBrowse);
     }
@@ -212,19 +198,6 @@ public class StratosSdkPanel implements InstallSdkAction.Model {// extends JPane
     return myCancelProgressButton;
   }
 
-  //  @Override
-//  public void requestNextStep() {
-//    final AbstractProjectWizard wizard = (AbstractProjectWizard)myContext.getWizard();
-//    if (wizard != null) {
-//      UIUtil.invokeAndWaitIfNeeded((Runnable)wizard::doNextAction);
-//    }
-//  }
-
-  @Override
-  public void requestNextStep() {
-//    AbstractProjectWizard
-  }
-
   /**
    * Set error details (pass null to hide).
    */
@@ -243,6 +216,11 @@ public class StratosSdkPanel implements InstallSdkAction.Model {// extends JPane
     myListener = listener;
   }
 
-
-
+  @Override
+  public void requestNextStep() {
+//    final AbstractProjectWizard wizard = (AbstractProjectWizard)myContext.getWizard();
+//    if (wizard != null) {
+//      UIUtil.invokeAndWaitIfNeeded((Runnable)wizard::doNextAction);
+//    }
+  }
 }

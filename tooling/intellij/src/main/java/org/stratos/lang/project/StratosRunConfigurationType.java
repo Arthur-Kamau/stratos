@@ -5,7 +5,7 @@ import com.intellij.execution.configurations.ConfigurationType;
 import com.intellij.execution.configurations.ConfigurationTypeUtil;
 
 import org.jetbrains.annotations.NotNull;
-import org.stratos.lang.Icons;
+import org.stratos.lang.StratosIcons;
 
 import javax.swing.*;
 
@@ -27,7 +27,7 @@ public class StratosRunConfigurationType implements ConfigurationType {
 
         @Override
         public Icon getIcon() {
-                return Icons.SAMPLE_ICON;
+                return StratosIcons.SAMPLE_ICON;
         }
 
         @NotNull

@@ -35,6 +35,6 @@ public class StratosFileType extends LanguageFileType {
 	@Nullable
 	@Override
 	public Icon getIcon() {
-		return Icons.SAMPLE_ICON;
+		return StratosIcons.SAMPLE_ICON;
 	}
 }

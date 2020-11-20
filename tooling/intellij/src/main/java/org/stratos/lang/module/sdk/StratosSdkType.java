@@ -1,16 +1,13 @@
 package org.stratos.lang.module.sdk;
 
 import com.intellij.openapi.projectRoots.*;
-import com.intellij.openapi.vfs.LocalFileSystem;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.xmlb.XmlSerializer;
 
 import org.jdom.Element;
 import org.jetbrains.annotations.Nullable;
-import org.stratos.lang.Icons;
+import org.stratos.lang.StratosIcons;
 
 import javax.swing.*;
-import java.io.File;
 
 /**
  * @author Arthur Kamau
@@ -64,7 +61,7 @@ public class StratosSdkType extends SdkType {
 
   @Override
   public Icon getIcon() {
-    return Icons.SAMPLE_ICON;
+    return StratosIcons.SAMPLE_ICON;
   }
 
   @Override

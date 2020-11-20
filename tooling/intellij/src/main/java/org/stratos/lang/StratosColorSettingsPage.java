@@ -29,7 +29,7 @@ public class StratosColorSettingsPage implements ColorSettingsPage {
 	@Nullable
 	@Override
 	public Icon getIcon() {
-		return Icons.SAMPLE_ICON;
+		return StratosIcons.SAMPLE_ICON;
 	}
 
 	@NotNull

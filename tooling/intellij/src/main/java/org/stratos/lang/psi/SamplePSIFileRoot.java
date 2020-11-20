@@ -7,7 +7,7 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiNamedElement;
 import org.antlr.intellij.adaptor.SymtabUtils;
 import org.antlr.intellij.adaptor.psi.ScopeNode;
-import org.stratos.lang.Icons;
+import org.stratos.lang.StratosIcons;
 import org.stratos.lang.StratosFileType;
 import org.stratos.lang.StratosLanguage;
 import org.jetbrains.annotations.NotNull;
@@ -33,7 +33,7 @@ public class SamplePSIFileRoot extends PsiFileBase implements ScopeNode {
 
     @Override
     public Icon getIcon(int flags) {
-        return Icons.SAMPLE_ICON;
+        return StratosIcons.SAMPLE_ICON;
     }
 
 	/** Return null since a file scope has no enclosing scope. It is

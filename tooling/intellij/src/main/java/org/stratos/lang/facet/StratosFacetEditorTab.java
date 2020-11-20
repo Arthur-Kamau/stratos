@@ -14,12 +14,12 @@ import javax.swing.*;
 
 public class StratosFacetEditorTab extends FacetEditorTab {
 
-  private final StratosSdkPanel mySdkPanel;
+//  private final StratosSdkPanel mySdkPanel;
   private final StratosModuleSettings mySettings;
 
   public StratosFacetEditorTab(StratosModuleSettings settings) {
     mySettings = settings;
-    mySdkPanel = new StratosSdkPanel();
+//    mySdkPanel = new StratosSdkPanel();
   }
 
   @Nls
@@ -31,24 +31,25 @@ public class StratosFacetEditorTab extends FacetEditorTab {
   @Nullable
   @Override
   public JComponent createComponent() {
-    return mySdkPanel;
+    return new  JLabel("fuck off");//mySdkPanel;
   }
 
   @Override
   public boolean isModified() {
-    return !StringUtil.equals(mySettings.redlineSmalltalkSdkName, mySdkPanel.getSdkName());
+    return !StringUtil.equals(mySettings.redlineSmalltalkSdkName, "yooo");//mySdkPanel.getSdkName());
   }
 
   @Override
   public void apply() throws ConfigurationException {
-    mySettings.redlineSmalltalkSdkName = mySdkPanel.getSdkName();
+    mySettings.redlineSmalltalkSdkName = "kooo"; //mySdkPanel.getSdkName();
   }
 
   @Override
   public void reset() {
     final Sdk sdk = ProjectJdkTable.getInstance().findJdk(mySettings.redlineSmalltalkSdkName);
     if (sdk != null) {
-      mySdkPanel.setSdk(sdk);
+      System.out.println(".........look");
+      //mySdkPanel.setSdk(sdk);
     }
   }
 

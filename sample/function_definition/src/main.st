@@ -5,9 +5,7 @@ package main ;
 function hello(){
    print ("hello world ")
 }
-function nn() {
-  
-}
+
 
 // function with parameters
 function printName(val name : String){
@@ -43,4 +41,8 @@ function m(){
    // parameter and return 
    val h : int = returnAge();
    print("my height $h");
+}
+
+function main(){
+   m()
 }

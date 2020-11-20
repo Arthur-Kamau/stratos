@@ -3,7 +3,7 @@ package org.stratos.lang.module;
 
 
 import com.intellij.openapi.module.ModuleType;
-import org.stratos.lang.Icons;
+import org.stratos.lang.StratosIcons;
 
 import javax.swing.*;
 
@@ -36,7 +36,7 @@ public class StratosModuleType extends ModuleType<StratosModuleBuilder> {
 
     @Override
     public Icon getNodeIcon(@Deprecated boolean isOpened) {
-        return Icons.SAMPLE_ICON;
+        return StratosIcons.SAMPLE_ICON;
     }
 
     public static StratosModuleType getInstance() {

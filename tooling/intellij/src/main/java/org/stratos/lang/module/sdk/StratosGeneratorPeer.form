@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="org.stratos.lang.module.sdk.StratosSdkPanel">
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="org.stratos.lang.module.sdk.StratosGeneratorPeer">
   <grid id="27dc6" binding="myMainPanel" layout-manager="GridLayoutManager" row-count="5" column-count="10" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="5" bottom="0" right="8"/>
     <constraints>
@@ -14,7 +14,7 @@
         </constraints>
         <properties>
           <labelFor value="b09db"/>
-          <text resource-bundle="io/flutter/StratosBundle" key="flutter.sdk.path.label"/>
+          <text resource-bundle="io/flutter/FlutterBundle" key="flutter.sdk.path.label"/>
         </properties>
       </component>
       <component id="b09db" class="com.intellij.ui.ComboboxWithBrowseButton" binding="mySdkPathComboWithBrowse" custom-create="true">

@@ -3,7 +3,7 @@ package org.stratos.lang.structview;
 import com.intellij.lang.ASTNode;
 import com.intellij.navigation.ItemPresentation;
 import com.intellij.psi.PsiElement;
-import org.stratos.lang.Icons;
+import org.stratos.lang.StratosIcons;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -18,7 +18,7 @@ public class SampleItemPresentation implements ItemPresentation {
 	@Nullable
 	@Override
 	public Icon getIcon(boolean unused) {
-		return Icons.FUNC_ICON;
+		return StratosIcons.FUNC_ICON;
 	}
 
 	@Nullable
