@@ -1,4 +1,4 @@
-package org.stratos.lang.module.sdk;
+package org.stratos.lang.sdk;
 
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.projectRoots.SdkAdditionalData;

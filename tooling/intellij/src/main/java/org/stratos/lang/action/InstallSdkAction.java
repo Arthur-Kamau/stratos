@@ -1,4 +1,4 @@
-package org.stratos.lang.module.sdk;
+package org.stratos.lang.action;
 
 
 
@@ -23,10 +23,6 @@ import com.intellij.execution.ExecutionException;
         import com.intellij.openapi.vfs.VirtualFile;
         import com.intellij.ui.ComboboxWithBrowseButton;
         import com.intellij.ui.components.labels.LinkLabel;
-//        import io.flutter.FlutterConstants;
-//        import io.flutter.FlutterInitializer;
-//        import io.flutter.sdk.FlutterSdkUtil;
-//        import io.flutter.utils.SystemUtils;
         import org.jetbrains.annotations.NotNull;
         import org.jetbrains.annotations.Nullable;
 import org.stratos.lang.utils.StratosSdkUtil;
@@ -41,6 +37,7 @@ public class InstallSdkAction extends DumbAwareAction {
     private final InstallAction myInstallAction;
 
     public InstallSdkAction(Model peer) {
+        System.out.println("\n\n HERE -------- > > ");
         myInstallAction = createInstallAction(peer);
     }
 
@@ -204,11 +201,11 @@ public class InstallSdkAction extends DumbAwareAction {
                                 // Eliminate some false positives, which occurs when an existing directory is deleted.
                                 VfsUtil.markDirtyAndRefresh(false, true, true, file);
                                 if (file.findChild("flutter") != null) {
-                                    throw new IllegalArgumentException("A file called 'flutter' already exists in this location.");
+                                    throw new IllegalArgumentException("A file called 'Stratos' already exists in this location.");
                                 }
                             }
                         }
-                    }.withTitle("Flutter SDK Directory").withDescription("Choose a directory to install the Flutter SDK");
+                    }.withTitle("Stratos SDK Directory").withDescription("Choose a directory to install the Stratos SDK");
 
             final VirtualFile installTarget = FileChooser.chooseFile(descriptor, null, null);
             if (installTarget != null) {
@@ -230,7 +227,7 @@ public class InstallSdkAction extends DumbAwareAction {
 
         private void installTo(final @NotNull VirtualFile directory) {
             final String installPath = directory.getPath();
-            final String sdkDir = new File(installPath, "flutter").getPath();
+            final String sdkDir = new File(installPath, "stratos").getPath();
 
             setSdkPath(sdkDir);
             runCommand(new GitCloneCommand(installPath, sdkDir));
@@ -341,17 +338,17 @@ public class InstallSdkAction extends DumbAwareAction {
             @NotNull
             @Override
             String getTitle() {
-                return "Cloning Flutter repository…";
+                return "Cloning Stratos repository…";
             }
 
             @Override
             void onError(@NotNull ExecutionException exception) {
-                showError("Error cloning Flutter repository: " + exception.getMessage());
+                showError("Error cloning Stratos repository: " + exception.getMessage());
             }
 
             @Override
             void onError(@NotNull ProcessEvent event) {
-                showError("Flutter SDK download canceled.");
+                showError("Stratos SDK download canceled.");
             }
 
             @Override

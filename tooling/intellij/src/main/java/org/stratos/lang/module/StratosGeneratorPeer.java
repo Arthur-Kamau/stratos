@@ -3,10 +3,9 @@
  * Use of this source code is governed by a BSD-style license that can be
  * found in the LICENSE file.
  */
-package org.stratos.lang.module.sdk;
+package org.stratos.lang.module;
 
 import com.intellij.icons.AllIcons;
-//import com.intellij.ide.util.newProjectWizard.AbstractProjectWizard;
 import com.intellij.ide.util.projectWizard.WizardContext;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.ui.ComboBox;
@@ -21,14 +20,10 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.labels.LinkLabel;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.xml.util.XmlStringUtil;
-//import io.flutter.FlutterBundle;
-//import io.flutter.actions.InstallSdkAction;
-//import io.flutter.sdk.FlutterSdkUtil;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-//import org.stratos.lang.bundle.StratosBundle;
-import org.stratos.lang.module.sdk.InstallSdkAction;
+import org.stratos.lang.action.InstallSdkAction;
 import org.stratos.lang.utils.StratosSdkUtil;
 
 import javax.swing.*;
@@ -52,15 +47,19 @@ public class StratosGeneratorPeer implements InstallSdkAction.Model {
   private JScrollPane myProgressScrollPane;
   private JLabel myCancelProgressButton;
 
-  private final InstallSdkAction myInstallSdkAction;
+  private  InstallSdkAction myInstallSdkAction ;
   private InstallSdkAction.CancelActionListener myListener;
 
   public StratosGeneratorPeer(WizardContext context) {
     myContext = context;
-    myInstallSdkAction = new InstallSdkAction(this);
+    try {
+      myInstallSdkAction = new InstallSdkAction(this);
+    }catch (Exception ex){
+      System.out.println("\n Err msg"+ex.getMessage() +" \n cause "+ex.getCause() + " \n message "+ex.getStackTrace());
 
+    }
     errorIcon.setText("");
-    errorIcon.setIcon(AllIcons.Actions.Lightning);
+//    errorIcon.setIcon(AllIcons.Actions.Lightning);
     Messages.installHyperlinkSupport(errorText);
 
     // Hide pending real content.
@@ -76,9 +75,7 @@ public class StratosGeneratorPeer implements InstallSdkAction.Model {
     mySdkPathComboWithBrowse.getComboBox().setEditable(true);
     StratosSdkUtil.addKnownSDKPathsToCombo(mySdkPathComboWithBrowse.getComboBox());
 
-    mySdkPathComboWithBrowse.addBrowseFolderListener(
-//            StratosBundle.message("flutter.sdk.browse.path.label")
-      "sdk path"      , null, null,
+    mySdkPathComboWithBrowse.addBrowseFolderListener("Sdk Path", null, null,
                                                      FileChooserDescriptorFactory.createSingleFolderDescriptor(),
                                                      TextComponentAccessor.STRING_COMBOBOX_WHOLE_TEXT);
 
@@ -91,10 +88,10 @@ public class StratosGeneratorPeer implements InstallSdkAction.Model {
     });
 
     // When this changes the corresponding parts of FlutterProjectStep should also be changed.
-    myInstallActionLink.setIcon(myInstallSdkAction.getLinkIcon());
-    myInstallActionLink.setDisabledIcon(IconLoader.getDisabledIcon(myInstallSdkAction.getLinkIcon()));
-
-    myInstallActionLink.setText(myInstallSdkAction.getLinkText());
+//    myInstallActionLink.setIcon(myInstallSdkAction.getLinkIcon());
+//    myInstallActionLink.setDisabledIcon(IconLoader.getDisabledIcon(myInstallSdkAction.getLinkIcon()));
+//
+//    myInstallActionLink.setText(myInstallSdkAction.getLinkText());
 
     //noinspection unchecked
     myInstallActionLink.setListener((label, linkUrl) -> myInstallSdkAction.actionPerformed(null), null);
@@ -117,7 +114,7 @@ public class StratosGeneratorPeer implements InstallSdkAction.Model {
   }
 
   @SuppressWarnings("EmptyMethod")
-  public void apply() {
+  void apply() {
   }
 
   @NotNull
@@ -147,7 +144,7 @@ public class StratosGeneratorPeer implements InstallSdkAction.Model {
   private ValidationInfo validateSdk() {
     final String sdkPath = getSdkComboPath();
     if (StringUtils.isEmpty(sdkPath)) {
-      return new ValidationInfo("A Flutter SDK must be specified for project creation.", mySdkPathComboWithBrowse);
+      return new ValidationInfo("A Stratos SDK must be specified for project creation.", mySdkPathComboWithBrowse);
     }
     final String message = StratosSdkUtil.getErrorMessageIfWrongSdkRootPath(sdkPath);
     if (message != null) {
@@ -218,6 +215,7 @@ public class StratosGeneratorPeer implements InstallSdkAction.Model {
 
   @Override
   public void requestNextStep() {
+    System.out.println("Request next steps");
 //    final AbstractProjectWizard wizard = (AbstractProjectWizard)myContext.getWizard();
 //    if (wizard != null) {
 //      UIUtil.invokeAndWaitIfNeeded((Runnable)wizard::doNextAction);

@@ -23,33 +23,40 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="544043c9-1ad9-4eec-b1ad-cbde4c0c0bc2" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosProjectType.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/InstallSdkAction.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosCreateAdditionalSettings.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosCreateAdditionalSettingsFields.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/utils/StratosSdk.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/utils/StratosSdkUtil.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/utils/SystemUtils.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../sample/function_definition/src/main.st" beforeDir="false" afterPath="$PROJECT_DIR$/../../sample/function_definition/src/main.st" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../sample/function_definition/src/rand/function.st" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../sample/variables/src/main.st" beforeDir="false" afterPath="$PROJECT_DIR$/../../sample/variables/src/main.st" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleWizardStep.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/sdk/StratosSdkType.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/Icons.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/StratosIcons.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/StratosColorSettingsPage.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/StratosColorSettingsPage.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/StratosFileType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/StratosFileType.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/facet/StratosFacetEditorTab.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/facet/StratosFacetEditorTab.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/facet/StratosFacetType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/facet/StratosFacetType.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleBuilder.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkPanel.form" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkPanel.form" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkPanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkPanel.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/wizard/StratosSdkWizardStep.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/wizard/StratosSdkWizardStep.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosRunConfigurationType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosRunConfigurationType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/psi/SamplePSIFileRoot.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/psi/SamplePSIFileRoot.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/structview/SampleItemPresentation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/structview/SampleItemPresentation.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/structview/SampleRootPresentation.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/structview/SampleRootPresentation.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/messages/StratosBundle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/messages/StratosBundle.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosProjectType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/projectType/StratosProjectTypePanel.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/projectType/StratosProjectTypePanel.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/FlutterModuleBuilder.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/InstallSdkAction.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosCreateAdditionalSettings.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosCreateAdditionalSettingsFields.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosGeneratorPeer.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosGeneratorPeer.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkComboBox.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkData.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkPanel.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkPanel.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/FlutterCreateAdditionalSettingsFields.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/FlutterCreateParams.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/ProjectType.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/ProjectType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/RadiosForm.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/RadiosForm.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/SettingsHelpForm.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/SettingsHelpForm.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/StratosCreateParams.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/wizard/StratosProjectTypeWizardStep.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/wizard/StratosSdkWizardStep.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/wizard/StratosWizardInputField.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/utils/StratosSdk.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/utils/StratosSdk.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/META-INF/plugin.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/META-INF/plugin.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -141,7 +148,8 @@
       <workItem from="1604932766846" duration="1004000" />
       <workItem from="1605524468656" duration="5627000" />
       <workItem from="1605680284304" duration="5122000" />
-      <workItem from="1605791077192" duration="7042000" />
+      <workItem from="1605791077192" duration="10609000" />
+      <workItem from="1605853105076" duration="8054000" />
     </task>
     <servers />
   </component>
@@ -165,11 +173,15 @@
       <screen x="0" y="0" width="1920" height="1030" />
     </state>
     <state x="420" y="156" width="1079" height="751" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1920.1030@0.0.1920.1030" timestamp="1604906311295" />
-    <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser" timestamp="1605527752393">
+    <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser" timestamp="1605857841915">
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
-    <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1029@0.0.1920.1029" timestamp="1605527752393" />
+    <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1029@0.0.1920.1029" timestamp="1605857841915" />
     <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1030@0.0.1920.1030" timestamp="1604933412350" />
+    <state x="0" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog" timestamp="1605858114399">
+      <screen x="0" y="0" width="1920" height="1029" />
+    </state>
+    <state x="0" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog/0.0.1920.1029@0.0.1920.1029" timestamp="1605858114399" />
     <state x="695" y="206" key="FileChooserDialogImpl" timestamp="1604930624225">
       <screen x="0" y="0" width="1920" height="1030" />
     </state>
@@ -178,19 +190,23 @@
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
     <state x="445" y="190" key="IDE.errors.dialog/0.0.1920.1029@0.0.1920.1029" timestamp="1605694370330" />
-    <state x="578" y="0" width="739" height="740" key="find.popup" timestamp="1605798311596">
+    <state x="578" y="0" width="739" height="740" key="find.popup" timestamp="1605860568659">
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
-    <state x="578" y="0" width="739" height="740" key="find.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1605798311596" />
+    <state x="578" y="0" width="739" height="740" key="find.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1605860568659" />
     <state x="590" y="172" width="739" height="686" key="find.popup/0.0.1920.1030@0.0.1920.1030" timestamp="1605345874448" />
+    <state width="750" height="535" key="javadoc.popup" timestamp="1605850825423">
+      <screen x="0" y="0" width="1920" height="1029" />
+    </state>
+    <state width="750" height="535" key="javadoc.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1605850825423" />
     <state x="204" y="169" key="new project wizard" timestamp="1604932806065">
       <screen x="0" y="0" width="1920" height="1030" />
     </state>
     <state x="204" y="169" key="new project wizard/0.0.1920.1030@0.0.1920.1030" timestamp="1604932806065" />
-    <state x="539" y="0" width="840" height="1033" key="search.everywhere.popup" timestamp="1605797172919">
+    <state x="539" y="0" width="840" height="1033" key="search.everywhere.popup" timestamp="1605850097472">
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
-    <state x="539" y="0" width="840" height="1033" key="search.everywhere.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1605797172919" />
+    <state x="539" y="0" width="840" height="1033" key="search.everywhere.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1605850097472" />
     <state x="539" y="0" width="840" height="1034" key="search.everywhere.popup/0.0.1920.1030@0.0.1920.1030" timestamp="1604909871341" />
   </component>
 </project>
