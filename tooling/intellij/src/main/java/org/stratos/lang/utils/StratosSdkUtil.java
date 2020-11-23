@@ -6,8 +6,6 @@ import com.intellij.execution.ExecutionException;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.application.ApplicationNamesInfo;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.SystemInfo;
@@ -28,11 +26,11 @@ import java.util.Set;
 
 public class StratosSdkUtil {
     /**
-     * The environment variable to use to tell the flutter tool which app is driving it.
+     * The environment variable to use to tell the stratos tool which app is driving it.
      */
-    public static final String FLUTTER_HOST_ENV = "FLUTTER_HOST";
+    public static final String STRATOS_HOST_ENV = "FLUTTER_HOST";
 
-    private static final String FLUTTER_SDK_KNOWN_PATHS = "FLUTTER_SDK_KNOWN_PATHS";
+    private static final String STRATOS_KNOWN_PATHS = "STRATOS_KNOWN_PATHS";
     private static final Logger LOG = Logger.getInstance(StratosSdkUtil.class);
 
     private StratosSdkUtil() {
@@ -43,12 +41,12 @@ public class StratosSdkUtil {
      */
     public static String getFlutterHostEnvValue() {
         final String clientId = ApplicationNamesInfo.getInstance().getFullProductName().replaceAll(" ", "-");
-        final String existingVar = java.lang.System.getenv(FLUTTER_HOST_ENV);
+        final String existingVar = java.lang.System.getenv(STRATOS_HOST_ENV);
         return existingVar == null ? clientId : (existingVar + ":" + clientId);
     }
 
     public static void updateKnownSdkPaths(@NotNull final String newSdkPath) {
-        updateKnownPaths(FLUTTER_SDK_KNOWN_PATHS, newSdkPath);
+        updateKnownPaths(STRATOS_KNOWN_PATHS, newSdkPath);
     }
 
     private static void updateKnownPaths(@SuppressWarnings("SameParameterValue") @NotNull final String propertyKey,
@@ -105,16 +103,16 @@ public class StratosSdkUtil {
         final Set<String> paths = new HashSet<>();
 
         System.out.println("==> Sanitize me ........");
-        // scan current projects for existing flutter sdk settings
-//        for (Project project : ProjectManager.getInstance().getOpenProjects()) {
-//        final FlutterSdk flutterSdk = FlutterSdk.getFlutterSdk(project);
-//        if (flutterSdk != null) {
-//        paths.add(flutterSdk.getHomePath());
-//        }
-//        }
+//         scan current projects for existing flutter sdk settings
+        for (Project project : ProjectManager.getInstance().getOpenProjects()) {
+            final StratosSdk flutterSdk = StratosSdk.getStratosSdk(project);
+            if (flutterSdk != null) {
+                paths.add(flutterSdk.getHomePath());
+            }
+        }
 
         // use the list of paths they've entered in the past
-        final String[] knownPaths = PropertiesComponent.getInstance().getValues(FLUTTER_SDK_KNOWN_PATHS);
+        final String[] knownPaths = PropertiesComponent.getInstance().getValues(STRATOS_KNOWN_PATHS);
         if (knownPaths != null) {
             paths.addAll(Arrays.asList(knownPaths));
         }
@@ -132,22 +130,22 @@ public class StratosSdkUtil {
     public static String pathToFlutterTool(@NotNull String sdkPath) throws ExecutionException {
         final String path = findDescendant(sdkPath, "/bin/" + flutterScriptName());
         if (path == null) {
-            throw new ExecutionException("Flutter SDK is not configured");
+            throw new ExecutionException("Stratos SDK is not configured");
         }
         return path;
     }
 
     @NotNull
     public static String flutterScriptName() {
-        return SystemInfo.isWindows ? "flutter.bat" : "flutter";
+        return SystemInfo.isWindows ? "stratos.bat" : "flutter";
     }
 
     /**
-     * Returns the path to the Dart SDK within a Flutter SDK, or null if it doesn't exist.
+     * Returns the path to the Stratos SDK , or null if it doesn't exist.
      */
     @Nullable
-    public static String pathToDartSdk(@NotNull String flutterSdkPath) {
-        return findDescendant(flutterSdkPath, "/bin/cache/dart-sdk");
+    public static String pathToStratosSdk(@NotNull String flutterSdkPath) {
+        return findDescendant(flutterSdkPath, "/bin/stratos");
     }
 
     @Nullable
@@ -159,32 +157,26 @@ public class StratosSdkUtil {
         return file.getPath();
     }
 
-    public static boolean isFlutterSdkHome(@NotNull final String path) {
-        final File flutterPubspecFile = new File(path + "/packages/flutter/pubspec.yaml");
-        final File flutterToolFile = new File(path + "/bin/flutter");
-        final File dartLibFolder = new File(path + "/bin/cache/dart-sdk/lib");
-        return flutterPubspecFile.isFile() && flutterToolFile.isFile() && dartLibFolder.isDirectory();
+    public static boolean isStratosSdkHome(@NotNull final String path) {
+        final File stratosConfig = new File(path + "/src/app.config");
+        final File stratosBin = new File(path + "/bin/stratos");
+        return stratosConfig.isFile() && stratosBin.isFile();
     }
 
-    private static boolean isFlutterSdkHomeWithoutDartSdk(@NotNull final String path) {
-        final File flutterPubspecFile = new File(path + "/packages/flutter/pubspec.yaml");
-        final File flutterToolFile = new File(path + "/bin/flutter");
-        final File dartLibFolder = new File(path + "/bin/cache/dart-sdk/lib");
-        return flutterPubspecFile.isFile() && flutterToolFile.isFile() && !dartLibFolder.isDirectory();
-    }
 
     /**
      * Checks the workspace for any open Flutter projects.
      *
      * @return true if an open Flutter project is found
      */
-        public static boolean hasFlutterModules() {
+    public static boolean hasFlutterModules() {
         return Arrays.stream(ProjectManager.getInstance().getOpenProjects()).anyMatch(StratosModuleUtils::hasFlutterModule);
-        }
+    }
 
-        public static boolean hasFlutterModules(@NotNull Project project) {
+    public static boolean hasFlutterModules(@NotNull Project project) {
         return StratosModuleUtils.hasFlutterModule(project);
-        }
+    }
+
     @Nullable
     public static String getErrorMessageIfWrongSdkRootPath(final @NotNull String sdkRootPath) {
         if (sdkRootPath.isEmpty()) {
@@ -195,63 +187,19 @@ public class StratosSdkUtil {
         if (!sdkRoot.isDirectory())
             return "sdk no exist"; // StratosBundle.message("error.folder.specified.as.sdk.not.exists");
 
-        if (isFlutterSdkHomeWithoutDartSdk(sdkRootPath))
-            return "missing core .."; // return StratosBundle.message("error.flutter.sdk.without.dart.sdk");
-        if (!isFlutterSdkHome(sdkRootPath))
+        if (!isStratosSdkHome(sdkRootPath))
             return "sdk not found in location"; //return StratosBundle.message("error.sdk.not.found.in.specified.location");
 
         return null;
     }
 
     public static void setFlutterSdkPath(@NotNull final Project project, @NotNull final String flutterSdkPath) {
-        // In reality this method sets Dart SDK (that is inside the Flutter SDK).
-//        final String dartSdk = flutterSdkPath + "/bin/cache/dart-sdk";
-//        ApplicationManager.getApplication().runWriteAction(() -> DartPlugin.ensureDartSdkConfigured(project, dartSdk));
-
-        // Checking for updates doesn't make sense since the channels don't correspond to Flutter...
-//        DartSdkUpdateOption.setDartSdkUpdateOption(DartSdkUpdateOption.DoNotCheck);
 
         // Update the list of known sdk paths.
         StratosSdkUtil.updateKnownSdkPaths(flutterSdkPath);
 
-        // Fire events for a Flutter SDK change, which updates the UI.
-//        FlutterSdkManager.getInstance(project).checkForFlutterSdkChange();
     }
 
-    // TODO(devoncarew): The Dart plugin supports specifying individual modules in the settings page.
-
-    /**
-     * Do a best-effort basis to enable Dart support for the given project.
-     */
-    public static void enableDartSdk(@NotNull final Project project) {
-        final Module[] modules = ModuleManager.getInstance(project).getModules();
-        if (modules.length == 1) {
-//        DartPlugin.enableDartSdk(modules[0]);
-        }
-    }
-
-    /**
-     * Parse any .packages file and infer the location of the Flutter SDK from that.
-     */
-    @Nullable
-//        public static String guessFlutterSdkFromPackagesFile(@NotNull Module module) {
-//        for (PubRoot pubRoot : PubRoots.forModule(module)) {
-//        final VirtualFile packagesFile = pubRoot.getPackagesFile();
-//        if (packagesFile == null) {
-//        continue;
-//        }
-//
-//        // parse it
-//        try {
-//        final String contents = new String(packagesFile.contentsToByteArray(true /* cache contents */));
-//        return parseFlutterSdkPath(contents);
-//        }
-//        catch (IOException ignored) {
-//        }
-//        }
-//
-//        return null;
-//        }
 
     @VisibleForTesting
     public static String parseFlutterSdkPath(String packagesFileContent) {
@@ -284,16 +232,16 @@ public class StratosSdkUtil {
     }
 
     /**
-     * Locate the Flutter SDK using the user's PATH.
+     * Locate the Stratos SDK using the user's PATH.
      */
     @Nullable
     public static String locateSdkFromPath() {
-        final String flutterBinPath = SystemUtils.which("flutter");
-        if (flutterBinPath == null) {
+        final String stratosBinPath = SystemUtils.which("stratos");
+        if (stratosBinPath == null) {
             return null;
         }
 
-        final File flutterBinFile = new File(flutterBinPath);
+        final File flutterBinFile = new File(stratosBinPath);
         return flutterBinFile.getParentFile().getParentFile().getPath();
     }
 }

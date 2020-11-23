@@ -1,5 +1,4 @@
-package org.stratos.lang.project;
-
+package org.stratos.lang.project.runner;
 import com.intellij.execution.ExecutionException;
 import com.intellij.execution.Executor;
 import com.intellij.execution.configurations.*;
@@ -8,16 +7,16 @@ import com.intellij.openapi.options.SettingsEditor;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.stratos.lang.project.StratosSettingsEditor;
 
 public class StratosRunConfiguration extends RunConfigurationBase {
-    protected StratosRunConfiguration(Project project, ConfigurationFactory factory, String name) {
+    public StratosRunConfiguration(Project project, ConfigurationFactory factory, String name) {
         super(project, factory, name);
     }
 
     @NotNull
     @Override
     public SettingsEditor<? extends RunConfiguration> getConfigurationEditor() {
+
         return new StratosSettingsEditor();
     }
 

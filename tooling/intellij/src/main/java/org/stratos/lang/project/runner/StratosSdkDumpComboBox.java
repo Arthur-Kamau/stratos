@@ -1,19 +1,15 @@
-package org.stratos.lang.module;
+package org.stratos.lang.project.runner;
 
 import com.intellij.openapi.fileChooser.FileChooser;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.projectRoots.ProjectJdkTable;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ColoredListCellRenderer;
 import com.intellij.ui.ComboboxWithBrowseButton;
-import com.intellij.ui.SimpleTextAttributes;
 import org.jetbrains.annotations.NotNull;
-import org.stratos.lang.action.InstallSdkAction;
 import org.stratos.lang.sdk.StratosSdkType;
 
 import javax.swing.*;
@@ -22,16 +18,14 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.List;
 
-/**
- * @author Konstantin Bulenkov
- */
-public class StratosSdkComboBox extends ComboboxWithBrowseButton {
 
-  public StratosSdkComboBox() {
+public class StratosSdkDumpComboBox extends ComboboxWithBrowseButton {
+
+  public StratosSdkDumpComboBox() {
     getComboBox().setRenderer(new ColoredListCellRenderer() {
       @Override
       protected void customizeCellRenderer(JList list, Object value, int index, boolean selected, boolean hasFocus) {
-        append("SDK ONE");
+        append("home/stratos/logs");
 //        if (value instanceof Sdk) {
 //          append(((Sdk) value).getName());
 //        } else {

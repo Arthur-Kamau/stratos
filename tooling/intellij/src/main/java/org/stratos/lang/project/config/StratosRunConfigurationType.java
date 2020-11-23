@@ -1,4 +1,4 @@
-package org.stratos.lang.project;
+package org.stratos.lang.project.config;
 
 import com.intellij.execution.configurations.ConfigurationFactory;
 import com.intellij.execution.configurations.ConfigurationType;

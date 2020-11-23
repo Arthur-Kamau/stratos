@@ -52,7 +52,8 @@ public class StratosSdk {
      * Returns null if the Dart SDK is not set or does not exist.
      */
     @Nullable
-    public static StratosSdk getFlutterSdk(@NotNull final Project project) {
+    public static StratosSdk getStratosSdk(@NotNull final Project project) {
+        System.out.println("\n\n Fix mee    =========== \n\n ");
         if (project.isDisposed()) {
             return null;
         }
@@ -104,7 +105,7 @@ public class StratosSdk {
     @Nullable
     public static StratosSdk forPath(@NotNull final String path) {
         final VirtualFile home = LocalFileSystem.getInstance().findFileByPath(path);
-        if (home == null || !StratosSdkUtil.isFlutterSdkHome(path)) {
+        if (home == null || !StratosSdkUtil.isStratosSdkHome(path)) {
             return null;
         }
         else {
@@ -158,11 +159,11 @@ public class StratosSdk {
     }
 
     /**
-     * Returns the path to the Dart SDK cached within the Flutter SDK, or null if it doesn't exist.
+     * Returns the path to the Stratos SDK c, or null if it doesn't exist.
      */
     @Nullable
     public String getDartSdkPath() {
-        return StratosSdkUtil.pathToDartSdk(getHomePath());
+        return StratosSdkUtil.pathToStratosSdk(getHomePath());
     }
 
 

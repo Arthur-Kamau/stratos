@@ -23,39 +23,27 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="544043c9-1ad9-4eec-b1ad-cbde4c0c0bc2" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleWizardStep.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/sdk/StratosSdkType.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/runner/StratosSdkDumpComboBox.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/runner/StratosSettingsEditor.form" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/runner/StratosSettingsEditor.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/facet/StratosFacetEditorTab.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/facet/StratosFacetEditorTab.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contributors.txt" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleBuilder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleBuilder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleType.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosModuleType.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosProjectType.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/projectType/StratosProjectTypePanel.form" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/projectType/StratosProjectTypePanel.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/FlutterModuleBuilder.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/InstallSdkAction.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosCreateAdditionalSettings.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosCreateAdditionalSettingsFields.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosGeneratorPeer.form" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosGeneratorPeer.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkComboBox.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkData.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkPanel.form" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkPanel.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/sdk/StratosSdkType.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/FlutterCreateAdditionalSettingsFields.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/FlutterCreateParams.form" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/ProjectType.form" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/ProjectType.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/RadiosForm.form" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/RadiosForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/SettingsHelpForm.form" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/SettingsHelpForm.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/settings/StratosCreateParams.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/wizard/StratosProjectTypeWizardStep.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/wizard/StratosSdkWizardStep.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/wizard/StratosWizardInputField.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosSdkComboBox.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/module/StratosSdkComboBox.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosConfigurationFactory.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosProjectStructureDetector.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosRunConfiguration.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosRunConfigurationSettingsEditor.form" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosRunConfigurationSettingsEditor.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosRunConfigurationType.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosRunner.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosSettingsEditor.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosStructureViewElement.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosStructureViewFactory.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/StratosStructureViewModel.java" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/utils/StratosSdk.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/utils/StratosSdk.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/utils/StratosSdkManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/utils/StratosSdkManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/utils/StratosSdkUtil.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/utils/StratosSdkUtil.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/META-INF/plugin.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/META-INF/plugin.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -103,10 +91,11 @@
   </component>
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
-    <property name="UI_DESIGNER_EDITOR_MODE.UIDesignerToolWindowManager.WIDTH" value="508" />
+    <property name="UI_DESIGNER_EDITOR_MODE.PaletteManager.WIDTH" value="294" />
+    <property name="UI_DESIGNER_EDITOR_MODE.UIDesignerToolWindowManager.WIDTH" value="359" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../Plugins/intellij/flutter-intellij" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../Plugins/intellij/redline/RedlineSmalltalk" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -114,13 +103,30 @@
     <property name="node.js.selected.package.eslint" value="(autodetect)" />
     <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="nodejs_package_manager_path" value="npm" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
   </component>
   <component name="RecentsManager">
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="org.stratos.lang.project.runner" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/src/main/antlr/org/stratos.lang" />
     </key>
   </component>
   <component name="RunManager">
+    <configuration default="true" type="ArquillianTestNG" factoryName="" nameIsGenerated="true">
+      <option name="arquillianRunConfiguration">
+        <value>
+          <option name="containerStateName" value="" />
+        </value>
+      </option>
+      <option name="TEST_OBJECT" value="CLASS" />
+      <properties />
+      <listeners />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="test" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType">
       <module name="" />
       <option name="VM_PARAMETERS" value="-Xmx512m -Xms256m -ea" />
@@ -150,6 +156,8 @@
       <workItem from="1605680284304" duration="5122000" />
       <workItem from="1605791077192" duration="10609000" />
       <workItem from="1605853105076" duration="8054000" />
+      <workItem from="1606136215509" duration="1818000" />
+      <workItem from="1606138067664" duration="6388000" />
     </task>
     <servers />
   </component>
@@ -173,40 +181,49 @@
       <screen x="0" y="0" width="1920" height="1030" />
     </state>
     <state x="420" y="156" width="1079" height="751" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1920.1030@0.0.1920.1030" timestamp="1604906311295" />
-    <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser" timestamp="1605857841915">
+    <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser" timestamp="1606140327952">
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
-    <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1029@0.0.1920.1029" timestamp="1605857841915" />
+    <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1029@0.0.1920.1029" timestamp="1606140327952" />
     <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1030@0.0.1920.1030" timestamp="1604933412350" />
-    <state x="0" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog" timestamp="1605858114399">
+    <state x="0" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog" timestamp="1606140236618">
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
-    <state x="0" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog/0.0.1920.1029@0.0.1920.1029" timestamp="1605858114399" />
-    <state x="695" y="206" key="FileChooserDialogImpl" timestamp="1604930624225">
-      <screen x="0" y="0" width="1920" height="1030" />
+    <state x="0" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog/0.0.1920.1029@0.0.1920.1029" timestamp="1606140236618" />
+    <state x="632" y="195" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1606138197393">
+      <screen x="0" y="0" width="1920" height="1029" />
     </state>
+    <state x="632" y="195" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1029@0.0.1920.1029" timestamp="1606138197393" />
+    <state x="695" y="206" key="FileChooserDialogImpl" timestamp="1606137248269">
+      <screen x="0" y="0" width="1920" height="1029" />
+    </state>
+    <state x="695" y="206" key="FileChooserDialogImpl/0.0.1920.1029@0.0.1920.1029" timestamp="1606137248269" />
     <state x="695" y="206" key="FileChooserDialogImpl/0.0.1920.1030@0.0.1920.1030" timestamp="1604930624225" />
     <state x="445" y="190" key="IDE.errors.dialog" timestamp="1605694370330">
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
     <state x="445" y="190" key="IDE.errors.dialog/0.0.1920.1029@0.0.1920.1029" timestamp="1605694370330" />
-    <state x="578" y="0" width="739" height="740" key="find.popup" timestamp="1605860568659">
+    <state x="344" y="52" key="SettingsEditor" timestamp="1606138035400">
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
-    <state x="578" y="0" width="739" height="740" key="find.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1605860568659" />
+    <state x="344" y="52" key="SettingsEditor/0.0.1920.1029@0.0.1920.1029" timestamp="1606138035400" />
+    <state x="578" y="0" width="739" height="740" key="find.popup" timestamp="1606144339572">
+      <screen x="0" y="0" width="1920" height="1029" />
+    </state>
+    <state x="578" y="0" width="739" height="740" key="find.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1606144339572" />
     <state x="590" y="172" width="739" height="686" key="find.popup/0.0.1920.1030@0.0.1920.1030" timestamp="1605345874448" />
-    <state width="750" height="535" key="javadoc.popup" timestamp="1605850825423">
+    <state width="750" height="535" key="javadoc.popup" timestamp="1606143698339">
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
-    <state width="750" height="535" key="javadoc.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1605850825423" />
+    <state width="750" height="535" key="javadoc.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1606143698339" />
     <state x="204" y="169" key="new project wizard" timestamp="1604932806065">
       <screen x="0" y="0" width="1920" height="1030" />
     </state>
     <state x="204" y="169" key="new project wizard/0.0.1920.1030@0.0.1920.1030" timestamp="1604932806065" />
-    <state x="539" y="0" width="840" height="1033" key="search.everywhere.popup" timestamp="1605850097472">
+    <state x="539" y="0" width="840" height="1033" key="search.everywhere.popup" timestamp="1606137642002">
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
-    <state x="539" y="0" width="840" height="1033" key="search.everywhere.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1605850097472" />
+    <state x="539" y="0" width="840" height="1033" key="search.everywhere.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1606137642002" />
     <state x="539" y="0" width="840" height="1034" key="search.everywhere.popup/0.0.1920.1030@0.0.1920.1030" timestamp="1604909871341" />
   </component>
 </project>

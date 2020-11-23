@@ -1,12 +1,12 @@
 <idea-plugin version="2">
   <id>stratos-lang</id>
-  <version>0.0.2</version>
+  <version>0.2</version>
     <!-- Text to display as name on Preferences/Settings | Plugin page -->
   <name>Stratos Language</name>
 
 
   <!-- Text to display as company information on Preferences/Settings | Plugin page -->
-  <vendor email="kamaukenn11@gmail.com.com" url="https://github.com/Arthur-Kamau/stratos">Stratos</vendor>
+  <vendor email="kennkamau09@gmail.com.com" url="https://github.com/Arthur-Kamau/stratos">Stratos</vendor>
 
   <!-- Text to display as description on Preferences/Settings | Plugin page -->
   	<description><![CDATA[
@@ -14,6 +14,7 @@
 		 <em>Project creating</em>
 		 <em>Syntax highlighting</em>
 		 <em>Commenting code</em>
+		 <em>Run Configuration</em>
 		 ]]></description>
 
 
@@ -50,8 +51,8 @@
 
 
 		<!--run configuration-->
-		<programRunner implementation="org.stratos.lang.project.StratosRunner"/>
-		<configurationType implementation="org.stratos.lang.project.StratosRunConfigurationType"/>
+		<programRunner implementation="org.stratos.lang.project.runner.StratosRunner"/>
+		<configurationType implementation="org.stratos.lang.project.config.StratosRunConfigurationType"/>
 		<!--    stratos sdk details-->
 		<sdkType implementation="org.stratos.lang.sdk.StratosSdkType"/>
 		<!--     create project in intellij wizard-->

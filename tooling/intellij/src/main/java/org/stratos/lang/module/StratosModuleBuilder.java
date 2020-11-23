@@ -67,7 +67,7 @@ public class StratosModuleBuilder extends ModuleBuilder {
         }
 
         @Nullable
-        StratosSdk getFlutterSdk() {
+        StratosSdk getStratosSdk() {
             final String sdkPath = myPeer.getSdkComboPath();
 
             // Ensure the local filesystem has caught up to external processes (e.g., git clone).

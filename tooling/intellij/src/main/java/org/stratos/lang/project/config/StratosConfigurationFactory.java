@@ -1,9 +1,10 @@
-package org.stratos.lang.project;
+package org.stratos.lang.project.config;
 
 import com.intellij.execution.configurations.ConfigurationFactory;
 import com.intellij.execution.configurations.ConfigurationType;
 import com.intellij.execution.configurations.RunConfiguration;
 import com.intellij.openapi.project.Project;
+import org.stratos.lang.project.runner.StratosRunConfiguration;
 
 public class StratosConfigurationFactory extends ConfigurationFactory {
     private static final String FACTORY_NAME = "Stratos configuration factory";
@@ -14,7 +15,7 @@ public class StratosConfigurationFactory extends ConfigurationFactory {
 
     @Override
     public RunConfiguration createTemplateConfiguration(Project project) {
-        return   null ;//new StratosRunConfiguration("Stratos", project, this);
+        return   new StratosRunConfiguration(project,this, "Stratos");
     }
 
     @Override

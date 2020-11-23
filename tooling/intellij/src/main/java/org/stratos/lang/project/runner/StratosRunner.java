@@ -1,30 +1,18 @@
-package org.stratos.lang.project;
+package org.stratos.lang.project.runner;
 
 
 import com.intellij.execution.ExecutionException;
-        import com.intellij.execution.ExecutionResult;
-        import com.intellij.execution.Executor;
+import com.intellij.execution.Executor;
 import com.intellij.execution.configurations.*;
 import com.intellij.execution.executors.DefaultRunExecutor;
-        import com.intellij.execution.runners.DefaultProgramRunner;
-        import com.intellij.execution.runners.ExecutionEnvironment;
+import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.ProgramRunner;
-import com.intellij.execution.ui.RunContentDescriptor;
-        import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.options.SettingsEditor;
-import com.intellij.openapi.project.Project;
-        import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.stratos.lang.project.StratosRunConfiguration;
 
 public class StratosRunner implements ProgramRunner {
     public static final String ID = "StratosRunnerRunner";
-
-//    @Override
-//    public AnAction[] createActions(ExecutionResult executionResult) {
-//        return super.createActions(executionResult);
-//    }
-
 
 
     @Override

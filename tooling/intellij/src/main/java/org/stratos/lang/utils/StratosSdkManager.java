@@ -63,16 +63,16 @@ public class StratosSdkManager {
     });
 
     // Cache initial state.
-    isStratosConfigured = isFlutterSdkSetAndNeeded();
+    isStratosConfigured = isStratosSdkSetAndNeeded();
   }
 
   // Send events if Flutter SDK was configured or unconfigured.
   public void checkForFlutterSdkChange() {
-    if (!isStratosConfigured && isFlutterSdkSetAndNeeded()) {
+    if (!isStratosConfigured && isStratosSdkSetAndNeeded()) {
       isStratosConfigured = true;
       myListenerDispatcher.getMulticaster().flutterSdkAdded();
     }
-    else if (isStratosConfigured && !isFlutterSdkSetAndNeeded()) {
+    else if (isStratosConfigured && !isStratosSdkSetAndNeeded()) {
       isStratosConfigured = false;
       myListenerDispatcher.getMulticaster().flutterSdkRemoved();
     }
@@ -86,8 +86,8 @@ public class StratosSdkManager {
     myListenerDispatcher.removeListener(listener);
   }
 
-  private boolean isFlutterSdkSetAndNeeded() {
-    return StratosSdk.getFlutterSdk(myProject) != null && StratosSdkUtil.hasFlutterModules(myProject);
+  private boolean isStratosSdkSetAndNeeded() {
+    return StratosSdk.getStratosSdk(myProject) != null && StratosSdkUtil.hasFlutterModules(myProject);
   }
 
   /**
