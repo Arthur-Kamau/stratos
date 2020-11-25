@@ -81,10 +81,15 @@
 								 implementationClass="org.stratos.lang.StratosFindUsagesProvider"/>
 
 								    <lang.commenter language="Stratos" implementationClass="org.stratos.lang.StratosCommenter"/>
+		<lang.formatter language="Stratos"
+						implementationClass="org.stratos.lang.formatter.StratosFormattingModelBuilder"/>
+
 	</extensions>
 
 	 <projectListeners>
     <listener class="org.stratos.lang.listener.StratosProjectManagerListener"
               topic="com.intellij.openapi.project.ProjectManagerListener"/>
   </projectListeners>
+
+
 </idea-plugin>
