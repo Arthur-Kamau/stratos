@@ -23,9 +23,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="544043c9-1ad9-4eec-b1ad-cbde4c0c0bc2" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/formatter/StratosBlock.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/formatter/StratosFormattingModelBuilder.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/project/detector/StratosProjectStructureDetector.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/resources/fileTemplates/internal/Stratos Function.sts.ft" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/META-INF/plugin.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/META-INF/plugin.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -78,7 +79,7 @@
     <property name="UI_DESIGNER_EDITOR_MODE.UIDesignerToolWindowManager.WIDTH" value="359" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../Plugins/intellij/redline/RedlineSmalltalk" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/src/main/resources/fileTemplates/internal" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -89,6 +90,9 @@
     <property name="settings.editor.selected.configurable" value="preferences.sourceCode.Java" />
   </component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/main/resources/fileTemplates/internal" />
+    </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="org.stratos.lang.project.runner" />
     </key>
@@ -97,6 +101,19 @@
     </key>
   </component>
   <component name="RunManager">
+    <configuration default="true" type="ArquillianTestNG" factoryName="" nameIsGenerated="true">
+      <option name="arquillianRunConfiguration">
+        <value>
+          <option name="containerStateName" value="" />
+        </value>
+      </option>
+      <option name="TEST_OBJECT" value="CLASS" />
+      <properties />
+      <listeners />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="test" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType">
       <module name="" />
       <option name="VM_PARAMETERS" value="-Xmx512m -Xms256m -ea" />
@@ -129,7 +146,8 @@
       <workItem from="1606136215509" duration="1818000" />
       <workItem from="1606138067664" duration="8564000" />
       <workItem from="1606200662903" duration="619000" />
-      <workItem from="1606299135664" duration="2415000" />
+      <workItem from="1606299135664" duration="5912000" />
+      <workItem from="1606306275984" duration="4863000" />
     </task>
     <servers />
   </component>
@@ -162,10 +180,10 @@
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
     <state x="0" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog/0.0.1920.1029@0.0.1920.1029" timestamp="1606140236618" />
-    <state x="632" y="195" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1606138197393">
+    <state x="632" y="195" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog" timestamp="1606307239658">
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
-    <state x="632" y="195" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1029@0.0.1920.1029" timestamp="1606138197393" />
+    <state x="632" y="195" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1029@0.0.1920.1029" timestamp="1606307239658" />
     <state x="695" y="206" key="FileChooserDialogImpl" timestamp="1606137248269">
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
@@ -183,10 +201,10 @@
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
     <state x="466" y="0" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser/0.0.1920.1029@0.0.1920.1029" timestamp="1606144745882" />
-    <state x="578" y="0" width="739" height="740" key="find.popup" timestamp="1606300182858">
+    <state x="578" y="0" width="739" height="740" key="find.popup" timestamp="1606302586122">
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
-    <state x="578" y="0" width="739" height="740" key="find.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1606300182858" />
+    <state x="578" y="0" width="739" height="740" key="find.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1606302586122" />
     <state x="590" y="172" width="739" height="686" key="find.popup/0.0.1920.1030@0.0.1920.1030" timestamp="1605345874448" />
     <state width="750" height="535" key="javadoc.popup" timestamp="1606143698339">
       <screen x="0" y="0" width="1920" height="1029" />
@@ -196,10 +214,10 @@
       <screen x="0" y="0" width="1920" height="1030" />
     </state>
     <state x="204" y="169" key="new project wizard/0.0.1920.1030@0.0.1920.1030" timestamp="1604932806065" />
-    <state x="539" y="0" width="840" height="1033" key="search.everywhere.popup" timestamp="1606300223548">
+    <state x="539" y="0" width="840" height="1033" key="search.everywhere.popup" timestamp="1606309200679">
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
-    <state x="539" y="0" width="840" height="1033" key="search.everywhere.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1606300223548" />
+    <state x="539" y="0" width="840" height="1033" key="search.everywhere.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1606309200679" />
     <state x="539" y="0" width="840" height="1034" key="search.everywhere.popup/0.0.1920.1030@0.0.1920.1030" timestamp="1604909871341" />
   </component>
 </project>

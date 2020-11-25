@@ -34,6 +34,7 @@
 		 on how to target different products -->
 	<!-- uncomment to enable plugin in all products -->
 	<depends>com.intellij.modules.lang</depends>
+	<depends>com.intellij.modules.java</depends>
 
 	<application-components>
 	</application-components>
@@ -45,14 +46,19 @@
 	</project-components>
 
 	<actions>
+		<action id="Stratos.NewFile" class="org.stratos.lang.action.NewFileAction"
+				text="Stratos File" description="Create new Stratos file">
+			<add-to-group group-id="NewGroup" anchor="before" relative-to-action="NewFromTemplate"/>
+		</action>
+  
 	</actions>
-
 	<extensions defaultExtensionNs="com.intellij">
 
 
 		<!--run configuration-->
 		<programRunner implementation="org.stratos.lang.project.runner.StratosRunner"/>
 		<configurationType implementation="org.stratos.lang.project.config.StratosRunConfigurationType"/>
+		<projectStructureDetector implementation="org.stratos.lang.project.detector.StratosProjectStructureDetector"/>
 		<!--    stratos sdk details-->
 		<sdkType implementation="org.stratos.lang.sdk.StratosSdkType"/>
 		<!--     create project in intellij wizard-->
@@ -60,7 +66,7 @@
 		<applicationService serviceImplementation="org.stratos.lang.listener.StratosApplicationService"/>
 		<projectService serviceImplementation="org.stratos.lang.listener.StratosProjectService"/>
 		<!--file type recognition-->
-		<fileType name="Stratos" implementationClass="org.stratos.lang.StratosFileType"
+		<fileType name="Stratos Language" implementationClass="org.stratos.lang.StratosFileType"
 				  fieldName="INSTANCE" language="Stratos" extensions="sts"   />
 
 <!--		<fileTypeFactory implementation="org.stratos.lang.StratosFileTypeFactory"/>-->
@@ -84,6 +90,9 @@
 		<lang.formatter language="Stratos"
 						implementationClass="org.stratos.lang.formatter.StratosFormattingModelBuilder"/>
 
+
+		<internalFileTemplate name="Stratos Class"/>
+        <internalFileTemplate name="Stratos Function"/>
 	</extensions>
 
 	 <projectListeners>
