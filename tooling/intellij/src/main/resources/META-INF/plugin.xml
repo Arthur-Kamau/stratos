@@ -50,7 +50,47 @@
 				text="Stratos File" description="Create new Stratos file">
 			<add-to-group group-id="NewGroup" anchor="before" relative-to-action="NewFromTemplate"/>
 		</action>
-  
+
+		<!-- help menu -->
+		<action class="org.stratos.lang.action.HelpAction" id="Stratos.StratosHelp" text="Stratos Help">
+			<add-to-group group-id="HelpMenu" anchor="after" relative-to-action="HelpTopics"/>
+		</action>
+
+
+		<!-- main toolbar run actions -->
+		<action id="AttachDebuggerAction"
+				class="org.stratos.lang.action.AttachDebuggerAction"
+				text="Attach Debugger"
+				description="Attach debugger to a  app"
+				icon="/icons/hot-reload.png"
+				>
+
+			<add-to-group group-id="ToolbarRunGroup" anchor="after" relative-to-action="RunnerActions"/>
+		</action>
+
+<!--		<action id="Stratos.Toolbar.AnalyzeApplication" class="org.stratos.lang.action.AnalyzeApplication"-->
+<!--				description="Analyze ">-->
+<!--			<add-to-group group-id="ToolbarRunGroup" anchor="after" relative-to-action="RunnerActions"/>-->
+<!--			<keyboard-shortcut keymap="$default" first-keystroke="ctrl BACK_SLASH"/>-->
+<!--		</action>-->
+
+		<!-- run menu actions -->
+<!--		<group id="Flutter.MenuActions.Run">-->
+
+
+<!--			<separator/>-->
+<!--			<action id="Flutter.Menu.RunProfileAction" class="org.stratos.lang.action.RunApplication"-->
+<!--					description="Run Application"-->
+<!--					icon="AllIcons.Actions.Execute">-->
+<!--			</action>-->
+<!--			<action id="Flutter.Menu.RunReleaseAction" class="org.stratos.lang.action.BuildApplication"-->
+<!--					description="Build Application"-->
+<!--					icon="AllIcons.Actions.Execute">-->
+<!--			</action>-->
+<!--			<reference ref="AttachDebuggerAction"/>-->
+<!--			<separator/>-->
+<!--			<add-to-group group-id="RunMenu" anchor="after" relative-to-action="Stop"/>-->
+<!--		</group>-->
 	</actions>
 	<extensions defaultExtensionNs="com.intellij">
 
