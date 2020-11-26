@@ -1,5 +1,7 @@
 package org.stratos.lang.action;
 
+import com.intellij.notification.NotificationDisplayType;
+import com.intellij.notification.NotificationGroup;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
@@ -9,7 +11,12 @@ import com.intellij.openapi.module.ModuleUtilCore;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import org.stratos.lang.notification.NotificationConfigBuilder;
 import org.stratos.lang.utils.StratosModuleUtils;
+import com.intellij.notification.NotificationType;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.startup.StartupActivity;
+import org.jetbrains.annotations.NotNull;
 
 public class BuildActionGroup extends DefaultActionGroup {
 
@@ -79,6 +86,21 @@ public class BuildActionGroup extends DefaultActionGroup {
             if (project == null) {
                 return;
             }
+            // notification group for non-sticky balloon notifications
+
+            NotificationConfigBuilder builder = NotificationConfigBuilder.create(project);
+            builder.setNotificationType(NotificationType.INFORMATION);
+            builder.setTitle("Configurable Notification");
+            builder.setSubtitle("user-defined properties");
+            builder.setContent("<html>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt " +
+                    "ut labore et dolore magna aliqua. Ut enim ad minim veniam, " +
+                    "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. " +
+                    "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur." +
+                    "<br><strong style=\"font-size:larger;\">Open article on <a href=\"https://www.plugin-dev.com/\">plugin-dev.com</a>.</strong></html>");
+            builder.addDefaultActions();
+            builder.build().notify(project);
+
+
             System.out.println("TODO HERE");
 //            final FlutterSdk sdk = FlutterSdk.getFlutterSdk(project);
 //            if (sdk == null) {
@@ -88,7 +110,7 @@ public class BuildActionGroup extends DefaultActionGroup {
 //            if (pubRoot == null) {
 //                return;
 //            }
-//            final BuildType buildType = buildType();
+
 //            build(project, pubRoot, sdk, buildType, presentation.getDescription());
         }
     }
