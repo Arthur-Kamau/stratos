@@ -23,13 +23,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="544043c9-1ad9-4eec-b1ad-cbde4c0c0bc2" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/action/AnalyzeApplication.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/action/AttachDebuggerAction.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/action/BuildApplication.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/action/HelpAction.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/action/RunApplication.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/action/AnalyzeDepsAction.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/action/BuildActionGroup.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/StratosIcons.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/StratosIcons.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/action/AnalyzeApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/action/ProfileApplicationAction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/utils/StratosModuleUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/utils/StratosModuleUtils.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/resources/META-INF/plugin.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/META-INF/plugin.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -98,28 +96,18 @@
     <property name="settings.editor.selected.configurable" value="preferences.sourceCode.Java" />
   </component>
   <component name="RecentsManager">
-    <key name="CopyFile.RECENT_KEYS">
-      <recent name="$PROJECT_DIR$/src/main/resources/fileTemplates/internal" />
-    </key>
-    <key name="CopyClassDialog.RECENTS_KEY">
-      <recent name="org.stratos.lang.project.runner" />
-    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/src/main/antlr/org/stratos.lang" />
     </key>
+    <key name="CopyClassDialog.RECENTS_KEY">
+      <recent name="org.stratos.lang.action" />
+      <recent name="org.stratos.lang.project.runner" />
+    </key>
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/src/main/resources/fileTemplates/internal" />
+    </key>
   </component>
   <component name="RunManager">
-    <configuration default="true" type="ArquillianJUnit" factoryName="" nameIsGenerated="true">
-      <option name="arquillianRunConfiguration">
-        <value>
-          <option name="containerStateName" value="" />
-        </value>
-      </option>
-      <option name="TEST_OBJECT" value="class" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="test" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType">
       <module name="" />
       <option name="VM_PARAMETERS" value="-Xmx512m -Xms256m -ea" />
@@ -154,7 +142,7 @@
       <workItem from="1606200662903" duration="619000" />
       <workItem from="1606299135664" duration="5912000" />
       <workItem from="1606306275984" duration="6801000" />
-      <workItem from="1606314271827" duration="2902000" />
+      <workItem from="1606314271827" duration="8460000" />
     </task>
     <servers />
   </component>
@@ -208,10 +196,10 @@
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
     <state x="466" y="0" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser/0.0.1920.1029@0.0.1920.1029" timestamp="1606144745882" />
-    <state x="578" y="0" width="739" height="740" key="find.popup" timestamp="1606302586122">
+    <state x="578" y="0" width="739" height="740" key="find.popup" timestamp="1606372952790">
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
-    <state x="578" y="0" width="739" height="740" key="find.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1606302586122" />
+    <state x="578" y="0" width="739" height="740" key="find.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1606372952790" />
     <state x="590" y="172" width="739" height="686" key="find.popup/0.0.1920.1030@0.0.1920.1030" timestamp="1605345874448" />
     <state width="750" height="535" key="javadoc.popup" timestamp="1606143698339">
       <screen x="0" y="0" width="1920" height="1029" />

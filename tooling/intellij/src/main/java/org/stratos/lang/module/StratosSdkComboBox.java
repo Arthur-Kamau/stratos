@@ -58,7 +58,7 @@ public class StratosSdkComboBox extends ComboboxWithBrowseButton {
                       }
                     }
                   }
-                }.withTitle("Flutter SDK Directory").withDescription("Choose a directory to install the Flutter SDK");
+                }.withTitle("Stratos SDK Directory").withDescription("Choose a directory to with Stratos SDK");
 
         final VirtualFile installTarget = FileChooser.chooseFile(descriptor, null, null);
         if (installTarget != null) {

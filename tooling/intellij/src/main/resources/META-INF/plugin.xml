@@ -1,15 +1,15 @@
 <idea-plugin version="2">
-  <id>stratos-lang</id>
-  <version>0.2</version>
+    <id>stratos-lang</id>
+    <version>0.2</version>
     <!-- Text to display as name on Preferences/Settings | Plugin page -->
-  <name>Stratos Language</name>
+    <name>Stratos Language</name>
 
 
-  <!-- Text to display as company information on Preferences/Settings | Plugin page -->
-  <vendor email="kennkamau09@gmail.com.com" url="https://github.com/Arthur-Kamau/stratos">Stratos</vendor>
+    <!-- Text to display as company information on Preferences/Settings | Plugin page -->
+    <vendor email="kennkamau09@gmail.com.com" url="https://github.com/Arthur-Kamau/stratos">Stratos</vendor>
 
-  <!-- Text to display as description on Preferences/Settings | Plugin page -->
-  	<description><![CDATA[
+    <!-- Text to display as description on Preferences/Settings | Plugin page -->
+    <description><![CDATA[
 		Stratos Language Plugin.<br>
 		 <em>Project creating</em>
 		 <em>Syntax highlighting</em>
@@ -18,127 +18,135 @@
 		 ]]></description>
 
 
-<change-notes>
-    <![CDATA[
+    <change-notes>
+        <![CDATA[
       <ul>
         <li><b>0.2.0</b> Convert to Gradle-based plugin.</li>
         <li><b>0.1.0</b> Release 2018.3 and earlier.</li>
       </ul>
     ]]>
-  </change-notes>
+    </change-notes>
 
-	<!-- please see http://confluence.jetbrains.net/display/IDEADEV/Build+Number+Ranges for description -->
-	<idea-version since-build="193"/> <!-- requires 13.x, 14.x, 15.x -->
+    <!-- please see http://confluence.jetbrains.net/display/IDEADEV/Build+Number+Ranges for description -->
+    <idea-version since-build="193"/> <!-- requires 13.x, 14.x, 15.x -->
 
-	<!-- please see http://confluence.jetbrains.net/display/IDEADEV/Plugin+Compatibility+with+IntelliJ+Platform+Products
-		 on how to target different products -->
-	<!-- uncomment to enable plugin in all products -->
-	<depends>com.intellij.modules.lang</depends>
-	<depends>com.intellij.modules.java</depends>
+    <!-- please see http://confluence.jetbrains.net/display/IDEADEV/Plugin+Compatibility+with+IntelliJ+Platform+Products
+         on how to target different products -->
+    <!-- uncomment to enable plugin in all products -->
+    <depends>com.intellij.modules.lang</depends>
+    <depends>com.intellij.modules.java</depends>
 
-	<application-components>
-	</application-components>
+    <application-components>
+    </application-components>
 
-	<project-components>
-		<component>
-			<implementation-class>org.stratos.lang.StratosPluginController</implementation-class>
-		</component>
-	</project-components>
+    <project-components>
+        <component>
+            <implementation-class>org.stratos.lang.StratosPluginController</implementation-class>
+        </component>
+    </project-components>
 
-	<actions>
-		<action id="Stratos.NewFile" class="org.stratos.lang.action.NewFileAction"
-				text="Stratos File" description="Create new Stratos file">
-			<add-to-group group-id="NewGroup" anchor="before" relative-to-action="NewFromTemplate"/>
-		</action>
+    <actions>
+        <action id="Stratos.NewFile" class="org.stratos.lang.action.NewFileAction"
+                text="Stratos File" description="Create new Stratos file">
+            <add-to-group group-id="NewGroup" anchor="before" relative-to-action="NewFromTemplate"/>
+        </action>
 
-		<!-- help menu -->
-		<action class="org.stratos.lang.action.HelpAction" id="Stratos.StratosHelp" text="Stratos Help">
-			<add-to-group group-id="HelpMenu" anchor="after" relative-to-action="HelpTopics"/>
-		</action>
-
-
-		<!-- main toolbar run actions -->
-		<action id="AttachDebuggerAction"
-				class="org.stratos.lang.action.AttachDebuggerAction"
-				text="Attach Debugger"
-				description="Attach debugger to a  app"
-				icon="/icons/hot-reload.png"
-				>
-
-			<add-to-group group-id="ToolbarRunGroup" anchor="after" relative-to-action="RunnerActions"/>
-		</action>
-
-<!--		<action id="Stratos.Toolbar.AnalyzeApplication" class="org.stratos.lang.action.AnalyzeApplication"-->
-<!--				description="Analyze ">-->
-<!--			<add-to-group group-id="ToolbarRunGroup" anchor="after" relative-to-action="RunnerActions"/>-->
-<!--			<keyboard-shortcut keymap="$default" first-keystroke="ctrl BACK_SLASH"/>-->
-<!--		</action>-->
-
-		<!-- run menu actions -->
-<!--		<group id="Flutter.MenuActions.Run">-->
+        <!-- help menu -->
+        <action class="org.stratos.lang.action.HelpAction" id="Stratos.StratosHelp" text="Stratos Help">
+            <add-to-group group-id="HelpMenu" anchor="after" relative-to-action="HelpTopics"/>
+        </action>
 
 
-<!--			<separator/>-->
-<!--			<action id="Flutter.Menu.RunProfileAction" class="org.stratos.lang.action.RunApplication"-->
-<!--					description="Run Application"-->
-<!--					icon="AllIcons.Actions.Execute">-->
-<!--			</action>-->
-<!--			<action id="Flutter.Menu.RunReleaseAction" class="org.stratos.lang.action.BuildApplication"-->
-<!--					description="Build Application"-->
-<!--					icon="AllIcons.Actions.Execute">-->
-<!--			</action>-->
-<!--			<reference ref="AttachDebuggerAction"/>-->
-<!--			<separator/>-->
-<!--			<add-to-group group-id="RunMenu" anchor="after" relative-to-action="Stop"/>-->
-<!--		</group>-->
-	</actions>
-	<extensions defaultExtensionNs="com.intellij">
+        <group id="StratosBuildActionGroup" class="org.stratos.lang.action.BuildActionGroup">
+            <separator/>
+            <group text="Stratos" popup="true">
+                <action id="stratos.build.aar" text="Build Library" description="Building a stratos library"
+                        class="org.stratos.lang.action.BuildActionGroup$AAR"/>
+                <action id="stratos.build.apk" text="Build Windows Executable" description="Building a Flutter app for general distribution"
+                        class="org.stratos.lang.action.BuildActionGroup$APK"/>
+                <!--suppress PluginXmlCapitalization -->
+                <action id="stratos.build.aab" text="Build Linux Executable" description="Building a Flutter app for Google Play Store distribution"
+                        class="org.stratos.lang.action.BuildActionGroup$AppBundle"/>
+                <!--suppress PluginXmlCapitalization -->
+                <action id="stratos.build.ios" text="Build Mac Executable" description="Building a Flutter app for Apple App Store distribution"
+                        class="org.stratos.lang.action.BuildActionGroup$Ios"/>
+            </group>
+            <add-to-group group-id="BuildMenu" anchor="first"/>
+        </group>
+
+        
+        <!-- main toolbar run actions -->
+        <group>
+            <action id="AttachDebuggerAction"
+                    class="org.stratos.lang.action.AttachDebuggerAction"
+                    text="Attach Debugger"
+                    description="Attach profiler to a  app"
+                    icon="/icons/hot-reload.png"
+            >
+            </action>
+            <separator/>
+            <action id="stratos.ProfileApplication" class="org.stratos.lang.action.ProfileApplicationAction"
+                    description="Profile application "
+                    text="Profile Application"
+                    icon="/icons/timeline.png"/>
+            <action id="stratos.AnalyzeDeps" class="org.stratos.lang.action.AnalyzeDepsAction"
+                    text="Analyze Dependancies"
+                    description="Refresh device list"
+                    icon="/icons/observatory_overflow.png"
+            />
+            <separator/>
+            <add-to-group group-id="ToolbarRunGroup" anchor="after" relative-to-action="RunnerActions"/>
+        </group>
 
 
-		<!--run configuration-->
-		<programRunner implementation="org.stratos.lang.project.runner.StratosRunner"/>
-		<configurationType implementation="org.stratos.lang.project.config.StratosRunConfigurationType"/>
-		<projectStructureDetector implementation="org.stratos.lang.project.detector.StratosProjectStructureDetector"/>
-		<!--    stratos sdk details-->
-		<sdkType implementation="org.stratos.lang.sdk.StratosSdkType"/>
-		<!--     create project in intellij wizard-->
-		<moduleType id="STRATOS_LANG_MODULE" implementationClass="org.stratos.lang.module.StratosModuleType"/>
-		<applicationService serviceImplementation="org.stratos.lang.listener.StratosApplicationService"/>
-		<projectService serviceImplementation="org.stratos.lang.listener.StratosProjectService"/>
-		<!--file type recognition-->
-		<fileType name="Stratos Language" implementationClass="org.stratos.lang.StratosFileType"
-				  fieldName="INSTANCE" language="Stratos" extensions="sts"   />
-
-<!--		<fileTypeFactory implementation="org.stratos.lang.StratosFileTypeFactory"/>-->
-		<lang.syntaxHighlighterFactory key="Stratos"
-									   implementationClass="org.stratos.lang.StratosSyntaxHighlighterFactory"/>
-
-		<lang.parserDefinition language="Stratos" implementationClass="org.stratos.lang.StratosParserDefinition"/>
-		<lang.ast.factory language="Stratos" implementationClass="org.stratos.lang.StratosASTFactory"/>
-
-		<lang.psiStructureViewFactory language="Stratos"
-									  implementationClass="org.stratos.lang.structview.SampleStructureViewFactory"/>
-
-		<colorSettingsPage implementation="org.stratos.lang.StratosColorSettingsPage"/>
-
-		<externalAnnotator language="Stratos" implementationClass="org.stratos.lang.StratosExternalAnnotator"/>
-
-		<lang.findUsagesProvider language="Stratos"
-								 implementationClass="org.stratos.lang.StratosFindUsagesProvider"/>
-
-								    <lang.commenter language="Stratos" implementationClass="org.stratos.lang.StratosCommenter"/>
-		<lang.formatter language="Stratos"
-						implementationClass="org.stratos.lang.formatter.StratosFormattingModelBuilder"/>
+    </actions>
+    <extensions defaultExtensionNs="com.intellij">
 
 
-		<internalFileTemplate name="Stratos Class"/>
+        <!--run configuration-->
+        <programRunner implementation="org.stratos.lang.project.runner.StratosRunner"/>
+        <configurationType implementation="org.stratos.lang.project.config.StratosRunConfigurationType"/>
+        <projectStructureDetector implementation="org.stratos.lang.project.detector.StratosProjectStructureDetector"/>
+        <!--    stratos sdk details-->
+        <sdkType implementation="org.stratos.lang.sdk.StratosSdkType"/>
+        <!--     create project in intellij wizard-->
+        <moduleType id="STRATOS_LANG_MODULE" implementationClass="org.stratos.lang.module.StratosModuleType"/>
+        <applicationService serviceImplementation="org.stratos.lang.listener.StratosApplicationService"/>
+        <projectService serviceImplementation="org.stratos.lang.listener.StratosProjectService"/>
+        <!--file type recognition-->
+        <fileType name="Stratos Language" implementationClass="org.stratos.lang.StratosFileType"
+                  fieldName="INSTANCE" language="Stratos" extensions="sts"/>
+
+        <!--		<fileTypeFactory implementation="org.stratos.lang.StratosFileTypeFactory"/>-->
+        <lang.syntaxHighlighterFactory key="Stratos"
+                                       implementationClass="org.stratos.lang.StratosSyntaxHighlighterFactory"/>
+
+        <lang.parserDefinition language="Stratos" implementationClass="org.stratos.lang.StratosParserDefinition"/>
+        <lang.ast.factory language="Stratos" implementationClass="org.stratos.lang.StratosASTFactory"/>
+
+        <lang.psiStructureViewFactory language="Stratos"
+                                      implementationClass="org.stratos.lang.structview.SampleStructureViewFactory"/>
+
+        <colorSettingsPage implementation="org.stratos.lang.StratosColorSettingsPage"/>
+
+        <externalAnnotator language="Stratos" implementationClass="org.stratos.lang.StratosExternalAnnotator"/>
+
+        <lang.findUsagesProvider language="Stratos"
+                                 implementationClass="org.stratos.lang.StratosFindUsagesProvider"/>
+
+        <lang.commenter language="Stratos" implementationClass="org.stratos.lang.StratosCommenter"/>
+        <lang.formatter language="Stratos"
+                        implementationClass="org.stratos.lang.formatter.StratosFormattingModelBuilder"/>
+
+
+        <internalFileTemplate name="Stratos Class"/>
         <internalFileTemplate name="Stratos Function"/>
-	</extensions>
+    </extensions>
 
-	 <projectListeners>
-    <listener class="org.stratos.lang.listener.StratosProjectManagerListener"
-              topic="com.intellij.openapi.project.ProjectManagerListener"/>
-  </projectListeners>
+    <projectListeners>
+        <listener class="org.stratos.lang.listener.StratosProjectManagerListener"
+                  topic="com.intellij.openapi.project.ProjectManagerListener"/>
+    </projectListeners>
 
 
 </idea-plugin>

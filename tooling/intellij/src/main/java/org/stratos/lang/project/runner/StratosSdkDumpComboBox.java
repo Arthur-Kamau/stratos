@@ -52,7 +52,7 @@ public class StratosSdkDumpComboBox extends ComboboxWithBrowseButton {
                       }
                     }
                   }
-                }.withTitle("Flutter SDK Directory").withDescription("Choose a directory to install the Flutter SDK");
+                }.withTitle("Directory for log dumps").withDescription("Choose a directory to store logs");
 
         final VirtualFile installTarget = FileChooser.chooseFile(descriptor, null, null);
         if (installTarget != null) {

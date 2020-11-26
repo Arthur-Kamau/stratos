@@ -269,7 +269,8 @@ public class StratosModuleUtils {
    * <p/>
    * True is returned if any of the PubRoots associated with the {@link Module} have a pubspec that declares flutter.
    */
-//  public static boolean declaresFlutter(@NotNull Module module) {
+  public static boolean declaresFlutter(@NotNull Module module) {
+    System.out.println("MUCH MORE WORK TODO ----");
 //    final PubRootCache cache = PubRootCache.getInstance(module.getProject());
 //
 //    for (PubRoot root : cache.getRoots(module)) {
@@ -277,9 +278,9 @@ public class StratosModuleUtils {
 //        return true;
 //      }
 //    }
-//
-//    return false;
-//  }
+
+    return false;
+  }
 
   /**
    * Find flutter modules.

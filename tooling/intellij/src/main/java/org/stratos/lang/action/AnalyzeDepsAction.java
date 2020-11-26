@@ -4,7 +4,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.DumbAwareAction;
 import org.jetbrains.annotations.NotNull;
 
-public class AnalyzeApplication extends DumbAwareAction {
+public class AnalyzeDepsAction extends DumbAwareAction {
     @Override
     public void actionPerformed(@NotNull final AnActionEvent e) {
 
