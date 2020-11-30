@@ -9,4 +9,5 @@ class StratosProjectService(project: Project) {
     init {
         println(StratosBundle.message("projectService", project.name))
     }
+
 }

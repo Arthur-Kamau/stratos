@@ -139,6 +139,18 @@
                         implementationClass="org.stratos.lang.formatter.StratosFormattingModelBuilder"/>
 
 
+        <toolWindow id="Stratos"  secondary="false" icon="AllIcons.General.Modified" anchor="bottom"
+                    factoryClass="org.stratos.lang.toolWindow.RunToolWindowWindowFactory"/>
+        <projectService serviceImplementation="org.stratos.lang.service.RunToolWindowWindowFactoryService" overrides="false"/>
+<!--        <projectService serviceImplementation="org.stratos.lang.service.StratosProjectApplicationService" overrides="false"/>-->
+
+
+        <codeInsight.lineMarkerProvider language="Stratos"
+                                        implementationClass="org.stratos.lang.lineMarker.LineMarkerProvider"/>
+
+
+
+
         <internalFileTemplate name="Stratos Class"/>
         <internalFileTemplate name="Stratos Function"/>
     </extensions>

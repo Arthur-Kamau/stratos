@@ -23,13 +23,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="544043c9-1ad9-4eec-b1ad-cbde4c0c0bc2" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/notification/ConfigurableNotification.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/notification/ConfigurableNotificationAction.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/notification/FullContentConfigurableNotification.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/notification/NotificationConfig.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/notification/NotificationConfigBuilder.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/lineMarker/LineMarkerProvider.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/service/RunToolWindowWindowFactoryService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/toolWindow/RunToolWindowWindowFactory.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/toolWindow/StratosToolWindow.form" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/toolWindow/StratosToolWindow.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../sample/imports/src/util/util.st" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../sample/struct_type/src/main.st" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/action/BuildActionGroup.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/action/BuildActionGroup.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/antlr/org/stratos.lang/StratosLanguage.g4" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/antlr/org/stratos.lang/StratosLanguage.g4" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/action/AnalyzeDepsAction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/action/AnalyzeDepsAction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/stratos/lang/listener/StratosProjectService.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/stratos/lang/listener/StratosProjectService.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/META-INF/plugin.xml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/META-INF/plugin.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -86,7 +91,7 @@
     <property name="UI_DESIGNER_EDITOR_MODE.UIDesignerToolWindowManager.WIDTH" value="359" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/src/main/resources/fileTemplates/internal" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="node.js.detected.package.eslint" value="true" />
     <property name="node.js.detected.package.tslint" value="true" />
     <property name="node.js.path.for.package.eslint" value="project" />
@@ -109,19 +114,6 @@
     </key>
   </component>
   <component name="RunManager">
-    <configuration default="true" type="ArquillianTestNG" factoryName="" nameIsGenerated="true">
-      <option name="arquillianRunConfiguration">
-        <value>
-          <option name="containerStateName" value="" />
-        </value>
-      </option>
-      <option name="TEST_OBJECT" value="CLASS" />
-      <properties />
-      <listeners />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="test" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType">
       <module name="" />
       <option name="VM_PARAMETERS" value="-Xmx512m -Xms256m -ea" />
@@ -157,7 +149,12 @@
       <workItem from="1606299135664" duration="5912000" />
       <workItem from="1606306275984" duration="6801000" />
       <workItem from="1606314271827" duration="8460000" />
-      <workItem from="1606374743993" duration="2573000" />
+      <workItem from="1606374743993" duration="6931000" />
+      <workItem from="1606389026753" duration="34000" />
+      <workItem from="1606456068991" duration="4819000" />
+      <workItem from="1606461220526" duration="900000" />
+      <workItem from="1606746834953" duration="22000" />
+      <workItem from="1606747254510" duration="772000" />
     </task>
     <servers />
   </component>
@@ -181,10 +178,10 @@
       <screen x="0" y="0" width="1920" height="1030" />
     </state>
     <state x="420" y="156" width="1079" height="751" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1920.1030@0.0.1920.1030" timestamp="1604906311295" />
-    <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser" timestamp="1606140327952">
+    <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser" timestamp="1606386264058">
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
-    <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1029@0.0.1920.1029" timestamp="1606140327952" />
+    <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1029@0.0.1920.1029" timestamp="1606386264058" />
     <state x="726" y="156" key="#com.intellij.ide.util.MemberChooser/0.0.1920.1030@0.0.1920.1030" timestamp="1604933412350" />
     <state x="0" y="0" key="#com.intellij.refactoring.rename.AutomaticRenamingDialog" timestamp="1606140236618">
       <screen x="0" y="0" width="1920" height="1029" />
@@ -194,11 +191,11 @@
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
     <state x="632" y="195" key="#com.intellij.refactoring.safeDelete.UnsafeUsagesDialog/0.0.1920.1029@0.0.1920.1029" timestamp="1606307239658" />
-    <state x="695" y="206" key="FileChooserDialogImpl" timestamp="1606137248269">
-      <screen x="0" y="0" width="1920" height="1029" />
+    <state x="695" y="206" key="FileChooserDialogImpl" timestamp="1606460865579">
+      <screen x="0" y="0" width="1920" height="1030" />
     </state>
     <state x="695" y="206" key="FileChooserDialogImpl/0.0.1920.1029@0.0.1920.1029" timestamp="1606137248269" />
-    <state x="695" y="206" key="FileChooserDialogImpl/0.0.1920.1030@0.0.1920.1030" timestamp="1604930624225" />
+    <state x="695" y="206" key="FileChooserDialogImpl/0.0.1920.1030@0.0.1920.1030" timestamp="1606460865579" />
     <state x="445" y="190" key="IDE.errors.dialog" timestamp="1605694370330">
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
@@ -211,11 +208,11 @@
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
     <state x="466" y="0" key="com.intellij.openapi.editor.actions.MultiplePasteAction$ClipboardContentChooser/0.0.1920.1029@0.0.1920.1029" timestamp="1606144745882" />
-    <state x="578" y="0" width="739" height="740" key="find.popup" timestamp="1606372952790">
-      <screen x="0" y="0" width="1920" height="1029" />
+    <state x="590" y="172" width="739" height="686" key="find.popup" timestamp="1606460431851">
+      <screen x="0" y="0" width="1920" height="1030" />
     </state>
-    <state x="578" y="0" width="739" height="740" key="find.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1606372952790" />
-    <state x="590" y="172" width="739" height="686" key="find.popup/0.0.1920.1030@0.0.1920.1030" timestamp="1605345874448" />
+    <state x="578" y="0" width="739" height="740" key="find.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1606387361432" />
+    <state x="590" y="172" width="739" height="686" key="find.popup/0.0.1920.1030@0.0.1920.1030" timestamp="1606460431851" />
     <state width="750" height="535" key="javadoc.popup" timestamp="1606143698339">
       <screen x="0" y="0" width="1920" height="1029" />
     </state>
@@ -224,10 +221,10 @@
       <screen x="0" y="0" width="1920" height="1030" />
     </state>
     <state x="204" y="169" key="new project wizard/0.0.1920.1030@0.0.1920.1030" timestamp="1604932806065" />
-    <state x="539" y="0" width="840" height="1033" key="search.everywhere.popup" timestamp="1606375582082">
-      <screen x="0" y="0" width="1920" height="1029" />
+    <state x="539" y="0" width="840" height="1034" key="search.everywhere.popup" timestamp="1606460085000">
+      <screen x="0" y="0" width="1920" height="1030" />
     </state>
-    <state x="539" y="0" width="840" height="1033" key="search.everywhere.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1606375582082" />
-    <state x="539" y="0" width="840" height="1034" key="search.everywhere.popup/0.0.1920.1030@0.0.1920.1030" timestamp="1604909871341" />
+    <state x="539" y="0" width="840" height="1033" key="search.everywhere.popup/0.0.1920.1029@0.0.1920.1029" timestamp="1606387374678" />
+    <state x="539" y="0" width="840" height="1034" key="search.everywhere.popup/0.0.1920.1030@0.0.1920.1030" timestamp="1606460085000" />
   </component>
 </project>

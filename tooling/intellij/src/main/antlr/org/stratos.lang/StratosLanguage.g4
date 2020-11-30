@@ -13,7 +13,7 @@ grammar StratosLanguage;
  *  or compilationUnit, etc...
  */
 script
-	: packageClause eos	(importDecl eos)* (vardef* function* classType* statement*) EOF
+	: (packageClause)? eos	(importDecl eos)* (vardef* function* classType* statement*) EOF
 	;
 
 
