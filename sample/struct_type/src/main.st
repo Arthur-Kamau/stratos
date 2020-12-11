@@ -2,12 +2,8 @@ package test;
 
 
 
-struct User {
-   var age : int;
-   val name : string ;
-   // declare default value 
-   let isAudible = true; 
-   // function return a string 
+struct User { var age : int;val name : string ;// declare default value 
+let isAudible = true; // function return a string 
     getNationality() :string ;
     // function return a nothing 
     isAdult() : unit ;
@@ -16,8 +12,7 @@ struct User {
 class student implements User {
    
    
-   val age = 22;
-   val name = "User";
+   val age = 22;  val name = "User";
 
    override getNationality():  string{
       return "kenya"

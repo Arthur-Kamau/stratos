@@ -81,7 +81,7 @@ statement
 	;
 
 valTypedef : 'val' ID '=' expr ;
-letTypedef : 'let' ID '=' expr ;
+letTypedef : 'let' ID ( ':' ('string'| 'int' | 'double' | ID))? '=' expr ;
 varTypedef : 'var' ID '=' expr ;
 vardef :  valTypedef | letTypedef  | varTypedef ;  //'var' ID '=' expr ;
 
