@@ -1,0 +1,15 @@
+<component name="libraryTable">
+  <library name="jackson-annotations-2.11.1">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/Documents/plugins/jar/jackson-annotations-2.11.1.jar!/" />
+      <root url="jar://$USER_HOME$/Documents/plugins/jar/jackson-core-2.11.1.jar!/" />
+      <root url="jar://$USER_HOME$/Documents/plugins/jar/jackson-databind-2.11.1.jar!/" />
+      <root url="jar://$USER_HOME$/Documents/plugins/jar/jsr308-compiler-1.5.0.jar!/" />
+      <root url="jar://$USER_HOME$/Documents/plugins/jar/google-common.jar!/" />
+      <root url="jar://$USER_HOME$/Documents/plugins/jar/google-collections-1.0.jar!/" />
+      <root url="jar://$USER_HOME$/Documents/plugins/jar/gson-2.8.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
