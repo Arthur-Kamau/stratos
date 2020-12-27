@@ -83,7 +83,7 @@ public enum NodeType {
     EndOfFileNode,
     UnknownNode,
 
-
+    DotNode
 
 
 }

@@ -3,10 +3,7 @@ package analysis.custom.Parser;
 //import old.stratos.util.node.NodeUtil;
 
 import model.*;
-import model.Statement.LiteralStatement;
-import model.Statement.PackageStatement;
-import model.Statement.Statement;
-import model.Statement.VariableStatement;
+import model.Statement.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,21 +32,49 @@ public class Parser {
 
     private void evaluateStatements(Node n) throws Exception {
 
-        if (n.getType() == NodeType.PackageNode) {
+        if (n.getType() == NodeType.LineCommentNode || n.getType() == NodeType.MultiLineCommentNode || n.getType() == NodeType.NewLineNode) {
+            System.out.println("ignore node " + n.toString());
+        } else if (n.getType() == NodeType.ImportNode) {
+            String path = "";
+            Node nxt = advance();
+
+            if (nxt.getType() == NodeType.AlphaNumericNode) {
+            path+=nxt.getValue();
+            while (!isAtEnd()){
+                Node nxtScopeOrNot = advance();
+                if(nxtScopeOrNot.getType() == NodeType.SemiColonNode || nxtScopeOrNot.getType() == NodeType.NewLineNode ){
+                    break;
+                }else{
+                   if(nxtScopeOrNot.getType() == NodeType.AlphaNumericNode ||nxtScopeOrNot.getType() == NodeType.DotNode  ){
+                       path+=nxtScopeOrNot.getValue();
+                   }else{
+                       System.out.println("Error expected . or name in import path but got "+nxtScopeOrNot.getValue() );
+
+                   }
+                }
+            }
+
+                statementList.add(new ImportStatement(StatementType.ImportStatement, path));
+            }else{
+                System.out.println("Expected import name but got "+ n.toString() );
+            }
+        } else if (n.getType() == NodeType.PackageNode) {
 
             Node nxt = advance();
             if (nxt.getType() == NodeType.AlphaNumericNode) {
 
                 statementList.add(new PackageStatement(StatementType.PackageStatement, nxt.getValue()));
-                if (peek().getType() == NodeType.SemiColonNode  ){
-                    // consume new line and semi colon
-                    advance();
-                    advance();
-                }else if(peek().getType() == NodeType.NewLineNode){
-                    // consume new
-                    advance();
-                }else{
-                    System.out.println("Continue execution");
+                if (peek() != null) {
+                    if (peek().getType() == NodeType.SemiColonNode) {
+                        // consume new line and semi colon
+                        advance();
+                        advance();
+                    } else if (peek().getType() == NodeType.NewLineNode) {
+                        // consume new
+                        advance();
+                    } else {
+                        System.out.println("Continue execution");
+                    }
                 }
             } else {
                 System.out.println("Expected package name");
@@ -113,14 +138,15 @@ public class Parser {
     public Statement evaluateExpression() throws Exception {
 
         List<Node> nodeList = new ArrayList<Node>();
-        while (true) {
+        while (!isAtEnd()) {
 
             Node curr = advance();
             System.out.println("item " + curr.toString());
 
-            if (curr.getType() == NodeType.NewLineNode || curr.getType() == NodeType.SemiColonNode) {
+            if (curr.getType() == NodeType.NewLineNode || curr.getType() == NodeType.SemiColonNode || curr.getType() == NodeType.EndOfFileNode) {
                 break;
             } else {
+                System.out.println("Add ");
                 nodeList.add(curr);
             }
 
@@ -129,8 +155,18 @@ public class Parser {
         if (nodeList.size() == 1) {
             Node n = nodeList.get(0);
             if (n.getType() == NodeType.NumericNode || n.getType() == NodeType.AlphaNumericNode || n.getType() == NodeType.StringValue) {
+                VariableType type;
+                if (n.getType() == NodeType.NumericNode) {
+                    type = VariableType.integerType;
+                } else if (n.getType() == NodeType.AlphaNumericNode) {
+                    type = VariableType.customType;
+                } else if (n.getType() == NodeType.StringValue) {
+                    type = VariableType.stringType;
+                } else {
+                    type = VariableType.customType;
+                }
 
-                return new LiteralStatement(n.getValue(), StatementType.LiteralStatement);
+                return new LiteralStatement(StatementType.LiteralStatement, n.getValue(), type);
             } else {
                 System.out.println("Unexpected node " + n.toString());
             }

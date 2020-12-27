@@ -56,23 +56,23 @@ public class Stratos {
     private static void runFile(String path) throws Exception {
         List<Node> _nodesList = new Lexer().generateNodes(path);
 
-        for (Node n : _nodesList) {
-            ObjectMapper mapper = new ObjectMapper();
-            //Converting the Object to JSONString
-            String jsonString = mapper.writeValueAsString(n);
-            System.out.println("node list ==>" + jsonString);
-
-        }
-
-
-//     List<Statement>    statementList = new Parser().parse(_nodesList);
-//        for (Statement n : statementList) {
-//            //Creating the ObjectMapper object
+//        for (Node n : _nodesList) {
 //            ObjectMapper mapper = new ObjectMapper();
 //            //Converting the Object to JSONString
 //            String jsonString = mapper.writeValueAsString(n);
 //            System.out.println("node list ==>" + jsonString);
+//
 //        }
+
+
+     List<Statement>    statementList = new Parser().parse(_nodesList);
+        for (Statement n : statementList) {
+            //Creating the ObjectMapper object
+            ObjectMapper mapper = new ObjectMapper();
+            //Converting the Object to JSONString
+            String jsonString = mapper.writeValueAsString(n);
+            System.out.println("node list ==>" + jsonString);
+        }
     }
 
     private static void runProject(String path) throws Exception {

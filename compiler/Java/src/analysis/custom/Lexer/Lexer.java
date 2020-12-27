@@ -185,6 +185,16 @@ public class Lexer {
                         "*"
                 ));
                 break;
+            case '.':
+                nodesList.add(new Node(
+                        currentLineCharacter,
+                        currentLineCharacter,
+                        lineNumber,
+                        lineNumber,
+                        NodeType.DotNode,
+                        "."
+                ));
+                break;
             case '+':
                 nodesList.add(new Node(
                         currentLineCharacter,
@@ -455,6 +465,7 @@ public class Lexer {
                                 peek() != '(' &&
                                 peek() != ')' &&
                                 peek() != '*' &&
+                                peek() != '.' &&
                                 peek() != '+' &&
                                 peek() != '%' &&
                                 peek() != '-' &&

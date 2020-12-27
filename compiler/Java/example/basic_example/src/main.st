@@ -1,2 +1,1 @@
-
-//new
+import std.core() ;
