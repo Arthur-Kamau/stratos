@@ -10,5 +10,6 @@
     <orderEntry type="library" name="KotlinJavaRuntime" level="project" />
     <orderEntry type="library" name="config-1.4.1" level="project" />
     <orderEntry type="library" name="jackson-annotations-2.11.1" level="project" />
+    <orderEntry type="library" name="antlr-4.8-complete" level="project" />
   </component>
 </module>

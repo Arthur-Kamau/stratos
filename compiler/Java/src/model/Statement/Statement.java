@@ -1,33 +1,21 @@
 package model.Statement;
 
+import model.StatementType;
+
 import java.util.List;
 
 public class Statement {
-    Statement statement;
-    List<Statement> children;
+    StatementType statementType;
 
-
-    public Statement getStatement() {
-        return statement;
+    public Statement(StatementType statementType) {
+        this.statementType = statementType;
     }
 
-    public void setStatement(Statement statement) {
-        this.statement = statement;
+    public StatementType getStatementType() {
+        return statementType;
     }
 
-    public List<Statement> getChildren() {
-        return children;
-    }
-
-    public void setChildren(List<Statement> children) {
-        this.children = children;
-    }
-
-    @Override
-    public String toString() {
-        return "Statement{" +
-                "statement=" + statement +
-                ", children=" + children +
-                '}';
+    public void setStatementType(StatementType statementType) {
+        this.statementType = statementType;
     }
 }

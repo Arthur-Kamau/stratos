@@ -1,66 +1,48 @@
 package model.Statement;
 
 import model.Node;
-import model.Statement.ExpressionStatement;
+import model.StatementType;
+import model.VariableType;
 
 import java.util.List;
 
-public class VariableStatement {
+public class VariableStatement extends Statement {
+  String kind;
+  String identifier;
 
-    Node type;
-    Node name;
-    Boolean isStatic;
-    Boolean isConstant;
+  VariableType type;
+  Object init;
 
-    List<ExpressionStatement>  variableExpression ;
+  public VariableStatement(String kind, String identifier, VariableType type, Object init, StatementType statementType) {
+    super(statementType);
+    this.kind = kind;
+    this.identifier = identifier;
+    this.type = type;
+    this.init = init;
+  }
+
+  public VariableType getType() {
+    return type;
+  }
+
+  public void setType(VariableType type) {
+    this.type = type;
+  }
+
+  public String getKind() {
+    return kind;
+  }
+
+  public void setKind(String kind) {
+    this.kind = kind;
+  }
 
 
-    public VariableStatement(Node type, Node name, Boolean isStatic, Boolean isConstant, List<ExpressionStatement> variableExpression) {
-        this.type = type;
-        this.name = name;
-        this.isStatic = isStatic;
-        this.isConstant = isConstant;
-        this.variableExpression = variableExpression;
-    }
+  public Object getInit() {
+    return init;
+  }
 
-
-    public List<ExpressionStatement> getVariableExpression() {
-        return variableExpression;
-    }
-
-    public void setVariableExpression(List<ExpressionStatement> variableExpression) {
-        this.variableExpression = variableExpression;
-    }
-
-    public Node getType() {
-        return type;
-    }
-
-    public void setType(Node type) {
-        this.type = type;
-    }
-
-    public Node getName() {
-        return name;
-    }
-
-    public void setName(Node name) {
-        this.name = name;
-    }
-
-    public Boolean getStatic() {
-        return isStatic;
-    }
-
-    public void setStatic(Boolean aStatic) {
-        isStatic = aStatic;
-    }
-
-    public Boolean getConstant() {
-        return isConstant;
-    }
-
-    public void setConstant(Boolean constant) {
-        isConstant = constant;
-    }
+  public void setInit(Object init) {
+    this.init = init;
+  }
 }

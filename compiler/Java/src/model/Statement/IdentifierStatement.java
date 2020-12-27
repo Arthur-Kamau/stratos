@@ -1,15 +1,15 @@
 package model.Statement;
 
-import model.Node;
 import model.StatementType;
+import model.VariableType;
 
-public class PackageStatement extends  Statement{
+public class IdentifierStatement extends Statement{
     String name;
 
-
-    public PackageStatement(StatementType statementType, String name) {
-        super(statementType);
+    public IdentifierStatement(String name, StatementType type) {
+        super(type);
         this.name = name;
+
     }
 
     public String getName() {

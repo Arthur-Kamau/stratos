@@ -1,101 +1,182 @@
 package analysis.custom.Parser;
 
 //import old.stratos.util.node.NodeUtil;
-import model.Diagnostics;
-import model.NodeList;
-import model.NodeType;
+
 import model.*;
-import util.node.NodeUtil;
+import model.Statement.LiteralStatement;
+import model.Statement.PackageStatement;
+import model.Statement.Statement;
+import model.Statement.VariableStatement;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Parser {
 
-    List<List<Node>> nodeGroup = new ArrayList();
+    List<Statement> statementList = new ArrayList();
     List<Node> nodes;
 
     List<Diagnostics> diagnostics = new ArrayList<>();
     private int current = 0;
 
-    public NodeList parse(List<Node> nodes) {
+    public List<Statement> parse(List<Node> nodes) throws Exception {
         this.nodes = nodes;
-//        System.out.println("start parsing ");
+
 
         while (!isAtEnd()) {
             Node n = advance();
-            createTokenTree(n);
+            evaluateStatements(n);
         }
 
 
-
-        return new NodeList(
-                nodeGroup
-        );
+        return statementList;
     }
 
 
-   private void createTokenTree(Node n) {
+    private void evaluateStatements(Node n) throws Exception {
 
-        List<Node> nodeGroupItem = new ArrayList();
-        if (n.getType() == NodeType.SemiColonNode || n.getType() == NodeType.NewLineNode || n.getType() == NodeType.EndOfFileNode) {
-            if (!nodeGroupItem.isEmpty()) {
-                nodeGroup.add(nodeGroupItem);
-                nodeGroupItem.clear();
+        if (n.getType() == NodeType.PackageNode) {
+
+            Node nxt = advance();
+            if (nxt.getType() == NodeType.AlphaNumericNode) {
+
+                statementList.add(new PackageStatement(StatementType.PackageStatement, nxt.getValue()));
+                if (peek().getType() == NodeType.SemiColonNode  ){
+                    // consume new line and semi colon
+                    advance();
+                    advance();
+                }else if(peek().getType() == NodeType.NewLineNode){
+                    // consume new
+                    advance();
+                }else{
+                    System.out.println("Continue execution");
+                }
+            } else {
+                System.out.println("Expected package name");
             }
-        } else if (n.getType() == NodeType.CurlyBracketOpenNode) {
-            System.out.println("\n Curly  token tree unhandled \n ");
-            int stepsToClosingCurlyNode = new NodeUtil().findClosingCurlyBrace(nodes.subList(nodes.indexOf(n), nodes.size()));
-            int closingNode = stepsToClosingCurlyNode +current;
-//            System.out.println("steps "+stepsToClosingCurlyNode+" closing node "+closingNode + " current " + current);
-            nodeGroupItem.add(n);
-            if (0 == closingNode) {
-                diagnostics.add(new Diagnostics("Unable to find closing Curly brace", SeverityLevel.Critical, n.getNodeLineStart(), n.getNodeLineEnd(), n.getNodeStart(), getLastNode().getNodeEnd()));
+
+
+        } else if (n.getType() == NodeType.ValNode || n.getType() == NodeType.VarNode || n.getType() == NodeType.LetNode) {
+
+            Node nxt = advance();
+            if (nxt.getType() != NodeType.AlphaNumericNode && nxt.getType() != NodeType.NumericNode) {
+                System.out.println("Expected integer or variable name ");
+                throw new Exception("Invalid statement");
+            }
+            if (nxt.getType() == NodeType.SemiColonNode || nxt.getType() == NodeType.NewLineNode) {
+
+                statementList.add(new VariableStatement(n.getValue(), nxt.getValue(), VariableType.unknownType, null, StatementType.VariableDeclaration));
             } else {
 
-                for (int i = 0; i <stepsToClosingCurlyNode ; i++) {
-                    nodeGroupItem.add(advance());
-                }
+                Node assignOrColon = advance();
+                if (assignOrColon.getType() == NodeType.AssignNode) {
+                    statementList.add(new VariableStatement(n.getValue(), nxt.getValue(), VariableType.objectType, evaluateExpression(), StatementType.VariableDeclaration));
 
+                } else if (assignOrColon.getType() == NodeType.ColonNode) {
+
+                    Node type = advance();
+                    VariableType variableType = getVariableType(type);
+                    Node assign = advance();
+                    if (assign.getType() == NodeType.AssignNode) {
+
+                        statementList.add(new VariableStatement(n.getValue(), nxt.getValue(), variableType, evaluateExpression(), StatementType.VariableDeclaration));
+                    } else {
+                        System.out.println("Expected Assignment  node but got " + assign.toString());
+                    }
+
+
+                } else {
+
+                    System.out.println("Expected Assignment or Colon node but got " + assignOrColon.toString());
+                }
             }
 
         } else {
-            nodeGroupItem.clear();
-            nodeGroupItem.add(n);
-            while (currentNode().getType() != NodeType.SemiColonNode && currentNode().getType() != NodeType.NewLineNode && currentNode().getType() != NodeType.EndOfFileNode) {
-                Node n2 = advance();
-                if (n2.getType() == NodeType.CurlyBracketOpenNode) {
-
-                    int stepsToClosingCurlyNode = new NodeUtil().findClosingCurlyBrace(nodes.subList(nodes.indexOf(n2), nodes.size()));
-                    int closingNode = stepsToClosingCurlyNode +current;
-//                    System.out.println("steps "+stepsToClosingCurlyNode+" closing node "+closingNode + " current " + current);
-                    nodeGroupItem.add(n2);
-                    if (0 == closingNode) {
-                        diagnostics.add(new Diagnostics("Unable to find closing Curly brace", SeverityLevel.Critical, n.getNodeLineStart(), n.getNodeLineEnd(), n.getNodeStart(), getLastNode().getNodeEnd()));
-                    } else {
-
-                        for (int i = 0; i <stepsToClosingCurlyNode ; i++) {
-                            nodeGroupItem.add(advance());
-                        }
-
-                    }
-
-                } else {
-                    nodeGroupItem.add(n2);
-                }
-            }
-
-            if (!nodeGroupItem.isEmpty()) {
-                nodeGroup.add(nodeGroupItem);
-
-            }
+            System.out.println("Node parse not captured" + n.toString());
         }
 
+    }
+
+    private VariableType getVariableType(Node n) {
+
+        if (n.getType() == NodeType.StringNode) {
+            return VariableType.stringType;
+        } else if (n.getType() == NodeType.DoubleNode) {
+            return VariableType.integerType;
+        } else if (n.getType() == NodeType.DoubleNode) {
+            return VariableType.doubleType;
+        } else {
+            return VariableType.customType;
+        }
+    }
+
+    public Statement evaluateExpression() throws Exception {
+
+        List<Node> nodeList = new ArrayList<Node>();
+        while (true) {
+
+            Node curr = advance();
+            System.out.println("item " + curr.toString());
+
+            if (curr.getType() == NodeType.NewLineNode || curr.getType() == NodeType.SemiColonNode) {
+                break;
+            } else {
+                nodeList.add(curr);
+            }
+
+        }
+
+        if (nodeList.size() == 1) {
+            Node n = nodeList.get(0);
+            if (n.getType() == NodeType.NumericNode || n.getType() == NodeType.AlphaNumericNode || n.getType() == NodeType.StringValue) {
+
+                return new LiteralStatement(n.getValue(), StatementType.LiteralStatement);
+            } else {
+                System.out.println("Unexpected node " + n.toString());
+            }
+
+        } else {
+
+            List<Statement> statementList = new Parser().parse(nodeList);
+
+            System.out.println("Statements in expression  " + statementList.toString());
+            if (statementList.size() > 1) {
+                throw new Exception("Expected on e expression ");
+            } else {
+                return statementList.get(0);
+            }
+
+        }
+
+
+        return null;
+    }
+
+
+    private boolean contains(List<Node> nodeList, NodeType type) {
+        boolean exist = false;
+        for (Node i : nodeList) {
+            if (i.getType() == type) {
+                exist = true;
+                break;
+            }
+
+        }
+        return exist;
     }
 
 
     public List<Diagnostics> getDiagnostics() {
         return diagnostics;
+    }
+
+    private Node peek() {
+        if (!isAtEnd()) {
+            int _tmp = current;
+            return nodes.get(_tmp++);
+        } else {
+            return null;
+        }
     }
 
     private Node advance() {
@@ -115,7 +196,7 @@ public class Parser {
     }
 
     private boolean isAtEnd() {
-        boolean r = currentNode().getType() == NodeType.EndOfFileNode || current+1 == nodes.size();
+        boolean r = currentNode().getType() == NodeType.EndOfFileNode || current + 1 == nodes.size();
 
         return r;
     }

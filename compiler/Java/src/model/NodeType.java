@@ -74,6 +74,7 @@ public enum NodeType {
     LineCommentNode,
     MultiLineCommentNode,
     SemiColonNode,
+    ColonNode,
     NewLineNode,
     SpaceCharacterNode,
     NumericNode,

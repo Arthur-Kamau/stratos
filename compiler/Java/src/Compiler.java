@@ -1,4 +1,4 @@
-import analysis.custom.AST.ASTGenerator;
+//import analysis.custom.AST.ASTGenerator;
 import analysis.custom.Lexer.Lexer;
 import analysis.custom.Parser.Parser;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,27 +48,20 @@ public class Compiler {
         List<ExecutionTree> executionTrees = new ArrayList<>();
         for (String file : projectFiles) {
             List<Node> nodesList = new Lexer().generateNodes(file);
-            NodeList nodeList = new Parser().parse(nodesList);
-            for (List<Node> n : nodeList.getnodesGroup()) {
+            List<Statement> statementList = new Parser().parse(nodesList);
+
+            for (Statement statement : statementList) {
                 //Creating the ObjectMapper object
                 ObjectMapper mapper = new ObjectMapper();
                 //Converting the Object to JSONString
-                String jsonString = mapper.writeValueAsString(n);
+                String jsonString = mapper.writeValueAsString(statement);
                 System.out.println("node list ==>" + jsonString);
             }
 
 
             System.out.println("\n\n ================= \n\n ");
 
-            List<Token> tokenList = new ASTGenerator(nodeList).generate();
 
-            for (Token n : tokenList) {
-                //Creating the ObjectMapper object
-                ObjectMapper mapper = new ObjectMapper();
-                //Converting the Object to JSONString
-                String jsonString = mapper.writeValueAsString(n);
-                System.out.println("Token list ==>" + jsonString);
-            }
         }
     }
 
