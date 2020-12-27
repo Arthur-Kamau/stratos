@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/arthur-kamau/Development/Stratos/compiler/tooling/toolman/main.cpp" "/home/arthur-kamau/Development/Stratos/compiler/tooling/toolman/cmake-build-debug/CMakeFiles/toolman.dir/main.cpp.o"
+  "/home/kamau/Development/Stratos/compiler/C++/main.cpp" "/home/kamau/Development/Stratos/compiler/C++/cmake-build-debug/CMakeFiles/toolman.dir/main.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 
