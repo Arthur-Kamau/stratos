@@ -6,7 +6,12 @@ public enum StatementType {
     PackageStatement,
     FunctionDeclaration,
     BinaryExpression,
+    ArrayExpression,
+    VariableDeclarator,
     VariableDeclaration,
+    CallStatement,
+
+
     IdentifierStatement,
     LiteralStatement
 

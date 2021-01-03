@@ -6,7 +6,7 @@ lexer grammar StratosLexer;
 
 BREAK                  : 'break';
 DEFAULT                : 'default';
-FUNC                   : 'func';
+FUNCTION                   : 'function';
 INTERFACE              : 'interface';
 SELECT                 : 'select';
 CASE                   : 'case';
@@ -29,6 +29,8 @@ FOR                    : 'for';
 IMPORT                 : 'import';
 RETURN                 : 'return';
 VAR                    : 'var';
+VAL                    : 'val';
+LET                    : 'let';
 
 NIL_LIT                : 'nil';
 
@@ -51,6 +53,7 @@ PLUS_PLUS              : '++';
 MINUS_MINUS            : '--';
 DECLARE_ASSIGN         : ':=';
 ELLIPSIS               : '...';
+BETWEEN              : '..';
 
 // Logical
 
@@ -108,6 +111,8 @@ RUNE_LIT               : '\'' (~[\n\\] | ESCAPED_VALUE) '\'';
 
 RAW_STRING_LIT         : '`' ~'`'*                      '`';
 INTERPRETED_STRING_LIT : '"' (~["\\] | ESCAPED_VALUE)*  '"';
+IMPORT_PATH : [A-Za-z0-9_]+;
+
 // Hidden tokens
 WS                     : [ \t]+             -> channel(HIDDEN);
 COMMENT                : '/*' .*? '*/'      -> channel(HIDDEN);

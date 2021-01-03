@@ -1,1 +1,8 @@
-import std.core() ;
+//package name
+
+//import std.core ;
+
+
+function name(){
+
+}

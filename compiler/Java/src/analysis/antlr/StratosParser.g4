@@ -60,11 +60,11 @@ typeSpec
 // Function declarations
 
 functionDecl
-    : 'func' IDENTIFIER (signature block?)
+    : 'function' IDENTIFIER (signature block?)
     ;
 
 methodDecl
-    : 'func' receiver IDENTIFIER (signature block?)
+    : 'function' receiver IDENTIFIER (signature block?)
     ;
 
 receiver
@@ -308,7 +308,7 @@ methodSpec
     ;
 
 functionType
-    : 'func' signature
+    : 'function' signature
     ;
 
 signature
@@ -444,6 +444,7 @@ fieldDecl
 string_
     : RAW_STRING_LIT
     | INTERPRETED_STRING_LIT
+    | IMPORT_PATH
     ;
 
 anonymousField
@@ -451,7 +452,7 @@ anonymousField
     ;
 
 functionLit
-    : 'func' signature block // function
+    : 'function' signature block // function
     ;
 
 index

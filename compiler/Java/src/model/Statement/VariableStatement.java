@@ -9,7 +9,6 @@ import java.util.List;
 public class VariableStatement extends Statement {
   String kind;
   String identifier;
-
   VariableType type;
   Object init;
 
