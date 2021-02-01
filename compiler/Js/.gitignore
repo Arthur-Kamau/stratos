@@ -1,6 +1,0 @@
-node_modules
-coverage
-src/fun-lang.js
-/examples/*.js
-/examples/*.history
-/examples/*.ast

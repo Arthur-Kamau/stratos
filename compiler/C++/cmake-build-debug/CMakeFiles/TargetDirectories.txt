@@ -1,3 +1,0 @@
-/home/kamau/Development/Stratos/compiler/C++/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/kamau/Development/Stratos/compiler/C++/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/kamau/Development/Stratos/compiler/C++/cmake-build-debug/CMakeFiles/toolman.dir
