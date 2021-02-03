@@ -25,7 +25,8 @@ private:
 
 public:
 
-    void consume();
+    void peek();
+    bool is_eof() const;
     Token next();
     explicit Lexer(std::string source);
 

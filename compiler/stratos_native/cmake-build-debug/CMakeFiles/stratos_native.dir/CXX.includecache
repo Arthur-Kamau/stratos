@@ -9,4 +9,8 @@
 /home/kamau/Development/Stratos/compiler/stratos_native/main.cpp
 iostream
 -
+fstream
+-
+string
+-
 
