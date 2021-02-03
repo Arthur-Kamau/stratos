@@ -1,1 +1,1 @@
-/usr/bin/c++  -g   CMakeFiles/stratos_native.dir/main.cpp.o  -o stratos_native 
+/usr/bin/c++  -g   CMakeFiles/stratos_native.dir/main.cpp.o CMakeFiles/stratos_native.dir/Lexer.cpp.o CMakeFiles/stratos_native.dir/Node.cpp.o CMakeFiles/stratos_native.dir/NodeType.cpp.o CMakeFiles/stratos_native.dir/Parser.cpp.o CMakeFiles/stratos_native.dir/Token.cpp.o CMakeFiles/stratos_native.dir/TokenType.cpp.o  -o stratos_native 

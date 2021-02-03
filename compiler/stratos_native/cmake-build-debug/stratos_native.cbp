@@ -44,6 +44,7 @@
 				<Option type="1"/>
 				<Option compiler="gcc"/>
 				<Compiler>
+					<Add directory="/home/kamau/Development/Stratos/compiler/stratos_native"/>
 					<Add directory="/usr/include/c++/10"/>
 					<Add directory="/usr/include/x86_64-linux-gnu/c++/10"/>
 					<Add directory="/usr/include/c++/10/backward"/>
@@ -66,6 +67,7 @@
 				<Option type="1"/>
 				<Option compiler="gcc"/>
 				<Compiler>
+					<Add directory="/home/kamau/Development/Stratos/compiler/stratos_native"/>
 					<Add directory="/usr/include/c++/10"/>
 					<Add directory="/usr/include/x86_64-linux-gnu/c++/10"/>
 					<Add directory="/usr/include/c++/10/backward"/>
@@ -82,6 +84,42 @@
 				</MakeCommands>
 			</Target>
 		</Build>
+		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/Lexer.cpp">
+			<Option target="stratos_native"/>
+		</Unit>
+		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/Lexer.h">
+			<Option target="stratos_native"/>
+		</Unit>
+		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/Node.cpp">
+			<Option target="stratos_native"/>
+		</Unit>
+		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/Node.h">
+			<Option target="stratos_native"/>
+		</Unit>
+		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/NodeType.cpp">
+			<Option target="stratos_native"/>
+		</Unit>
+		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/NodeType.h">
+			<Option target="stratos_native"/>
+		</Unit>
+		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/Parser.cpp">
+			<Option target="stratos_native"/>
+		</Unit>
+		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/Parser.h">
+			<Option target="stratos_native"/>
+		</Unit>
+		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/Token.cpp">
+			<Option target="stratos_native"/>
+		</Unit>
+		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/Token.h">
+			<Option target="stratos_native"/>
+		</Unit>
+		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/TokenType.cpp">
+			<Option target="stratos_native"/>
+		</Unit>
+		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/TokenType.h">
+			<Option target="stratos_native"/>
+		</Unit>
 		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/main.cpp">
 			<Option target="stratos_native"/>
 		</Unit>

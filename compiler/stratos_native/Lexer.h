@@ -6,29 +6,33 @@
 #define STRATOS_NATIVE_LEXER_H
 #include <iostream>
 #include <stdlib.h>
+#include <vector>
 #include <iostream>
 #include <map>
 #include <fstream>
-#include "TokenType.h"
-#include "Token.h"
+#include <bits/stdc++.h>
+#include "NodeType.h"
+#include "Node.h"
 
 class Lexer {
 private:
-    int lineNumber = 1;
-    int currentLineCharacter = 0;
-    int currentCharacter;
-    static std::map<std::string, TokenType> s_keywords;
 
-    static std::map<std::string, TokenType> s_three_char_tokens;
-    static std::map<std::string, TokenType> s_two_char_tokens;
-    static std::map<char, TokenType> s_single_char_tokens;
+    std::vector<Node> nodes;
+    std::vector<char> char_array;
+
+    int line_number ;
+    int source_length ;
+    int current_character_index =0;
+
+
+    char peek();
+    bool is_eof() const;
+    char consume();
+    void lex();
 
 public:
 
-    void peek();
-    bool is_eof() const;
-    Token next();
-    explicit Lexer(std::string source);
+     std::vector<Node> lex_text(std::string source);
 
 };
 

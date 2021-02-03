@@ -7,7 +7,8 @@
 
 
 class Token {
-
+private:
+    Token();
 };
 
 

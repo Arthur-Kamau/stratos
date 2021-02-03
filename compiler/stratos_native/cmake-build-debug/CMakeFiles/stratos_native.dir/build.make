@@ -90,17 +90,107 @@ CMakeFiles/stratos_native.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/stratos_native.dir/main.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/kamau/Development/Stratos/compiler/stratos_native/main.cpp -o CMakeFiles/stratos_native.dir/main.cpp.s
 
+CMakeFiles/stratos_native.dir/Lexer.cpp.o: CMakeFiles/stratos_native.dir/flags.make
+CMakeFiles/stratos_native.dir/Lexer.cpp.o: ../Lexer.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/kamau/Development/Stratos/compiler/stratos_native/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/stratos_native.dir/Lexer.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/stratos_native.dir/Lexer.cpp.o -c /home/kamau/Development/Stratos/compiler/stratos_native/Lexer.cpp
+
+CMakeFiles/stratos_native.dir/Lexer.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/stratos_native.dir/Lexer.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/kamau/Development/Stratos/compiler/stratos_native/Lexer.cpp > CMakeFiles/stratos_native.dir/Lexer.cpp.i
+
+CMakeFiles/stratos_native.dir/Lexer.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/stratos_native.dir/Lexer.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/kamau/Development/Stratos/compiler/stratos_native/Lexer.cpp -o CMakeFiles/stratos_native.dir/Lexer.cpp.s
+
+CMakeFiles/stratos_native.dir/Node.cpp.o: CMakeFiles/stratos_native.dir/flags.make
+CMakeFiles/stratos_native.dir/Node.cpp.o: ../Node.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/kamau/Development/Stratos/compiler/stratos_native/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/stratos_native.dir/Node.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/stratos_native.dir/Node.cpp.o -c /home/kamau/Development/Stratos/compiler/stratos_native/Node.cpp
+
+CMakeFiles/stratos_native.dir/Node.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/stratos_native.dir/Node.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/kamau/Development/Stratos/compiler/stratos_native/Node.cpp > CMakeFiles/stratos_native.dir/Node.cpp.i
+
+CMakeFiles/stratos_native.dir/Node.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/stratos_native.dir/Node.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/kamau/Development/Stratos/compiler/stratos_native/Node.cpp -o CMakeFiles/stratos_native.dir/Node.cpp.s
+
+CMakeFiles/stratos_native.dir/NodeType.cpp.o: CMakeFiles/stratos_native.dir/flags.make
+CMakeFiles/stratos_native.dir/NodeType.cpp.o: ../NodeType.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/kamau/Development/Stratos/compiler/stratos_native/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/stratos_native.dir/NodeType.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/stratos_native.dir/NodeType.cpp.o -c /home/kamau/Development/Stratos/compiler/stratos_native/NodeType.cpp
+
+CMakeFiles/stratos_native.dir/NodeType.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/stratos_native.dir/NodeType.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/kamau/Development/Stratos/compiler/stratos_native/NodeType.cpp > CMakeFiles/stratos_native.dir/NodeType.cpp.i
+
+CMakeFiles/stratos_native.dir/NodeType.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/stratos_native.dir/NodeType.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/kamau/Development/Stratos/compiler/stratos_native/NodeType.cpp -o CMakeFiles/stratos_native.dir/NodeType.cpp.s
+
+CMakeFiles/stratos_native.dir/Parser.cpp.o: CMakeFiles/stratos_native.dir/flags.make
+CMakeFiles/stratos_native.dir/Parser.cpp.o: ../Parser.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/kamau/Development/Stratos/compiler/stratos_native/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/stratos_native.dir/Parser.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/stratos_native.dir/Parser.cpp.o -c /home/kamau/Development/Stratos/compiler/stratos_native/Parser.cpp
+
+CMakeFiles/stratos_native.dir/Parser.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/stratos_native.dir/Parser.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/kamau/Development/Stratos/compiler/stratos_native/Parser.cpp > CMakeFiles/stratos_native.dir/Parser.cpp.i
+
+CMakeFiles/stratos_native.dir/Parser.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/stratos_native.dir/Parser.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/kamau/Development/Stratos/compiler/stratos_native/Parser.cpp -o CMakeFiles/stratos_native.dir/Parser.cpp.s
+
+CMakeFiles/stratos_native.dir/Token.cpp.o: CMakeFiles/stratos_native.dir/flags.make
+CMakeFiles/stratos_native.dir/Token.cpp.o: ../Token.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/kamau/Development/Stratos/compiler/stratos_native/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/stratos_native.dir/Token.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/stratos_native.dir/Token.cpp.o -c /home/kamau/Development/Stratos/compiler/stratos_native/Token.cpp
+
+CMakeFiles/stratos_native.dir/Token.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/stratos_native.dir/Token.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/kamau/Development/Stratos/compiler/stratos_native/Token.cpp > CMakeFiles/stratos_native.dir/Token.cpp.i
+
+CMakeFiles/stratos_native.dir/Token.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/stratos_native.dir/Token.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/kamau/Development/Stratos/compiler/stratos_native/Token.cpp -o CMakeFiles/stratos_native.dir/Token.cpp.s
+
+CMakeFiles/stratos_native.dir/TokenType.cpp.o: CMakeFiles/stratos_native.dir/flags.make
+CMakeFiles/stratos_native.dir/TokenType.cpp.o: ../TokenType.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/kamau/Development/Stratos/compiler/stratos_native/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/stratos_native.dir/TokenType.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/stratos_native.dir/TokenType.cpp.o -c /home/kamau/Development/Stratos/compiler/stratos_native/TokenType.cpp
+
+CMakeFiles/stratos_native.dir/TokenType.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/stratos_native.dir/TokenType.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/kamau/Development/Stratos/compiler/stratos_native/TokenType.cpp > CMakeFiles/stratos_native.dir/TokenType.cpp.i
+
+CMakeFiles/stratos_native.dir/TokenType.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/stratos_native.dir/TokenType.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/kamau/Development/Stratos/compiler/stratos_native/TokenType.cpp -o CMakeFiles/stratos_native.dir/TokenType.cpp.s
+
 # Object files for target stratos_native
 stratos_native_OBJECTS = \
-"CMakeFiles/stratos_native.dir/main.cpp.o"
+"CMakeFiles/stratos_native.dir/main.cpp.o" \
+"CMakeFiles/stratos_native.dir/Lexer.cpp.o" \
+"CMakeFiles/stratos_native.dir/Node.cpp.o" \
+"CMakeFiles/stratos_native.dir/NodeType.cpp.o" \
+"CMakeFiles/stratos_native.dir/Parser.cpp.o" \
+"CMakeFiles/stratos_native.dir/Token.cpp.o" \
+"CMakeFiles/stratos_native.dir/TokenType.cpp.o"
 
 # External object files for target stratos_native
 stratos_native_EXTERNAL_OBJECTS =
 
 stratos_native: CMakeFiles/stratos_native.dir/main.cpp.o
+stratos_native: CMakeFiles/stratos_native.dir/Lexer.cpp.o
+stratos_native: CMakeFiles/stratos_native.dir/Node.cpp.o
+stratos_native: CMakeFiles/stratos_native.dir/NodeType.cpp.o
+stratos_native: CMakeFiles/stratos_native.dir/Parser.cpp.o
+stratos_native: CMakeFiles/stratos_native.dir/Token.cpp.o
+stratos_native: CMakeFiles/stratos_native.dir/TokenType.cpp.o
 stratos_native: CMakeFiles/stratos_native.dir/build.make
 stratos_native: CMakeFiles/stratos_native.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/kamau/Development/Stratos/compiler/stratos_native/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable stratos_native"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/kamau/Development/Stratos/compiler/stratos_native/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Linking CXX executable stratos_native"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/stratos_native.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

@@ -143,6 +143,168 @@ stratos_native/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/build
 .PHONY : stratos_native/fast
 
+Lexer.o: Lexer.cpp.o
+
+.PHONY : Lexer.o
+
+# target to build an object file
+Lexer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/Lexer.cpp.o
+.PHONY : Lexer.cpp.o
+
+Lexer.i: Lexer.cpp.i
+
+.PHONY : Lexer.i
+
+# target to preprocess a source file
+Lexer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/Lexer.cpp.i
+.PHONY : Lexer.cpp.i
+
+Lexer.s: Lexer.cpp.s
+
+.PHONY : Lexer.s
+
+# target to generate assembly for a file
+Lexer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/Lexer.cpp.s
+.PHONY : Lexer.cpp.s
+
+Node.o: Node.cpp.o
+
+.PHONY : Node.o
+
+# target to build an object file
+Node.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/Node.cpp.o
+.PHONY : Node.cpp.o
+
+Node.i: Node.cpp.i
+
+.PHONY : Node.i
+
+# target to preprocess a source file
+Node.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/Node.cpp.i
+.PHONY : Node.cpp.i
+
+Node.s: Node.cpp.s
+
+.PHONY : Node.s
+
+# target to generate assembly for a file
+Node.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/Node.cpp.s
+.PHONY : Node.cpp.s
+
+NodeType.o: NodeType.cpp.o
+
+.PHONY : NodeType.o
+
+# target to build an object file
+NodeType.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/NodeType.cpp.o
+.PHONY : NodeType.cpp.o
+
+NodeType.i: NodeType.cpp.i
+
+.PHONY : NodeType.i
+
+# target to preprocess a source file
+NodeType.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/NodeType.cpp.i
+.PHONY : NodeType.cpp.i
+
+NodeType.s: NodeType.cpp.s
+
+.PHONY : NodeType.s
+
+# target to generate assembly for a file
+NodeType.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/NodeType.cpp.s
+.PHONY : NodeType.cpp.s
+
+Parser.o: Parser.cpp.o
+
+.PHONY : Parser.o
+
+# target to build an object file
+Parser.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/Parser.cpp.o
+.PHONY : Parser.cpp.o
+
+Parser.i: Parser.cpp.i
+
+.PHONY : Parser.i
+
+# target to preprocess a source file
+Parser.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/Parser.cpp.i
+.PHONY : Parser.cpp.i
+
+Parser.s: Parser.cpp.s
+
+.PHONY : Parser.s
+
+# target to generate assembly for a file
+Parser.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/Parser.cpp.s
+.PHONY : Parser.cpp.s
+
+Token.o: Token.cpp.o
+
+.PHONY : Token.o
+
+# target to build an object file
+Token.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/Token.cpp.o
+.PHONY : Token.cpp.o
+
+Token.i: Token.cpp.i
+
+.PHONY : Token.i
+
+# target to preprocess a source file
+Token.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/Token.cpp.i
+.PHONY : Token.cpp.i
+
+Token.s: Token.cpp.s
+
+.PHONY : Token.s
+
+# target to generate assembly for a file
+Token.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/Token.cpp.s
+.PHONY : Token.cpp.s
+
+TokenType.o: TokenType.cpp.o
+
+.PHONY : TokenType.o
+
+# target to build an object file
+TokenType.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/TokenType.cpp.o
+.PHONY : TokenType.cpp.o
+
+TokenType.i: TokenType.cpp.i
+
+.PHONY : TokenType.i
+
+# target to preprocess a source file
+TokenType.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/TokenType.cpp.i
+.PHONY : TokenType.cpp.i
+
+TokenType.s: TokenType.cpp.s
+
+.PHONY : TokenType.s
+
+# target to generate assembly for a file
+TokenType.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/TokenType.cpp.s
+.PHONY : TokenType.cpp.s
+
 main.o: main.cpp.o
 
 .PHONY : main.o
@@ -179,6 +341,24 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... stratos_native"
+	@echo "... Lexer.o"
+	@echo "... Lexer.i"
+	@echo "... Lexer.s"
+	@echo "... Node.o"
+	@echo "... Node.i"
+	@echo "... Node.s"
+	@echo "... NodeType.o"
+	@echo "... NodeType.i"
+	@echo "... NodeType.s"
+	@echo "... Parser.o"
+	@echo "... Parser.i"
+	@echo "... Parser.s"
+	@echo "... Token.o"
+	@echo "... Token.i"
+	@echo "... Token.s"
+	@echo "... TokenType.o"
+	@echo "... TokenType.i"
+	@echo "... TokenType.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
