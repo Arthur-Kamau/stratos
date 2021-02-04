@@ -108,29 +108,58 @@ void Lexer::lex() {
         default:
             if (non_digit(current())) {
                 std::string text_string;
+                int start_character_index = current_character_index;
                 text_string.push_back(start);
 
                 while (true) {
 
                     char advanced = advance();
-                    std::cerr   << "Start" << start << " advance " << advanced << std::endl;
+                    std::cerr   << "Start  " << start << " advance " << advanced << std::endl;
 
-                    if (current() == ' ') {
+                    if (current() == ' ' || current() == '\n' ) {
+                        if (current() == '\n'){
+                            line_number++;
+                        }
                         break;
                     }else{
                         text_string.push_back(advanced);
                     }
                 }
+                Node var;
+                var.start = start_character_index;
+                var.end = current_character_index;
+                var.line =line_number;
+                var.literal =text_string;
+                if(key_word(text_string)) {
+                    var.type = s_keywords[text_string];
+
+                }else{
+                    var.type =NodeType:: UserDefinedName ;
+                }
+
+                nodes.push_back(
+                        var
+                        );
 
 
             } else {
 
-                std::cerr << "Unknown " << current()     << "is non digit " << non_digit(current()) << std::endl;
+                std::cerr << "Unknown " << current()     << "is non digit " << non_digit(current()) << "advance"  << advance() << std::endl;
+                if (current() == ' ' || current() == '\n' ) {
+                    if (current() == '\n'){
+                        line_number++;
+                    }
+                    advance();
+                }
             }
     }
 }
 
 
+bool Lexer::key_word(std::string ch) {
+
+    return s_keywords.count(ch) > 0;
+}
 /*
 symbol : one of
   == , >= , <= ,

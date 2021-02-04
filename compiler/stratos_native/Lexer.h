@@ -7,12 +7,11 @@
 #include <iostream>
 #include <stdlib.h>
 #include <vector>
-#include <iostream>
 #include <map>
 #include <fstream>
 #include <bits/stdc++.h>
 #include "Node.cpp"
-#include "NodeType.cpp"
+//#include "NodeType.cpp"
 
 class Lexer {
 private:
@@ -20,8 +19,8 @@ private:
     std::vector<Node> nodes;
     std::vector<char> char_array;
 
-    int line_number ;
-    int source_length;
+    int line_number = 0;
+    int source_length =0;
     int  current_character_index =0  ;
 
 
@@ -51,6 +50,7 @@ public:
 
     bool single_symbol(char ch);
     bool double_symbol(std::string ch);
+    bool key_word(std::string ch);
     bool nonzero_digit(char ch);
 
     Lexer();

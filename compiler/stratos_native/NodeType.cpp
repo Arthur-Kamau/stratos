@@ -2,7 +2,8 @@
 // Created by kamau on 1/29/21.
 //
 
-#pragma once
+#include <iostream>
+
 enum class NodeType {
     Function,
     Class,
@@ -10,7 +11,7 @@ enum class NodeType {
     Variable ,
     Value,
     Constant,
-
+    UserDefinedName,
     ExclamationMarkEquals,
     AmpersandEquals,
     Await,
@@ -52,3 +53,9 @@ enum class NodeType {
     GreaterThan,
     TripleDot,
 };
+
+static std::ostream& operator << (std::ostream& os, const NodeType& obj)
+{
+    os << static_cast<std::underlying_type<NodeType>::type>(obj);
+    return os;
+}

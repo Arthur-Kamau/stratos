@@ -17,8 +17,6 @@ stdlib.h
 -
 vector
 -
-iostream
--
 map
 -
 fstream
@@ -27,12 +25,14 @@ bits/stdc++.h
 -
 Node.cpp
 /home/kamau/Development/Stratos/compiler/stratos_native/Node.cpp
-NodeType.cpp
-/home/kamau/Development/Stratos/compiler/stratos_native/NodeType.cpp
 
 /home/kamau/Development/Stratos/compiler/stratos_native/Node.cpp
+iostream
+-
 NodeType.cpp
 /home/kamau/Development/Stratos/compiler/stratos_native/NodeType.cpp
 
 /home/kamau/Development/Stratos/compiler/stratos_native/NodeType.cpp
+iostream
+-
 

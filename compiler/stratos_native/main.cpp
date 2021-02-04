@@ -56,6 +56,10 @@ void compile_script(std::string file_path) {
     std::string str = strStream.str();
 
 
+    //lex text
     Lexer l ;
-    l.lex_text(str);
+    std::vector<Node> n = l.lex_text(str);
+    for (auto i: n)
+        std::cerr << " Nodes " << i << std::endl;
+    // parse nodes to tokens
 }
