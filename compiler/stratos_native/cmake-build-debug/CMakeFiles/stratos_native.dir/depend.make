@@ -3,28 +3,25 @@
 
 CMakeFiles/stratos_native.dir/Lexer.cpp.o: ../Lexer.cpp
 CMakeFiles/stratos_native.dir/Lexer.cpp.o: ../Lexer.h
-CMakeFiles/stratos_native.dir/Lexer.cpp.o: ../Node.h
-CMakeFiles/stratos_native.dir/Lexer.cpp.o: ../NodeType.h
+CMakeFiles/stratos_native.dir/Lexer.cpp.o: ../Node.cpp
+CMakeFiles/stratos_native.dir/Lexer.cpp.o: ../NodeType.cpp
 
 CMakeFiles/stratos_native.dir/Node.cpp.o: ../Node.cpp
-CMakeFiles/stratos_native.dir/Node.cpp.o: ../Node.h
-CMakeFiles/stratos_native.dir/Node.cpp.o: ../NodeType.h
+CMakeFiles/stratos_native.dir/Node.cpp.o: ../NodeType.cpp
 
 CMakeFiles/stratos_native.dir/NodeType.cpp.o: ../NodeType.cpp
 
 CMakeFiles/stratos_native.dir/Parser.cpp.o: ../Parser.cpp
 CMakeFiles/stratos_native.dir/Parser.cpp.o: ../Parser.h
 CMakeFiles/stratos_native.dir/Parser.cpp.o: ../Token.h
-CMakeFiles/stratos_native.dir/Parser.cpp.o: ../TokenType.h
 
 CMakeFiles/stratos_native.dir/Token.cpp.o: ../Token.cpp
 CMakeFiles/stratos_native.dir/Token.cpp.o: ../Token.h
 
 CMakeFiles/stratos_native.dir/TokenType.cpp.o: ../TokenType.cpp
-CMakeFiles/stratos_native.dir/TokenType.cpp.o: ../TokenType.h
 
 CMakeFiles/stratos_native.dir/main.cpp.o: ../Lexer.h
-CMakeFiles/stratos_native.dir/main.cpp.o: ../Node.h
-CMakeFiles/stratos_native.dir/main.cpp.o: ../NodeType.h
+CMakeFiles/stratos_native.dir/main.cpp.o: ../Node.cpp
+CMakeFiles/stratos_native.dir/main.cpp.o: ../NodeType.cpp
 CMakeFiles/stratos_native.dir/main.cpp.o: ../main.cpp
 

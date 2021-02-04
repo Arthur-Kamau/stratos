@@ -25,14 +25,14 @@ fstream
 -
 bits/stdc++.h
 -
-NodeType.h
-/home/kamau/Development/Stratos/compiler/stratos_native/NodeType.h
-Node.h
-/home/kamau/Development/Stratos/compiler/stratos_native/Node.h
+Node.cpp
+/home/kamau/Development/Stratos/compiler/stratos_native/Node.cpp
+NodeType.cpp
+/home/kamau/Development/Stratos/compiler/stratos_native/NodeType.cpp
 
-/home/kamau/Development/Stratos/compiler/stratos_native/Node.h
-NodeType.h
-/home/kamau/Development/Stratos/compiler/stratos_native/NodeType.h
+/home/kamau/Development/Stratos/compiler/stratos_native/Node.cpp
+NodeType.cpp
+/home/kamau/Development/Stratos/compiler/stratos_native/NodeType.cpp
 
-/home/kamau/Development/Stratos/compiler/stratos_native/NodeType.h
+/home/kamau/Development/Stratos/compiler/stratos_native/NodeType.cpp
 

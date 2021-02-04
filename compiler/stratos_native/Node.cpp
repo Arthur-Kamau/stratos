@@ -1,5 +1,15 @@
 //
 // Created by kamau on 1/29/21.
 //
+#include "NodeType.cpp"
 
-#include "Node.h"
+class Node {
+public:
+    int start;
+    int end;
+    int lineStart;
+    int lineEnd;
+    NodeType type;
+
+
+};

@@ -4,27 +4,24 @@
 CMakeFiles/stratos_native.dir/Lexer.cpp.o
  /home/kamau/Development/Stratos/compiler/stratos_native/Lexer.cpp
  /home/kamau/Development/Stratos/compiler/stratos_native/Lexer.h
- /home/kamau/Development/Stratos/compiler/stratos_native/Node.h
- /home/kamau/Development/Stratos/compiler/stratos_native/NodeType.h
+ /home/kamau/Development/Stratos/compiler/stratos_native/Node.cpp
+ /home/kamau/Development/Stratos/compiler/stratos_native/NodeType.cpp
 CMakeFiles/stratos_native.dir/Node.cpp.o
  /home/kamau/Development/Stratos/compiler/stratos_native/Node.cpp
- /home/kamau/Development/Stratos/compiler/stratos_native/Node.h
- /home/kamau/Development/Stratos/compiler/stratos_native/NodeType.h
+ /home/kamau/Development/Stratos/compiler/stratos_native/NodeType.cpp
 CMakeFiles/stratos_native.dir/NodeType.cpp.o
  /home/kamau/Development/Stratos/compiler/stratos_native/NodeType.cpp
 CMakeFiles/stratos_native.dir/Parser.cpp.o
  /home/kamau/Development/Stratos/compiler/stratos_native/Parser.cpp
  /home/kamau/Development/Stratos/compiler/stratos_native/Parser.h
  /home/kamau/Development/Stratos/compiler/stratos_native/Token.h
- /home/kamau/Development/Stratos/compiler/stratos_native/TokenType.h
 CMakeFiles/stratos_native.dir/Token.cpp.o
  /home/kamau/Development/Stratos/compiler/stratos_native/Token.cpp
  /home/kamau/Development/Stratos/compiler/stratos_native/Token.h
 CMakeFiles/stratos_native.dir/TokenType.cpp.o
  /home/kamau/Development/Stratos/compiler/stratos_native/TokenType.cpp
- /home/kamau/Development/Stratos/compiler/stratos_native/TokenType.h
 CMakeFiles/stratos_native.dir/main.cpp.o
  /home/kamau/Development/Stratos/compiler/stratos_native/Lexer.h
- /home/kamau/Development/Stratos/compiler/stratos_native/Node.h
- /home/kamau/Development/Stratos/compiler/stratos_native/NodeType.h
+ /home/kamau/Development/Stratos/compiler/stratos_native/Node.cpp
+ /home/kamau/Development/Stratos/compiler/stratos_native/NodeType.cpp
  /home/kamau/Development/Stratos/compiler/stratos_native/main.cpp
