@@ -56,18 +56,18 @@ Lexer::Lexer() {
         if (s_single_char_tokens.empty()) {
             s_single_char_tokens['&'] = NodeType::Ampersand;
             s_single_char_tokens['*'] = NodeType::Asterisk;
-            s_single_char_tokens['['] = NodeType::BracketOpen;
-            s_single_char_tokens[']'] = NodeType::BracketClose;
+            s_single_char_tokens['['] = NodeType::SquareBracketsOpen;
+            s_single_char_tokens[']'] = NodeType::SquareBracketsClose;
             s_single_char_tokens['^'] = NodeType::Caret;
             s_single_char_tokens[':'] = NodeType::Colon;
             s_single_char_tokens[']'] = NodeType::Comma;
-            s_single_char_tokens['{'] = NodeType::CurlyOpen;
-            s_single_char_tokens['}'] = NodeType::CurlyClose;
+            s_single_char_tokens['{'] = NodeType::CurlyBracketsOpen;
+            s_single_char_tokens['}'] = NodeType::CurlyBracketsClose;
             s_single_char_tokens['='] = NodeType::Equals;
             s_single_char_tokens['!'] = NodeType::ExclamationMark;
             s_single_char_tokens['-'] = NodeType::Minus;
-            s_single_char_tokens['('] = NodeType::ParenOpen;
-            s_single_char_tokens[')'] = NodeType::ParenClose;
+            s_single_char_tokens['('] = NodeType::RoundBracketsOpen;
+            s_single_char_tokens[')'] = NodeType::RoundBracketsClose;
             s_single_char_tokens['%'] = NodeType::Percent;
             s_single_char_tokens['.'] = NodeType::Period;
             s_single_char_tokens['|'] = NodeType::Pipe;
@@ -122,15 +122,55 @@ void Lexer::add_one_char_node(char item, NodeType type) {
 }
 
 void Lexer::lex() {
+    int start_character_index;
     char peek_char;
     char start = current();
     switch (start) {
+
+        case '"':
+            peek_char = peek();
+            if (peek_char == '"') {
+
+            } else {
+                std::string text_string;
+                start_character_index = current_character_index;
+                text_string.push_back(start);
+                while (!is_eof()) {
+                    char advanced = advance();
+                    if (current() == '\n') {
+
+                        line_number++;
+
+
+                    }
+
+                    if (current() == '"') {
+                        text_string.push_back(advanced);
+                        break;
+                    } else {
+
+                        text_string.push_back(advanced);
+                    }
+                }
+
+                Node var;
+                var.start = start_character_index;
+                var.end = current_character_index;
+                var.line = line_number;
+                var.literal = text_string;
+                var.type = NodeType::UserDefinedString;
+                nodes.push_back(
+                        var
+                );
+            }
+
+            break;
         case '/':
             peek_char = peek();
             if (peek_char == '*') {
 
                 std::string text_string;
-                int start_character_index = current_character_index;
+                start_character_index = current_character_index;
                 text_string.push_back(start);
                 while (!is_eof()) {
 
@@ -162,7 +202,7 @@ void Lexer::lex() {
 
             } else if (peek_char == '/') {
                 std::string text_string;
-                int start_character_index = current_character_index;
+                start_character_index = current_character_index;
                 text_string.push_back(start);
                 while (!is_eof()) {
 
@@ -218,6 +258,15 @@ void Lexer::lex() {
                 add_one_char_node(start, NodeType::Plus);
             }
             break;
+        case ':':
+            add_one_char_node(start, NodeType::Colon);
+            break;
+        case ',':
+            add_one_char_node(start, NodeType::Comma);
+            break;
+        case '.':
+            add_one_char_node(start, NodeType::Period);
+            break;
         case '<':
             add_one_char_node(start, NodeType::LessThan);
             break;
@@ -230,6 +279,25 @@ void Lexer::lex() {
         case '~':
             add_one_char_node(start, NodeType::Tilde);
             break;
+        case '{':
+            add_one_char_node(start, NodeType::CurlyBracketsOpen);
+            break;
+        case '}':
+            add_one_char_node(start, NodeType::CurlyBracketsClose);
+            break;
+        case '(':
+            add_one_char_node(start, NodeType::RoundBracketsOpen);
+            break;
+        case ')':
+            add_one_char_node(start, NodeType::RoundBracketsClose);
+            break;
+        case '[':
+            add_one_char_node(start, NodeType::SquareBracketsOpen);
+            break;
+        case ']':
+            add_one_char_node(start, NodeType::SquareBracketsClose);
+            break;
+
         case '!':
             peek_char = peek();
 
@@ -255,7 +323,7 @@ void Lexer::lex() {
         default:
             if (non_digit(start) || digit(start)) {
                 std::string text_string;
-                int start_character_index = current_character_index;
+                start_character_index = current_character_index;
                 text_string.push_back(start);
 
                 while (true) {
@@ -280,7 +348,7 @@ void Lexer::lex() {
                 var.literal = text_string;
                 if (non_digit(start)) {
                     if (key_word(text_string)) {
-                        std::cout << "key word " << s_keywords[text_string] << std::endl;
+
                         var.type = s_keywords[text_string];
 
                     } else {

@@ -57,23 +57,31 @@ enum class NodeType {
     Ampersand,
     Asterisk,
 
-    BracketOpen,
-    BracketClose,
+
 
     Caret,
     Colon,
     Comma,
 
-    CurlyOpen,
-    CurlyClose,
+
+    CurlyBracketsClose,
+    CurlyBracketsOpen,
+
+    RoundBracketsOpen,
+    RoundBracketsClose,
+
+    SquareBracketsOpen,
+    SquareBracketsClose,
+
+    AngleBracketsOpen,
+    AngleBracketsClose,
 
     Equals,
     NotEquals,
 
     ExclamationMark,
     Minus,
-    ParenOpen,
-    ParenClose,
+
     Percent,
     Period,
     Pipe,
