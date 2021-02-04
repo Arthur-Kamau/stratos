@@ -16,9 +16,9 @@ struct Node {
 };
 
 static std::ostream& operator<<(std::ostream& os, const Node& node) {
-    return os << "start: " << node.start << std::endl
-              << "end: " << node.end << std::endl
-              << "line: " << node.line << std::endl
-              << "literal: " << node.literal << std::endl
-              << "type:" << node.type << std::endl;
+    return os << "  start: " << node.start << std::endl
+              << "  end: " << node.end << std::endl
+              << "  line: " << node.line << std::endl
+              << "  literal: " << node.literal << std::endl
+              << "  type:" << node.type << std::endl;
 }

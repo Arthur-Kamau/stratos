@@ -3,11 +3,12 @@
 //
 
 #include <iostream>
-
+#define stringify( name ) # name
 enum class NodeType {
     Function,
     Class,
     Package,
+    Import,
     Variable ,
     Value,
     Constant,
@@ -25,6 +26,7 @@ enum class NodeType {
     GreaterThanEquals,
     LessThanEquals,
     EqualsEquals,
+
     MinusMinus,
     PlusPlus,
     Ampersand,
@@ -37,6 +39,7 @@ enum class NodeType {
     CurlyOpen,
     CurlyClose,
     Equals,
+    NotEquals,
     ExclamationMark,
     Minus,
     ParenOpen,
@@ -57,5 +60,5 @@ enum class NodeType {
 static std::ostream& operator << (std::ostream& os, const NodeType& obj)
 {
     os << static_cast<std::underlying_type<NodeType>::type>(obj);
-    return os;
+    return os ;
 }

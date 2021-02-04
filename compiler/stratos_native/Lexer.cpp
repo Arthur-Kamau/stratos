@@ -9,6 +9,8 @@ Lexer::Lexer() {
     {
         if (s_keywords.empty()) {
             s_keywords["await"] = NodeType::Await;
+            s_keywords["package"] = NodeType::Package;
+            s_keywords["import"] = NodeType::Import;
             s_keywords["class"] = NodeType::Class;
             s_keywords["fun"] = NodeType::Function;
             s_keywords["var"] = NodeType::Variable;
@@ -78,33 +80,56 @@ std::vector<Node> Lexer::lex_text(std::string source) {
     return nodes;
 }
 
-char Lexer::current() {
-    return char_array[current_character_index];
+void Lexer::add_two_char_node(std::string item, NodeType type) {
+    Node var;
+    var.start = current_character_index;
+    var.end = current_character_index + 2;
+    var.line = line_number;
+    var.literal = item;
+    var.type = type;
+    nodes.push_back(
+            var
+    );
 }
 
-bool Lexer::is_eof() {
-    return current_character_index >= source_length;
-}
-
-//char Lexer::previous() {
-//    return char_array[current_character_index--];
-//
-//}
-
-char Lexer::advance() {
-    if (!is_eof()) {
-        current_character_index++;
-    }
-    return char_array[current_character_index];
+void Lexer::add_one_char_node(char item, NodeType type) {
+    Node var;
+    var.start = current_character_index;
+    var.end = current_character_index + 1;
+    var.line = line_number;
+    var.literal = item;
+    var.type = type;
+    nodes.push_back(
+            var
+    );
 }
 
 void Lexer::lex() {
-
+    char peek_char;
     char start = current();
     switch (start) {
         case '!':
+            peek_char = peek();
 
+            if (peek_char == '=') {
+                add_two_char_node("!=", NodeType::NotEquals);
+                advance();//consume the = character
+            } else {
+                add_one_char_node(start, NodeType::ExclamationMark);
+            }
             break;
+        case '=' :
+            // peek if next char equal =
+            peek_char = peek();
+
+            if (peek_char == '=') {
+                add_two_char_node("==", NodeType::EqualsEquals);
+                advance();//consume the = character
+            } else {
+                add_one_char_node(start, NodeType::Equals);
+            }
+            break;
+
         default:
             if (non_digit(current())) {
                 std::string text_string;
@@ -114,57 +139,92 @@ void Lexer::lex() {
                 while (true) {
 
                     char advanced = advance();
-                    std::cerr   << "Start  " << start << " advance " << advanced << std::endl;
+                    std::cerr << "Start  " << start << " advance " << advanced << std::endl;
 
-                    if (current() == ' ' || current() == '\n' ) {
-                        if (current() == '\n'){
+                    if (current() == ' ' || current() == '\n') {
+                        std::cerr << "Start  " << std::endl;
+                        if (current() == '\n') {
                             line_number++;
                         }
                         break;
-                    }else{
+                    } else {
+                        std::cerr << "====  " << std::endl;
                         text_string.push_back(advanced);
                     }
                 }
                 Node var;
                 var.start = start_character_index;
                 var.end = current_character_index;
-                var.line =line_number;
-                var.literal =text_string;
-                if(key_word(text_string)) {
+                var.line = line_number;
+                var.literal = text_string;
+                if (key_word(text_string)) {
                     var.type = s_keywords[text_string];
 
-                }else{
-                    var.type =NodeType:: UserDefinedName ;
+                } else {
+                    var.type = NodeType::UserDefinedName;
                 }
 
                 nodes.push_back(
                         var
-                        );
+                );
 
 
             } else {
 
-                std::cerr << "Unknown " << current()     << "is non digit " << non_digit(current()) << "advance"  << advance() << std::endl;
-                if (current() == ' ' || current() == '\n' ) {
-                    if (current() == '\n'){
+
+                if (current() == ' ' || current() == '\n') {
+                    if (current() == '\n') {
                         line_number++;
                     }
-                    advance();
+
+                }else{
+                    std::cerr << "Unknown " << current() << "is non digit " << non_digit(current())  << std::endl;
                 }
             }
     }
+    // proceed to next character
+    // will be gotten with current at start of function
+    // function is in loop
+    advance();
 }
 
 
-bool Lexer::key_word(std::string ch) {
+char Lexer::current() {
+    return char_array[current_character_index];
+}
+
+bool Lexer::is_eof() const {
+    return current_character_index >= source_length;
+}
+
+char Lexer::advance() {
+
+
+    current_character_index++;
+
+
+    return char_array[current_character_index];
+}
+
+char Lexer::peek() {
+//    if (!is_eof()) {
+    int next = current_character_index + 1;
+    return char_array[next];
+//    }
+//    return char_array[current_character_index];
+}
+
+
+bool Lexer::key_word(const std::string &ch) {
 
     return s_keywords.count(ch) > 0;
 }
+
 /*
 symbol : one of
   == , >= , <= ,
 */
-bool Lexer::double_symbol(std::string ch) {
+bool Lexer::double_symbol(const std::string &ch) {
 
     return s_two_char_tokens.count(ch) > 0;
 }
