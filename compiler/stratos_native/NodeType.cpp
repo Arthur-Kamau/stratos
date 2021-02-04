@@ -5,24 +5,49 @@
 #include <iostream>
 #define stringify( name ) # name
 enum class NodeType {
+
+    LineComment,
+    CommentBlock,
+
     Function,
+    Return,
+    Await,
+    Async,
+
     Class,
     Package,
     Import,
     Variable ,
     Value,
-    Constant,
+    Let,
+    Int,
+    Double,
+    String,
+    Char,
+
+
     UserDefinedName,
+    UserDefinedInt,
+    UserDefinedLong,
+    UserDefinedString,
+    UserDefinedChar,
+
+    Private,
+    Public,
+
     ExclamationMarkEquals,
     AmpersandEquals,
-    Await,
+
     While,
     When,
     For,
+
     False,
     True,
+
     Continue,
     Break,
+
     GreaterThanEquals,
     LessThanEquals,
     EqualsEquals,
@@ -31,15 +56,20 @@ enum class NodeType {
     PlusPlus,
     Ampersand,
     Asterisk,
+
     BracketOpen,
     BracketClose,
+
     Caret,
     Colon,
     Comma,
+
     CurlyOpen,
     CurlyClose,
+
     Equals,
     NotEquals,
+
     ExclamationMark,
     Minus,
     ParenOpen,
@@ -48,13 +78,21 @@ enum class NodeType {
     Period,
     Pipe,
     Plus,
+    Multiply,
     QuestionMark,
     Semicolon,
     Slash,
     Tilde,
+
     LessThan,
     GreaterThan,
+
     TripleDot,
+
+    Or,
+    And,
+    XOr,
+    XAnd
 };
 
 static std::ostream& operator << (std::ostream& os, const NodeType& obj)

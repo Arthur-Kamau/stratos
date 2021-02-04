@@ -8,13 +8,26 @@
 Lexer::Lexer() {
     {
         if (s_keywords.empty()) {
-            s_keywords["await"] = NodeType::Await;
+
+
             s_keywords["package"] = NodeType::Package;
             s_keywords["import"] = NodeType::Import;
             s_keywords["class"] = NodeType::Class;
+
             s_keywords["fun"] = NodeType::Function;
+            s_keywords["await"] = NodeType::Await;
+            s_keywords["async"] = NodeType::Async;
+            s_keywords["return"] = NodeType::Return;
+
             s_keywords["var"] = NodeType::Variable;
             s_keywords["val"] = NodeType::Value;
+            s_keywords["let"] = NodeType::Let;
+
+            s_keywords["int"] = NodeType::Int;
+            s_keywords["string"] = NodeType::String;
+            s_keywords["double"] = NodeType::Double;
+            s_keywords["char"] = NodeType::Char;
+
             s_keywords["for"] = NodeType::For;
 
             s_keywords["while"] = NodeType::While;
@@ -24,6 +37,10 @@ Lexer::Lexer() {
 
             s_keywords["break"] = NodeType::Break;
             s_keywords["continue"] = NodeType::Continue;
+
+            s_keywords["private"] = NodeType::Private;
+            s_keywords["public"] = NodeType::Public;
+
 
         }
 
@@ -108,6 +125,111 @@ void Lexer::lex() {
     char peek_char;
     char start = current();
     switch (start) {
+        case '/':
+            peek_char = peek();
+            if (peek_char == '*') {
+
+                std::string text_string;
+                int start_character_index = current_character_index;
+                text_string.push_back(start);
+                while (!is_eof()) {
+
+                    char advanced = advance();
+
+                    if (current() == '*' && peek() == '/') {
+
+                        if (current() == '\n') {
+                            line_number++;
+                        }
+
+                        text_string.push_back(current());
+                        text_string.push_back(advance());
+                        break;
+                    } else {
+
+                        text_string.push_back(advanced);
+                    }
+                }
+                Node var;
+                var.start = start_character_index;
+                var.end = current_character_index;
+                var.line = line_number;
+                var.literal = text_string;
+                var.type = NodeType::CommentBlock;
+                nodes.push_back(
+                        var
+                );
+
+            } else if (peek_char == '/') {
+                std::string text_string;
+                int start_character_index = current_character_index;
+                text_string.push_back(start);
+                while (!is_eof()) {
+
+                    char advanced = advance();
+                    if (current() == '\n') {
+
+                        line_number++;
+
+                        break;
+                    } else {
+
+                        text_string.push_back(advanced);
+                    }
+                }
+                Node var;
+                var.start = start_character_index;
+                var.end = current_character_index;
+                var.line = line_number;
+                var.literal = text_string;
+                var.type = NodeType::LineComment;
+                nodes.push_back(
+                        var
+                );
+            } else {
+                std::cerr << "Error , expected '/' or '*'  but got " << current() << std::endl;
+                std::exit(1);
+            }
+            break;
+        case '&':
+            peek_char = peek();
+            if (peek_char == '&') {
+                add_two_char_node("&&", NodeType::And);
+                advance();//consume the = character
+            } else {
+                add_one_char_node(start, NodeType::XAnd);
+            }
+            break;
+        case '|':
+            peek_char = peek();
+            if (peek_char == '|') {
+                add_two_char_node("||", NodeType::Or);
+                advance();//consume the = character
+            } else {
+                add_one_char_node(start, NodeType::XOr);
+            }
+            break;
+        case '+':
+            peek_char = peek();
+            if (peek_char == '+') {
+                add_two_char_node("++", NodeType::PlusPlus);
+                advance();//consume the = character
+            } else {
+                add_one_char_node(start, NodeType::Plus);
+            }
+            break;
+        case '<':
+            add_one_char_node(start, NodeType::LessThan);
+            break;
+        case '>':
+            add_one_char_node(start, NodeType::GreaterThan);
+            break;
+        case '*':
+            add_one_char_node(start, NodeType::Multiply);
+            break;
+        case '~':
+            add_one_char_node(start, NodeType::Tilde);
+            break;
         case '!':
             peek_char = peek();
 
@@ -131,7 +253,7 @@ void Lexer::lex() {
             break;
 
         default:
-            if (non_digit(current())) {
+            if (non_digit(start) || digit(start)) {
                 std::string text_string;
                 int start_character_index = current_character_index;
                 text_string.push_back(start);
@@ -139,16 +261,15 @@ void Lexer::lex() {
                 while (true) {
 
                     char advanced = advance();
-                    std::cerr << "Start  " << start << " advance " << advanced << std::endl;
 
                     if (current() == ' ' || current() == '\n') {
-                        std::cerr << "Start  " << std::endl;
+
                         if (current() == '\n') {
                             line_number++;
                         }
                         break;
                     } else {
-                        std::cerr << "====  " << std::endl;
+
                         text_string.push_back(advanced);
                     }
                 }
@@ -157,11 +278,17 @@ void Lexer::lex() {
                 var.end = current_character_index;
                 var.line = line_number;
                 var.literal = text_string;
-                if (key_word(text_string)) {
-                    var.type = s_keywords[text_string];
+                if (non_digit(start)) {
+                    if (key_word(text_string)) {
+                        std::cout << "key word " << s_keywords[text_string] << std::endl;
+                        var.type = s_keywords[text_string];
 
+                    } else {
+                        var.type = NodeType::UserDefinedName;
+                    }
                 } else {
-                    var.type = NodeType::UserDefinedName;
+                    //todo long
+                    var.type = NodeType::UserDefinedInt;
                 }
 
                 nodes.push_back(
@@ -177,8 +304,8 @@ void Lexer::lex() {
                         line_number++;
                     }
 
-                }else{
-                    std::cerr << "Unknown " << current() << "is non digit " << non_digit(current())  << std::endl;
+                } else {
+                    std::cerr << "Unknown " << current() << "is non digit " << non_digit(current()) << std::endl;
                 }
             }
     }
@@ -207,11 +334,10 @@ char Lexer::advance() {
 }
 
 char Lexer::peek() {
-//    if (!is_eof()) {
+
     int next = current_character_index + 1;
     return char_array[next];
-//    }
-//    return char_array[current_character_index];
+
 }
 
 
