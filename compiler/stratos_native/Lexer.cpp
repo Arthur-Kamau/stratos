@@ -330,7 +330,9 @@ void Lexer::lex() {
 
                     char advanced = advance();
 
-                    if (current() == ' ' || current() == '\n') {
+                    if (current() == ' ' || current() == '{' || current() == '}' || current() == '(' ||
+                        current() == ')' || current() == '[' || current() == ']' || current() == '.' ||
+                        current() == ':' || current() == ';' || current() == ',' || current() == '\n') {
 
                         if (current() == '\n') {
                             line_number++;
