@@ -11,6 +11,8 @@ enum class NodeType {
 
     Function,
     Return,
+    Stream,
+    Yield,
     Await,
     Async,
 
@@ -38,6 +40,7 @@ enum class NodeType {
     ExclamationMarkEquals,
     AmpersandEquals,
 
+    With,
     While,
     When,
     For,
@@ -58,6 +61,13 @@ enum class NodeType {
     Asterisk,
 
 
+    As,
+    Is,
+    Range,
+
+    List,
+    Set,
+    Map,
 
     Caret,
     Colon,

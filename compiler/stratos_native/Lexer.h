@@ -36,6 +36,7 @@ private:
     bool is_eof() const ;
     char advance();
     char peek();
+    char double_peek();
     void lex();
 
 public:

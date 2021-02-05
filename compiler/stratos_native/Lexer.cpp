@@ -18,6 +18,8 @@ Lexer::Lexer() {
             s_keywords["await"] = NodeType::Await;
             s_keywords["async"] = NodeType::Async;
             s_keywords["return"] = NodeType::Return;
+            s_keywords["yield"] = NodeType::Yeild;
+            s_keywords["stream"] = NodeType::Stream;
 
             s_keywords["var"] = NodeType::Variable;
             s_keywords["val"] = NodeType::Value;
@@ -29,7 +31,15 @@ Lexer::Lexer() {
             s_keywords["char"] = NodeType::Char;
 
             s_keywords["for"] = NodeType::For;
+            s_keywords["is"] = NodeType::Is;
+            s_keywords["as"] = NodeType::As;
+            s_keywords["range"] = NodeType::Range;
 
+            s_keywords["list"] = NodeType::List;
+            s_keywords["set"] = NodeType::Set;
+            s_keywords["map"] = NodeType::Map;
+
+            s_keywords["with"] = NodeType::With;
             s_keywords["while"] = NodeType::While;
             s_keywords["when"] = NodeType::When;
             s_keywords["else"] = NodeType::Else;
@@ -98,6 +108,17 @@ std::vector<Node> Lexer::lex_text(std::string source) {
     return nodes;
 }
 
+void Lexer::add_three_char_node(std::string item, NodeType type) {
+    Node var;
+    var.start = current_character_index;
+    var.end = current_character_index + 3;
+    var.line = line_number;
+    var.literal = item;
+    var.type = type;
+    nodes.push_back(
+            var
+    );
+}
 void Lexer::add_two_char_node(std::string item, NodeType type) {
     Node var;
     var.start = current_character_index;
@@ -125,6 +146,7 @@ void Lexer::add_one_char_node(char item, NodeType type) {
 void Lexer::lex() {
     int start_character_index;
     char peek_char;
+    char double_peek_char;
     char start = current();
     switch (start) {
 
@@ -325,7 +347,16 @@ void Lexer::lex() {
             add_one_char_node(start, NodeType::Comma);
             break;
         case '.':
-            add_one_char_node(start, NodeType::Period);
+            peek_char = peek();
+            double_peek_char = double_peek();
+            if(peek_char=='.' && double_peek_char=='.'){
+
+                add_three_char_node(start, NodeType::Range);
+                advance(); // consume the .
+                advance();// consume the .
+            }else {
+                add_one_char_node(start, NodeType::Period);
+            }
             break;
         case '<':
             add_one_char_node(start, NodeType::LessThan);
@@ -466,6 +497,10 @@ char Lexer::advance() {
     return char_array[current_character_index];
 }
 
+char Lexer::double_peek() {
+    int next = current_character_index + 2;
+    return char_array[next];
+}
 char Lexer::peek() {
 
     int next = current_character_index + 1;
