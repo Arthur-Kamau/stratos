@@ -32,6 +32,7 @@ Lexer::Lexer() {
 
             s_keywords["while"] = NodeType::While;
             s_keywords["when"] = NodeType::When;
+            s_keywords["else"] = NodeType::Else;
             s_keywords["true"] = NodeType::True;
             s_keywords["false"] = NodeType::False;
 
@@ -130,7 +131,17 @@ void Lexer::lex() {
         case '"':
             peek_char = peek();
             if (peek_char == '"') {
-
+                Node var;
+                var.start =current_character_index ;
+                var.end = current_character_index+1;
+                var.line = line_number;
+                var.literal = "";
+                var.type = NodeType::UserDefinedString;
+                nodes.push_back(
+                        var
+                );
+                //consume the closing "
+                advance();
             } else {
                 std::string text_string;
                 start_character_index = current_character_index;
@@ -164,6 +175,55 @@ void Lexer::lex() {
                 );
             }
 
+            break;
+        case '\'':
+            peek_char = peek();
+            if (peek_char == '\'') {
+                Node var;
+                var.start =current_character_index ;
+                var.end = current_character_index+1;
+                var.line = line_number;
+                var.literal = "";
+                var.type = NodeType::UserDefinedChar;
+                nodes.push_back(
+                        var
+                );
+                advance();
+            } else {
+                std::string text_string;
+                start_character_index = current_character_index;
+                text_string.push_back(start);
+                while (!is_eof()) {
+                    char advanced = advance();
+                    if (current() == '\n') {
+
+                        line_number++;
+
+
+                    }
+
+                    if (current() == '"') {
+                        text_string.push_back(advanced);
+                        break;
+                    } else {
+
+                        text_string.push_back(advanced);
+                    }
+                }
+
+                Node var;
+                var.start = start_character_index;
+                var.end = current_character_index;
+                var.line = line_number;
+                var.literal = text_string;
+                var.type = NodeType::UserDefinedChar;
+                nodes.push_back(
+                        var
+                );
+            }
+
+            //consume the closing '
+            advance();
             break;
         case '/':
             peek_char = peek();
@@ -296,6 +356,9 @@ void Lexer::lex() {
             break;
         case ']':
             add_one_char_node(start, NodeType::SquareBracketsClose);
+            break;
+        case '_':
+            add_one_char_node(start, NodeType::UnderScore);
             break;
 
         case '!':

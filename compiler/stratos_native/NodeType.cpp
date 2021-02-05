@@ -100,7 +100,7 @@ enum class NodeType {
     Or,
     And,
     XOr,
-    XAnd
+    XAnd, UnderScore, Else
 };
 
 static std::ostream& operator << (std::ostream& os, const NodeType& obj)
