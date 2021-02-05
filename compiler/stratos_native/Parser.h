@@ -12,7 +12,7 @@
 #ifndef STRATOS_NATIVE_PARSER_H
 #define STRATOS_NATIVE_PARSER_H
 
-class parser {
+class Parser {
 
 private:
 
