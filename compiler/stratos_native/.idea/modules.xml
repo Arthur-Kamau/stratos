@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/stratos_native.iml" filepath="$PROJECT_DIR$/.idea/stratos_native.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/test_2.iml" filepath="$PROJECT_DIR$/.idea/test_2.iml" />
     </modules>
   </component>
 </project>

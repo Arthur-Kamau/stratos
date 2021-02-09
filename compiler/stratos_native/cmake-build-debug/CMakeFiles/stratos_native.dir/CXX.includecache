@@ -6,26 +6,6 @@
 
 #IncludeRegexTransform: 
 
-/home/kamau/Development/Stratos/compiler/stratos_native/Lexer.cpp
-Lexer.h
-/home/kamau/Development/Stratos/compiler/stratos_native/Lexer.h
-
-/home/kamau/Development/Stratos/compiler/stratos_native/Lexer.h
-iostream
--
-stdlib.h
--
-vector
--
-map
--
-fstream
--
-bits/stdc++.h
--
-Node.cpp
-/home/kamau/Development/Stratos/compiler/stratos_native/Node.cpp
-
 /home/kamau/Development/Stratos/compiler/stratos_native/Node.cpp
 iostream
 -
@@ -35,4 +15,24 @@ NodeType.cpp
 /home/kamau/Development/Stratos/compiler/stratos_native/NodeType.cpp
 iostream
 -
+
+/home/kamau/Development/Stratos/compiler/stratos_native/Parser.cpp
+Parser.h
+/home/kamau/Development/Stratos/compiler/stratos_native/Parser.h
+
+/home/kamau/Development/Stratos/compiler/stratos_native/Parser.h
+vector
+-
+iostream
+-
+map
+-
+fstream
+-
+Token.h
+/home/kamau/Development/Stratos/compiler/stratos_native/Token.h
+Node.cpp
+/home/kamau/Development/Stratos/compiler/stratos_native/Node.cpp
+
+/home/kamau/Development/Stratos/compiler/stratos_native/Token.h
 

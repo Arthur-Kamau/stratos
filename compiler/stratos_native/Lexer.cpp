@@ -105,6 +105,15 @@ std::vector<Node> Lexer::lex_text(std::string source) {
         lex();
 
     }
+    Node var;
+    var.start = current_character_index;
+    var.end = current_character_index + 1;
+    var.line = line_number;
+    var.literal = "";
+    var.type = NodeType::Eof;
+
+    nodes.push_back(var);
+
     return nodes;
 }
 
@@ -119,6 +128,7 @@ void Lexer::add_three_char_node(std::string item, NodeType type) {
             var
     );
 }
+
 void Lexer::add_two_char_node(std::string item, NodeType type) {
     Node var;
     var.start = current_character_index;
@@ -350,8 +360,7 @@ void Lexer::lex() {
             peek_char = peek();
             double_peek_char = double_peek();
             if(peek_char=='.' && double_peek_char=='.'){
-
-                add_three_char_node(start, NodeType::Range);
+                add_three_char_node("...", NodeType::Range);
                 advance(); // consume the .
                 advance();// consume the .
             }else {

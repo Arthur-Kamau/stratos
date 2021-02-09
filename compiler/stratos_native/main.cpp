@@ -5,6 +5,8 @@
 #include <vector>
 #include <filesystem>
 #include "Lexer.h"
+#include "Parser.h"
+
 namespace fs = std::filesystem;
 
 void compile_script(std::string basicString);
@@ -62,8 +64,13 @@ void compile_script(std::string file_path) {
 
     Lexer l=Lexer();
     std::vector<Node> n = l.lex_text(str);
-    for (auto i: n)
-        std::cerr << "Nodes " << std::endl << i << std::endl;
+//    for (auto i: n)
+//        std::cerr << "Nodes " << std::endl << i << std::endl;
 
     // parse nodes to tokens
+    Parser p =Parser();
+    std::vector<Token> t = p.parse(n);
+    for (auto i: t)
+        std::cerr << "Token " << std::endl << i << std::endl;
+
 }

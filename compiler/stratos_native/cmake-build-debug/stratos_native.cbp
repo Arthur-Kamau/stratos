@@ -93,13 +93,7 @@
 		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/Node.cpp">
 			<Option target="stratos_native"/>
 		</Unit>
-		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/Node.h">
-			<Option target="stratos_native"/>
-		</Unit>
 		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/NodeType.cpp">
-			<Option target="stratos_native"/>
-		</Unit>
-		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/NodeType.h">
 			<Option target="stratos_native"/>
 		</Unit>
 		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/Parser.cpp">
@@ -117,7 +111,10 @@
 		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/TokenType.cpp">
 			<Option target="stratos_native"/>
 		</Unit>
-		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/TokenType.h">
+		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/TokenVariable.cpp">
+			<Option target="stratos_native"/>
+		</Unit>
+		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/TokenVariable.h">
 			<Option target="stratos_native"/>
 		</Unit>
 		<Unit filename="/home/kamau/Development/Stratos/compiler/stratos_native/main.cpp">

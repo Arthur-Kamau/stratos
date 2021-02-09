@@ -44,6 +44,6 @@
 
 
 ###Code patterns.
-1. Classes, Structs & enums start with upeercase 
-2. variables are underscores.
-3. classes should have a cpp & header files.
+1. Classes, Structs & enums start with uppercase 
+2. variables start with lower letter, private variables start with an underscore)
+3. classes should have a cpp & header files(wherever possible)

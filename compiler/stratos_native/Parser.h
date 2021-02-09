@@ -11,14 +11,24 @@
 
 #ifndef STRATOS_NATIVE_PARSER_H
 #define STRATOS_NATIVE_PARSER_H
+#include "Node.cpp"
 
 class Parser {
 
 private:
-
+    std::vector<Token> token_list;
+    std::vector<Node> nodes_list;
+    int  current_character_index =0  ;
+    void parse_node();
 
 public:
-    std::vector<Token> parse();
+    std::vector<Token> parse(std::vector<Node> nodes);
+
+    bool is_eof() const;
+
+    Node peek() const;
+
+    Node advance() ;
 };
 
 #endif //STRATOS_NATIVE_PARSER_H

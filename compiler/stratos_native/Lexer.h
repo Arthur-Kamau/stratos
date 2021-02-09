@@ -32,6 +32,7 @@ private:
 
     void add_one_char_node(char item, NodeType type);
     void add_two_char_node(std::string item, NodeType type);
+    void add_three_char_node(std::string item, NodeType type);
     char current();
     bool is_eof() const ;
     char advance();

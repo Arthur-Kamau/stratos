@@ -305,6 +305,33 @@ TokenType.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/TokenType.cpp.s
 .PHONY : TokenType.cpp.s
 
+TokenVariable.o: TokenVariable.cpp.o
+
+.PHONY : TokenVariable.o
+
+# target to build an object file
+TokenVariable.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/TokenVariable.cpp.o
+.PHONY : TokenVariable.cpp.o
+
+TokenVariable.i: TokenVariable.cpp.i
+
+.PHONY : TokenVariable.i
+
+# target to preprocess a source file
+TokenVariable.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/TokenVariable.cpp.i
+.PHONY : TokenVariable.cpp.i
+
+TokenVariable.s: TokenVariable.cpp.s
+
+.PHONY : TokenVariable.s
+
+# target to generate assembly for a file
+TokenVariable.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/stratos_native.dir/build.make CMakeFiles/stratos_native.dir/TokenVariable.cpp.s
+.PHONY : TokenVariable.cpp.s
+
 main.o: main.cpp.o
 
 .PHONY : main.o
@@ -359,6 +386,9 @@ help:
 	@echo "... TokenType.o"
 	@echo "... TokenType.i"
 	@echo "... TokenType.s"
+	@echo "... TokenVariable.o"
+	@echo "... TokenVariable.i"
+	@echo "... TokenVariable.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"
