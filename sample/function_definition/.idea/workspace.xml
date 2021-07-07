@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="60bceb29-e2bb-40ef-80f4-1b2524c05161" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/../../compiler/Java/.idea/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../compiler/Java/.idea/kotlinc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../compiler/Java/.idea/libraries/KotlinJavaRuntime.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../compiler/Java/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../compiler/Java/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../compiler/Java/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../compiler/Java/src/Stratos.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../compiler/Java/stratos_jvm.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../tooling/formatter/.idea/uiDesigner.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../tooling/formatter/src/org/stratos/language/FileWalker.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../tooling/formatter/src/org/stratos/language/ImportOrder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tooling/formatter/src/org/stratos/language/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/../../tooling/formatter/src/org/stratos/language/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../tooling/intellij/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../tooling/intellij/.idea/workspace.xml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="ProjectId" id="1lmHFc5MwkIwd28XmAyX1uhwt7t" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="stratos.was_setup_v_1_0" value="true" />
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="60bceb29-e2bb-40ef-80f4-1b2524c05161" name="Default Changelist" comment="" />
+      <created>1608195247184</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1608195247184</updated>
+    </task>
+    <servers />
+  </component>
+</project>

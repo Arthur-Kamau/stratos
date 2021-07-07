@@ -1,7 +1,7 @@
 {
 	".source.st": {
 		"main": {
-			"prefix": "main",
+			"prefix": "fmain",
 			"description": "Insert a main function, used as an entry point.",
 			"body": [
 				"function main() {",
@@ -112,6 +112,15 @@
 				"class ${1:Name} {",
 				"  $0",
 				"}"
+			]
+		},
+
+		"package": {
+			"prefix": "pac",
+			"description": "Insert a class definition.",
+			"body": [
+				"package $0"
+				
 			]
 		},
 		

@@ -19,18 +19,19 @@ function main(){
        literal 
    
    """ ;
-      // mutable  and nullable
-    var letter : Char = 'v'  // ensure single quote
+   
+   // imutable  
+    val letter : Char = 'v'  // ensure single quote
 
    // imutable and nullable
-   var userAge  = SomeFunction(); 
+   val userAge  = SomeFunction(); 
    //  imutable  and nullable  with explicit type
-   var userHeight : int  = 145 ;
+   val userHeight : int  = 145 ;
 
-   // non nullable and imutable 
-   var userLat  = 12.333 ; 
-   // non nullable and imutable   with explicit type
-   var userLong : double = 12.333 ; 
-   //  non nullable and mutable
-   var mutable userAngle : double = 12.333 ; 
+   // non nullable  
+   let userLat  = 12.333 ; 
+   // non nullable    with explicit type
+   let userLong : double = 12.333 ; 
+   //  non nullable 
+   let  mutable userAngle : double = 12.333 ; 
 }

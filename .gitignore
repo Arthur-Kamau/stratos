@@ -27,3 +27,8 @@ out/*/**
 gen/
 */gen/**
 gen/*/**
+
+#dump files
+**/*.hprof
+*.hprof
+
