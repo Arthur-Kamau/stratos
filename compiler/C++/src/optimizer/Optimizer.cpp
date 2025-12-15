@@ -118,7 +118,7 @@ void Optimizer::visit(ReturnStmt& stmt) {
 }
 
 void Optimizer::visit(ClassDecl& stmt) {} // No-op
-void Optimizer::visit(NamespaceDecl& stmt) {} // No-op
+void Optimizer::visit(PackageDecl& stmt) {} // No-op
 void Optimizer::visit(PrintStmt& stmt) { stmt.expression->accept(*this); }
 
 } // namespace stratos

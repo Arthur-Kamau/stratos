@@ -1,27 +1,56 @@
-### Error syntax
-* To promote  type safety  functions/ classes can result in non  nullable and nullable types.
+### Error Handling
 
-* Nullable types have `let` as the base declaration  while non nullables have `var` and `val` as the base declaration (`variables.md`)
+Stratos uses `Optional` types and pattern matching with `when` for error handling instead of traditional try/catch blocks.
 
-* 
+### Error Handling with Optional
 
+Functions that can fail return `Optional<T>` types. Use pattern matching to handle both success and error cases.
 
-Errors derive from the exception class the error syntax should resemble these :
+**Example: File Operations**
 
-`try {` <br> 
- &emsp; `let path =  Path("~/me.txt");` <br>
- &emsp; `let file = File(path.absolute);` <br>
-  &emsp; `let fileData = file.readAll(); ` <br>
-`} onfail e of type FileNotFoundException{` <br>
- &emsp;  `e.printStackTrace();` <br>
-`} onfail e of type FilePermissionException{` <br>
- &emsp;  `e.printStackTrace();` <br>
-`} catch e of type Exception {`  <br>
-&emsp;  `e.printStackTrace();` <br>
-`} finally {` <br>
-&emsp; `print("done")` <br>
-`}`
+```stratos
+val fileData: Optional<string> = readFile("~/me.txt");
 
-descrption the  try ctatch logic gets the path as a string and resolve to the os dependent file path for example in linux its `/home/user/me.txt`  then the absolute path is passed into `File` and finally  `readAll` reads the whole file as String the   `readAll` can throw `FileNotFoundException` if the file is not found or `FilePermissionException` if the file does not have access permission.This two expetions are handled uniquly finally using the `catch` key word we capt
-ure all other errors.
+when (fileData) {
+    Some(data) -> {
+        print("File contents: " + data);
+    }
+    None -> {
+        print("Error: Could not read file");
+    }
+}
+```
 
+**Example: Using .is_some() and .is_none() in conditions**
+
+```stratos
+val result: Optional<int> = compute();
+
+if (result.is_some()) {
+    // Safe to use result
+    print("Success!");
+} else {
+    // Handle None case
+    print("Operation failed");
+}
+```
+
+### Chaining Optional Operations
+
+Use safe call operator `?.` to chain operations on Optional values:
+
+```stratos
+val path: Optional<Path> = Path("~/me.txt");
+val content: Optional<string> = path?.readAll();
+
+val text = content ?: "File not found";
+print(text);
+```
+
+### Best Practices
+
+* Functions that can fail should return `Optional<T>` types
+* Use `when` for exhaustive pattern matching on Optional values
+* Use `.is_some()` and `.is_none()` for simple conditional checks
+* Use `?.` for safe chaining of operations
+* Use `?:` (null coalescing) to provide default values

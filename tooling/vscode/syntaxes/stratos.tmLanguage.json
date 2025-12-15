@@ -7,7 +7,6 @@
 		{ "include": "#keywords" },
 		{ "include": "#storage" },
 		{ "include": "#constants" },
-		{ "include": "#support" },
 		{ "include": "#functions" },
 		{ "include": "#types" },
 		{ "include": "#operators" },
@@ -22,8 +21,8 @@
 					"name": "comment.line.double-slash.stratos"
 				},
 				{
-					"begin": "/\*",
-					"end": "\*/",
+					"begin": "/\\*",
+					"end": "\\*/",
 					"name": "comment.block.stratos"
 				}
 			]
@@ -35,7 +34,10 @@
 					"end": "\"",
 					"name": "string.quoted.double.stratos",
 					"patterns": [
-						{ "match": "\\.", "name": "constant.character.escape.stratos" }
+						{
+							"match": "\\\\(n|r|t|\\\\|\"|')",
+							"name": "constant.character.escape.stratos"
+						}
 					]
 				}
 			]
@@ -43,28 +45,40 @@
 		"keywords": {
 			"patterns": [
 				{
-					"match": "\\b(if|else|while|for|return|when|break|continue)\\b",
-					"name": "keyword.control.stratos"
+					"match": "\\b(if|else|while|for|return|when|break|continue|do|with)\\b",
+					"name": "keyword.control.flow.stratos"
 				},
 				{
-					"match": "\\b(use|namespace|import|as)\\b",
-					"name": "keyword.other.import.stratos"
+					"match": "\\b(in|is|as|not)\\b",
+					"name": "keyword.operator.logical.stratos"
 				},
 				{
-					"match": "\\b(class|interface|struct|enum|constructor)\\b",
-					"name": "keyword.declaration.stratos"
+					"match": "\\b(use|import|package)\\b",
+					"name": "keyword.control.import.stratos"
+				},
+				{
+					"match": "\\b(class|interface|struct|enum|type)\\b",
+					"name": "storage.type.class.stratos"
+				},
+				{
+					"match": "\\b(constructor|destroy)\\b",
+					"name": "storage.type.function.stratos"
 				},
 				{
 					"match": "\\b(fn)\\b",
-					"name": "keyword.function.stratos"
+					"name": "storage.type.function.stratos"
 				},
 				{
-					"match": "\\b(true|false|None|Some|null)\\b",
-					"name": "constant.language.stratos"
+					"match": "\\b(private|public)\\b",
+					"name": "storage.modifier.access.stratos"
 				},
 				{
-					"match": "\\b(this|super)\\b",
-					"name": "variable.language.stratos"
+					"match": "\\b(override)\\b",
+					"name": "storage.modifier.stratos"
+				},
+				{
+					"match": "\\b(thread|process|task|stream)\\b",
+					"name": "keyword.other.stratos"
 				}
 			]
 		},
@@ -72,7 +86,7 @@
 			"patterns": [
 				{
 					"match": "\\b(var|val)\\b",
-					"name": "storage.type.variable.stratos"
+					"name": "storage.type.stratos"
 				},
 				{
 					"match": "\\b(mut)\\b",
@@ -80,43 +94,139 @@
 				}
 			]
 		},
+		"constants": {
+			"patterns": [
+				{
+					"match": "\\b(true|false)\\b",
+					"name": "constant.language.boolean.stratos"
+				},
+				{
+					"match": "\\b(None|Some|null)\\b",
+					"name": "constant.language.null.stratos"
+				},
+				{
+					"match": "\\b(this)\\b",
+					"name": "variable.language.this.stratos"
+				},
+				{
+					"match": "\\b(super)\\b",
+					"name": "variable.language.super.stratos"
+				},
+				{
+					"match": "\\b(0[xX][0-9A-Fa-f]+|0[bB][01]+|[0-9]+)\\b",
+					"name": "constant.numeric.integer.stratos"
+				},
+				{
+					"match": "\\b[0-9]+\\.[0-9]+([eE][+-]?[0-9]+)?\\b",
+					"name": "constant.numeric.float.stratos"
+				}
+			]
+		},
 		"types": {
 			"patterns": [
 				{
-					"match": "\\b(int|double|string|bool|void|unit|any|Optional)\\b",
-					"name": "support.type.primitive.stratos"
+					"match": "\\b(int|bit|byte|char)\\b",
+					"name": "storage.type.numeric.stratos"
+				},
+				{
+					"match": "\\b(double|float)\\b",
+					"name": "storage.type.numeric.stratos"
+				},
+				{
+					"match": "\\b(string)\\b",
+					"name": "storage.type.string.stratos"
+				},
+				{
+					"match": "\\b(bool)\\b",
+					"name": "storage.type.boolean.stratos"
+				},
+				{
+					"match": "\\b(void|unit)\\b",
+					"name": "storage.type.void.stratos"
+				},
+				{
+					"match": "\\b(Optional|list|set|array|tuple|map)\\b",
+					"name": "storage.type.collection.stratos"
+				},
+				{
+					"match": "\\b([A-Z][A-Za-z0-9_]*)\\b",
+					"name": "entity.name.type.stratos"
 				}
 			]
 		},
 		"functions": {
 			"patterns": [
 				{
-					"match": "\\b([A-Za-z_][A-Za-z0-9_]*)(?=\\()",
-					"name": "entity.name.function.stratos"
-				}
-			]
-		},
-		"constants": {
-			"patterns": [
+					"match": "\\b([a-z_][A-Za-z0-9_]*)(?=\\s*\\()",
+					"name": "entity.name.function.call.stratos"
+				},
 				{
-					"match": "\\b[0-9]+(\\.[0-9]+)?\\b",
-					"name": "constant.numeric.stratos"
+					"match": "\\b(print|println)\\b",
+					"name": "support.function.builtin.stratos"
 				}
 			]
 		},
 		"operators": {
 			"patterns": [
 				{
-					"match": "(\|>|\?:|\?\.|==|!=|<=|>=|<|>|\+|\-|\*|/|%|=|\+=|\-=)",
-					"name": "keyword.operator.stratos"
+					"match": "(\\|>)",
+					"name": "keyword.operator.pipe.stratos"
+				},
+				{
+					"match": "(\\?:|\\?\\.)",
+					"name": "keyword.operator.optional.stratos"
+				},
+				{
+					"match": "(==|!=|<=|>=|<|>)",
+					"name": "keyword.operator.comparison.stratos"
+				},
+				{
+					"match": "(\\+\\+|--|\\+|-|\\*|/|%)",
+					"name": "keyword.operator.arithmetic.stratos"
+				},
+				{
+					"match": "(&&|\\|\\||!)",
+					"name": "keyword.operator.logical.stratos"
+				},
+				{
+					"match": "(=|\\+=|-=|\\*=|/=)",
+					"name": "keyword.operator.assignment.stratos"
+				},
+				{
+					"match": "(->)",
+					"name": "keyword.operator.arrow.stratos"
 				}
 			]
 		},
 		"punctuation": {
 			"patterns": [
 				{
-					"match": "\{|\}|\(|\)|;|,|\.|:",
-					"name": "punctuation.stratos"
+					"match": "[{}]",
+					"name": "punctuation.definition.block.stratos"
+				},
+				{
+					"match": "[\\[\\]]",
+					"name": "punctuation.definition.array.stratos"
+				},
+				{
+					"match": "[()]",
+					"name": "punctuation.definition.parameters.stratos"
+				},
+				{
+					"match": ";",
+					"name": "punctuation.terminator.statement.stratos"
+				},
+				{
+					"match": ",",
+					"name": "punctuation.separator.comma.stratos"
+				},
+				{
+					"match": ":",
+					"name": "punctuation.separator.colon.stratos"
+				},
+				{
+					"match": "\\.",
+					"name": "punctuation.accessor.stratos"
 				}
 			]
 		}

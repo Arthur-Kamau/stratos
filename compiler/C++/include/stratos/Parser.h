@@ -23,7 +23,7 @@ private:
     std::unique_ptr<Stmt> varDeclaration();
     std::unique_ptr<Stmt> fnDeclaration(const std::string& kind);
     std::unique_ptr<Stmt> classDeclaration();
-    std::unique_ptr<Stmt> namespaceDeclaration();
+    std::unique_ptr<Stmt> packageDeclaration();
     
     // Statements
     std::unique_ptr<Stmt> statement();

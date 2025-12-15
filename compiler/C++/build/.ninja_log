@@ -14,3 +14,12 @@
 10	1314	7874892500488731	CMakeFiles/stratos.dir/src/main.cpp.obj	916c6094476ea1dd
 4	981	7874892771500220	CMakeFiles/stratos.dir/src/parser/Parser.cpp.obj	ad688d7dc24e0045
 984	1215	7874892781281570	stratos.exe	27e4b7e8f123d50b
+24	1671	7874952730780220	CMakeFiles/stratos.dir/src/main.cpp.obj	916c6094476ea1dd
+1673	1944	7874952747262996	stratos.exe	27e4b7e8f123d50b
+72	2287	7874968298881359	CMakeFiles/stratos.dir/src/optimizer/Optimizer.cpp.obj	c613d85973063484
+66	2457	7874968298821313	CMakeFiles/stratos.dir/src/lexer/Lexer.cpp.obj	9e4b86f8308903ff
+79	2844	7874968298941605	CMakeFiles/stratos.dir/src/sema/SemanticAnalyzer.cpp.obj	7ff0aca528e86194
+11	3082	7874968298269052	CMakeFiles/stratos.dir/src/codegen/IRGenerator.cpp.obj	e98c13da235363db
+69	3421	7874968298851380	CMakeFiles/stratos.dir/src/main.cpp.obj	916c6094476ea1dd
+76	3586	7874968298911521	CMakeFiles/stratos.dir/src/parser/Parser.cpp.obj	ad688d7dc24e0045
+3586	4080	7874968334015342	stratos.exe	27e4b7e8f123d50b

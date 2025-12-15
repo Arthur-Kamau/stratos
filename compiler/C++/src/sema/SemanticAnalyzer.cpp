@@ -142,9 +142,9 @@ void SemanticAnalyzer::visit(ClassDecl& stmt) {
     symbolTable.exitScope();
 }
 
-void SemanticAnalyzer::visit(NamespaceDecl& stmt) {
-    // Define namespace symbol so it can be resolved (e.g. MathUtils.add)
-    symbolTable.define(Symbol{stmt.name.lexeme, SymbolKind::NAMESPACE, "namespace", false});
+void SemanticAnalyzer::visit(PackageDecl& stmt) {
+    // Define package symbol so it can be resolved (e.g. math.add)
+    symbolTable.define(Symbol{stmt.name.lexeme, SymbolKind::PACKAGE, "package", false});
 
     symbolTable.enterScope();
     for (const auto& s : stmt.declarations) {

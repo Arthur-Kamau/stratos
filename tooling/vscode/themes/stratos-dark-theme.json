@@ -1,0 +1,230 @@
+{
+	"name": "Stratos Dark",
+	"type": "dark",
+	"semanticHighlighting": true,
+	"colors": {
+		"editor.background": "#1e1e1e",
+		"editor.foreground": "#d4d4d4",
+		"editor.lineHighlightBackground": "#2a2a2a",
+		"editor.selectionBackground": "#264f78",
+		"editorCursor.foreground": "#00d9ff",
+		"editorWhitespace.foreground": "#3b3b3b"
+	},
+	"tokenColors": [
+		{
+			"name": "Comments",
+			"scope": [
+				"comment",
+				"comment.line",
+				"comment.block"
+			],
+			"settings": {
+				"foreground": "#6A9955",
+				"fontStyle": "italic"
+			}
+		},
+		{
+			"name": "Strings",
+			"scope": [
+				"string",
+				"string.quoted"
+			],
+			"settings": {
+				"foreground": "#ce9178"
+			}
+		},
+		{
+			"name": "String Escape Characters",
+			"scope": [
+				"constant.character.escape"
+			],
+			"settings": {
+				"foreground": "#d7ba7d"
+			}
+		},
+		{
+			"name": "Keywords - Control Flow",
+			"scope": [
+				"keyword.control.flow",
+				"keyword.control.import",
+				"keyword.control.exception"
+			],
+			"settings": {
+				"foreground": "#C586C0",
+				"fontStyle": "bold"
+			}
+		},
+		{
+			"name": "Operators - Logical",
+			"scope": [
+				"keyword.operator.logical"
+			],
+			"settings": {
+				"foreground": "#C586C0",
+				"fontStyle": "bold"
+			}
+		},
+		{
+			"name": "Storage Types - var, val, fn, class, etc.",
+			"scope": [
+				"storage.type",
+				"storage.type.class",
+				"storage.type.function"
+			],
+			"settings": {
+				"foreground": "#569CD6",
+				"fontStyle": "bold"
+			}
+		},
+		{
+			"name": "Storage Modifiers",
+			"scope": [
+				"storage.modifier",
+				"storage.modifier.access"
+			],
+			"settings": {
+				"foreground": "#569CD6"
+			}
+		},
+		{
+			"name": "Primitive Types - int, string, bool, etc.",
+			"scope": [
+				"storage.type.numeric",
+				"storage.type.string",
+				"storage.type.boolean",
+				"storage.type.void",
+				"storage.type.collection"
+			],
+			"settings": {
+				"foreground": "#4EC9B0",
+				"fontStyle": "italic"
+			}
+		},
+		{
+			"name": "User-Defined Types",
+			"scope": [
+				"entity.name.type"
+			],
+			"settings": {
+				"foreground": "#4EC9B0"
+			}
+		},
+		{
+			"name": "Function Calls",
+			"scope": [
+				"entity.name.function.call"
+			],
+			"settings": {
+				"foreground": "#DCDCAA"
+			}
+		},
+		{
+			"name": "Built-in Functions",
+			"scope": [
+				"support.function.builtin"
+			],
+			"settings": {
+				"foreground": "#DCDCAA",
+				"fontStyle": "italic"
+			}
+		},
+		{
+			"name": "Numbers",
+			"scope": [
+				"constant.numeric",
+				"constant.numeric.integer",
+				"constant.numeric.float"
+			],
+			"settings": {
+				"foreground": "#b5cea8"
+			}
+		},
+		{
+			"name": "Booleans",
+			"scope": [
+				"constant.language.boolean"
+			],
+			"settings": {
+				"foreground": "#569CD6",
+				"fontStyle": "bold"
+			}
+		},
+		{
+			"name": "Null/None",
+			"scope": [
+				"constant.language.null"
+			],
+			"settings": {
+				"foreground": "#569CD6",
+				"fontStyle": "italic"
+			}
+		},
+		{
+			"name": "this, super",
+			"scope": [
+				"variable.language"
+			],
+			"settings": {
+				"foreground": "#4FC1FF",
+				"fontStyle": "italic"
+			}
+		},
+		{
+			"name": "Operators - Arithmetic",
+			"scope": [
+				"keyword.operator.arithmetic"
+			],
+			"settings": {
+				"foreground": "#d4d4d4"
+			}
+		},
+		{
+			"name": "Operators - Comparison",
+			"scope": [
+				"keyword.operator.comparison"
+			],
+			"settings": {
+				"foreground": "#d4d4d4"
+			}
+		},
+		{
+			"name": "Operators - Assignment",
+			"scope": [
+				"keyword.operator.assignment"
+			],
+			"settings": {
+				"foreground": "#d4d4d4"
+			}
+		},
+		{
+			"name": "Operators - Special (pipe, arrow, optional)",
+			"scope": [
+				"keyword.operator.pipe",
+				"keyword.operator.arrow",
+				"keyword.operator.optional"
+			],
+			"settings": {
+				"foreground": "#C586C0",
+				"fontStyle": "bold"
+			}
+		},
+		{
+			"name": "Punctuation",
+			"scope": [
+				"punctuation"
+			],
+			"settings": {
+				"foreground": "#d4d4d4"
+			}
+		},
+		{
+			"name": "Other Keywords",
+			"scope": [
+				"keyword.other"
+			],
+			"settings": {
+				"foreground": "#C586C0"
+			}
+		}
+	]
+}

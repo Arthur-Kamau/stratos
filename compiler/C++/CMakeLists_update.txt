@@ -1,0 +1,74 @@
+# Add this to your existing CMakeLists.txt
+# This snippet shows what to add for the CLI tool
+
+# ============================================================================
+# OPTION 1: Add to existing CMakeLists.txt
+# ============================================================================
+
+# After your existing stratos executable definition, add:
+
+# CLI Tool for Project Management
+add_executable(stratoscli
+    tools/cli/main.cpp
+)
+
+target_compile_features(stratoscli PRIVATE cxx_std_17)
+
+# ============================================================================
+# OPTION 2: Complete CMakeLists.txt Example
+# ============================================================================
+
+cmake_minimum_required(VERSION 3.15)
+project(Stratos VERSION 0.1.0 LANGUAGES CXX)
+
+# C++17 or higher required
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Include directories
+include_directories(${CMAKE_SOURCE_DIR}/include)
+
+# Main compiler executable
+add_executable(stratos
+    src/main.cpp
+    # Add your other source files here:
+    # src/Lexer.cpp
+    # src/Parser.cpp
+    # src/SemanticAnalyzer.cpp
+    # src/IRGenerator.cpp
+    # src/Optimizer.cpp
+    # etc.
+)
+
+target_compile_features(stratos PRIVATE cxx_std_17)
+
+target_include_directories(stratos PRIVATE
+    ${CMAKE_SOURCE_DIR}/include
+)
+
+# CLI Tool for project creation
+add_executable(stratoscli
+    tools/cli/main.cpp
+)
+
+target_compile_features(stratoscli PRIVATE cxx_std_17)
+
+# Install targets (optional)
+install(TARGETS stratos stratoscli
+    RUNTIME DESTINATION bin
+)
+
+# ============================================================================
+# BUILD INSTRUCTIONS
+# ============================================================================
+
+# To build:
+#   cd compiler/C++
+#   mkdir build
+#   cd build
+#   cmake ..
+#   cmake --build .
+#
+# Output:
+#   build/stratos.exe    (or stratos on Linux/Mac)
+#   build/stratoscli.exe (or stratoscli on Linux/Mac)

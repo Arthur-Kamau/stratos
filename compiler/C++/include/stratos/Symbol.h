@@ -11,7 +11,7 @@ enum class SymbolKind {
     FUNCTION,
     CLASS,
     INTERFACE,
-    NAMESPACE
+    PACKAGE
 };
 
 struct Symbol {

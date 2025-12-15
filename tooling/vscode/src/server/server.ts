@@ -85,71 +85,53 @@ documents.onDidChangeContent(change => {
 	validateTextDocument(change.document);
 });
 
+import * as fs from 'fs';
+import * as os from 'os';
+import { execFile } from 'child_process';
+
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
-    // In this simple example we get the settings for every validate run.
-    const settings = await getDocumentSettings(textDocument.uri);
-
-    // Diagnostics via Stratos Compiler
-    // Logic: Save temp file -> Run stratos.exe -> Parse Stderr -> Publish Diagnostics
-    // For now, let's just mock specific keyword validation or assume stratos.exe is in path.
-    
-    // NOTE: Requires stratos.exe to be built and accessible.
-    // We will attempt to run it.
-    
-    // For safety in this demo, let's do a basic regex check for "diagnostics" 
-    // to prove the concept without spawning processes that might fail in environment.
-    // BUT user asked for "diagnostics rules".
-    
     const text = textDocument.getText();
-    const pattern = /\b[A-Z]{2,}\b/g;
-    let m: RegExpExecArray | null;
-
     const diagnostics: Diagnostic[] = [];
-    
-    // Example Rule: Variables shouldn't be ALL CAPS (just a dummy rule)
-    while ((m = pattern.exec(text))) {
-        const diagnostic: Diagnostic = {
-            severity: DiagnosticSeverity.Warning,
-            range: {
-                start: textDocument.positionAt(m.index),
-                end: textDocument.positionAt(m.index + m[0].length)
-            },
-            message: `${m[0]} is all uppercase.`,
-            source: 'ex'
-        };
-        if (hasDiagnosticRelatedInformationCapability) {
-            diagnostic.relatedInformation = [
-                {
-                    location: {
-                        uri: textDocument.uri,
-                        range: Object.assign({}, diagnostic.range)
-                    },
-                    message: 'Spelling matters'
+
+    // 1. Write content to temp file
+    const tempFile = path.join(os.tmpdir(), 'stratos_temp_' + Math.random().toString(36).substring(7) + '.st');
+    fs.writeFileSync(tempFile, text);
+
+    // 2. Path to compiler (Hardcoded for this environment, in a real extension this would be a setting)
+    const compilerPath = 'C:\\Users\\ADMIN\\Desktop\\Development\\Projects\\stratos\\compiler\\C++\\build\\stratos.exe';
+
+    // 3. Run compiler
+    execFile(compilerPath, [tempFile], (error, stdout, stderr) => {
+        // Cleanup
+        if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
+
+        // 4. Parse output
+        // Output format: [Error] Line:Col: Message
+        const output = stderr.toString();
+        const errorRegex = /\[Error\] (\d+):(\d+): (.*)/g;
+        let match;
+
+        while ((match = errorRegex.exec(output)) !== null) {
+            const line = parseInt(match[1]) - 1; // LSP is 0-based, Compiler is 1-based usually? 
+                                                 // My compiler: token.line is 1-based (from Lexer init line=1).
+            const col = parseInt(match[2]) - 1;  // Compiler col is 1-based? Lexer init col=0, but advance increments. So likely 1-based.
+            const msg = match[3];
+
+            const diagnostic: Diagnostic = {
+                severity: DiagnosticSeverity.Error,
+                range: {
+                    start: { line: line, character: col },
+                    end: { line: line, character: col + 100 } // Heuristic end, or until end of line
                 },
-                {
-                    location: {
-                        uri: textDocument.uri,
-                        range: Object.assign({}, diagnostic.range)
-                    },
-                    message: 'Particularly for names'
-                }
-            ];
+                message: msg,
+                source: 'stratos-compiler'
+            };
+            diagnostics.push(diagnostic);
         }
-        diagnostics.push(diagnostic);
-    }
 
-    // REAL COMPILER INTEGRATION MOCK
-    // In a real scenario:
-    /*
-    const filePath = URI.parse(textDocument.uri).fsPath;
-    exec(`stratos.exe "${filePath}"`, (err, stdout, stderr) => {
-        // Parse stderr for "[Error] Line:Col: Msg"
-        // Update diagnostics
+        // Send diagnostics
+        connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
     });
-    */
-
-    // Send the computed diagnostics to VSCode.
-    connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 }
 
 // The settings interface

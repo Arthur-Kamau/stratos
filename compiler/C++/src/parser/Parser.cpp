@@ -25,7 +25,7 @@ std::unique_ptr<Stmt> Parser::declaration() {
         if (match({TokenType::VAR, TokenType::VAL})) return varDeclaration();
         if (match({TokenType::FN})) return fnDeclaration("function");
         if (match({TokenType::CLASS, TokenType::STRUCT, TokenType::INTERFACE})) return classDeclaration();
-        if (match({TokenType::NAMESPACE})) return namespaceDeclaration();
+        if (match({TokenType::PACKAGE})) return packageDeclaration();
         return statement();
     } catch (ParseError& error) {
         synchronize();
@@ -130,15 +130,23 @@ std::unique_ptr<Stmt> Parser::classDeclaration() {
     return std::make_unique<ClassDecl>(name, std::move(superclass), std::move(methods));
 }
 
-std::unique_ptr<Stmt> Parser::namespaceDeclaration() {
-    Token name = consume(TokenType::IDENTIFIER, "Expect namespace name.");
-    consume(TokenType::LEFT_BRACE, "Expect '{' before namespace body.");
-    std::vector<std::unique_ptr<Stmt>> body;
-    while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
-        body.push_back(declaration());
+std::unique_ptr<Stmt> Parser::packageDeclaration() {
+    Token name = consume(TokenType::IDENTIFIER, "Expect package name.");
+    // Package declarations don't use braces in Go-style
+    // Just consume semicolon or newline
+    // For now, keep compatibility with old block-style
+    if (check(TokenType::LEFT_BRACE)) {
+        consume(TokenType::LEFT_BRACE, "Expect '{' before package body.");
+        std::vector<std::unique_ptr<Stmt>> body;
+        while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
+            body.push_back(declaration());
+        }
+        consume(TokenType::RIGHT_BRACE, "Expect '}' after package body.");
+        return std::make_unique<PackageDecl>(name, std::move(body));
     }
-    consume(TokenType::RIGHT_BRACE, "Expect '}' after namespace body.");
-    return std::make_unique<NamespaceDecl>(name, std::move(body));
+    // Go-style: package declaration at top, no braces
+    // Return empty package declaration (body will be rest of file)
+    return std::make_unique<PackageDecl>(name, std::vector<std::unique_ptr<Stmt>>());
 }
 
 // --- Statements ---

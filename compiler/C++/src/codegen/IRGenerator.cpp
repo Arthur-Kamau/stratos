@@ -26,8 +26,8 @@ void IRGenerator::generate(const std::vector<std::unique_ptr<Stmt>>& statements)
     for (const auto& stmt : statements) {
         if (auto fn = dynamic_cast<FunctionDecl*>(stmt.get())) {
             fn->accept(*this); // Generate function definition immediately
-        } else if (auto ns = dynamic_cast<NamespaceDecl*>(stmt.get())) {
-            // TODO: flatten namespace?
+        } else if (auto pkg = dynamic_cast<PackageDecl*>(stmt.get())) {
+            // TODO: flatten package?
         } else if (auto cls = dynamic_cast<ClassDecl*>(stmt.get())) {
             // TODO: generate structs
         } else {
@@ -435,7 +435,7 @@ void IRGenerator::visit(ClassDecl& stmt) {
    // No-op to avoid crash
    return;
 }
-void IRGenerator::visit(NamespaceDecl& stmt) {
+void IRGenerator::visit(PackageDecl& stmt) {
     for (const auto& s : stmt.declarations) {
         if (s) s->accept(*this);
     }

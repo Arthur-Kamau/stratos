@@ -9,7 +9,7 @@ std::unordered_map<std::string, TokenType> Lexer::keywords = {
     {"struct", TokenType::STRUCT},
     {"interface", TokenType::INTERFACE},
     {"enum", TokenType::ENUM},
-    {"namespace", TokenType::NAMESPACE},
+    {"package", TokenType::PACKAGE},
     {"else", TokenType::ELSE},
     {"false", TokenType::FALSE},
     {"for", TokenType::FOR},
