@@ -11,7 +11,7 @@ declaration
     | structDecl
     | interfaceDecl
     | enumDecl
-    | namespaceDecl
+    | packageDecl
     | useDecl
     ;
 
@@ -19,8 +19,8 @@ useDecl
     : 'use' ID (':' ID)* ';'
     ;
 
-namespaceDecl
-    : 'namespace' ID '{' declaration* '}'
+packageDecl
+    : 'package' ID ';'
     ;
 
 varDecl
@@ -171,7 +171,7 @@ CLASS : 'class' ;
 STRUCT : 'struct' ;
 INTERFACE : 'interface' ;
 ENUM : 'enum' ;
-NAMESPACE : 'namespace' ;
+PACKAGE : 'package' ;
 USE : 'use' ;
 CONSTRUCTOR : 'constructor' ;
 IF : 'if' ;

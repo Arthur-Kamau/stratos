@@ -59,7 +59,7 @@ public class StratosSyntaxHighlighter extends SyntaxHighlighterBase {
 			case StratosLanguageLexer.STRUCT :
 			case StratosLanguageLexer.INTERFACE :
 			case StratosLanguageLexer.ENUM :
-			case StratosLanguageLexer.NAMESPACE :
+			case StratosLanguageLexer.PACKAGE :
 			case StratosLanguageLexer.USE :
 			case StratosLanguageLexer.CONSTRUCTOR :
 			case StratosLanguageLexer.IF :

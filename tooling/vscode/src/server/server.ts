@@ -209,6 +209,11 @@ connection.onCompletion(
 				data: 4
 			},
             {
+				label: 'package',
+				kind: CompletionItemKind.Keyword,
+				data: 6
+			},
+            {
 				label: 'Optional',
 				kind: CompletionItemKind.Class,
 				data: 5
