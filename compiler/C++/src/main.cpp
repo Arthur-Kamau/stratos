@@ -9,13 +9,11 @@
 #include "stratos/Parser.h"
 #include "stratos/AST.h"
 #include "stratos/SemanticAnalyzer.h"
-#include "stratos/IRGenerator.h" // CodeGen
+#include "stratos/IRGenerator.h"
+#include "stratos/Optimizer.h" // Optimizer
 
 using namespace stratos;
 namespace fs = std::filesystem;
-
-// ASTPrinter omitted for brevity (but ideally kept in a util file)
-// ...
 
 void runTest(const std::string& path) {
     std::cout << "Processing: " << path << std::endl;
@@ -37,6 +35,11 @@ void runTest(const std::string& path) {
         if (analyzer.analyze(statements)) {
             std::cout << "  [Semantics] OK." << std::endl;
             
+            // Optimization
+            Optimizer optimizer;
+            optimizer.optimize(statements);
+            std::cout << "  [Optimizer] Finished." << std::endl;
+
             // Code Generation
             std::string irPath = path + ".ll";
             IRGenerator generator(irPath);

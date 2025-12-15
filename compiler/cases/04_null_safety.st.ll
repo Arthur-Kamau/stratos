@@ -5,13 +5,15 @@ target triple = "x86_64-pc-windows-msvc"
 
 declare i32 @printf(i8*, ...)
 
-@.str_specifier = private unnamed_addr constant [4 x i8] c"%d\0A\00"
 
 define i32 @main() {
   %maybeNumber_0 = alloca i32
-  store i32 42, i32* %maybeNumber_0
-  %empty_1 = alloca i32
-  store i32 42, i32* %empty_1
+  %t1 = call i32 @Some(i32 42)
+  store i32 %t1, i32* %maybeNumber_0
+  %empty_2 = alloca i32
+  store i32 null, i32* %empty_2
   ret i32 0
 }
 
+
+; String Literals

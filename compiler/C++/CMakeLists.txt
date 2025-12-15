@@ -14,6 +14,7 @@ file(GLOB_RECURSE SOURCES
     "src/parser/*.cpp"
     "src/sema/*.cpp"
     "src/codegen/*.cpp"
+    "src/optimizer/*.cpp"
 )
 
 add_executable(stratos ${SOURCES})

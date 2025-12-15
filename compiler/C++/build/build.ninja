@@ -65,6 +65,13 @@ build CMakeFiles/stratos.dir/src/main.cpp.obj: CXX_COMPILER__stratos_unscanned_ 
   OBJECT_DIR = CMakeFiles\stratos.dir
   OBJECT_FILE_DIR = CMakeFiles\stratos.dir\src
 
+build CMakeFiles/stratos.dir/src/optimizer/Optimizer.cpp.obj: CXX_COMPILER__stratos_unscanned_ C$:/Users/ADMIN/Desktop/Development/Projects/stratos/compiler/C++/src/optimizer/Optimizer.cpp || cmake_object_order_depends_target_stratos
+  DEP_FILE = CMakeFiles\stratos.dir\src\optimizer\Optimizer.cpp.obj.d
+  FLAGS = -std=gnu++20
+  INCLUDES = -IC:/Users/ADMIN/Desktop/Development/Projects/stratos/compiler/C++/include
+  OBJECT_DIR = CMakeFiles\stratos.dir
+  OBJECT_FILE_DIR = CMakeFiles\stratos.dir\src\optimizer
+
 build CMakeFiles/stratos.dir/src/parser/Parser.cpp.obj: CXX_COMPILER__stratos_unscanned_ C$:/Users/ADMIN/Desktop/Development/Projects/stratos/compiler/C++/src/parser/Parser.cpp || cmake_object_order_depends_target_stratos
   DEP_FILE = CMakeFiles\stratos.dir\src\parser\Parser.cpp.obj.d
   FLAGS = -std=gnu++20
@@ -87,7 +94,7 @@ build CMakeFiles/stratos.dir/src/sema/SemanticAnalyzer.cpp.obj: CXX_COMPILER__st
 #############################################
 # Link the executable stratos.exe
 
-build stratos.exe: CXX_EXECUTABLE_LINKER__stratos_ CMakeFiles/stratos.dir/src/codegen/IRGenerator.cpp.obj CMakeFiles/stratos.dir/src/lexer/Lexer.cpp.obj CMakeFiles/stratos.dir/src/main.cpp.obj CMakeFiles/stratos.dir/src/parser/Parser.cpp.obj CMakeFiles/stratos.dir/src/sema/SemanticAnalyzer.cpp.obj
+build stratos.exe: CXX_EXECUTABLE_LINKER__stratos_ CMakeFiles/stratos.dir/src/codegen/IRGenerator.cpp.obj CMakeFiles/stratos.dir/src/lexer/Lexer.cpp.obj CMakeFiles/stratos.dir/src/main.cpp.obj CMakeFiles/stratos.dir/src/optimizer/Optimizer.cpp.obj CMakeFiles/stratos.dir/src/parser/Parser.cpp.obj CMakeFiles/stratos.dir/src/sema/SemanticAnalyzer.cpp.obj
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\stratos.dir
   POST_BUILD = cd .

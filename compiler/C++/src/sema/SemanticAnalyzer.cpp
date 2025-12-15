@@ -15,6 +15,9 @@ void SemanticAnalyzer::defineNativeFunctions() {
     // Define standard types/constructors
     symbolTable.define(Symbol::Variable("Some", "constructor", false)); // Mock for now
     symbolTable.define(Symbol::Variable("None", "Optional", false));
+    
+    // Internal intrinsics
+    symbolTable.define(Symbol::Function("__if_expr", {"bool", "any", "any"}, "any"));
 }
 
 bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& statements) {

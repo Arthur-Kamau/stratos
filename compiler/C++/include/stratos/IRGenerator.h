@@ -10,6 +10,11 @@
 
 namespace stratos {
 
+struct IRValue {
+    std::string reg;  // The register name (e.g., "%t1") or literal ("3.14")
+    std::string type; // The LLVM type (e.g., "i32", "double")
+};
+
 class IRGenerator : public ASTVisitor {
 public:
     IRGenerator(const std::string& filename);
@@ -35,24 +40,39 @@ public:
 
 private:
     std::ofstream out;
-    int regCount = 0;       // Temporary register counter (%0, %1...)
-    int labelCount = 0;     // Label counter (L0, L1...)
-    std::string lastReg;    // The register holding the result of the last expression
+    int regCount = 0;       
+    int labelCount = 0;     
+    int strCount = 0;
 
-    // We need a simple map to track variable registers
-    // In a real compiler, this would be more complex (SymbolTable with allocas)
-    // Map: variableName -> stackPtrRegister (e.g., %x)
-    std::vector<std::unordered_map<std::string, std::string>> scopes;
+    IRValue lastVal; // Holds result of last expression
+
+    // Scopes track variable register locations AND their types
+    struct VarInfo {
+        std::string ptr; // Stack pointer register
+        std::string type; // LLVM type
+    };
+    std::vector<std::unordered_map<std::string, VarInfo>> scopes;
+
+    // Cache for string literals to generate global constants
+    // Content -> GlobalName (e.g. "Hello" -> @.str0)
+    std::unordered_map<std::string, std::string> stringLiterals;
 
     void enterScope();
     void exitScope();
-    std::string getVarPtr(const std::string& name);
-    void defineVar(const std::string& name, const std::string& ptr);
+    VarInfo getVarInfo(const std::string& name);
+    void defineVar(const std::string& name, const std::string& ptr, const std::string& type);
 
     std::string nextReg();
     std::string nextLabel();
+    std::string getOrCreateStringLiteral(const std::string& text);
+    std::string getLLVMType(const std::string& stratosType);
+    std::string getDefaultValue(const std::string& llvmType);
+
     void emit(const std::string& code);
     void emitRaw(const std::string& code);
+    
+    // Helper to generate explicit main wrapper
+    void generateMainWrapper(const std::vector<Stmt*>& topLevelStmts);
 };
 
 } // namespace stratos
