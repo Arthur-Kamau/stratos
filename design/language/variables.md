@@ -1,32 +1,43 @@
-  declare a variable , variables are constants by default and non null by default and private by default.
-An example of the various ways you could dclare an integer variable of name myInt.
 
-1. declare a variable of type  int that is non nullable  and non mutable
-    `val  myInt : int  = 33` or 
-2. declare  a mutable variable of type  int  that is non nullable
-    `var  myInt : int ` 
-3. declare  nullable and  mutable variable of type  int 
-    `let mut  myInt : int`
-4.  For quick typing variables that are declared and initialized could be simlified as
-      * `let myInt = 33` . The  example is non nullable and immutable interger
-    
-    
-### Take away
-1. Let =>  Nullable  types
-           To access them neeeed to check if none(`errors.md`).Non mutable by default but can use `mut` keyword to make it mutable
-2. Var =>  Non nullbale and mutable.
-3. Val => Non nullable and non mutable
-4. mut  => used to  make `let` mutable.
+## Variables
 
-## Safety
-While accessing/operating/checking nullable you could try any of the follwing.
+Variables can be declared as immutable (`val`) or mutable (`var`).
+Nullability is handled by the type system using the `Optional<Type>` wrapper.
 
-* Accessing object property use `?.`, `?`
-  `myUserObject?.name?`, ie myUserObject could be none if not none get the value of name, name could be also be none if not none get the value.
+### 1. Immutable (`val`)
+Cannot be reassigned after initialization. This is the default recommendation.
+*   `val myInt: int = 33` (Non-nullable)
+*   `val myOptionalInt: Optional<int> = None` (Nullable, can hold `Some(value)` or `None`)
 
+### 2. Mutable (`var`)
+Can be reassigned.
+*   `var myInt: int = 33` (Non-nullable, can change value but not to `None`)
+*   `var myOptional: Optional<int> = Some(33)` (Nullable, can change value to `Some(int)` or `None`)
 
-* checking if null <br/>
+### Examples
+
+1. **Non-nullable immutable integer:**
+    `val myInt = 33` (Type inferred as `int`)
+
+2. **Non-nullable mutable integer:**
+    `var myCounter = 0`
+
+3. **Nullable mutable integer:**
+    `var myOptional: Optional<int> = None`
+    `myOptional = Some(5)`
+
+### Safety with Nullable Types (Optional)
+
+Accessing `Optional` types requires safety checks.
+
+* **Safe Call `?.`**
+  `user?.name` (If `user` is `None`, `name` access results in `None`; otherwise, `Optional<string>` containing the name)
+
+* **Null Coalescing `?:`**
+  `val name = user?.name ?: "Unknown"` (If `user?.name` results in `None`, use "Unknown")
+
+* **Pattern Matching `when`**
 `when(my_value){ `<br/>
- &emsp; `none -> { report_err() } `<br/>
- &emsp; `Some -> {some_operation()} `<br/>
+ &emsp; `None -> { report_err() } `<br/>
+ &emsp; `Some(v) -> { some_operation(v) } `<br/>
 `}`

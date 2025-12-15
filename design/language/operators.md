@@ -1,14 +1,12 @@
-
-
 ## Comparison operators
-`==`, `!=` , `>=` , `=<` , `<>`,  `<=>` ,`<!>`, `<!=>` <br>
+`==`, `!=` , `>=` , `<=` , `<>`,  `<=>` ,`<!>`, `<!=>` <br>
 * `==` equality operator
 * `!=` not equal operator
 * `>=` greater than or equal operator
-* `=<` less than or equal operator
-* `<>` between the left and and right hand
-* `<=>` between the left and and right hand inclusive range variables
-* `<!=>`  not between the left and and right hand inclusive of the range variables
+* `<=` less than or equal operator
+* `<>` range between the left and and right hand (exclusive)
+* `<=>` range between the left and and right hand (inclusive)
+* `<!=>`  not between range
 
 
 ### Logical operators

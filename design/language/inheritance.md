@@ -1,7 +1,6 @@
-
 ### Inheritance 
 
-Stratos uses single inheritance.
+Stratos uses single inheritance for classes.
 
 &emsp; `class shape {`<br>
 
@@ -14,17 +13,20 @@ Stratos uses single inheritance.
 &emsp; `}`<br>
 
 
-To use abstract class or interface use struct instead.
+To define a contract of behavior (abstract class or interface), use `interface`.
 
-`struct animal {`<br>
-  &emsp;  `age: int,`   
-  &emsp;  `isMale: bool`<br>
+`interface Animal {`<br>
+  &emsp;  `fn makeSound() unit`<br>
 `}`
 
 
-&emsp; `class humans : animal{`<br>
-&emsp; `}`<br>
-&emsp; `class lions : animal{`<br>
+&emsp; `class Lion : Animal {`<br>
+&emsp; `    fn makeSound() { print("Roar") }`<br>
 &emsp; `}`<br>
 
+To define data structures, use `struct` or `class`.
 
+`struct Point {`<br>
+  &emsp;  `x: int,`   
+  &emsp;  `y: int`<br>
+`}`

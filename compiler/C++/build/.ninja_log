@@ -1,0 +1,12 @@
+# ninja log v6
+3	148	7874864923698594	build.ninja	c77b966852e98a42
+4	685	7874856084520206	CMakeFiles/stratos.dir/src/lexer/Lexer.cpp.obj	9e4b86f8308903ff
+5	850	7874857401444275	CMakeFiles/stratos.dir/src/main.cpp.obj	916c6094476ea1dd
+5	1173	7874858354610070	CMakeFiles/stratos.dir/src/parser/Parser.cpp.obj	ad688d7dc24e0045
+18	919	7874856084729977	CMakeFiles/stratos.dir/src/sema/SemanticAnalyzer.cpp.obj	7ff0aca528e86194
+1175	1343	7874858366306817	stratos.exe	8a892f1a5d8b6e4
+7	285	7874864923698594	build.ninja	c77b966852e98a42
+39	1257	7874864924437427	CMakeFiles/stratos.dir/src/main.cpp.obj	916c6094476ea1dd
+4	781	7874866553196571	CMakeFiles/stratos.dir/src/codegen/IRGenerator.cpp.obj	e98c13da235363db
+10	927	7874866553211615	CMakeFiles/stratos.dir/src/main.cpp.obj	916c6094476ea1dd
+929	1209	7874866562426875	stratos.exe	b2dcf376162bd416

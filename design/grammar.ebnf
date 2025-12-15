@@ -1,0 +1,87 @@
+// Stratos EBNF Grammar
+
+// Program Structure
+program        ::= declaration* EOF
+
+declaration    ::= varDecl
+                 | fnDecl
+                 | classDecl
+                 | structDecl
+                 | interfaceDecl
+                 | enumDecl
+                 | stmt
+
+// Declarations
+varDecl        ::= ("val" | "var") IDENTIFIER (":" type)? ("=" expression)? ";"
+fnDecl         ::= "fn" IDENTIFIER "(" paramList? ")" (type)? block
+classDecl      ::= "class" IDENTIFIER (":" IDENTIFIER)? "{" classMember* "}"
+structDecl     ::= "struct" IDENTIFIER "{" structMember* "}"
+interfaceDecl  ::= "interface" IDENTIFIER "{" fnSignature* "}"
+enumDecl       ::= "enum" IDENTIFIER "{" enumList "}"
+
+paramList      ::= param ("," param)*
+param          ::= IDENTIFIER ":" type
+
+classMember    ::= varDecl | fnDecl | constructor
+structMember   ::= IDENTIFIER ":" type ("," | ";")?
+fnSignature    ::= "fn" IDENTIFIER "(" paramList? ")" (type)? ";"
+constructor    ::= "constructor" "(" paramList? ")" block
+
+// Types
+type           ::= "int" | "double" | "string" | "bool" | "void" | "unit"
+                 | "Optional" "<" type ">"
+                 | IDENTIFIER // User defined types
+                 | type "[" "]" // Arrays
+
+// Statements
+stmt           ::= exprStmt
+                 | ifStmt
+                 | whileStmt
+                 | forStmt
+                 | returnStmt
+                 | block
+
+exprStmt       ::= expression ";"
+block          ::= "{" declaration* "}"
+ifStmt         ::= "if" "(" expression ")" stmt ("else" stmt)?
+whileStmt      ::= "while" "(" expression ")" stmt
+returnStmt     ::= "return" expression? ";"
+
+// Expressions (Precedence: lowest to highest)
+expression     ::= assignment
+
+assignment     ::= pipe (("=" | "+=" | "-=" | "*=" | "/=") expression)?
+
+pipe           ::= ternary ("|>" ternary)*
+
+ternary        ::= "if" "(" expression ")" expression "else" expression  // If-Expression
+                 | logicOr
+
+logicOr        ::= logicAnd ("||" logicAnd)*
+logicAnd       ::= equality ("&&" equality)*
+equality       ::= comparison (("==" | "!=") comparison)*
+comparison     ::= term (("<" | "<=" | ">" | ">=") term)*
+term           ::= factor (("+" | "-") factor)*
+factor         ::= unary (("*" | "/" | "%") unary)*
+
+unary          ::= ("!" | "-" | "not") unary
+                 | primary
+
+primary        ::= NUMBER
+                 | STRING
+                 | "true" | "false"
+                 | "None"
+                 | IDENTIFIER
+                 | "(" expression ")"
+                 | callOrAccess
+                 | instantiation
+
+callOrAccess   ::= IDENTIFIER (
+                     "(" argList? ")" // Function call
+                   | "." IDENTIFIER   // Member access
+                   | "?." IDENTIFIER  // Safe access
+                   )*
+
+instantiation  ::= IDENTIFIER "(" argList? ")" // Simplified, overlaps with call
+
+argList        ::= expression ("," expression)*

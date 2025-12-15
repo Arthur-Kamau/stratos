@@ -1,4 +1,4 @@
-### Key word
+### Keywords
 
 * `string` 
 * `double` 
@@ -7,20 +7,19 @@
 * `byte` 
 * `char` 
 * `unit` 
-* `mut`  
+* `Optional`
 * `list` 
 * `set` 
 * `array` 
 * `tuple` 
-* `triple` 
 * `map` 
 * `true` 
 * `false` 
 * `not` 
 * `in` 
-* `function` 
 * `fn` 
-* `let` 
+* `var`
+* `val`
 * `if` 
 * `else` 
 * `when` 
@@ -28,7 +27,8 @@
 * `namespace` 
 * `class` 
 * `enum` 
-* `struct` 
+* `struct`
+* `interface` 
 * `is` 
 * `as` 
 * `do` 
@@ -38,11 +38,10 @@
 * `type` 
 * `catch` 
 * `onfail` 
-* `finaly` 
+* `finally` 
 * `private` 
 * `use` 
 * `import` 
-* `create` 
 * `constructor` 
 * `destroy` 
 * `not` 
@@ -51,4 +50,3 @@
 * `task` 
 * `?:`
 * `:=`
-

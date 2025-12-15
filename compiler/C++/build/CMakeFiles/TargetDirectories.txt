@@ -1,0 +1,3 @@
+C:/Users/ADMIN/Desktop/Development/Projects/stratos/compiler/C++/build/CMakeFiles/stratos.dir
+C:/Users/ADMIN/Desktop/Development/Projects/stratos/compiler/C++/build/CMakeFiles/edit_cache.dir
+C:/Users/ADMIN/Desktop/Development/Projects/stratos/compiler/C++/build/CMakeFiles/rebuild_cache.dir

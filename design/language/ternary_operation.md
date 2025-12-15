@@ -1,13 +1,9 @@
-
-## Ternary oprator. 
+## Ternary Logic (If Expression)
    
-  use of  `?: ` instead of `?`. as `?` is used of safe checks.
-  `value = expression ?: value :  value ;`<br>
+Stratos uses `if` expressions instead of a dedicated ternary operator like `? :`. This avoids conflict with the null-coalescing (Elvis) operator `?:` and improves readability.
+
+`val value = if (expression) value_a else value_b;`<br>
 Example <br/>
 
-   `let isAdult =  19>20+1 ?: "you are an adult " : "You ar underaged ;` <br>
+   `val isAdult =  if (age > 18) "You are an adult" else "You are underage";` <br>
    `print(isAdult);`
-   
-
-
-
