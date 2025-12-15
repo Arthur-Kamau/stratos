@@ -1,41 +1,30 @@
 <idea-plugin version="2">
   <id>stratos-lang</id>
-  <version>0.0.2</version>
-    <!-- Text to display as name on Preferences/Settings | Plugin page -->
+  <version>0.3.0</version>
   <name>Stratos Language</name>
+  <vendor email="kamaukenn11@gmail.com" url="https://github.com/Arthur-Kamau/stratos">Stratos</vendor>
 
-
-  <!-- Text to display as company information on Preferences/Settings | Plugin page -->
-  <vendor email="kamaukenn11@gmail.com.com" url="https://github.com/Arthur-Kamau/stratos">Stratos</vendor>
-
-  <!-- Text to display as description on Preferences/Settings | Plugin page -->
-  	<description><![CDATA[
+  <description><![CDATA[
 		Stratos Language Plugin.<br>
-		 <em>Project creating</em>
-		 <em>Syntax highlighting</em>
-		 <em>Commenting code</em>
+		Features:
+		<ul>
+		 <li>Syntax highlighting</li>
+		 <li>Error checking (via Stratos Compiler)</li>
+		 <li>Structure View</li>
+		 <li>Project creation wizard</li>
+		</ul>
 		 ]]></description>
 
-
-<change-notes>
+  <change-notes>
     <![CDATA[
       <ul>
-        <li><b>0.2.0</b> Convert to Gradle-based plugin.</li>
-        <li><b>0.1.0</b> Release 2018.3 and earlier.</li>
+        <li><b>0.3.0</b> Updated grammar to match latest Stratos design. Added external compiler integration for error highlighting.</li>
       </ul>
     ]]>
   </change-notes>
 
-	<!-- please see http://confluence.jetbrains.net/display/IDEADEV/Build+Number+Ranges for description -->
-	<idea-version since-build="193"/> <!-- requires 13.x, 14.x, 15.x -->
-
-	<!-- please see http://confluence.jetbrains.net/display/IDEADEV/Plugin+Compatibility+with+IntelliJ+Platform+Products
-		 on how to target different products -->
-	<!-- uncomment to enable plugin in all products -->
+	<idea-version since-build="193"/>
 	<depends>com.intellij.modules.lang</depends>
-
-	<application-components>
-	</application-components>
 
 	<project-components>
 		<component>
@@ -43,26 +32,17 @@
 		</component>
 	</project-components>
 
-	<actions>
-	</actions>
-
 	<extensions defaultExtensionNs="com.intellij">
-
-
-		<!--run configuration-->
 		<programRunner implementation="org.stratos.lang.project.StratosRunner"/>
 		<configurationType implementation="org.stratos.lang.project.StratosRunConfigurationType"/>
-		<!--    stratos sdk details-->
 		<sdkType implementation="org.stratos.lang.module.sdk.StratosSdkType"/>
-		<!--     create project in intellij wizard-->
 		<moduleType id="STRATOS_LANG_MODULE" implementationClass="org.stratos.lang.module.StratosModuleType"/>
 		<applicationService serviceImplementation="org.stratos.lang.listener.StratosApplicationService"/>
 		<projectService serviceImplementation="org.stratos.lang.listener.StratosProjectService"/>
-		<!--file type recognition-->
+		
 		<fileType name="Stratos" implementationClass="org.stratos.lang.StratosFileType"
-				  fieldName="INSTANCE" language="Stratos" extensions="sts"   />
+				  fieldName="INSTANCE" language="Stratos" extensions="st"/>
 
-<!--		<fileTypeFactory implementation="org.stratos.lang.StratosFileTypeFactory"/>-->
 		<lang.syntaxHighlighterFactory key="Stratos"
 									   implementationClass="org.stratos.lang.StratosSyntaxHighlighterFactory"/>
 
@@ -79,7 +59,7 @@
 		<lang.findUsagesProvider language="Stratos"
 								 implementationClass="org.stratos.lang.StratosFindUsagesProvider"/>
 
-								    <lang.commenter language="Stratos" implementationClass="org.stratos.lang.StratosCommenter"/>
+		<lang.commenter language="Stratos" implementationClass="org.stratos.lang.StratosCommenter"/>
 	</extensions>
 
 	 <projectListeners>

@@ -13,38 +13,20 @@ import org.antlr.jetbrains.sample.parser.StratosLanguageParser;
 import org.jetbrains.annotations.NotNull;
 import static com.intellij.openapi.editor.colors.TextAttributesKey.createTextAttributesKey;
 
-/** A highlighter is really just a mapping from token type to
- *  some text attributes using {@link #getTokenHighlights(IElementType)}.
- *  The reason that it returns an array, TextAttributesKey[], is
- *  that you might want to mix the attributes of a few known highlighters.
- *  A {@link TextAttributesKey} is just a name for that a theme
- *  or IDE skin can set. For example, {@link com.intellij.openapi.editor.DefaultLanguageHighlighterColors#KEYWORD}
- *  is the key that maps to what identifiers look like in the editor.
- *  To change it, see dialog: Editor > Colors & Fonts > Language Defaults.
- *
- *  From <a href="http://www.jetbrains.org/intellij/sdk/docs/reference_guide/custom_language_support/syntax_highlighting_and_error_highlighting.html">doc</a>:
- *  "The mapping of the TextAttributesKey to specific attributes used
- *  in an editor is defined by the EditorColorsScheme class, and can
- *  be configured by the user if the plugin provides an appropriate
- *  configuration interface.
- *  ...
- *  The syntax highlighter returns the {@link TextAttributesKey}
- * instances for each token type which needs special highlighting.
- * For highlighting lexer errors, the standard TextAttributesKey
- * for bad characters HighlighterColors.BAD_CHARACTER can be used."
- */
 public class StratosSyntaxHighlighter extends SyntaxHighlighterBase {
 	private static final TextAttributesKey[] EMPTY_KEYS = new TextAttributesKey[0];
 	public static final TextAttributesKey ID =
-		createTextAttributesKey("SAMPLE_ID", DefaultLanguageHighlighterColors.IDENTIFIER);
+		createTextAttributesKey("STRATOS_ID", DefaultLanguageHighlighterColors.IDENTIFIER);
 	public static final TextAttributesKey KEYWORD =
-		createTextAttributesKey("SAMPLE_KEYWORD", DefaultLanguageHighlighterColors.KEYWORD);
+		createTextAttributesKey("STRATOS_KEYWORD", DefaultLanguageHighlighterColors.KEYWORD);
 	public static final TextAttributesKey STRING =
-		createTextAttributesKey("SAMPLE_STRING", DefaultLanguageHighlighterColors.STRING);
-	public static final TextAttributesKey LINE_COMMENT =
-		createTextAttributesKey("SAMPLE_LINE_COMMENT", DefaultLanguageHighlighterColors.LINE_COMMENT);
+		createTextAttributesKey("STRATOS_STRING", DefaultLanguageHighlighterColors.STRING);
+	public static final TextAttributesKey NUMBER =
+		createTextAttributesKey("STRATOS_NUMBER", DefaultLanguageHighlighterColors.NUMBER);
+	public static final TextAttributesKey COMMENT =
+		createTextAttributesKey("STRATOS_COMMENT", DefaultLanguageHighlighterColors.LINE_COMMENT);
 	public static final TextAttributesKey BLOCK_COMMENT =
-		createTextAttributesKey("SAMPLE_BLOCK_COMMENT", DefaultLanguageHighlighterColors.BLOCK_COMMENT);
+		createTextAttributesKey("STRATOS_BLOCK_COMMENT", DefaultLanguageHighlighterColors.BLOCK_COMMENT);
 
 	static {
 		PSIElementTypeFactory.defineLanguageIElementTypes(StratosLanguage.INSTANCE,
@@ -70,33 +52,38 @@ public class StratosSyntaxHighlighter extends SyntaxHighlighterBase {
 			case StratosLanguageLexer.ID :
 				attrKey = ID;
 				break;
-			case StratosLanguageLexer.VAR :
-			case StratosLanguageLexer.LET :
 			case StratosLanguageLexer.VAL :
-			case StratosLanguageLexer.WHILE :
+			case StratosLanguageLexer.VAR :
+			case StratosLanguageLexer.FN :
+			case StratosLanguageLexer.CLASS :
+			case StratosLanguageLexer.STRUCT :
+			case StratosLanguageLexer.INTERFACE :
+			case StratosLanguageLexer.ENUM :
+			case StratosLanguageLexer.NAMESPACE :
+			case StratosLanguageLexer.USE :
+			case StratosLanguageLexer.CONSTRUCTOR :
 			case StratosLanguageLexer.IF :
 			case StratosLanguageLexer.ELSE :
+			case StratosLanguageLexer.WHILE :
 			case StratosLanguageLexer.RETURN :
-			case StratosLanguageLexer.PRINT :
-			case StratosLanguageLexer.FUNC :
-			case StratosLanguageLexer.CLASS :
-			case StratosLanguageLexer.PACKAGE:
-			case StratosLanguageLexer.IMPORT:
-			case StratosLanguageLexer.TYPEINT :
-			case StratosLanguageLexer.TYPEFLOAT :
-			case StratosLanguageLexer.TYPESTRING :
-			case StratosLanguageLexer.TYPEBOOLEAN :
+			case StratosLanguageLexer.WHEN :
 			case StratosLanguageLexer.TRUE :
 			case StratosLanguageLexer.FALSE :
+			case StratosLanguageLexer.NONE :
+			case StratosLanguageLexer.SOME :
 				attrKey = KEYWORD;
 				break;
 			case StratosLanguageLexer.STRING :
 				attrKey = STRING;
 				break;
-			case StratosLanguageLexer.COMMENT :
-				attrKey = LINE_COMMENT;
+			case StratosLanguageLexer.INT :
+			case StratosLanguageLexer.FLOAT :
+				attrKey = NUMBER;
 				break;
 			case StratosLanguageLexer.LINE_COMMENT :
+				attrKey = COMMENT;
+				break;
+			case StratosLanguageLexer.BLOCK_COMMENT :
 				attrKey = BLOCK_COMMENT;
 				break;
 			default :

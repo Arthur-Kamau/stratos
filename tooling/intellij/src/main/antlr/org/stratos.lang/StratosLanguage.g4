@@ -1,182 +1,207 @@
-/** A simple language for use with this sample plugin.
- *  It's C-like but without semicolons. Symbol resolution semantics are
- *  C-like: resolve symbol in current scope. If not in this scope, ask
- *  enclosing scope to resolve (recurse up tree until no more scopes or found).
- *  Forward refs allowed for functions but not variables. Globals must
- *  appear first syntactically.
- *
- *  Generate the parser via "mvn compile" from root dir of project.
- */
 grammar StratosLanguage;
 
-/** The start rule must be whatever you would normally use, such as script
- *  or compilationUnit, etc...
- */
 script
-	: packageClause eos	(importDecl eos)* (vardef* function* classType* statement*) EOF
-	;
-
-
-eos
-    : ';'
-    | EOF
-
+    : (declaration | statement)* EOF
     ;
 
-packageClause
-    : 'package' ID
+declaration
+    : varDecl
+    | fnDecl
+    | classDecl
+    | structDecl
+    | interfaceDecl
+    | enumDecl
+    | namespaceDecl
+    | useDecl
     ;
 
-importDecl
-    : 'import' (importSpec | '(' (importSpec eos)* ')')
+useDecl
+    : 'use' ID (':' ID)* ';'
     ;
 
-importSpec
-    : ('.' | ID)? importPath
+namespaceDecl
+    : 'namespace' ID '{' declaration* '}'
     ;
 
-importPath
-    : string_
+varDecl
+    : ('val' | 'var') ID (':' type)? ('=' expr)? ';'
     ;
 
-string_
-    : RAW_STRING_LIT
-    | INTERPRETED_STRING_LIT
+fnDecl
+    : 'fn' ID '(' paramList? ')' (type)? block
     ;
 
-classType
-	:	'class' ID ('(' formal_args? ')')?  blockWithFunctions
-	;
+paramList
+    : param (',' param)*
+    ;
 
-function
-	:	'function' ID '(' formal_args? ')' (':' type)? block
-	;
+param
+    : ID ':' type
+    ;
 
-formal_args : formal_arg (',' formal_arg)* ;
+classDecl
+    : 'class' ID (':' ID)? '{' classMember* '}'
+    ;
 
-formal_arg : ID ':' type ;
+structDecl
+    : 'struct' ID '{' structMember* '}'
+    ;
 
-type:	'int'                                               # IntTypeSpec
-	|	'float'                                             # FloatTypeSpec
-	|	'string'                                            # StringTypeSpec
-	|	'boolean'											# BooleanTypeSpec
-	|	'[' ']'                                             # VectorTypeSpec
-	;
+interfaceDecl
+    : 'interface' ID '{' fnSignature* '}'
+    ;
+
+enumDecl
+    : 'enum' ID '{' enumList '}'
+    ;
+
+enumList
+    : ID (',' ID)*
+    ;
+
+classMember
+    : varDecl 
+    | fnDecl 
+    | constructorDecl
+    ;
+
+structMember
+    : ID ':' type (',' | ';')?
+    ;
+
+fnSignature
+    : 'fn' ID '(' paramList? ')' (type)? ';'
+    ;
+
+constructorDecl
+    : 'constructor' '(' paramList? ')' block
+    ;
+
+type
+    : 'int'
+    | 'double'
+    | 'string'
+    | 'bool'
+    | 'void'
+    | 'unit'
+    | 'any'
+    | 'Optional' '<' type '>'
+    | ID
+    ;
 
 block
-	:  '{' (statement|vardef)* '}';
-
-blockWithFunctions
-	:  '{' (statement|vardef|function)* '}';
+    : '{' (declaration | statement)* '}'
+    ;
 
 statement
-	:	'if' '(' expr ')' statement ('else' statement)?		# If
-	|	'while' '(' expr ')' statement						# While
-	|	ID '=' expr											# Assign
-	|	ID '[' expr ']' '=' expr							# ElementAssign
-	|	call_expr											# CallStatement
-	|	'print' '(' expr? ')'								# Print
-	|	'return' expr										# Return
-	|	block				 								# BlockStatement
-	;
+    : ifStmt
+    | whileStmt
+    | returnStmt
+    | exprStmt
+    | block
+    ;
 
-valTypedef : 'val' ID '=' expr ;
-letTypedef : 'let' ID '=' expr ;
-varTypedef : 'var' ID '=' expr ;
-vardef :  valTypedef | letTypedef  | varTypedef ;  //'var' ID '=' expr ;
+ifStmt
+    : 'if' '(' expr ')' statement ('else' statement)?
+    ;
+
+whileStmt
+    : 'while' '(' expr ')' statement
+    ;
+
+returnStmt
+    : 'return' expr? ';'
+    ;
+
+exprStmt
+    : expr ';'
+    ;
 
 expr
-	:	expr operator expr									# Op
-	|	'-' expr											# Negate
-	|	'!' expr											# Not
-	|	call_expr											# Call
-	|	ID '[' expr ']'										# Index
-	|	'(' expr ')'										# Parens
-	|	primary												# Atom
-	;
-
-operator  : MUL|DIV|ADD|SUB|GT|GE|LT|LE|EQUAL_EQUAL|NOT_EQUAL|OR|AND|DOT ; // no implicit precedence
-
-call_expr
-	: ID '(' expr_list? ')' ;
-
-expr_list : expr (',' expr)* ;
+    : expr pipeOp expr          # PipeExpr
+    | expr orOp expr            # OrExpr
+    | expr andOp expr           # AndExpr
+    | expr eqOp expr            # EqExpr
+    | expr compOp expr          # CompExpr
+    | expr addOp expr           # AddExpr
+    | expr multOp expr          # MulExpr
+    | unaryOp expr              # UnaryExpr
+    | primary                   # AtomExpr
+    ;
 
 primary
-	:	ID													# Identifier
-	|	INT													# Integer
-	|	FLOAT												# Float
-	|	STRING												# String
-	|	'[' expr_list ']'									# Vector
-	|	'true'												# TrueLiteral
-	|	'false'												# FalseLiteral
-	;
+    : INT
+    | FLOAT
+    | STRING
+    | 'true'
+    | 'false'
+    | 'None'
+    | ID
+    | '(' expr ')'
+    | primary '(' argList? ')'  # CallExpr
+    | primary '.' ID            # AccessExpr
+    | primary safeDot ID        # SafeAccessExpr
+    | primary elvis expr        # ElvisExpr
+    | ifExpr                    # IfExpr
+    | whenExpr                  # WhenExpr
+    ;
 
-LPAREN : '(' ;
-RPAREN : ')' ;
-COLON : ':' ;
-COMMA : ',' ;
-LBRACK : '[' ;
-RBRACK : ']' ;
-LBRACE : '{' ;
-RBRACE : '}' ;
+argList
+    : expr (',' expr)*
+    ;
+
+ifExpr
+    : 'if' '(' expr ')' expr 'else' expr
+    ;
+
+whenExpr
+    : 'when' '(' expr ')' '{' whenEntry* '}'
+    ;
+
+whenEntry
+    : (expr | 'else') '->' block
+    ;
+
+// Lexer Rules
+
+VAL : 'val' ;
+VAR : 'var' ;
+FN : 'fn' ;
+CLASS : 'class' ;
+STRUCT : 'struct' ;
+INTERFACE : 'interface' ;
+ENUM : 'enum' ;
+NAMESPACE : 'namespace' ;
+USE : 'use' ;
+CONSTRUCTOR : 'constructor' ;
 IF : 'if' ;
 ELSE : 'else' ;
 WHILE : 'while' ;
-VAR : 'var' ;
-LET : 'let' ;
-VAL : 'val' ;
-EQUAL : '=' ;
 RETURN : 'return' ;
-PRINT : 'print' ;
-CLASS : 'class' ;
-PACKAGE : 'package' ;
-IMPORT : 'import' ;
-FUNC : 'function' ;
-TYPEINT : 'int' ;
-TYPEFLOAT : 'float' ;
-TYPESTRING : 'string' ;
-TYPEBOOLEAN : 'boolean' ;
+WHEN : 'when' ;
 TRUE : 'true' ;
 FALSE : 'false' ;
-SUB : '-' ;
-BANG : '!' ;
-MUL : '*' ;
-DIV : '/' ;
-ADD : '+' ;
-LT : '<' ;
-LE : '<=' ;
-EQUAL_EQUAL : '==' ;
-NOT_EQUAL : '!=' ;
-GT : '>' ;
-GE : '>=' ;
-OR : '||' ;
-AND : '&&' ;
-DOT : ' . ' ;
+NONE : 'None' ;
+SOME : 'Some' ;
 
-LINE_COMMENT : '//' .*? ('\n'|EOF)	-> channel(HIDDEN) ;
-COMMENT      : '/*' .*? '*/'    	-> channel(HIDDEN) ;
+pipeOp : '|>' ;
+orOp : '||' ;
+andOp : '&&' ;
+eqOp : '==' | '!=' ;
+compOp : '<' | '<=' | '>' | '>=' ;
+addOp : '+' | '-' ;
+multOp : '*' | '/' | '%' ;
+unaryOp : '!' | '-' | 'not' ;
+safeDot : '?.' ;
+elvis : '?:' ;
 
-ID  : [a-zA-Z_] [a-zA-Z0-9_]* ;
+ID : [a-zA-Z_] [a-zA-Z0-9_]* ;
 INT : [0-9]+ ;
-FLOAT
-	:   '-'? INT '.' INT EXP?   // 1.35, 1.35E-9, 0.3, -4.5
-	|   '-'? INT EXP            // 1e10 -3e4
-	;
-fragment EXP :   [Ee] [+\-]? INT ;
+FLOAT : [0-9]+ '.' [0-9]+ ;
+STRING : '"' .*? '"' ;
 
-STRING :  '"' (ESC | ~["\\])* '"' ;
-fragment ESC :   '\\' ["\bfnrt] ;
-
-WS : [ \t\n\r]+ -> channel(HIDDEN) ;
-
-/** "catch all" rule for any char not matche in a token rule of your
- *  grammar. Lexers in Intellij must return all tokens good and bad.
- *  There must be a token to cover all characters, which makes sense, for
- *  an IDE. The parser however should not see these bad tokens because
- *  it just confuses the issue. Hence, the hidden channel.
- */
-ERRCHAR
-	:	.	-> channel(HIDDEN)
-	;
-
+WS : [ 	
+]+ -> skip ;
+LINE_COMMENT : '//' ~[
+]* -> skip ;
+BLOCK_COMMENT : '/*' .*? '*/' -> skip ;

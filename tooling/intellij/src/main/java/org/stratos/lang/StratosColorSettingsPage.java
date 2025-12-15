@@ -16,8 +16,9 @@ public class StratosColorSettingsPage implements ColorSettingsPage {
 		new AttributesDescriptor("Identifier", StratosSyntaxHighlighter.ID),
 		new AttributesDescriptor("Keyword", StratosSyntaxHighlighter.KEYWORD),
 		new AttributesDescriptor("String", StratosSyntaxHighlighter.STRING),
-		new AttributesDescriptor("Line comment", StratosSyntaxHighlighter.LINE_COMMENT),
-		new AttributesDescriptor("Block comment", StratosSyntaxHighlighter.BLOCK_COMMENT),
+		new AttributesDescriptor("Number", StratosSyntaxHighlighter.NUMBER),
+		new AttributesDescriptor("Comment", StratosSyntaxHighlighter.COMMENT),
+		new AttributesDescriptor("Block Comment", StratosSyntaxHighlighter.BLOCK_COMMENT),
 	};
 
 	@Nullable
@@ -42,16 +43,28 @@ public class StratosColorSettingsPage implements ColorSettingsPage {
 	@Override
 	public String getDemoText() {
 		return
-			"/* block comment */\n"+
-			"function f(a:[]) {\n"+
-			"   // line comment\n"+
-			"   var i = 1\n" +
-			"   while (i < len(a)) {\n" +
-			"       print(a[i])\n" +
-			"   }\n" +
-			"   g(\"hi mom\")\n" +
-			"}\n" +
-			"func g(c:string) { }\n";
+			"// Stratos Demo Code\n" +
+			"/* This is a block comment */\n" +
+			"package main;\n\n" +
+			"use std:io;\n\n" +
+			"val pi: double = 3.14159;\n\n" +
+			"class Circle {\n" +
+			"    var radius: double;\n" +
+			"    constructor(r: double) {\n" +
+			"        this.radius = r;\n" +
+			"    }\n" +
+			"}\n\n" +
+			"fn calculateArea(c: Circle) double {\n" +
+			"    return pi * c.radius * c.radius;\n" +
+			"}\n\n" +
+			"fn main() {\n" +
+			"    val myCircle = Circle(10.0);\n" +
+			"    if (myCircle.radius > 5.0) {\n" +
+			"        print(\"Big Circle\");\n" +
+			"    } else {\n" +
+			"        print(\"Small Circle\");\n" +
+			"    }\n" +
+			"}";
 	}
 
 	@NotNull
@@ -69,6 +82,6 @@ public class StratosColorSettingsPage implements ColorSettingsPage {
 	@NotNull
 	@Override
 	public String getDisplayName() {
-		return "Sample";
+		return "Stratos";
 	}
 }
