@@ -10,3 +10,7 @@
 31	777	7874887963776409	CMakeFiles/stratos.dir/src/optimizer/Optimizer.cpp.obj	c613d85973063484
 24	1681	7874887963694007	CMakeFiles/stratos.dir/src/main.cpp.obj	916c6094476ea1dd
 1684	1889	7874887980283867	stratos.exe	27e4b7e8f123d50b
+87	1195	7874892501267826	CMakeFiles/stratos.dir/src/sema/SemanticAnalyzer.cpp.obj	7ff0aca528e86194
+10	1314	7874892500488731	CMakeFiles/stratos.dir/src/main.cpp.obj	916c6094476ea1dd
+4	981	7874892771500220	CMakeFiles/stratos.dir/src/parser/Parser.cpp.obj	ad688d7dc24e0045
+984	1215	7874892781281570	stratos.exe	27e4b7e8f123d50b

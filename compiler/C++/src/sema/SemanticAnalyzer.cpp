@@ -29,7 +29,12 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
 }
 
 void SemanticAnalyzer::error(const std::string& message) {
-    std::cerr << "Semantic Error: " << message << std::endl;
+    std::cerr << "[Error] 0:0: " << message << std::endl; // Fallback
+    hadError = true;
+}
+
+void SemanticAnalyzer::error(Token token, const std::string& message) {
+    std::cerr << "[Error] " << token.line << ":" << token.column << ": " << message << std::endl;
     hadError = true;
 }
 
@@ -37,13 +42,7 @@ void SemanticAnalyzer::error(const std::string& message) {
 
 void SemanticAnalyzer::visit(BinaryExpr& expr) {
     if (expr.op.type == TokenType::DOT) {
-        // Member access: Type.member or object.member
-        // 1. Analyze the object/type (Left)
         expr.left->accept(*this);
-        
-        // 2. The Right side is a member name (identifier), NOT a variable in the current scope.
-        //    So we DO NOT visit it (which would trigger "Undefined variable").
-        //    In a full compiler, we would check if 'left.type' has member 'right'.
         return; 
     }
 
@@ -63,7 +62,7 @@ void SemanticAnalyzer::visit(LiteralExpr& expr) {
 void SemanticAnalyzer::visit(VariableExpr& expr) {
     // 1. Resolution: Variable must exist
     if (!symbolTable.resolve(expr.name.lexeme)) {
-        error("Undefined variable '" + expr.name.lexeme + "'.");
+        error(expr.name, "Undefined variable '" + expr.name.lexeme + "'.");
     }
 }
 
@@ -94,7 +93,7 @@ void SemanticAnalyzer::visit(VarDecl& stmt) {
     Symbol symbol = Symbol::Variable(stmt.name.lexeme, type, stmt.isMutable);
     
     if (!symbolTable.define(symbol)) {
-        error("Variable '" + stmt.name.lexeme + "' is already defined in this scope.");
+        error(stmt.name, "Variable '" + stmt.name.lexeme + "' is already defined in this scope.");
     }
 }
 
@@ -102,7 +101,7 @@ void SemanticAnalyzer::visit(FunctionDecl& stmt) {
     // 1. Define function name in current scope (so it can recurse)
     Symbol funcSymbol = Symbol::Function(stmt.name.lexeme, stmt.paramTypes, stmt.returnType);
     if (!symbolTable.define(funcSymbol)) {
-        error("Function '" + stmt.name.lexeme + "' is already defined.");
+        error(stmt.name, "Function '" + stmt.name.lexeme + "' is already defined.");
     }
 
     // 2. Enter new scope for function body
@@ -129,7 +128,7 @@ void SemanticAnalyzer::visit(FunctionDecl& stmt) {
 
 void SemanticAnalyzer::visit(ClassDecl& stmt) {
     if (!symbolTable.define(Symbol{stmt.name.lexeme, SymbolKind::CLASS, stmt.name.lexeme, false})) {
-         error("Class '" + stmt.name.lexeme + "' is already defined.");
+         error(stmt.name, "Class '" + stmt.name.lexeme + "' is already defined.");
     }
 
     symbolTable.enterScope();

@@ -66,7 +66,10 @@ private:
 
 class ParseError : public std::runtime_error {
 public:
-    ParseError(const std::string& msg) : std::runtime_error(msg) {}
+    int line;
+    int column;
+    ParseError(const std::string& msg, int line, int column) 
+        : std::runtime_error(msg), line(line), column(column) {}
 };
 
 } // namespace stratos

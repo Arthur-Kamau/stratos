@@ -11,7 +11,7 @@ std::vector<std::unique_ptr<Stmt>> Parser::parse() {
         try {
             statements.push_back(declaration());
         } catch (ParseError& error) {
-            std::cerr << "Parse Error: " << error.what() << std::endl;
+            std::cerr << "[Error] " << error.line << ":" << error.column << ": " << error.what() << std::endl;
             synchronize();
         }
     }
@@ -402,7 +402,7 @@ std::unique_ptr<Expr> Parser::primary() {
         return std::make_unique<GroupingExpr>(std::move(expr));
     }
 
-    throw ParseError("Expect expression.");
+    throw ParseError("Expect expression. Found: " + peek().lexeme, peek().line, peek().column);
 }
 
 // --- Helpers ---
@@ -417,7 +417,8 @@ std::string Parser::parseType() {
     if (match({TokenType::IDENTIFIER, TokenType::INT, TokenType::STRING, TokenType::BOOL, TokenType::DOUBLE, TokenType::VOID})) {
         return previous().lexeme;
     }
-    throw ParseError("Expect type.");
+    Token t = peek();
+    throw ParseError("Expect type. Found: " + t.lexeme, t.line, t.column);
 }
 
 bool Parser::match(const std::vector<TokenType>& types) {
@@ -454,7 +455,8 @@ Token Parser::previous() {
 
 Token Parser::consume(TokenType type, std::string message) {
     if (check(type)) return advance();
-    throw ParseError(message + " Found: " + peek().lexeme);
+    Token t = peek();
+    throw ParseError(message + " Found: " + t.lexeme, t.line, t.column);
 }
 
 void Parser::synchronize() {

@@ -37,7 +37,8 @@ private:
     SymbolTable symbolTable;
     bool hadError = false;
 
-    void error(const std::string& message);
+    void error(const std::string& message); // Generic (no loc)
+    void error(Token token, const std::string& message); // With loc
     void defineNativeFunctions(); // define print, etc.
 };
 

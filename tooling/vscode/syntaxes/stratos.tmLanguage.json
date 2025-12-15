@@ -2,544 +2,121 @@
 	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
 	"name": "Stratos",
 	"patterns": [
-		
-		{
-			"include": "#keywords"
-		},
-		
-		{
-			"include": "#string-multiline"
-		},
-		{
-			"include": "#statements"
-		},
-		{
-			"include": "#annotations"
-		},
-		{
-			"include": "#comments"
-		},
-		
-		{
-			"include": "#character"
-		},
-		{
-			"include": "#strings"
-		},
-		{
-			"include":"#constants-and-special-vars"
-		},
-		{
-			"begin": "^\\w*\\b(package|use|import|part|export)\\b",
-			"beginCaptures": {
-				"0": {
-					"name": "keyword.other.import.stratos"
-				}
-			},
-			"end": ";",
-			"endCaptures": {
-				"0": {
-					"name": "punctuation.terminator.stratos"
-				}
-			},
-			"name": "meta.declaration.stratos",
-			"patterns": [
-				{
-					"include": "#strings"
-				},
-				{
-					"include": "#comments"
-				},
-				{
-					"match": "\\b(as|show|hide)\\b",
-					"name": "keyword.other.import.stratos"
-				}
-			]
-		}
-	
+		{ "include": "#comments" },
+		{ "include": "#strings" },
+		{ "include": "#keywords" },
+		{ "include": "#storage" },
+		{ "include": "#constants" },
+		{ "include": "#support" },
+		{ "include": "#functions" },
+		{ "include": "#types" },
+		{ "include": "#operators" },
+		{ "include": "#punctuation" }
 	],
 	"repository": {
-		"keywords": {
+		"comments": {
 			"patterns": [
 				{
-					"match": "(?<!\\$)\\b(break|case|continue|default|do|else|for|if|in|when|expect|return|switch|while)\\b(?!\\$)",
-					"name": "keyword.control.stratos"
+					"begin": "//",
+					"end": "$",
+					"name": "comment.line.double-slash.stratos"
 				},
 				{
-					"match": "(?<!\\$)\\b(try|on|catch|finally|throw|rethrow)\\b(?!\\$)",
-					"name": "keyword.control.catch-exception.stratos"
-				},
-				{
-					"match": "(?<![a-zA-Z0-9_$])([_$]*[A-Z][a-zA-Z0-9_$]*|bool\\b|num\\b|int\\b|double\\b|dynamic\\b)",
-					"name": "support.class.stratos"
-				},
-				{
-					"match": "(==|!=|<=?|>=?)",
-					"name": "keyword.operator.comparison.stratos"
-				},
-				{
-					"match": "(?<!\\$)\\b(is\\!?)\\b(?!\\$)",
-					"name": "keyword.operator.stratos"
-				},
-				{
-					"match": "\\?|:",
-					"name": "keyword.operator.ternary.stratos"
-				},
-				{
-					"match": "(<<|>>>?|~|\\^|\\||&)",
-					"name": "keyword.operator.bitwise.stratos"
-				},
-				{
-					"match": "((&|\\^|\\||<<|>>>?)=)",
-					"name": "keyword.operator.assignment.bitwise.stratos"
-				},
-				{
-					"match": "(->)",
-					"name": "keyword.operator.closure.stratos"
-				},
-				{
-					"match": "(?<!\\$)\\b(sync(\\*)?|async(\\*)?|await|yield(\\*)?)\\b(?!\\$)",
-					"name": "keyword.control.stratos"
-				},
-				{
-					"match": "(?<!\\$)\\b(static|mut|final|const|required|late)\\b(?!\\$)",
-					"name": "storage.modifier.stratos"
-				}
-			]
-		},
-
-		"statements": {
-			"patterns": [
-				{
-					"match": "\\b(var)\\s+([A-Za-z_][A-Za-z0-9_]*)\\b",
-					"captures": {
-						"1": {
-							"name": "storage.type.stratos"
-						},
-						"2": {
-							"name": "support.variable.stratos"
-						}
-					}
-				},
-				{
-					"match": "\\b(let)\\s+([A-Za-z_][A-Za-z0-9_]*)\\b",
-					"captures": {
-						"1": {
-							"name": "storage.type.stratos"
-						},
-						"2": {
-							"name": "support.variable.stratos"
-						}
-					}
-				},
-				{
-					"match": "\\b(val)\\s+([A-Za-z_][A-Za-z0-9_]*)\\b",
-					"captures": {
-						"1": {
-							"name": "storage.type.stratos"
-						},
-						"2": {
-							"name": "support.variable.stratos"
-						}
-					}
-				},
-				{
-
-					"match": "\\b(function)\\s+([A-Za-z0-9_])",
-					"captures": {
-						"1": {
-							"name":"storage.type.function.stratos"
-						},
-						"2": {
-							"name":"entity.name.function.stratos"
-						},
-						"3": {
-							"patterns": [
-								{
-									"match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b",
-									"name": "variable.parameter.stratos"
-								}
-							]
-						}
-					}
-				},
-				{
-					"match": "\\b(class)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(<)\\s*([A-Za-z_][A-Za-z0-9_]*))?\\b",
-					"captures": {
-						"1": {
-							"name": "storage.type.class.stratos"
-						},
-						"2": {
-							"name": "entity.name.type.class.stratos"
-						},
-						"3": {
-							"name": "storage.modifier.stratos"
-						},
-						"4": {
-							"name": "entity.name.type.class.stratos"
-						}
-					}
-				},
-				{
-					"match": "\\b(implements)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(<)\\s*([A-Za-z_][A-Za-z0-9_]*))?\\b",
-					"captures": {
-						"1": {
-							"name": "storage.type.class.stratos"
-						},
-						"2": {
-							"name": "entity.name.type.class.stratos"
-						},
-						"3": {
-							"name": "storage.modifier.stratos"
-						},
-						"4": {
-							"name": "entity.name.type.class.stratos"
-						}
-					}
-				},
-				{
-					"match": "\\b(override)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(<)\\s*([A-Za-z_][A-Za-z0-9_]*))?\\b",
-					"captures": {
-						"1": {
-							"name": "storage.type.class.stratos"
-						},
-						"2": {
-							"name": "entity.name.type.class.stratos"
-						},
-						"3": {
-							"name": "storage.modifier.stratos"
-						},
-						"4": {
-							"name": "entity.name.type.class.stratos"
-						}
-					}
-				},
-				{
-					"match": "\\b(extends)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(<)\\s*([A-Za-z_][A-Za-z0-9_]*))?\\b",
-					"captures": {
-						"1": {
-							"name": "storage.type.class.stratos"
-						},
-						"2": {
-							"name": "entity.name.type.class.stratos"
-						},
-						"3": {
-							"name": "storage.modifier.stratos"
-						},
-						"4": {
-							"name": "entity.name.type.class.stratos"
-						}
-					}
-				},
-				{
-					"match": "\\b(struct)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(<)\\s*([A-Za-z_][A-Za-z0-9_]*))?\\b",
-					"captures": {
-						"1": {
-							"name": "storage.type.class.stratos"
-						},
-						"2": {
-							"name": "entity.name.type.class.stratos"
-						},
-						"3": {
-							"name": "storage.modifier.stratos"
-						},
-						"4": {
-							"name": "entity.name.type.class.stratos"
-						}
-					}
-				},
-				{
-					"match": "\\b(data)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(<)\\s*([A-Za-z_][A-Za-z0-9_]*))?\\b",
-					"captures": {
-						"1": {
-							"name": "storage.type.class.stratos"
-						},
-						"2": {
-							"name": "entity.name.type.class.stratos"
-						},
-						"3": {
-							"name": "storage.modifier.stratos"
-						},
-						"4": {
-							"name": "entity.name.type.class.stratos"
-						}
-					}
-				},
-				{
-					"match": "\\b(enum)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(<)\\s*([A-Za-z_][A-Za-z0-9_]*))?\\b",
-					"captures": {
-						"1": {
-							"name": "storage.type.class.stratos"
-						},
-						"2": {
-							"name": "entity.name.type.class.stratos"
-						},
-						"3": {
-							"name": "storage.modifier.stratos"
-						},
-						"4": {
-							"name": "entity.name.type.class.stratos"
-						}
-					}
-				},
-				{
-					"match": "\\b(namespace)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\s*(<)\\s*([A-Za-z_][A-Za-z0-9_]*))?\\b",
-					"captures": {
-						"1": {
-							"name": "storage.type.namespace.stratos"
-						},
-						"2": {
-							"name": "entity.name.type.namespace.stratos"
-						},
-						"3": {
-							"name": "storage.modifier.stratos"
-						},
-						"4": {
-							"name": "entity.name.type.namespace.stratos"
-						}
-					}
-				}
-			]
-		},
-
-		"annotations": {
-			"patterns": [
-				{
-					"match": "@[a-zA-Z]+",
-					"name": "storage.type.annotation.stratos"
+					"begin": "/\*",
+					"end": "\*/",
+					"name": "comment.block.stratos"
 				}
 			]
 		},
 		"strings": {
-			"name": "string.quoted.double.stratos",
-			"begin": "\"",
-			"end": "\"",
 			"patterns": [
 				{
-					"begin": "(?<!r)\"\"\"",
-					"end": "\"\"\"(?!\")",
-					"name": "string.interpolated.triple.double.stratos",
-					"patterns": [
-						{
-							"include": "#string-interp"
-						}
-					]
-				},
-				{
-					"begin": "(?<!r)'''",
-					"end": "'''(?!')",
-					"name": "string.interpolated.triple.single.stratos",
-					"patterns": [
-						{
-							"include": "#string-interp"
-						}
-					]
-				},
-				{
-					"begin": "r\"\"\"",
-					"end": "\"\"\"(?!\")",
-					"name": "string.quoted.triple.double.stratos"
-				},
-				{
-					"begin": "r'''",
-					"end": "'''(?!')",
-					"name": "string.quoted.triple.single.stratos"
-				},
-				{
-					"begin": "(?<!\\|r)\"",
+					"begin": "\"",
 					"end": "\"",
-					"name": "string.interpolated.double.stratos",
+					"name": "string.quoted.double.stratos",
 					"patterns": [
-						{
-							"match": "\\n",
-							"name": "invalid.string.newline"
-						},
-						{
-							"include": "#string-interp"
-						}
-					]
-				},
-			
-				{
-					"begin": "(?<!\\|r)'",
-					"end": "'",
-					"name": "string.interpolated.single.stratos",
-					"patterns": [
-						{
-							"match": "\\n",
-							"name": "invalid.string.newline"
-						},
-						{
-							"include": "#string-interp"
-						}
-					]
-				},
-				
-				{
-					"begin": "r'",
-					"end": "'",
-					"name": "string.quoted.single.stratos",
-					"patterns": [
-						{
-							"match": "\\n",
-							"name": "invalid.string.newline"
-						}
+						{ "match": "\\.", "name": "constant.character.escape.stratos" }
 					]
 				}
 			]
 		},
-		"string-multiline": {
-			"begin": "\"\"\"",
-			"end": "\"\"\"",
-			"name": "string.quoted.double.stratos",
+		"keywords": {
 			"patterns": [
 				{
-					"match": "\\\\.",
-					"name": "constant.character.escape.stratos"
+					"match": "\\b(if|else|while|for|return|when|break|continue)\\b",
+					"name": "keyword.control.stratos"
 				},
 				{
-					"include": "#string-escape-simple"
+					"match": "\\b(use|namespace|import|as)\\b",
+					"name": "keyword.other.import.stratos"
 				},
 				{
-					"include": "#string-escape-bracketed"
-				}
-			]
-		},
-		"character": {
-			"begin": "'",
-			"end": "'",
-			"name": "string.quoted.single.stratos",
-			"patterns": [
-				{
-					"match": "\\\\.",
-					"name": "constant.character.escape.stratos"
-				}
-			]
-		},
-		"digits": {
-			"patterns": [
-				{
-					"name": "constant.numeric.stratos",
-					"match": "\\b[0-9]+(?:.[0-9]+)?\\b"
-				}
-			]
-		},
-		"ident": {
-			"patterns": [
-				{
-					"name": "variable.other.readwrite.stratos",
-					"match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
-				}
-			]
-		},
-		"comments": {
-			"patterns": [
-				{
-					"include": "#comment-line"
+					"match": "\\b(class|interface|struct|enum|constructor)\\b",
+					"name": "keyword.declaration.stratos"
 				},
 				{
-					"include": "#comment-stratos-doc"
-				}
-			]
-		},
-		"comment-line": {
-			"begin": "//",
-			"end": "$",
-			"name": "comment.line.double-slash.stratos"
-		},
-		"comment-stratos-doc": {
-			"patterns": [
+					"match": "\\b(fn)\\b",
+					"name": "keyword.function.stratos"
+				},
 				{
-					"begin": "/\\*\\*",
-					"end": "\\*/",
-					"name": "comment.block.javadoc.stratos",
-					"patterns": [
-						{
-							"match": "@(author|deprecated|return|see|serial|since|version)\\b",
-							"name": "keyword.other.documentation.javadoc.stratos"
-						},
-						{
-							"match": "(@param)\\s+(\\S+)",
-							"captures": {
-								"1": {
-									"name": "keyword.other.documentation.javadoc.stratos"
-								},
-								"2": {
-									"name": "variable.parameter.stratos"
-								}
-							}
-						},
-						{
-							"match": "(@(?:exception|throws))\\s+(\\S+)",
-							"captures": {
-								"1": {
-									"name": "keyword.other.documentation.javadoc.stratos"
-								},
-								"2": {
-									"name": "entity.name.type.class.stratos"
-								}
-							}
-						},
-						{
-							"match": "{(@link)\\s+(\\S+)?#([\\w$]+\\s*\\([^\\(\\)]*\\)).*}",
-							"captures": {
-								"1": {
-									"name": "keyword.other.documentation.javadoc.stratos"
-								},
-								"2": {
-									"name": "entity.name.type.class.stratos"
-								},
-								"3": {
-									"name": "variable.parameter.stratos"
-								}
-							}
-						}
-					]
-				}
-			]
-		},
-		"constants-and-special-vars": {
-			"patterns": [
-				{
-					"match": "(?<!\\$)\\b(true|false|nil|some)\\b(?!\\$)",
+					"match": "\\b(true|false|None|Some|null)\\b",
 					"name": "constant.language.stratos"
 				},
 				{
-					"match": "(?<!\\$)\\b(this|super)\\b(?!\\$)",
+					"match": "\\b(this|super)\\b",
 					"name": "variable.language.stratos"
-				},
-				{
-					"match": "(?<!\\$)\\b((0(x|X)[0-9a-fA-F]*)|(([0-9]+\\.?[0-9]*)|(\\.[0-9]+))((e|E)(\\+|-)?[0-9]+)?)\\b(?!\\$)",
-					"name": "constant.numeric.stratos"
-				},
-				{
-					"match": "(?<![a-zA-Z0-9_$])([_$]*[A-Z][a-zA-Z0-9_$]*|bool\\b|num\\b|int\\b|string\\b|char\\b|double\\b|dynamic\\b)",
-					"name": "support.class.stratos"
-				},
-				{
-					"match": "([_$]*[a-z][a-zA-Z0-9_$]*)(<|\\(|\\s+=>)",
-					"captures": {
-						"1": {
-							"name": "entity.name.function.stratos"
-						}
-					}
 				}
 			]
 		},
-
+		"storage": {
+			"patterns": [
+				{
+					"match": "\\b(var|val)\\b",
+					"name": "storage.type.variable.stratos"
+				},
+				{
+					"match": "\\b(mut)\\b",
+					"name": "storage.modifier.stratos"
+				}
+			]
+		},
+		"types": {
+			"patterns": [
+				{
+					"match": "\\b(int|double|string|bool|void|unit|any|Optional)\\b",
+					"name": "support.type.primitive.stratos"
+				}
+			]
+		},
+		"functions": {
+			"patterns": [
+				{
+					"match": "\\b([A-Za-z_][A-Za-z0-9_]*)(?=\\()",
+					"name": "entity.name.function.stratos"
+				}
+			]
+		},
+		"constants": {
+			"patterns": [
+				{
+					"match": "\\b[0-9]+(\\.[0-9]+)?\\b",
+					"name": "constant.numeric.stratos"
+				}
+			]
+		},
+		"operators": {
+			"patterns": [
+				{
+					"match": "(\|>|\?:|\?\.|==|!=|<=|>=|<|>|\+|\-|\*|/|%|=|\+=|\-=)",
+					"name": "keyword.operator.stratos"
+				}
+			]
+		},
 		"punctuation": {
 			"patterns": [
 				{
-					"match": ",",
-					"name": "punctuation.comma.stratos"
-				},
-				{
-					"match": ";",
-					"name": "punctuation.terminator.stratos"
-				},
-				{
-					"match": "\\.",
-					"name": "punctuation.dot.stratos"
+					"match": "\{|\}|\(|\)|;|,|\.|:",
+					"name": "punctuation.stratos"
 				}
 			]
 		}
