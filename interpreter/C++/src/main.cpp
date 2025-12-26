@@ -16,6 +16,9 @@
 #include "stratos/IRGenerator.h"
 #include "stratos/Optimizer.h"
 #include "stratos/ProjectConfig.h"
+#include "stratos/NativeRegistry.h"
+#include "stratos/TypeSystem.h"
+#include "stratos/AsyncRuntime.h"
 
 using namespace stratos;
 namespace fs = std::filesystem;
@@ -470,6 +473,9 @@ int handleBuild(int argc, char* argv[]) {
 // ============================================================================
 
 int main(int argc, char* argv[]) {
+    // Initialize runtime systems
+    NativeRegistry::getInstance().initializeStdlib();
+
     if (argc < 2) {
         std::cerr << "Error: No input file or command specified.\n\n";
         printHelp();
