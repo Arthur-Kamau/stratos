@@ -1,0 +1,188 @@
+#include "stratos/SemanticAnalyzer.h"
+#include <iostream>
+
+namespace stratos {
+
+SemanticAnalyzer::SemanticAnalyzer() {
+    defineNativeFunctions();
+}
+
+void SemanticAnalyzer::defineNativeFunctions() {
+    // Define 'print' as a native function
+    // fn print(any) -> void
+    symbolTable.define(Symbol::Function("print", {"any"}, "void"));
+
+    // Define standard types/constructors
+    symbolTable.define(Symbol::Variable("Some", "constructor", false)); // Mock for now
+    symbolTable.define(Symbol::Variable("None", "Optional", false));
+    
+    // Internal intrinsics
+    symbolTable.define(Symbol::Function("__if_expr", {"bool", "any", "any"}, "any"));
+}
+
+bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& statements) {
+    hadError = false;
+    for (const auto& stmt : statements) {
+        if (stmt) stmt->accept(*this);
+    }
+    return !hadError;
+}
+
+void SemanticAnalyzer::error(const std::string& message) {
+    std::cerr << "[Error] 0:0: " << message << std::endl; // Fallback
+    hadError = true;
+}
+
+void SemanticAnalyzer::error(Token token, const std::string& message) {
+    std::cerr << "[Error] " << token.line << ":" << token.column << ": " << message << std::endl;
+    hadError = true;
+}
+
+// --- Expressions ---
+
+void SemanticAnalyzer::visit(BinaryExpr& expr) {
+    if (expr.op.type == TokenType::DOT) {
+        expr.left->accept(*this);
+        return; 
+    }
+
+    expr.left->accept(*this);
+    expr.right->accept(*this);
+    // TODO: Type checking (e.g., ensure left/right are numbers for +)
+}
+
+void SemanticAnalyzer::visit(UnaryExpr& expr) {
+    expr.right->accept(*this);
+}
+
+void SemanticAnalyzer::visit(LiteralExpr& expr) {
+    // Literals are self-contained
+}
+
+void SemanticAnalyzer::visit(VariableExpr& expr) {
+    // 1. Resolution: Variable must exist
+    if (!symbolTable.resolve(expr.name.lexeme)) {
+        error(expr.name, "Undefined variable '" + expr.name.lexeme + "'.");
+    }
+}
+
+void SemanticAnalyzer::visit(CallExpr& expr) {
+    expr.callee->accept(*this); // Verify function exists (if it's a variable access)
+
+    // TODO: Advanced check - ensure callee is actually a callable type
+    
+    for (const auto& arg : expr.arguments) {
+        arg->accept(*this);
+    }
+}
+
+void SemanticAnalyzer::visit(GroupingExpr& expr) {
+    expr.expression->accept(*this);
+}
+
+// --- Statements ---
+
+void SemanticAnalyzer::visit(VarDecl& stmt) {
+    // 1. Analyze initializer first (so it can't refer to the variable being declared)
+    if (stmt.initializer) {
+        stmt.initializer->accept(*this);
+    }
+
+    // 2. Define variable in current scope
+    std::string type = stmt.typeName.empty() ? "inferred" : stmt.typeName;
+    Symbol symbol = Symbol::Variable(stmt.name.lexeme, type, stmt.isMutable);
+    
+    if (!symbolTable.define(symbol)) {
+        error(stmt.name, "Variable '" + stmt.name.lexeme + "' is already defined in this scope.");
+    }
+}
+
+void SemanticAnalyzer::visit(FunctionDecl& stmt) {
+    // 1. Define function name in current scope (so it can recurse)
+    Symbol funcSymbol = Symbol::Function(stmt.name.lexeme, stmt.paramTypes, stmt.returnType);
+    if (!symbolTable.define(funcSymbol)) {
+        error(stmt.name, "Function '" + stmt.name.lexeme + "' is already defined.");
+    }
+
+    // 2. Enter new scope for function body
+    symbolTable.enterScope();
+
+    // 3. Define parameters as variables
+    for (size_t i = 0; i < stmt.params.size(); ++i) {
+        std::string pType = stmt.paramTypes[i];
+        // Params are usually immutable (val) by default in many modern langs, let's assume so or var
+        Symbol paramSym = Symbol::Variable(stmt.params[i].lexeme, pType, false); // val
+        symbolTable.define(paramSym);
+    }
+
+    // 4. Analyze body
+    if (stmt.body) {
+        for (const auto& s : *stmt.body) {
+            if (s) s->accept(*this);
+        }
+    }
+
+    // 5. Exit scope
+    symbolTable.exitScope();
+}
+
+void SemanticAnalyzer::visit(ClassDecl& stmt) {
+    if (!symbolTable.define(Symbol{stmt.name.lexeme, SymbolKind::CLASS, stmt.name.lexeme, false})) {
+         error(stmt.name, "Class '" + stmt.name.lexeme + "' is already defined.");
+    }
+
+    symbolTable.enterScope();
+    // Define 'this'
+    symbolTable.define(Symbol::Variable("this", stmt.name.lexeme, false));
+    
+    for (const auto& member : stmt.methods) {
+        if (member) member->accept(*this);
+    }
+    
+    symbolTable.exitScope();
+}
+
+void SemanticAnalyzer::visit(PackageDecl& stmt) {
+    // Package declaration (like "package main;") just declares what package
+    // this file belongs to - it doesn't create a symbol in the namespace.
+    // Don't define the package name as a symbol to avoid conflicts.
+    // NOTE: Package imports (via 'use' keyword) would be different.
+
+    // Process declarations within the package without creating a new scope
+    // or defining the package name as a symbol
+    for (const auto& s : stmt.declarations) {
+        if (s) s->accept(*this);
+    }
+}
+
+void SemanticAnalyzer::visit(BlockStmt& stmt) {
+    symbolTable.enterScope();
+    for (const auto& s : stmt.statements) {
+        if (s) s->accept(*this);
+    }
+    symbolTable.exitScope();
+}
+
+void SemanticAnalyzer::visit(PrintStmt& stmt) {
+    stmt.expression->accept(*this);
+}
+
+void SemanticAnalyzer::visit(IfStmt& stmt) {
+    stmt.condition->accept(*this);
+    stmt.thenBranch->accept(*this);
+    if (stmt.elseBranch) stmt.elseBranch->accept(*this);
+}
+
+void SemanticAnalyzer::visit(WhileStmt& stmt) {
+    stmt.condition->accept(*this);
+    stmt.body->accept(*this);
+}
+
+void SemanticAnalyzer::visit(ReturnStmt& stmt) {
+    if (stmt.value) {
+        stmt.value->accept(*this);
+    }
+    // TODO: Check if return type matches function signature
+}
+
+} // namespace stratos
