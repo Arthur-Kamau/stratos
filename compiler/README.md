@@ -18,7 +18,3 @@ To build the compiler:
 
 1.  Navigate to `C++/`.
 2.  Follow the build steps in the `C++/README.md`.
-
-## Legacy / Other Implementations
-
-*   **`Jvm/`**: (If present) Previous or alternative implementation targeting the JVM.
