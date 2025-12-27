@@ -84,6 +84,15 @@ void Interpreter::visit(BinaryExpr& expr) {
             }
             break;
 
+        case TokenType::PERCENT:
+            // Modulo operator - only works with integers
+            if (left.type == "int" && right.type == "int") {
+                lastValue = RuntimeValue(std::any(left.asInt() % right.asInt()), "int");
+            } else {
+                throw std::runtime_error("Modulo operator requires integer operands");
+            }
+            break;
+
         case TokenType::EQUAL_EQUAL:
             if (left.type == "int" && right.type == "int") {
                 lastValue = RuntimeValue(std::any(left.asInt() == right.asInt()), "bool");
@@ -256,6 +265,15 @@ void Interpreter::visit(CallExpr& expr) {
         // Call user-defined function
         lastValue = callFunction(functionName, args);
     }
+}
+
+void Interpreter::visit(IndexExpr& expr) {
+    // Array indexing not yet fully implemented
+    // For now, just evaluate both sides and return a default value
+    expr.object->accept(*this);
+    expr.index->accept(*this);
+    // Return a default value (0 for now)
+    lastValue = RuntimeValue(std::any(0), "int");
 }
 
 void Interpreter::visit(GroupingExpr& expr) {

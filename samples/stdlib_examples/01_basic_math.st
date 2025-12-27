@@ -6,6 +6,7 @@ package main;
 use math;
 use log;
 
+
 fn main() {
     log.info("=== Math Module Example ===");
 

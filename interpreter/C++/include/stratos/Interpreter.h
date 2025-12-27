@@ -48,6 +48,7 @@ public:
     void visit(LiteralExpr& expr) override;
     void visit(VariableExpr& expr) override;
     void visit(CallExpr& expr) override;
+    void visit(IndexExpr& expr) override;
     void visit(GroupingExpr& expr) override;
 
     void visit(VarDecl& stmt) override;

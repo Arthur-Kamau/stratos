@@ -503,6 +503,7 @@ void IRGenerator::visit(BinaryExpr& expr) {
         case TokenType::MINUS: opCode = isFloat ? "fsub" : "sub nsw"; break;
         case TokenType::STAR: opCode = isFloat ? "fmul" : "mul nsw"; break;
         case TokenType::SLASH: opCode = isFloat ? "fdiv" : "sdiv"; break;
+        case TokenType::PERCENT: opCode = isFloat ? "frem" : "srem"; break;
         case TokenType::GREATER: opCode = isFloat ? "fcmp ogt" : "icmp sgt"; break;
         case TokenType::LESS: opCode = isFloat ? "fcmp olt" : "icmp slt"; break;
         case TokenType::EQUAL_EQUAL: opCode = isFloat ? "fcmp oeq" : "icmp eq"; break;
@@ -608,6 +609,12 @@ void IRGenerator::visit(WhileStmt& stmt) {
 void IRGenerator::visit(UnaryExpr& expr) {
     expr.right->accept(*this);
     // TODO: Implement unary operations (negation, logical NOT, etc.)
+}
+
+void IRGenerator::visit(IndexExpr& expr) {
+    // Array indexing not yet fully implemented for IR generation
+    // For now, generate a placeholder value
+    lastVal = {"%idx_placeholder", "i32"};
 }
 
 void IRGenerator::visit(GroupingExpr& expr) {

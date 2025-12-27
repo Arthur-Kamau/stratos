@@ -22,6 +22,13 @@ void NativeRegistry::registerFunction(const std::string& moduleName, const std::
     functions_[qualifiedName] = func;
 }
 
+void NativeRegistry::registerFunction(const std::string& moduleName, const std::string& functionName,
+                                     NativeFunction func, const FunctionSignature& signature) {
+    std::string qualifiedName = getQualifiedName(moduleName, functionName);
+    functions_[qualifiedName] = func;
+    signatures_[qualifiedName] = signature;
+}
+
 bool NativeRegistry::isNative(const std::string& moduleName, const std::string& functionName) const {
     std::string qualifiedName = getQualifiedName(moduleName, functionName);
     return functions_.find(qualifiedName) != functions_.end();
@@ -34,6 +41,21 @@ NativeFunction NativeRegistry::getFunction(const std::string& moduleName, const 
         return it->second;
     }
     throw std::runtime_error("Native function not found: " + qualifiedName);
+}
+
+FunctionSignature NativeRegistry::getSignature(const std::string& moduleName, const std::string& functionName) const {
+    std::string qualifiedName = getQualifiedName(moduleName, functionName);
+    auto it = signatures_.find(qualifiedName);
+    if (it != signatures_.end()) {
+        return it->second;
+    }
+    // Return empty signature if not found
+    return FunctionSignature{{}, "void"};
+}
+
+bool NativeRegistry::hasSignature(const std::string& moduleName, const std::string& functionName) const {
+    std::string qualifiedName = getQualifiedName(moduleName, functionName);
+    return signatures_.find(qualifiedName) != signatures_.end();
 }
 
 std::string NativeRegistry::getQualifiedName(const std::string& moduleName, const std::string& functionName) const {
@@ -62,32 +84,32 @@ void NativeRegistry::initMath() {
     registerFunction("math", "sin", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return std::sin(x);
-    });
+    }, FunctionSignature{{"double"}, "double"});
 
     registerFunction("math", "cos", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return std::cos(x);
-    });
+    }, FunctionSignature{{"double"}, "double"});
 
     registerFunction("math", "tan", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return std::tan(x);
-    });
+    }, FunctionSignature{{"double"}, "double"});
 
     registerFunction("math", "asin", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return std::asin(x);
-    });
+    }, FunctionSignature{{"double"}, "double"});
 
     registerFunction("math", "acos", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return std::acos(x);
-    });
+    }, FunctionSignature{{"double"}, "double"});
 
     registerFunction("math", "atan", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return std::atan(x);
-    });
+    }, FunctionSignature{{"double"}, "double"});
 
     registerFunction("math", "atan2", [](const std::vector<std::any>& args) -> std::any {
         double y = std::any_cast<double>(args[0]);
@@ -125,60 +147,60 @@ void NativeRegistry::initMath() {
     registerFunction("math", "log10", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return std::log10(x);
-    });
+    }, FunctionSignature{{"double"}, "double"});
 
     registerFunction("math", "log2", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return std::log2(x);
-    });
+    }, FunctionSignature{{"double"}, "double"});
 
     registerFunction("math", "pow", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         double y = std::any_cast<double>(args[1]);
         return std::pow(x, y);
-    });
+    }, FunctionSignature{{"double", "double"}, "double"});
 
     registerFunction("math", "sqrt", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return std::sqrt(x);
-    });
+    }, FunctionSignature{{"double"}, "double"});
 
     registerFunction("math", "cbrt", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return std::cbrt(x);
-    });
+    }, FunctionSignature{{"double"}, "double"});
 
     // Rounding
     registerFunction("math", "ceil", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return std::ceil(x);
-    });
+    }, FunctionSignature{{"double"}, "double"});
 
     registerFunction("math", "floor", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return std::floor(x);
-    });
+    }, FunctionSignature{{"double"}, "double"});
 
     registerFunction("math", "round", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return std::round(x);
-    });
+    }, FunctionSignature{{"double"}, "double"});
 
     registerFunction("math", "trunc", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return std::trunc(x);
-    });
+    }, FunctionSignature{{"double"}, "double"});
 
     // Absolute and sign
     registerFunction("math", "abs", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return std::abs(x);
-    });
+    }, FunctionSignature{{"double"}, "double"});
 
     registerFunction("math", "sign", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return (x > 0) ? 1 : (x < 0) ? -1 : 0;
-    });
+    }, FunctionSignature{{"double"}, "int"});
 
     // Min/Max
     registerFunction("math", "min", [](const std::vector<std::any>& args) -> std::any {

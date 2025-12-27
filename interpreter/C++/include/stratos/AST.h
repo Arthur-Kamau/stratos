@@ -16,6 +16,7 @@ class UnaryExpr;
 class LiteralExpr;
 class VariableExpr;
 class CallExpr;
+class IndexExpr;
 class GroupingExpr;
 class VarDecl;
 class FunctionDecl;
@@ -36,6 +37,7 @@ public:
     virtual void visit(LiteralExpr& expr) = 0;
     virtual void visit(VariableExpr& expr) = 0;
     virtual void visit(CallExpr& expr) = 0;
+    virtual void visit(IndexExpr& expr) = 0;
     virtual void visit(GroupingExpr& expr) = 0;
 
     virtual void visit(VarDecl& stmt) = 0;
@@ -111,6 +113,18 @@ public:
 
     CallExpr(std::unique_ptr<Expr> callee, Token paren, std::vector<std::unique_ptr<Expr>> arguments)
         : callee(std::move(callee)), paren(paren), arguments(std::move(arguments)) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class IndexExpr : public Expr {
+public:
+    std::unique_ptr<Expr> object;
+    std::unique_ptr<Expr> index;
+    Token bracket;
+
+    IndexExpr(std::unique_ptr<Expr> object, std::unique_ptr<Expr> index, Token bracket)
+        : object(std::move(object)), index(std::move(index)), bracket(bracket) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };

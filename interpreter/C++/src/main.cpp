@@ -282,9 +282,38 @@ std::optional<std::string> findProjectConfig(const std::string& startDir = ".") 
 
 // Helper function to resolve entry point file
 std::optional<std::string> resolveEntryPoint(const std::string& inputPath) {
-    // If the input path exists as-is, use it
+    // If the input path exists as-is and is a file, use it
     if (fs::is_regular_file(inputPath)) {
         return inputPath;
+    }
+
+    // If the input path is a directory, look inside it
+    if (fs::is_directory(inputPath)) {
+        fs::path dirPath = inputPath;
+
+        // Look for stratos.conf in the directory
+        fs::path configPath = dirPath / "stratos.conf";
+        if (fs::exists(configPath)) {
+            auto configOpt = ProjectConfigParser::parse(configPath.string());
+            if (configOpt && !configOpt->entry.empty()) {
+                fs::path entryPath = dirPath / configOpt->entry;
+                if (fs::is_regular_file(entryPath)) {
+                    return entryPath.string();
+                }
+            }
+        }
+
+        // Try main.st in the directory
+        fs::path mainPath = dirPath / "main.st";
+        if (fs::is_regular_file(mainPath)) {
+            return mainPath.string();
+        }
+
+        // Try src/main.st in the directory
+        fs::path srcMainPath = dirPath / "src" / "main.st";
+        if (fs::is_regular_file(srcMainPath)) {
+            return srcMainPath.string();
+        }
     }
 
     // Try adding .st extension
@@ -293,7 +322,7 @@ std::optional<std::string> resolveEntryPoint(const std::string& inputPath) {
         return withExtension;
     }
 
-    // Look for stratos.conf
+    // Look for stratos.conf in current directory
     auto configPathOpt = findProjectConfig();
     if (configPathOpt) {
         auto configOpt = ProjectConfigParser::parse(*configPathOpt);
@@ -348,10 +377,16 @@ int handleRun(int argc, char* argv[]) {
         std::cerr << "Error: Could not find entry point file.\n";
         std::cerr << "Searched for:\n";
         std::cerr << "  - " << inputPath << "\n";
-        std::cerr << "  - " << inputPath << ".st\n";
-        std::cerr << "  - Entry point from stratos.conf\n";
-        std::cerr << "  - main.st\n";
-        std::cerr << "  - src/main.st\n";
+        if (fs::is_directory(inputPath)) {
+            std::cerr << "  - " << inputPath << "/stratos.conf entry\n";
+            std::cerr << "  - " << inputPath << "/main.st\n";
+            std::cerr << "  - " << inputPath << "/src/main.st\n";
+        } else {
+            std::cerr << "  - " << inputPath << ".st\n";
+        }
+        std::cerr << "  - Entry point from stratos.conf (current dir)\n";
+        std::cerr << "  - main.st (current dir)\n";
+        std::cerr << "  - src/main.st (current dir)\n";
         return 1;
     }
 

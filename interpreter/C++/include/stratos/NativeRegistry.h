@@ -16,20 +16,38 @@ class Value;
 using NativeFunction = std::function<std::any(const std::vector<std::any>&)>;
 
 /**
+ * Type signature for a native function
+ */
+struct FunctionSignature {
+    std::vector<std::string> paramTypes;  // Parameter types (e.g., "int", "double", "string")
+    std::string returnType;               // Return type
+};
+
+/**
  * Registry for native (C++) functions that can be called from Stratos code
  */
 class NativeRegistry {
 public:
     static NativeRegistry& getInstance();
 
-    // Register a native function
+    // Register a native function with its implementation
     void registerFunction(const std::string& moduleName, const std::string& functionName, NativeFunction func);
+
+    // Register a native function with type signature
+    void registerFunction(const std::string& moduleName, const std::string& functionName,
+                         NativeFunction func, const FunctionSignature& signature);
 
     // Check if a function is native
     bool isNative(const std::string& moduleName, const std::string& functionName) const;
 
     // Get a native function
     NativeFunction getFunction(const std::string& moduleName, const std::string& functionName) const;
+
+    // Get function type signature
+    FunctionSignature getSignature(const std::string& moduleName, const std::string& functionName) const;
+
+    // Check if signature exists
+    bool hasSignature(const std::string& moduleName, const std::string& functionName) const;
 
     // Get fully qualified name
     std::string getQualifiedName(const std::string& moduleName, const std::string& functionName) const;
@@ -40,6 +58,7 @@ public:
 private:
     NativeRegistry() = default;
     std::unordered_map<std::string, NativeFunction> functions_;
+    std::unordered_map<std::string, FunctionSignature> signatures_;
 
     // Module initialization functions
     void initMath();

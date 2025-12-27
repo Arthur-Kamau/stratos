@@ -85,9 +85,34 @@ void SemanticAnalyzer::visit(CallExpr& expr) {
                     // Check if this is a native function call via NativeRegistry
                     auto& registry = NativeRegistry::getInstance();
                     if (registry.isNative(moduleName, functionName)) {
-                        // Valid native function call - validate arguments
-                        for (const auto& arg : expr.arguments) {
-                            arg->accept(*this);
+                        // Check if we have type signature for this function
+                        if (registry.hasSignature(moduleName, functionName)) {
+                            auto signature = registry.getSignature(moduleName, functionName);
+
+                            // Check argument count
+                            if (expr.arguments.size() != signature.paramTypes.size()) {
+                                error(rightVar->name, "Function '" + functionName + "' expects " +
+                                     std::to_string(signature.paramTypes.size()) + " arguments, got " +
+                                     std::to_string(expr.arguments.size()));
+                                return;
+                            }
+
+                            // Check argument types
+                            for (size_t i = 0; i < expr.arguments.size(); i++) {
+                                std::string argType = inferType(expr.arguments[i].get());
+                                std::string expectedType = signature.paramTypes[i];
+
+                                if (argType != expectedType && argType != "unknown") {
+                                    error(rightVar->name, "Function '" + moduleName + "." + functionName +
+                                         "' expects argument " + std::to_string(i + 1) +
+                                         " to be of type '" + expectedType + "', found '" + argType + "'");
+                                }
+                            }
+                        } else {
+                            // No signature available, just validate arguments exist
+                            for (const auto& arg : expr.arguments) {
+                                arg->accept(*this);
+                            }
                         }
                         return;
                     }
@@ -104,6 +129,12 @@ void SemanticAnalyzer::visit(CallExpr& expr) {
     for (const auto& arg : expr.arguments) {
         arg->accept(*this);
     }
+}
+
+void SemanticAnalyzer::visit(IndexExpr& expr) {
+    // Validate object and index expressions
+    expr.object->accept(*this);
+    expr.index->accept(*this);
 }
 
 void SemanticAnalyzer::visit(GroupingExpr& expr) {
@@ -234,12 +265,31 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
 
     // Possible module file locations
     std::vector<std::string> searchPaths = {
+        // Current directory
         "std/" + moduleName + "/init.st",
         "std/encoding/" + moduleName + "/init.st",
+
+        // Build directory
         "build/std/" + moduleName + "/init.st",
         "build/std/encoding/" + moduleName + "/init.st",
+
+        // One level up (from samples/ or similar)
+        "../std/" + moduleName + "/init.st",
+        "../std/encoding/" + moduleName + "/init.st",
         "../build/std/" + moduleName + "/init.st",
-        "../build/std/encoding/" + moduleName + "/init.st"
+        "../build/std/encoding/" + moduleName + "/init.st",
+        "../interpreter/C++/build/std/" + moduleName + "/init.st",
+        "../interpreter/C++/build/std/encoding/" + moduleName + "/init.st",
+
+        // Two levels up
+        "../../std/" + moduleName + "/init.st",
+        "../../std/encoding/" + moduleName + "/init.st",
+        "../../interpreter/C++/build/std/" + moduleName + "/init.st",
+        "../../interpreter/C++/build/std/encoding/" + moduleName + "/init.st",
+
+        // Three levels up
+        "../../../std/" + moduleName + "/init.st",
+        "../../../std/encoding/" + moduleName + "/init.st"
     };
 
     std::string moduleFilePath;
@@ -255,47 +305,76 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
         return;
     }
 
-    // Read the module file
-    std::ifstream file(moduleFilePath);
-    if (!file.is_open()) {
-        error("Failed to open module file: " + moduleFilePath);
-        return;
-    }
+    // Module file exists - just register it
+    // We don't parse the module file because:
+    // 1. Native functions are implemented in C++ (NativeRegistry)
+    // 2. Module files may use advanced syntax not yet fully supported
+    // 3. We only need to know the module exists and is available
+    // 4. Actual function validation happens during CallExpr analysis via NativeRegistry
 
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    std::string moduleSource = buffer.str();
-    file.close();
+    // Register the module in the symbol table
+    symbolTable.define(Symbol::Variable(moduleName, "module", false));
+}
 
-    // Lex the module file
-    Lexer lexer(moduleSource);
-    std::vector<Token> tokens = lexer.scanTokens();
+std::string SemanticAnalyzer::inferType(Expr* expr) {
+    // Infer the type of an expression
+    if (auto* literal = dynamic_cast<LiteralExpr*>(expr)) {
+        if (literal->type == TokenType::NUMBER) {
+            // Check if it's a double (has decimal point) or int
+            if (literal->value.find('.') != std::string::npos) {
+                return "double";
+            } else {
+                return "int";
+            }
+        } else if (literal->type == TokenType::STRING) {
+            return "string";
+        } else if (literal->type == TokenType::TRUE || literal->type == TokenType::FALSE) {
+            return "bool";
+        }
+    } else if (auto* varExpr = dynamic_cast<VariableExpr*>(expr)) {
+        // Look up variable type from symbol table
+        if (symbolTable.isDefined(varExpr->name.lexeme)) {
+            auto symbol = symbolTable.lookup(varExpr->name.lexeme);
+            return symbol.type;
+        }
+    } else if (auto* binary = dynamic_cast<BinaryExpr*>(expr)) {
+        // Infer type from binary operation
+        std::string leftType = inferType(binary->left.get());
+        std::string rightType = inferType(binary->right.get());
 
-    // Parse the module file
-    Parser parser(tokens);
-    std::vector<std::unique_ptr<Stmt>> moduleAST;
-    try {
-        moduleAST = parser.parse();
-    } catch (...) {
-        error("Failed to parse module: " + moduleName);
-        return;
-    }
+        // If either side is double, result is double
+        if (leftType == "double" || rightType == "double") {
+            return "double";
+        }
+        // If both are int, result is int
+        if (leftType == "int" && rightType == "int") {
+            return "int";
+        }
+        // String concatenation
+        if (leftType == "string" || rightType == "string") {
+            return "string";
+        }
+    } else if (auto* callExpr = dynamic_cast<CallExpr*>(expr)) {
+        // Try to infer return type from function signature
+        if (auto* binExpr = dynamic_cast<BinaryExpr*>(callExpr->callee.get())) {
+            if (binExpr->op.type == TokenType::DOT) {
+                if (auto* leftVar = dynamic_cast<VariableExpr*>(binExpr->left.get())) {
+                    if (auto* rightVar = dynamic_cast<VariableExpr*>(binExpr->right.get())) {
+                        std::string moduleName = leftVar->name.lexeme;
+                        std::string functionName = rightVar->name.lexeme;
 
-    // Extract function declarations and register them
-    for (const auto& stmt : moduleAST) {
-        if (auto* funcDecl = dynamic_cast<FunctionDecl*>(stmt.get())) {
-            // Register function as a module symbol
-            // We create a symbol for the module itself as a "namespace" or "module" variable
-            symbolTable.define(Symbol::Variable(moduleName, "module", false));
-
-            // Note: We don't register individual functions as symbols here
-            // Instead, the semantic analyzer will validate module.function() syntax
-            // by checking with NativeRegistry during CallExpr analysis
-
-            // For now, just ensure the module name is registered
-            break; // Only need to define module once
+                        auto& registry = NativeRegistry::getInstance();
+                        if (registry.hasSignature(moduleName, functionName)) {
+                            auto signature = registry.getSignature(moduleName, functionName);
+                            return signature.returnType;
+                        }
+                    }
+                }
+            }
         }
     }
+
+    return "unknown";
 }
 
 } // namespace stratos

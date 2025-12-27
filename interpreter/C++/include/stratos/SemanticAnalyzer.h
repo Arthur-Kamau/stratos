@@ -21,6 +21,7 @@ public:
     void visit(LiteralExpr& expr) override;
     void visit(VariableExpr& expr) override;
     void visit(CallExpr& expr) override;
+    void visit(IndexExpr& expr) override;
     void visit(GroupingExpr& expr) override;
 
     void visit(VarDecl& stmt) override;
@@ -38,11 +39,13 @@ private:
     SymbolTable symbolTable;
     bool hadError = false;
     std::vector<std::string> loadedModules; // Track already loaded modules
+    std::string lastExprType; // Track the type of the last evaluated expression
 
     void error(const std::string& message); // Generic (no loc)
     void error(Token token, const std::string& message); // With loc
     void defineNativeFunctions(); // define print, etc.
     void loadModule(const std::string& moduleName); // Load module definitions
+    std::string inferType(Expr* expr); // Infer the type of an expression
 };
 
 } // namespace stratos

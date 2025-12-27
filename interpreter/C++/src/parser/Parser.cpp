@@ -334,7 +334,7 @@ std::unique_ptr<Expr> Parser::term() {
 
 std::unique_ptr<Expr> Parser::factor() {
     std::unique_ptr<Expr> expr = unary();
-    while (match({TokenType::SLASH, TokenType::STAR})) {
+    while (match({TokenType::SLASH, TokenType::STAR, TokenType::PERCENT})) {
         Token op = previous();
         std::unique_ptr<Expr> right = unary();
         expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
@@ -357,6 +357,10 @@ std::unique_ptr<Expr> Parser::call() {
     while (true) {
         if (match({TokenType::LEFT_PAREN})) {
             expr = finishCall(std::move(expr));
+        } else if (match({TokenType::LEFT_BRACKET})) {
+            std::unique_ptr<Expr> index = expression();
+            Token bracket = consume(TokenType::RIGHT_BRACKET, "Expect ']' after array index.");
+            expr = std::make_unique<IndexExpr>(std::move(expr), std::move(index), bracket);
         } else if (match({TokenType::DOT})) {
              Token dot = previous();
              Token name = consume(TokenType::IDENTIFIER, "Expect property name after '.'.");

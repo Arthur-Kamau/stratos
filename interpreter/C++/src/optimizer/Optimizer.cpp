@@ -75,6 +75,7 @@ void Optimizer::visit(UnaryExpr& expr) {
 
 void Optimizer::visit(VariableExpr& expr) { lastConst.type = 0; }
 void Optimizer::visit(CallExpr& expr) { lastConst.type = 0; }
+void Optimizer::visit(IndexExpr& expr) { lastConst.type = 0; }
 void Optimizer::visit(GroupingExpr& expr) { expr.expression->accept(*this); }
 
 // --- Statements ---
