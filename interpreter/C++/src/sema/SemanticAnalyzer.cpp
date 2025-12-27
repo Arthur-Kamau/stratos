@@ -333,9 +333,9 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
         }
     } else if (auto* varExpr = dynamic_cast<VariableExpr*>(expr)) {
         // Look up variable type from symbol table
-        if (symbolTable.isDefined(varExpr->name.lexeme)) {
-            auto symbol = symbolTable.lookup(varExpr->name.lexeme);
-            return symbol.type;
+        auto symbolOpt = symbolTable.resolve(varExpr->name.lexeme);
+        if (symbolOpt) {
+            return symbolOpt->type;
         }
     } else if (auto* binary = dynamic_cast<BinaryExpr*>(expr)) {
         // Infer type from binary operation
