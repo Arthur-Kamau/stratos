@@ -1,10 +1,10 @@
 # Stratos Standard Library Examples
 
-This directory contains example programs demonstrating the Stratos standard library modules.
+This directory contains example projects demonstrating the Stratos standard library modules. Each example is a complete Stratos project with its own `stratos.conf` file.
 
-## Examples
+## Example Projects
 
-### 01_basic_math.st
+### 01_basic_math
 Demonstrates the `math` module:
 - Mathematical constants (PI, E, PHI)
 - Trigonometric functions
@@ -13,7 +13,7 @@ Demonstrates the `math` module:
 - Statistics (sum, average, median)
 - Utility functions (clamp, lerp)
 
-### 02_file_io.st
+### 02_file_io
 Demonstrates the `io` module:
 - Reading and writing files
 - Line-based file operations
@@ -22,7 +22,7 @@ Demonstrates the `io` module:
 - Directory operations (create, list, remove)
 - File copying
 
-### 03_concurrency.st
+### 03_concurrency
 Demonstrates the `concurrent` module:
 - Goroutines for concurrent execution
 - Channels for communication
@@ -31,7 +31,7 @@ Demonstrates the `concurrent` module:
 - WaitGroups for coordination
 - Pipeline pattern
 
-### 04_http_server.st
+### 04_http_server
 Demonstrates the `net/http` module:
 - Creating HTTP servers
 - Routing (GET, POST, DELETE)
@@ -40,7 +40,7 @@ Demonstrates the `net/http` module:
 - RESTful API design
 - In-memory data store
 
-### 05_async_await.st
+### 05_async_await
 Demonstrates the `async` module:
 - Creating and chaining Promises
 - Promise.all and Promise.race
@@ -50,7 +50,7 @@ Demonstrates the `async` module:
 - Sequential and parallel execution
 - Wait until condition
 
-### 06_testing.st
+### 06_testing
 Demonstrates the `testing` module:
 - Defining test suites with `describe()`
 - Writing test cases with `it()`
@@ -62,19 +62,39 @@ Demonstrates the `testing` module:
 
 ## Running the Examples
 
-To run an example, use the Stratos interpreter:
+Each example is now a complete Stratos project. To run an example, use the `stratos run` command:
 
 ```bash
-# From the interpreter build directory
-cd interpreter/C++/build
+# From the samples directory
+cd /home/kamau/Development/Projects/stratos/samples
 
-# Run a specific example
-./stratos ../../../samples/stdlib_examples/01_basic_math.st
+# Run an example project by passing the directory
+../interpreter/C++/build/stratos run stdlib_examples/01_basic_math/
 
-# Or from the examples directory
-cd samples/stdlib_examples
-../../interpreter/C++/build/stratos 01_basic_math.st
+# Or with verbose output
+../interpreter/C++/build/stratos run stdlib_examples/02_file_io/ -v
+
+# From within an example directory
+cd stdlib_examples/03_concurrency
+../../../interpreter/C++/build/stratos run .
 ```
+
+## Project Structure
+
+Each example follows the standard Stratos project layout:
+
+```
+example_name/
+├── stratos.conf    # Project configuration
+└── src/
+    └── main.st     # Entry point with main() function
+```
+
+The `stratos.conf` file specifies:
+- Project metadata (name, version, author)
+- Project type (executable)
+- Entry point (src/main.st)
+- Build output location
 
 ## Standard Library Modules Used
 
@@ -101,6 +121,7 @@ cd samples/stdlib_examples
 2. Read the comprehensive documentation in `design/standard_library.md`
 3. Try modifying the examples to experiment with different features
 4. Create your own programs using the standard library
+5. Build each example: `stratos build example_dir/`
 
 ## Note
 

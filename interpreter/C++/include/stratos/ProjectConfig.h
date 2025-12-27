@@ -8,25 +8,34 @@
 
 namespace stratos {
 
+struct DependencyEntry {
+    std::string name;
+    std::string url;
+    std::string tag;      // optional - git tag
+    std::string branch;   // optional - git branch
+    std::string hash;     // optional - git commit hash
+};
+
 struct ProjectConfig {
-    // [project] section
+    // project section
     std::string name;
     std::string version;
     std::string author;
     std::string type; // "executable" or "library"
+    std::string description;
 
-    // [build] section
+    // build section
     std::string entry;      // Entry point file (for executables)
     std::string source_dir; // Source directory
     std::string output;     // Output file path
 
-    // [dependencies] section
-    std::map<std::string, std::string> dependencies; // name -> path
+    // dependencies array
+    std::vector<DependencyEntry> dependencies;
 
-    // [compile] section
+    // compile section
     std::vector<std::string> sources; // Explicit source file list
 
-    // [exports] section
+    // exports section
     std::map<std::string, std::string> exports; // Public API exports
 
     // Helper methods

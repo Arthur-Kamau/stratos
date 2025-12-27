@@ -1,4 +1,0 @@
-Installing Stratos Compiler
-=============================
-
-// todo

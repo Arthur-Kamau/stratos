@@ -1,0 +1,17 @@
+# Stratos dependency lock file
+# This file is auto-generated. Do not edit manually.
+# Generated: 2025-12-27T06:39:04Z
+
+metadata {
+  generated = "2025-12-27T06:39:04Z"
+  stratos_version = "0.1.0"
+}
+
+dependencies = [
+  {
+    name = sample
+    url = "/home/kamau/Development/Projects/stratos/samples/dependency_test/../../../stratos-sample-lib"
+    type = local
+    checksum = "sha256:cbee97a2d756db38"
+  }
+]

@@ -38,7 +38,22 @@
                 "uiTheme": "vs-dark",
                 "path": "./themes/stratos-dark-theme.json"
             }
-        ]
+        ],
+        "configuration": {
+            "title": "Stratos",
+            "properties": {
+                "stratosLanguageServer.compilerPath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Path to the Stratos compiler executable. Leave empty to auto-detect."
+                },
+                "stratosLanguageServer.maxNumberOfProblems": {
+                    "type": "number",
+                    "default": 1000,
+                    "description": "Maximum number of problems to report."
+                }
+            }
+        }
     },
     "scripts": {
         "vscode:prepublish": "npm run compile",

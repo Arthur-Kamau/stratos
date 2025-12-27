@@ -20,6 +20,8 @@
 #include "stratos/TypeSystem.h"
 #include "stratos/AsyncRuntime.h"
 #include "stratos/Interpreter.h"
+#include "stratos/DependencyManager.h"
+#include "stratos/LockFile.h"
 
 using namespace stratos;
 namespace fs = std::filesystem;
@@ -38,11 +40,20 @@ void printHelp() {
     std::cout << "  stratos build                  Build project (looks for stratos.conf)\n";
     std::cout << "  stratos build <project_dir>    Build project in specified directory\n";
     std::cout << "  stratos new <project-name>     Create a new Stratos project\n";
-    std::cout << "  stratos get <url>              Fetch a library from URL (git clone)\n";
+    std::cout << "  stratos get                    Fetch all dependencies from stratos.conf\n";
+    std::cout << "  stratos get <url>              Fetch a dependency from URL\n";
+    std::cout << "  stratos get --update           Update all dependencies and regenerate lock file\n";
+    std::cout << "  stratos get --verify           Verify lock file matches installed dependencies\n";
     std::cout << "  stratos test                   Run test cases from cases/ directory\n";
     std::cout << "  stratos test --verbose         Run tests with detailed output\n";
     std::cout << "  stratos --help                 Show this help\n";
     std::cout << "  stratos --version              Show version\n\n";
+    std::cout << "Dependency URL formats:\n";
+    std::cout << "  github.com/user/repo@v1.0.0    GitHub with version tag\n";
+    std::cout << "  github.com/user/repo@main      GitHub with branch\n";
+    std::cout << "  github.com/user/repo@abc123    GitHub with commit hash\n";
+    std::cout << "  https://github.com/user/repo   Full GitHub URL\n";
+    std::cout << "  path:../local-lib              Local directory\n\n";
     std::cout << "Options:\n";
     std::cout << "  -o, --output <file>            Specify output file path\n";
     std::cout << "  -v, --verbose                  Enable verbose output\n";
@@ -138,6 +149,9 @@ CompileResult compileFile(const std::string& path, const std::string& outputPath
                     CallExpr mainCall(std::move(mainVar), mainFunc->name, std::move(args));
                     mainCall.accept(interpreter);
 
+                    if (verbose) std::cout << "  [Execution] Complete" << std::endl;
+                } catch (const ReturnException& e) {
+                    // Return from main() is normal - not an error
                     if (verbose) std::cout << "  [Execution] Complete" << std::endl;
                 } catch (const std::exception& e) {
                     throw std::runtime_error("Error executing main(): " + std::string(e.what()));
@@ -581,6 +595,75 @@ CompileResult compileMultipleFiles(const std::vector<std::string>& files, const 
     return result;
 }
 
+// ============================================================================
+// DEPENDENCY MANAGEMENT
+// ============================================================================
+
+int handleGet(int argc, char* argv[]) {
+    bool verbose = false;
+    bool update = false;
+    bool verify = false;
+    std::string url;
+
+    // Parse options
+    for (int i = 2; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "-v" || arg == "--verbose") {
+            verbose = true;
+        } else if (arg == "--update") {
+            update = true;
+        } else if (arg == "--verify") {
+            verify = true;
+        } else if (!arg.starts_with("-")) {
+            url = arg;
+        }
+    }
+
+    // Get current directory as project root
+    std::string projectRoot = fs::current_path().string();
+
+    // Handle --verify flag
+    if (verify) {
+        bool success = LockFileManager::verify(projectRoot);
+        return success ? 0 : 1;
+    }
+
+    DependencyManager depMgr(projectRoot);
+
+    // Handle --update flag
+    if (update) {
+        std::cout << "Updating all dependencies...\n" << std::endl;
+        bool success = depMgr.updateAllDependencies(verbose);
+
+        if (success) {
+            // Generate lock file after successful update
+            std::cout << "\nGenerating lock file...\n";
+            LockFileManager::generate(projectRoot);
+        }
+
+        return success ? 0 : 1;
+    }
+
+    // Handle normal get operations
+    if (url.empty()) {
+        // No URL provided - fetch all dependencies from stratos.conf
+        std::cout << "Fetching all dependencies from stratos.conf...\n" << std::endl;
+        bool success = depMgr.fetchAllDependencies(verbose);
+
+        if (success) {
+            // Generate lock file after successful fetch
+            std::cout << "\nGenerating lock file...\n";
+            LockFileManager::generate(projectRoot);
+        }
+
+        return success ? 0 : 1;
+    } else {
+        // Fetch specific dependency
+        bool success = depMgr.fetchDependency(url, verbose);
+        return success ? 0 : 1;
+    }
+}
+
 int handleBuild(int argc, char* argv[]) {
     std::string projectDir = ".";
     bool verbose = false;
@@ -666,69 +749,6 @@ int handleBuild(int argc, char* argv[]) {
         return 0;
     } else {
         std::cerr << "✗ Build failed: " << result.errorMessage << std::endl;
-        return 1;
-    }
-}
-
-// ============================================================================
-// LIBRARY MANAGEMENT - stratos get
-// ============================================================================
-
-int handleGet(int argc, char* argv[]) {
-    if (argc < 3) {
-        std::cerr << "Error: No URL specified.\n";
-        std::cerr << "Usage: stratos get <url>\n";
-        std::cerr << "Example: stratos get https://github.com/user/stratos-lib\n";
-        return 1;
-    }
-
-    std::string url = argv[2];
-    std::cout << "Fetching library from: " << url << "\n";
-
-    // Extract repo name from URL
-    std::string repoName;
-    size_t lastSlash = url.find_last_of('/');
-    if (lastSlash != std::string::npos) {
-        repoName = url.substr(lastSlash + 1);
-        // Remove .git extension if present
-        if (repoName.ends_with(".git")) {
-            repoName = repoName.substr(0, repoName.length() - 4);
-        }
-    } else {
-        repoName = "stratos-lib";
-    }
-
-    // Create libs directory if it doesn't exist
-    std::string libsDir = "libs";
-    if (!fs::exists(libsDir)) {
-        fs::create_directory(libsDir);
-        std::cout << "Created libs directory\n";
-    }
-
-    std::string destPath = libsDir + "/" + repoName;
-
-    // Check if library already exists
-    if (fs::exists(destPath)) {
-        std::cout << "Library already exists at: " << destPath << "\n";
-        std::cout << "Updating...\n";
-    }
-
-    // Use git clone or wget to fetch the library
-    std::string gitCommand = "git clone " + url + " " + destPath;
-    std::cout << "Running: " << gitCommand << "\n";
-
-    int result = std::system(gitCommand.c_str());
-
-    if (result == 0) {
-        std::cout << "✓ Library fetched successfully!\n";
-        std::cout << "Location: " << destPath << "\n";
-        std::cout << "\nTo use this library, add to your stratos.conf:\n";
-        std::cout << "[dependencies]\n";
-        std::cout << repoName << " = \"" << destPath << "\"\n";
-        return 0;
-    } else {
-        std::cerr << "✗ Failed to fetch library\n";
-        std::cerr << "Make sure git is installed and the URL is correct\n";
         return 1;
     }
 }

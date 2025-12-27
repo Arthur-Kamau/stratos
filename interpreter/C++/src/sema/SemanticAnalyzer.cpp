@@ -265,6 +265,12 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
 
     // Possible module file locations
     std::vector<std::string> searchPaths = {
+        // Dependencies directory (highest priority)
+        "deps/" + moduleName + "/src/init.st",
+        "deps/" + moduleName + "/src/" + moduleName + ".st",
+        "../deps/" + moduleName + "/src/init.st",
+        "../deps/" + moduleName + "/src/" + moduleName + ".st",
+
         // Current directory
         "std/" + moduleName + "/init.st",
         "std/encoding/" + moduleName + "/init.st",

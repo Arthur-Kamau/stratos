@@ -40,6 +40,34 @@ void Interpreter::error(const std::string& message) {
 // --- Expression Visitors ---
 
 void Interpreter::visit(BinaryExpr& expr) {
+    // Special handling for DOT operator - don't evaluate right side as a variable
+    if (expr.op.type == TokenType::DOT) {
+        expr.left->accept(*this);
+        RuntimeValue left = lastValue;
+
+        // Member access for module.constant or module.property
+        if (left.type == "module") {
+            if (auto* leftVar = dynamic_cast<VariableExpr*>(expr.left.get())) {
+                if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
+                    std::string moduleName = leftVar->name.lexeme;
+                    std::string memberName = rightVar->name.lexeme;
+
+                    // Try to call as a zero-parameter native function (for constants like PI, E)
+                    std::vector<RuntimeValue> emptyArgs;
+                    try {
+                        lastValue = evaluateNativeCall(moduleName, memberName, emptyArgs);
+                        return;
+                    } catch (...) {
+                        error("Undefined property: " + moduleName + "." + memberName);
+                    }
+                }
+            }
+        }
+        // DOT operator handled, return
+        return;
+    }
+
+    // Regular binary operators - evaluate both sides
     expr.left->accept(*this);
     RuntimeValue left = lastValue;
 
@@ -54,8 +82,18 @@ void Interpreter::visit(BinaryExpr& expr) {
                 lastValue = RuntimeValue(std::any(left.asInt() + right.asInt()), "int");
             } else if (left.type == "string" || right.type == "string") {
                 // String concatenation
-                std::string leftStr = (left.type == "string") ? left.asString() : std::to_string(left.asInt());
-                std::string rightStr = (right.type == "string") ? right.asString() : std::to_string(right.asInt());
+                std::string leftStr;
+                if (left.type == "string") leftStr = left.asString();
+                else if (left.type == "int") leftStr = std::to_string(left.asInt());
+                else if (left.type == "double") leftStr = std::to_string(left.asDouble());
+                else if (left.type == "bool") leftStr = left.asBool() ? "true" : "false";
+
+                std::string rightStr;
+                if (right.type == "string") rightStr = right.asString();
+                else if (right.type == "int") rightStr = std::to_string(right.asInt());
+                else if (right.type == "double") rightStr = std::to_string(right.asDouble());
+                else if (right.type == "bool") rightStr = right.asBool() ? "true" : "false";
+
                 lastValue = RuntimeValue(std::any(leftStr + rightStr), "string");
             }
             break;
@@ -141,10 +179,6 @@ void Interpreter::visit(BinaryExpr& expr) {
             } else {
                 lastValue = RuntimeValue(std::any(left.asInt() >= right.asInt()), "bool");
             }
-            break;
-
-        case TokenType::DOT:
-            // Member access - handled in CallExpr for module.function()
             break;
 
         default:
@@ -330,7 +364,13 @@ void Interpreter::visit(PackageDecl& stmt) {
 }
 
 void Interpreter::visit(UseStmt& stmt) {
-    // Module imports are handled - no runtime action needed
+    // Register the module as a module object in the environment
+    // This allows module.function() syntax to work
+    std::string moduleName = stmt.moduleName.lexeme;
+
+    // Create a module object (represented as a special RuntimeValue)
+    RuntimeValue moduleValue(std::any(), "module");
+    currentEnv->define(moduleName, moduleValue);
 }
 
 void Interpreter::visit(BlockStmt& stmt) {

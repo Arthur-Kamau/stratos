@@ -14,6 +14,8 @@ g++ -std=c++20 -I include \
   src/runtime/Interpreter.cpp \
   src/runtime/NativeRegistry.cpp \
   src/config/ProjectConfig.cpp \
+  src/config/DependencyManager.cpp \
+  src/config/LockFile.cpp \
   -o build/stratos -lpthread
 
 if [ $? -eq 0 ]; then

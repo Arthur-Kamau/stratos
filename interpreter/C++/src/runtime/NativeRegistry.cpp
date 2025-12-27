@@ -80,6 +80,19 @@ void NativeRegistry::initializeStdlib() {
 // ============================================================================
 
 void NativeRegistry::initMath() {
+    // Constants (registered as zero-parameter functions)
+    registerFunction("math", "PI", [](const std::vector<std::any>& args) -> std::any {
+        return 3.14159265358979323846;
+    }, FunctionSignature{{}, "double"});
+
+    registerFunction("math", "E", [](const std::vector<std::any>& args) -> std::any {
+        return 2.71828182845904523536;
+    }, FunctionSignature{{}, "double"});
+
+    registerFunction("math", "PHI", [](const std::vector<std::any>& args) -> std::any {
+        return 1.61803398874989484820;
+    }, FunctionSignature{{}, "double"});
+
     // Trigonometric functions
     registerFunction("math", "sin", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
