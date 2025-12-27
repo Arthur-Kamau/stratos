@@ -258,6 +258,69 @@ int handleCompile(int argc, char* argv[]) {
 // RUN (INTERPRETER)
 // ============================================================================
 
+// Helper function to find stratos.conf in current or parent directories
+std::optional<std::string> findProjectConfig(const std::string& startDir = ".") {
+    fs::path currentPath = fs::absolute(startDir);
+
+    // Search up to 5 levels up
+    for (int i = 0; i < 5; i++) {
+        fs::path configPath = currentPath / "stratos.conf";
+        if (fs::exists(configPath)) {
+            return configPath.string();
+        }
+
+        // Move to parent directory
+        fs::path parent = currentPath.parent_path();
+        if (parent == currentPath) {
+            break; // Reached root
+        }
+        currentPath = parent;
+    }
+
+    return std::nullopt;
+}
+
+// Helper function to resolve entry point file
+std::optional<std::string> resolveEntryPoint(const std::string& inputPath) {
+    // If the input path exists as-is, use it
+    if (fs::is_regular_file(inputPath)) {
+        return inputPath;
+    }
+
+    // Try adding .st extension
+    std::string withExtension = inputPath + ".st";
+    if (fs::is_regular_file(withExtension)) {
+        return withExtension;
+    }
+
+    // Look for stratos.conf
+    auto configPathOpt = findProjectConfig();
+    if (configPathOpt) {
+        auto configOpt = ProjectConfigParser::parse(*configPathOpt);
+        if (configOpt) {
+            // Check if entry is set
+            if (!configOpt->entry.empty()) {
+                fs::path entryPath = fs::path(*configPathOpt).parent_path() / configOpt->entry;
+                if (fs::is_regular_file(entryPath)) {
+                    return entryPath.string();
+                }
+            }
+        }
+    }
+
+    // Try main.st in current directory
+    if (fs::is_regular_file("main.st")) {
+        return "main.st";
+    }
+
+    // Try main.st in src/ directory
+    if (fs::is_regular_file("src/main.st")) {
+        return "src/main.st";
+    }
+
+    return std::nullopt;
+}
+
 int handleRun(int argc, char* argv[]) {
     // Parse arguments
     std::string inputPath;
@@ -279,14 +342,27 @@ int handleRun(int argc, char* argv[]) {
         }
     }
 
-    // Check if input file exists
-    if (!fs::is_regular_file(inputPath)) {
-        std::cerr << "Error: Input file not found: " << inputPath << std::endl;
+    // Resolve the entry point file
+    auto resolvedPathOpt = resolveEntryPoint(inputPath);
+    if (!resolvedPathOpt) {
+        std::cerr << "Error: Could not find entry point file.\n";
+        std::cerr << "Searched for:\n";
+        std::cerr << "  - " << inputPath << "\n";
+        std::cerr << "  - " << inputPath << ".st\n";
+        std::cerr << "  - Entry point from stratos.conf\n";
+        std::cerr << "  - main.st\n";
+        std::cerr << "  - src/main.st\n";
         return 1;
     }
 
+    std::string resolvedPath = *resolvedPathOpt;
+
+    if (verbose) {
+        std::cout << "Resolved entry point: " << resolvedPath << std::endl;
+    }
+
     // Execute the file
-    CompileResult result = compileFile(inputPath, "", verbose, true); // run=true
+    CompileResult result = compileFile(resolvedPath, "", verbose, true); // run=true
 
     if (!result.success) {
         std::cerr << "Execution failed: " << result.errorMessage << std::endl;
