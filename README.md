@@ -8,7 +8,7 @@ A fast, type-safe, compiled(Interpreted), and fun-to-write programming language.
 *   Low-level (with managed abstractions where needed)
 *   Mix of functional and OOP paradigms
 *   Flexible (write scripts, huge monolith projects)
-*   Compiled/Interpretes=d language
+*   Compiled/Interpreted language (supports both modes)
 *   Ability to generate static binaries.
 
 ## Status
@@ -21,24 +21,34 @@ A fast, type-safe, compiled(Interpreted), and fun-to-write programming language.
  <img src="./icons/work.jpeg" height="25">
 </p>
 
-The **Stratos C++ Compiler** now features Lexing, Parsing, Semantic Analysis, and LLVM IR Code Generation. A VS Code extension provides basic language tooling.
+The **Stratos C++ Compiler** now features Lexing, Parsing, Semantic Analysis, and LLVM IR Code Generation. The **Stratos Interpreter** provides direct AST execution for rapid development and testing. A VS Code extension provides basic language tooling.
 
-## Plan
+**Two execution modes available**:
+- `stratos compile <file.st>` - Compile to LLVM IR for optimization and production builds
+- `stratos run <file.st>` - Direct interpretation for immediate execution and output
 
--   Language design and documentations ✅ (See `design/` and project documentation)
--   Tooling ✅ (VS Code extension with basic LSP features)
--   Lexer & Parser (Analysis) ✅ (C++ implementation complete)
--   Semantic Analysis & Type Checking ✅ (C++ implementation complete)
--   Stratos IR (Code Generation to LLVM IR) ✅ (C++ implementation complete)
--   Stratos WorkMan Tool. (Future)
--   Printing the frontend to CPP. (Future)
+## ⚠️ Important Disclaimer
+
+**Solo Project with AI Assistance**: Stratos is a solo project developed with heavy use of AI assistance (Claude Code/Gemini 3) throughout the language design, compiler implementation, standard library, and tooling. While this has enabled rapid development and exploration of language features, please be aware:
+
+- This is an **experimental project** under active development
+- The codebase may contain bugs, incomplete features, or unconventional design patterns
+- **Use at your own risk** - not recommended for production use
+- Testing coverage is limited and evolving
+- Breaking changes may occur frequently as the language design evolves
+
+If you encounter issues or have suggestions, please open an issue on GitHub. Contributions and feedback are welcome!
+
+
 
 ## Getting Started
 
-### Compiler
-To build and use the Stratos compiler:
-1.  Navigate to `compiler/C++`.
-2.  Follow the instructions in `compiler/C++/README.md`.
+### Compiler & Interpreter
+To build and use the Stratos compiler and interpreter:
+1.  Navigate to `interpreter/C++`.
+2.  Follow the instructions in `interpreter/C++/README.md`.
+
+The build produces a single `stratos` binary that supports both compilation and interpretation modes.
 
 ### VS Code Extension
 To get language support in VS Code:
