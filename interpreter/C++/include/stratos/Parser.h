@@ -24,7 +24,8 @@ private:
     std::unique_ptr<Stmt> fnDeclaration(const std::string& kind);
     std::unique_ptr<Stmt> classDeclaration();
     std::unique_ptr<Stmt> packageDeclaration();
-    
+    std::unique_ptr<Stmt> useStatement();
+
     // Statements
     std::unique_ptr<Stmt> statement();
     std::unique_ptr<Stmt> ifStatement();

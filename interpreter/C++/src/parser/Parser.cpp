@@ -26,6 +26,7 @@ std::unique_ptr<Stmt> Parser::declaration() {
         if (match({TokenType::FN})) return fnDeclaration("function");
         if (match({TokenType::CLASS, TokenType::STRUCT, TokenType::INTERFACE})) return classDeclaration();
         if (match({TokenType::PACKAGE})) return packageDeclaration();
+        if (match({TokenType::USE})) return useStatement();
         return statement();
     } catch (ParseError& error) {
         synchronize();
@@ -158,6 +159,17 @@ std::unique_ptr<Stmt> Parser::packageDeclaration() {
     }
     // Return empty package declaration (body will be rest of file)
     return std::make_unique<PackageDecl>(name, std::vector<std::unique_ptr<Stmt>>());
+}
+
+std::unique_ptr<Stmt> Parser::useStatement() {
+    Token moduleName = consume(TokenType::IDENTIFIER, "Expect module name after 'use'.");
+
+    // Consume the semicolon if present (Go-style allows omitting it)
+    if (check(TokenType::SEMICOLON)) {
+        advance();
+    }
+
+    return std::make_unique<UseStmt>(moduleName);
 }
 
 // --- Statements ---

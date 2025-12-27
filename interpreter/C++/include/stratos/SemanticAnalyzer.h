@@ -27,6 +27,7 @@ public:
     void visit(FunctionDecl& stmt) override;
     void visit(ClassDecl& stmt) override;
     void visit(PackageDecl& stmt) override;
+    void visit(UseStmt& stmt) override;
     void visit(BlockStmt& stmt) override;
     void visit(PrintStmt& stmt) override;
     void visit(IfStmt& stmt) override;
@@ -36,10 +37,12 @@ public:
 private:
     SymbolTable symbolTable;
     bool hadError = false;
+    std::vector<std::string> loadedModules; // Track already loaded modules
 
     void error(const std::string& message); // Generic (no loc)
     void error(Token token, const std::string& message); // With loc
     void defineNativeFunctions(); // define print, etc.
+    void loadModule(const std::string& moduleName); // Load module definitions
 };
 
 } // namespace stratos

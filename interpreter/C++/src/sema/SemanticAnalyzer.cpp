@@ -1,5 +1,12 @@
 #include "stratos/SemanticAnalyzer.h"
+#include "stratos/Lexer.h"
+#include "stratos/Parser.h"
+#include "stratos/NativeRegistry.h"
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include <filesystem>
+#include <algorithm>
 
 namespace stratos {
 
@@ -67,10 +74,33 @@ void SemanticAnalyzer::visit(VariableExpr& expr) {
 }
 
 void SemanticAnalyzer::visit(CallExpr& expr) {
+    // Check if this is a module function call (e.g., math.sqrt())
+    if (auto* binExpr = dynamic_cast<BinaryExpr*>(expr.callee.get())) {
+        if (binExpr->op.type == TokenType::DOT) {
+            if (auto* leftVar = dynamic_cast<VariableExpr*>(binExpr->left.get())) {
+                if (auto* rightVar = dynamic_cast<VariableExpr*>(binExpr->right.get())) {
+                    std::string moduleName = leftVar->name.lexeme;
+                    std::string functionName = rightVar->name.lexeme;
+
+                    // Check if this is a native function call via NativeRegistry
+                    auto& registry = NativeRegistry::getInstance();
+                    if (registry.isNative(moduleName, functionName)) {
+                        // Valid native function call - validate arguments
+                        for (const auto& arg : expr.arguments) {
+                            arg->accept(*this);
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    // Not a module call, process as regular function call
     expr.callee->accept(*this); // Verify function exists (if it's a variable access)
 
     // TODO: Advanced check - ensure callee is actually a callable type
-    
+
     for (const auto& arg : expr.arguments) {
         arg->accept(*this);
     }
@@ -155,6 +185,20 @@ void SemanticAnalyzer::visit(PackageDecl& stmt) {
     }
 }
 
+void SemanticAnalyzer::visit(UseStmt& stmt) {
+    // Load the module if not already loaded
+    std::string moduleName = stmt.moduleName.lexeme;
+
+    // Check if already loaded
+    if (std::find(loadedModules.begin(), loadedModules.end(), moduleName) != loadedModules.end()) {
+        return; // Already loaded
+    }
+
+    // Load the module
+    loadModule(moduleName);
+    loadedModules.push_back(moduleName);
+}
+
 void SemanticAnalyzer::visit(BlockStmt& stmt) {
     symbolTable.enterScope();
     for (const auto& s : stmt.statements) {
@@ -183,6 +227,75 @@ void SemanticAnalyzer::visit(ReturnStmt& stmt) {
         stmt.value->accept(*this);
     }
     // TODO: Check if return type matches function signature
+}
+
+void SemanticAnalyzer::loadModule(const std::string& moduleName) {
+    namespace fs = std::filesystem;
+
+    // Possible module file locations
+    std::vector<std::string> searchPaths = {
+        "std/" + moduleName + "/init.st",
+        "std/encoding/" + moduleName + "/init.st",
+        "build/std/" + moduleName + "/init.st",
+        "build/std/encoding/" + moduleName + "/init.st",
+        "../build/std/" + moduleName + "/init.st",
+        "../build/std/encoding/" + moduleName + "/init.st"
+    };
+
+    std::string moduleFilePath;
+    for (const auto& path : searchPaths) {
+        if (fs::exists(path)) {
+            moduleFilePath = path;
+            break;
+        }
+    }
+
+    if (moduleFilePath.empty()) {
+        error("Could not find module '" + moduleName + "'. Searched in std directories.");
+        return;
+    }
+
+    // Read the module file
+    std::ifstream file(moduleFilePath);
+    if (!file.is_open()) {
+        error("Failed to open module file: " + moduleFilePath);
+        return;
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    std::string moduleSource = buffer.str();
+    file.close();
+
+    // Lex the module file
+    Lexer lexer(moduleSource);
+    std::vector<Token> tokens = lexer.scanTokens();
+
+    // Parse the module file
+    Parser parser(tokens);
+    std::vector<std::unique_ptr<Stmt>> moduleAST;
+    try {
+        moduleAST = parser.parse();
+    } catch (...) {
+        error("Failed to parse module: " + moduleName);
+        return;
+    }
+
+    // Extract function declarations and register them
+    for (const auto& stmt : moduleAST) {
+        if (auto* funcDecl = dynamic_cast<FunctionDecl*>(stmt.get())) {
+            // Register function as a module symbol
+            // We create a symbol for the module itself as a "namespace" or "module" variable
+            symbolTable.define(Symbol::Variable(moduleName, "module", false));
+
+            // Note: We don't register individual functions as symbols here
+            // Instead, the semantic analyzer will validate module.function() syntax
+            // by checking with NativeRegistry during CallExpr analysis
+
+            // For now, just ensure the module name is registered
+            break; // Only need to define module once
+        }
+    }
 }
 
 } // namespace stratos

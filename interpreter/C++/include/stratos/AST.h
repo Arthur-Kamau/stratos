@@ -26,6 +26,7 @@ class IfStmt;
 class WhileStmt;
 class ReturnStmt;
 class PackageDecl;
+class UseStmt;
 
 // Visitor Interface
 class ASTVisitor {
@@ -41,6 +42,7 @@ public:
     virtual void visit(FunctionDecl& stmt) = 0;
     virtual void visit(ClassDecl& stmt) = 0;
     virtual void visit(PackageDecl& stmt) = 0;
+    virtual void visit(UseStmt& stmt) = 0;
     virtual void visit(BlockStmt& stmt) = 0;
     virtual void visit(PrintStmt& stmt) = 0;
     virtual void visit(IfStmt& stmt) = 0;
@@ -173,6 +175,16 @@ public:
 
     PackageDecl(Token name, std::vector<std::unique_ptr<Stmt>> declarations)
         : name(name), declarations(std::move(declarations)) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class UseStmt : public Stmt {
+public:
+    Token moduleName; // The module being imported (e.g., "math", "log", "strings")
+
+    UseStmt(Token moduleName)
+        : moduleName(moduleName) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };

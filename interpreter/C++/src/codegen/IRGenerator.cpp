@@ -652,6 +652,12 @@ void IRGenerator::visit(PackageDecl& stmt) {
         if (s) s->accept(*this);
     }
 }
+
+void IRGenerator::visit(UseStmt& stmt) {
+    // UseStmt doesn't generate any IR code - module loading is handled by SemanticAnalyzer
+    // The actual native function calls are handled in visit(CallExpr&)
+}
+
 void IRGenerator::visit(PrintStmt& stmt) {
     stmt.expression->accept(*this);
 

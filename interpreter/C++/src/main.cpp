@@ -19,6 +19,7 @@
 #include "stratos/NativeRegistry.h"
 #include "stratos/TypeSystem.h"
 #include "stratos/AsyncRuntime.h"
+#include "stratos/Interpreter.h"
 
 using namespace stratos;
 namespace fs = std::filesystem;
@@ -33,6 +34,7 @@ void printHelp() {
     std::cout << "  stratos <file.st>              Compile a single file\n";
     std::cout << "  stratos compile <file.st>      Compile a single file\n";
     std::cout << "  stratos compile <directory>    Compile all .st files in directory\n";
+    std::cout << "  stratos run <file.st>          Execute a Stratos program directly\n";
     std::cout << "  stratos build                  Build project (looks for stratos.conf)\n";
     std::cout << "  stratos build <project_dir>    Build project in specified directory\n";
     std::cout << "  stratos new <project-name>     Create a new Stratos project\n";
@@ -44,6 +46,7 @@ void printHelp() {
     std::cout << "Options:\n";
     std::cout << "  -o, --output <file>            Specify output file path\n";
     std::cout << "  -v, --verbose                  Enable verbose output\n";
+    std::cout << "  -r, --run                      Execute program instead of compiling\n";
 }
 
 void printVersion() {
@@ -62,12 +65,16 @@ struct CompileResult {
     double compilationTime;  // in milliseconds
 };
 
-CompileResult compileFile(const std::string& path, const std::string& outputPath = "", bool verbose = false) {
+CompileResult compileFile(const std::string& path, const std::string& outputPath = "", bool verbose = false, bool run = false) {
     CompileResult result;
     auto start = std::chrono::high_resolution_clock::now();
 
     if (verbose) {
-        std::cout << "Compiling: " << path << std::endl;
+        if (run) {
+            std::cout << "Executing: " << path << std::endl;
+        } else {
+            std::cout << "Compiling: " << path << std::endl;
+        }
     }
 
     // Read source file
@@ -102,16 +109,56 @@ CompileResult compileFile(const std::string& path, const std::string& outputPath
         }
         if (verbose) std::cout << "  [Semantics] OK" << std::endl;
 
-        // Optimization
-        Optimizer optimizer;
-        optimizer.optimize(statements);
-        if (verbose) std::cout << "  [Optimizer] Finished" << std::endl;
+        if (run) {
+            // Execute directly with interpreter
+            if (verbose) std::cout << "  [Executing...]" << std::endl;
 
-        // Code Generation
-        std::string irPath = outputPath.empty() ? (path + ".ll") : outputPath;
-        IRGenerator generator(irPath);
-        generator.generate(statements);
-        if (verbose) std::cout << "  [CodeGen]   Generated " << irPath << std::endl;
+            Interpreter interpreter;
+
+            // Process all declarations first
+            interpreter.execute(statements);
+
+            // Find and explicitly call main function
+            FunctionDecl* mainFunc = nullptr;
+            for (const auto& stmt : statements) {
+                if (auto* funcDecl = dynamic_cast<FunctionDecl*>(stmt.get())) {
+                    if (funcDecl->name.lexeme == "main") {
+                        mainFunc = funcDecl;
+                        break;
+                    }
+                }
+            }
+
+            // Call main function
+            if (mainFunc) {
+                try {
+                    // Create a CallExpr to call main()
+                    auto mainVar = std::make_unique<VariableExpr>(mainFunc->name);
+                    std::vector<std::unique_ptr<Expr>> args;
+                    CallExpr mainCall(std::move(mainVar), mainFunc->name, std::move(args));
+                    mainCall.accept(interpreter);
+
+                    if (verbose) std::cout << "  [Execution] Complete" << std::endl;
+                } catch (const std::exception& e) {
+                    throw std::runtime_error("Error executing main(): " + std::string(e.what()));
+                }
+            } else {
+                // No main function found - execute top-level statements
+                if (verbose) std::cout << "  [Execution] Complete (no main function)" << std::endl;
+            }
+
+        } else {
+            // Optimization
+            Optimizer optimizer;
+            optimizer.optimize(statements);
+            if (verbose) std::cout << "  [Optimizer] Finished" << std::endl;
+
+            // Code Generation
+            std::string irPath = outputPath.empty() ? (path + ".ll") : outputPath;
+            IRGenerator generator(irPath);
+            generator.generate(statements);
+            if (verbose) std::cout << "  [CodeGen]   Generated " << irPath << std::endl;
+        }
 
         result.success = true;
 
@@ -205,6 +252,48 @@ int handleCompile(int argc, char* argv[]) {
         std::cerr << "Error: Input path not found: " << inputPath << std::endl;
         return 1;
     }
+}
+
+// ============================================================================
+// RUN (INTERPRETER)
+// ============================================================================
+
+int handleRun(int argc, char* argv[]) {
+    // Parse arguments
+    std::string inputPath;
+    bool verbose = false;
+
+    if (argc < 3) {
+        std::cerr << "Error: No input file specified\n\n";
+        printHelp();
+        return 1;
+    }
+
+    inputPath = argv[2];
+
+    // Parse options
+    for (int i = 3; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "-v" || arg == "--verbose") {
+            verbose = true;
+        }
+    }
+
+    // Check if input file exists
+    if (!fs::is_regular_file(inputPath)) {
+        std::cerr << "Error: Input file not found: " << inputPath << std::endl;
+        return 1;
+    }
+
+    // Execute the file
+    CompileResult result = compileFile(inputPath, "", verbose, true); // run=true
+
+    if (!result.success) {
+        std::cerr << "Execution failed: " << result.errorMessage << std::endl;
+        return 1;
+    }
+
+    return 0;
 }
 
 // ============================================================================
@@ -685,6 +774,10 @@ int main(int argc, char* argv[]) {
 
     if (command == "build") {
         return handleBuild(argc, argv);
+    }
+
+    if (command == "run") {
+        return handleRun(argc, argv);
     }
 
     if (command == "get") {

@@ -23,6 +23,7 @@ public:
     void visit(FunctionDecl& stmt) override;
     void visit(ClassDecl& stmt) override;
     void visit(PackageDecl& stmt) override;
+    void visit(UseStmt& stmt) override;
     void visit(BlockStmt& stmt) override;
     void visit(PrintStmt& stmt) override;
     void visit(IfStmt& stmt) override;
