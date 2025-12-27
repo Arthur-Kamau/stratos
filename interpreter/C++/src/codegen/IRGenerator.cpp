@@ -266,8 +266,25 @@ void IRGenerator::visit(CallExpr& expr) {
             return;
         }
     } else if (auto binExpr = dynamic_cast<BinaryExpr*>(expr.callee.get())) {
-        // Method call (e.g., obj.method())
+        // Could be method call (e.g., obj.method()) or module function call (e.g., math.sqrt())
         if (binExpr->op.type == TokenType::DOT) {
+            // Check if left side is a module name (for stdlib calls like math.sqrt())
+            if (auto leftVar = dynamic_cast<VariableExpr*>(binExpr->left.get())) {
+                std::string leftName = leftVar->name.lexeme;
+
+                // Check if this is a stdlib module
+                if (auto rightVar = dynamic_cast<VariableExpr*>(binExpr->right.get())) {
+                    std::string rightName = rightVar->name.lexeme;
+
+                    // Check if this is a native function call
+                    if (isNativeFunction(leftName, rightName)) {
+                        generateNativeCall(leftName, rightName, args);
+                        return;
+                    }
+                }
+            }
+
+            // Otherwise, treat as method call
             // Left is object, right is method name
             binExpr->left->accept(*this);
             objPtr = lastVal;
@@ -840,6 +857,83 @@ void IRGenerator::generateMethod(const std::string& className, FunctionDecl& met
 
     exitScope();
     emitRaw("}\n");
+}
+
+// ============================================================================
+// Native Function Support
+// ============================================================================
+
+bool IRGenerator::isNativeFunction(const std::string& moduleName, const std::string& functionName) {
+    return NativeRegistry::getInstance().isNative(moduleName, functionName);
+}
+
+void IRGenerator::generateNativeCall(const std::string& moduleName, const std::string& functionName,
+                                    const std::vector<IRValue>& args) {
+    // For native functions, we generate a call to a runtime wrapper
+    // The wrapper will call NativeRegistry to execute the actual C++ function
+
+    // Declare native function wrapper if not already declared
+    std::string qualifiedName = moduleName + "_" + functionName;
+    std::string wrapperName = "@__native_" + qualifiedName;
+
+    // Determine return type based on function
+    std::string retType = "i32"; // Default, should be looked up from function signature
+
+    // For known stdlib functions, we can hardcode return types
+    if (moduleName == "math") {
+        if (functionName == "sin" || functionName == "cos" || functionName == "tan" ||
+            functionName == "sqrt" || functionName == "exp" || functionName == "log" ||
+            functionName == "pow" || functionName == "abs") {
+            retType = "double";
+        } else if (functionName == "randomInt" || functionName == "sign") {
+            retType = "i32";
+        } else if (functionName == "random") {
+            retType = "double";
+        }
+    } else if (moduleName == "strings") {
+        if (functionName == "toUpper" || functionName == "toLower" || functionName == "trim" ||
+            functionName == "substring" || functionName == "repeat") {
+            retType = "i8*"; // string
+        } else if (functionName == "length" || functionName == "indexOf") {
+            retType = "i32";
+        } else if (functionName == "contains" || functionName == "isEmpty" ||
+                   functionName == "startsWith" || functionName == "endsWith") {
+            retType = "i1"; // bool
+        }
+    } else if (moduleName == "io") {
+        if (functionName == "readFile" || functionName == "absolute" || functionName == "basename") {
+            retType = "i8*"; // string
+        } else if (functionName == "exists" || functionName == "isFile" || functionName == "isDirectory") {
+            retType = "i1"; // bool
+        } else if (functionName == "fileSize") {
+            retType = "i32";
+        }
+    } else if (moduleName == "log") {
+        retType = "void";
+    } else if (moduleName == "time") {
+        if (functionName == "now" || functionName == "unix") {
+            retType = "i64"; // timestamp
+        } else if (functionName == "sleep") {
+            retType = "void";
+        }
+    }
+
+    // Build argument list
+    std::stringstream argSS;
+    for (size_t i = 0; i < args.size(); ++i) {
+        argSS << args[i].type << " " << args[i].reg;
+        if (i < args.size() - 1) argSS << ", ";
+    }
+
+    // Generate the call
+    if (retType == "void") {
+        emit("call " + retType + " " + wrapperName + "(" + argSS.str() + ")");
+        lastVal = {"", "void"};
+    } else {
+        std::string callReg = nextReg();
+        emit(callReg + " = call " + retType + " " + wrapperName + "(" + argSS.str() + ")");
+        lastVal = {callReg, retType};
+    }
 }
 
 } // namespace stratos

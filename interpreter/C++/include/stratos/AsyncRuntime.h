@@ -9,6 +9,7 @@
 #include <thread>
 #include <future>
 #include <any>
+#include <optional>
 
 namespace stratos {
 

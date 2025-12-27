@@ -2,6 +2,7 @@
 #define STRATOS_IR_GENERATOR_H
 
 #include "stratos/AST.h"
+#include "stratos/NativeRegistry.h"
 #include <string>
 #include <vector>
 #include <sstream>
@@ -110,6 +111,13 @@ private:
     std::string getStructType(const std::string& className);
     int getFieldIndex(const std::string& className, const std::string& fieldName);
     ClassInfo* getClassInfo(const std::string& className);
+
+    // Native function helpers
+    bool isNativeFunction(const std::string& moduleName, const std::string& functionName);
+    void generateNativeCall(const std::string& moduleName, const std::string& functionName,
+                           const std::vector<IRValue>& args);
+
+    std::string currentModule; // Track current module/package context
 };
 
 } // namespace stratos

@@ -35,6 +35,8 @@ void printHelp() {
     std::cout << "  stratos compile <directory>    Compile all .st files in directory\n";
     std::cout << "  stratos build                  Build project (looks for stratos.conf)\n";
     std::cout << "  stratos build <project_dir>    Build project in specified directory\n";
+    std::cout << "  stratos new <project-name>     Create a new Stratos project\n";
+    std::cout << "  stratos get <url>              Fetch a library from URL (git clone)\n";
     std::cout << "  stratos test                   Run test cases from cases/ directory\n";
     std::cout << "  stratos test --verbose         Run tests with detailed output\n";
     std::cout << "  stratos --help                 Show this help\n";
@@ -469,6 +471,187 @@ int handleBuild(int argc, char* argv[]) {
 }
 
 // ============================================================================
+// LIBRARY MANAGEMENT - stratos get
+// ============================================================================
+
+int handleGet(int argc, char* argv[]) {
+    if (argc < 3) {
+        std::cerr << "Error: No URL specified.\n";
+        std::cerr << "Usage: stratos get <url>\n";
+        std::cerr << "Example: stratos get https://github.com/user/stratos-lib\n";
+        return 1;
+    }
+
+    std::string url = argv[2];
+    std::cout << "Fetching library from: " << url << "\n";
+
+    // Extract repo name from URL
+    std::string repoName;
+    size_t lastSlash = url.find_last_of('/');
+    if (lastSlash != std::string::npos) {
+        repoName = url.substr(lastSlash + 1);
+        // Remove .git extension if present
+        if (repoName.ends_with(".git")) {
+            repoName = repoName.substr(0, repoName.length() - 4);
+        }
+    } else {
+        repoName = "stratos-lib";
+    }
+
+    // Create libs directory if it doesn't exist
+    std::string libsDir = "libs";
+    if (!fs::exists(libsDir)) {
+        fs::create_directory(libsDir);
+        std::cout << "Created libs directory\n";
+    }
+
+    std::string destPath = libsDir + "/" + repoName;
+
+    // Check if library already exists
+    if (fs::exists(destPath)) {
+        std::cout << "Library already exists at: " << destPath << "\n";
+        std::cout << "Updating...\n";
+    }
+
+    // Use git clone or wget to fetch the library
+    std::string gitCommand = "git clone " + url + " " + destPath;
+    std::cout << "Running: " << gitCommand << "\n";
+
+    int result = std::system(gitCommand.c_str());
+
+    if (result == 0) {
+        std::cout << "✓ Library fetched successfully!\n";
+        std::cout << "Location: " << destPath << "\n";
+        std::cout << "\nTo use this library, add to your stratos.conf:\n";
+        std::cout << "[dependencies]\n";
+        std::cout << repoName << " = \"" << destPath << "\"\n";
+        return 0;
+    } else {
+        std::cerr << "✗ Failed to fetch library\n";
+        std::cerr << "Make sure git is installed and the URL is correct\n";
+        return 1;
+    }
+}
+
+// ============================================================================
+// PROJECT CREATION - stratos new
+// ============================================================================
+
+int handleNew(int argc, char* argv[]) {
+    if (argc < 3) {
+        std::cerr << "Error: No project name specified.\n";
+        std::cerr << "Usage: stratos new <project-name>\n";
+        std::cerr << "Example: stratos new my-app\n";
+        return 1;
+    }
+
+    std::string projectName = argv[2];
+    std::cout << "Creating new Stratos project: " << projectName << "\n";
+
+    // Validate project name
+    if (projectName.empty() || projectName[0] == '-') {
+        std::cerr << "Error: Invalid project name\n";
+        return 1;
+    }
+
+    // Check if directory already exists
+    if (fs::exists(projectName)) {
+        std::cerr << "Error: Directory '" << projectName << "' already exists\n";
+        return 1;
+    }
+
+    // Create project structure
+    try {
+        fs::create_directory(projectName);
+        fs::create_directory(projectName + "/src");
+        fs::create_directory(projectName + "/build");
+        fs::create_directory(projectName + "/libs");
+        fs::create_directory(projectName + "/tests");
+
+        std::cout << "Created directory structure:\n";
+        std::cout << "  " << projectName << "/\n";
+        std::cout << "  ├── src/\n";
+        std::cout << "  ├── build/\n";
+        std::cout << "  ├── libs/\n";
+        std::cout << "  ├── tests/\n";
+        std::cout << "  ├── stratos.conf\n";
+        std::cout << "  ├── README.md\n";
+        std::cout << "  └── .gitignore\n\n";
+
+        // Create stratos.conf
+        std::ofstream confFile(projectName + "/stratos.conf");
+        confFile << "[project]\n";
+        confFile << "name = " << projectName << "\n";
+        confFile << "version = 1.0.0\n";
+        confFile << "author = Your Name\n";
+        confFile << "license = MIT\n\n";
+        confFile << "[build]\n";
+        confFile << "entry = src/main.st\n";
+        confFile << "output = build/" << projectName << "\n\n";
+        confFile << "[compile]\n";
+        confFile << "sources = src/main.st\n\n";
+        confFile << "[dependencies]\n";
+        confFile << "# Add dependencies here\n";
+        confFile << "# example = \"libs/example\"\n";
+        confFile.close();
+
+        // Create main.st
+        std::ofstream mainFile(projectName + "/src/main.st");
+        mainFile << "package main;\n\n";
+        mainFile << "use log;\n";
+        mainFile << "use math;\n\n";
+        mainFile << "fn main() {\n";
+        mainFile << "    log.info(\"Hello from " << projectName << "!\");\n";
+        mainFile << "    \n";
+        mainFile << "    val result = math.sqrt(16.0);\n";
+        mainFile << "    log.info(\"Square root of 16 is: \" + result);\n";
+        mainFile << "}\n";
+        mainFile.close();
+
+        // Create README.md
+        std::ofstream readmeFile(projectName + "/README.md");
+        readmeFile << "# " << projectName << "\n\n";
+        readmeFile << "A Stratos project.\n\n";
+        readmeFile << "## Building\n\n";
+        readmeFile << "```bash\n";
+        readmeFile << "cd " << projectName << "\n";
+        readmeFile << "stratos build\n";
+        readmeFile << "```\n\n";
+        readmeFile << "## Running\n\n";
+        readmeFile << "```bash\n";
+        readmeFile << "./build/" << projectName << "\n";
+        readmeFile << "```\n\n";
+        readmeFile << "## Testing\n\n";
+        readmeFile << "```bash\n";
+        readmeFile << "stratos test\n";
+        readmeFile << "```\n";
+        readmeFile.close();
+
+        // Create .gitignore
+        std::ofstream gitignoreFile(projectName + "/.gitignore");
+        gitignoreFile << "build/\n";
+        gitignoreFile << "*.ll\n";
+        gitignoreFile << "*.o\n";
+        gitignoreFile << "*.exe\n";
+        gitignoreFile << ".vscode/\n";
+        gitignoreFile << ".idea/\n";
+        gitignoreFile.close();
+
+        std::cout << "✓ Project created successfully!\n\n";
+        std::cout << "Next steps:\n";
+        std::cout << "  cd " << projectName << "\n";
+        std::cout << "  stratos build\n";
+        std::cout << "  ./build/" << projectName << "\n\n";
+
+        return 0;
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error creating project: " << e.what() << std::endl;
+        return 1;
+    }
+}
+
+// ============================================================================
 // MAIN
 // ============================================================================
 
@@ -502,6 +685,14 @@ int main(int argc, char* argv[]) {
 
     if (command == "build") {
         return handleBuild(argc, argv);
+    }
+
+    if (command == "get") {
+        return handleGet(argc, argv);
+    }
+
+    if (command == "new") {
+        return handleNew(argc, argv);
     }
 
     if (command == "compile" || command.ends_with(".st")) {

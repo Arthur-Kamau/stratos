@@ -1,5 +1,6 @@
 # Stratos
-A fast, type-safe, compiled, and fun-to-write programming language.
+A fast, type-safe, compiled(Interpreted), and fun-to-write programming language.
+
 
 ## Objective
 
@@ -7,7 +8,7 @@ A fast, type-safe, compiled, and fun-to-write programming language.
 *   Low-level (with managed abstractions where needed)
 *   Mix of functional and OOP paradigms
 *   Flexible (write scripts, huge monolith projects)
-*   Compiled language
+*   Compiled/Interpretes=d language
 *   Ability to generate static binaries.
 
 ## Status

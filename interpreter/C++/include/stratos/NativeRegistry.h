@@ -57,6 +57,7 @@ private:
     void initHTTP();
     void initOS();
     void initCrypto();
+    void initZip();
     void initTesting();
 };
 
