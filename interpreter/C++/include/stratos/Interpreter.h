@@ -49,8 +49,11 @@ class Interpreter : public ASTVisitor {
 public:
     Interpreter();
 
-    // Execute a program
-    void execute(const std::vector<std::unique_ptr<Stmt>>& statements);
+    // Execute a program (takes ownership of statements)
+    void execute(std::vector<std::unique_ptr<Stmt>>&& statements);
+
+    // Call a function by name
+    RuntimeValue callFunction(const std::string& name, const std::vector<RuntimeValue>& args);
 
     // Visitor Implementation
     void visit(BinaryExpr& expr) override;
@@ -128,6 +131,18 @@ private:
     // Storage for parsed module statements to keep them alive
     std::vector<std::vector<std::unique_ptr<Stmt>>> moduleStatements;
 
+    // Storage for main file statements to keep them alive
+    std::vector<std::unique_ptr<Stmt>> mainStatements;
+
+    // Module function registry: moduleName -> functionName -> FunctionDecl*
+    std::unordered_map<std::string, std::unordered_map<std::string, FunctionDecl*>> moduleFunctions;
+
+    // Track which module we're currently loading
+    std::string currentModuleName;
+
+    // Track which module function is currently executing (for recursive calls)
+    std::string currentExecutingModule;
+
     // Result of last expression evaluation
     RuntimeValue lastValue;
 
@@ -139,7 +154,10 @@ private:
                                     const std::string& functionName,
                                     const std::vector<RuntimeValue>& args);
 
-    RuntimeValue callFunction(const std::string& name, const std::vector<RuntimeValue>& args);
+    RuntimeValue callModuleFunction(const std::string& moduleName,
+                                    const std::string& functionName,
+                                    const std::vector<RuntimeValue>& args,
+                                    FunctionDecl* funcDecl);
 
     RuntimeValue instantiateClass(const std::string& className, const std::vector<RuntimeValue>& args);
 

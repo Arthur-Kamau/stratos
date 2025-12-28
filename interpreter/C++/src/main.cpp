@@ -126,38 +126,24 @@ CompileResult compileFile(const std::string& path, const std::string& outputPath
 
             Interpreter interpreter;
 
-            // Process all declarations first
-            interpreter.execute(statements);
+            // Process all declarations first (transfers ownership to interpreter)
+            interpreter.execute(std::move(statements));
 
-            // Find and explicitly call main function
-            FunctionDecl* mainFunc = nullptr;
-            for (const auto& stmt : statements) {
-                if (auto* funcDecl = dynamic_cast<FunctionDecl*>(stmt.get())) {
-                    if (funcDecl->name.lexeme == "main") {
-                        mainFunc = funcDecl;
-                        break;
-                    }
+            // Call main function if it exists
+            try {
+                std::vector<RuntimeValue> emptyArgs;
+                interpreter.callFunction("main", emptyArgs);
+                if (verbose) std::cout << "  [Execution] Complete" << std::endl;
+            } catch (const ReturnException& e) {
+                // Return from main() is normal - not an error
+                if (verbose) std::cout << "  [Execution] Complete" << std::endl;
+            } catch (const std::runtime_error& e) {
+                // If main doesn't exist, that's okay - declarations were already executed
+                std::string err = e.what();
+                if (err.find("Undefined function: main") == std::string::npos) {
+                    // Only throw if it's not a "main not found" error
+                    throw std::runtime_error("Error executing main(): " + err);
                 }
-            }
-
-            // Call main function
-            if (mainFunc) {
-                try {
-                    // Create a CallExpr to call main()
-                    auto mainVar = std::make_unique<VariableExpr>(mainFunc->name);
-                    std::vector<std::unique_ptr<Expr>> args;
-                    CallExpr mainCall(std::move(mainVar), mainFunc->name, std::move(args));
-                    mainCall.accept(interpreter);
-
-                    if (verbose) std::cout << "  [Execution] Complete" << std::endl;
-                } catch (const ReturnException& e) {
-                    // Return from main() is normal - not an error
-                    if (verbose) std::cout << "  [Execution] Complete" << std::endl;
-                } catch (const std::exception& e) {
-                    throw std::runtime_error("Error executing main(): " + std::string(e.what()));
-                }
-            } else {
-                // No main function found - execute top-level statements
                 if (verbose) std::cout << "  [Execution] Complete (no main function)" << std::endl;
             }
 

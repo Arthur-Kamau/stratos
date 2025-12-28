@@ -16,9 +16,14 @@ Interpreter::Interpreter() {
     environments.push_back(std::move(globalEnv));
 }
 
-void Interpreter::execute(const std::vector<std::unique_ptr<Stmt>>& statements) {
-    // Execute all statements
-    for (const auto& stmt : statements) {
+void Interpreter::execute(std::vector<std::unique_ptr<Stmt>>&& statements) {
+    // Move statements into interpreter for ownership
+    for (auto& stmt : statements) {
+        mainStatements.push_back(std::move(stmt));
+    }
+
+    // Execute the stored statements
+    for (const auto& stmt : mainStatements) {
         if (stmt) {
             stmt->accept(*this);
         }
@@ -411,11 +416,28 @@ void Interpreter::visit(CallExpr& expr) {
                     return;
                 }
 
-                // Handle native module calls
+                // Handle module calls (both user-defined and native)
                 if (leftValue.type == "module") {
                     if (auto* leftVar = dynamic_cast<VariableExpr*>(binExpr->left.get())) {
                         std::string moduleName = leftVar->name.lexeme;
-                        lastValue = evaluateNativeCall(moduleName, methodName, args);
+
+                        // FIRST: Check if it's a user-defined module function
+                        if (moduleFunctions.count(moduleName) &&
+                            moduleFunctions[moduleName].count(methodName)) {
+                            FunctionDecl* funcDecl = moduleFunctions[moduleName][methodName];
+                            lastValue = callModuleFunction(moduleName, methodName, args, funcDecl);
+                            return;
+                        }
+
+                        // SECOND: Check if it's a native function
+                        auto& registry = NativeRegistry::getInstance();
+                        if (registry.isNative(moduleName, methodName)) {
+                            lastValue = evaluateNativeCall(moduleName, methodName, args);
+                            return;
+                        }
+
+                        // Function not found
+                        error("Undefined function: " + moduleName + "::" + methodName);
                         return;
                     }
                 }
@@ -444,6 +466,15 @@ void Interpreter::visit(CallExpr& expr) {
         // Check if this is a class instantiation
         if (classes.count(functionName)) {
             lastValue = instantiateClass(functionName, args);
+            return;
+        }
+
+        // If we're executing within a module, check if the function exists in that module first
+        if (!currentExecutingModule.empty() &&
+            moduleFunctions.count(currentExecutingModule) &&
+            moduleFunctions[currentExecutingModule].count(functionName)) {
+            FunctionDecl* funcDecl = moduleFunctions[currentExecutingModule][functionName];
+            lastValue = callModuleFunction(currentExecutingModule, functionName, args, funcDecl);
             return;
         }
 
@@ -492,14 +523,19 @@ void Interpreter::visit(VarDecl& stmt) {
 }
 
 void Interpreter::visit(FunctionDecl& stmt) {
-    // Store function for later execution
-    Function func;
-    func.params = stmt.params;
-    func.paramTypes = stmt.paramTypes;
-    func.returnType = stmt.returnType;
-    func.body = &stmt.body;
+    // If we're loading a module, register function in module namespace
+    if (!currentModuleName.empty()) {
+        moduleFunctions[currentModuleName][stmt.name.lexeme] = &stmt;
+    } else {
+        // Store function for later execution in global scope
+        Function func;
+        func.params = stmt.params;
+        func.paramTypes = stmt.paramTypes;
+        func.returnType = stmt.returnType;
+        func.body = &stmt.body;
 
-    functions[stmt.name.lexeme] = func;
+        functions[stmt.name.lexeme] = func;
+    }
 }
 
 void Interpreter::visit(ClassDecl& stmt) {
@@ -526,42 +562,60 @@ void Interpreter::visit(UseStmt& stmt) {
     RuntimeValue moduleValue(std::any(), "module");
     currentEnv->define(moduleName, moduleValue);
 
-    // Check if this is a user-defined module that needs to be loaded
-    std::string moduleDir = "src/" + moduleName;
-    if (fs::exists(moduleDir) && fs::is_directory(moduleDir)) {
-        // Load all .st files in the module directory
-        for (const auto& entry : fs::directory_iterator(moduleDir)) {
-            if (entry.path().extension() == ".st") {
-                std::ifstream file(entry.path());
-                if (!file.is_open()) continue;
+    // Search paths in priority order
+    std::vector<std::string> searchPaths = {
+        "src/" + moduleName,           // Internal packages
+        "deps/" + moduleName + "/src", // External dependencies
+        "deps/" + moduleName,          // Alternative layout
+    };
 
-                std::stringstream buffer;
-                buffer << file.rdbuf();
-                std::string source = buffer.str();
+    // Try each search path until we find the module
+    for (const auto& moduleDir : searchPaths) {
+        if (fs::exists(moduleDir) && fs::is_directory(moduleDir)) {
+            // Set current module name to track module context
+            currentModuleName = moduleName;
 
-                try {
-                    // Lex, parse, and execute the module file
-                    Lexer lexer(source);
-                    std::vector<Token> tokens = lexer.scanTokens();
+            // Load all .st files in the module directory
+            for (const auto& entry : fs::directory_iterator(moduleDir)) {
+                if (entry.path().extension() == ".st") {
+                    std::ifstream file(entry.path());
+                    if (!file.is_open()) continue;
 
-                    Parser parser(tokens);
-                    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+                    std::stringstream buffer;
+                    buffer << file.rdbuf();
+                    std::string source = buffer.str();
 
-                    // Store the statements first to keep ClassDecl alive
-                    moduleStatements.push_back(std::move(statements));
+                    try {
+                        // Lex, parse, and execute the module file
+                        Lexer lexer(source);
+                        std::vector<Token> tokens = lexer.scanTokens();
 
-                    // Execute the module statements (this will register classes, functions, etc.)
-                    for (const auto& moduleStmt : moduleStatements.back()) {
-                        if (moduleStmt) {
-                            moduleStmt->accept(*this);
+                        Parser parser(tokens);
+                        std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+                        // Store the statements first to keep ClassDecl alive
+                        moduleStatements.push_back(std::move(statements));
+
+                        // Execute the module statements (this will register classes, functions, etc.)
+                        for (const auto& moduleStmt : moduleStatements.back()) {
+                            if (moduleStmt) {
+                                moduleStmt->accept(*this);
+                            }
                         }
+                    } catch (const std::exception& e) {
+                        error("Error loading module '" + moduleName + "': " + e.what());
                     }
-                } catch (const std::exception& e) {
-                    error("Error loading module '" + moduleName + "': " + e.what());
                 }
             }
+
+            // Clear current module name after loading
+            currentModuleName = "";
+            return; // Module found and loaded
         }
     }
+
+    // If we get here, the module wasn't found in any search path
+    // This is okay for native modules (math, log, etc.)
 }
 
 void Interpreter::visit(BlockStmt& stmt) {
@@ -723,6 +777,45 @@ RuntimeValue Interpreter::callFunction(const std::string& name,
     }
 
     exitScope();
+    return result;
+}
+
+RuntimeValue Interpreter::callModuleFunction(const std::string& moduleName,
+                                             const std::string& functionName,
+                                             const std::vector<RuntimeValue>& args,
+                                             FunctionDecl* funcDecl) {
+    // Save previous executing module context
+    std::string previousModule = currentExecutingModule;
+    currentExecutingModule = moduleName;
+
+    // Create new scope for function execution
+    enterScope();
+
+    // Bind parameters
+    for (size_t i = 0; i < funcDecl->params.size() && i < args.size(); ++i) {
+        currentEnv->define(funcDecl->params[i].lexeme, args[i]);
+    }
+
+    // Execute function body
+    RuntimeValue result;
+    try {
+        if (funcDecl->body) {
+            for (const auto& stmt : *funcDecl->body) {
+                if (stmt) {
+                    stmt->accept(*this);
+                }
+            }
+        }
+        result = RuntimeValue(std::any(), "void");
+    } catch (ReturnException& ret) {
+        result = ret.value;
+    }
+
+    exitScope();
+
+    // Restore previous executing module context
+    currentExecutingModule = previousModule;
+
     return result;
 }
 

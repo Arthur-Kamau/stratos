@@ -21,6 +21,7 @@ fn main() {
     val fact5 = sample.factorial(5);
     println("5! = " + fact5);
 
+
     // Test max function
     val maximum = sample.max(42, 17);
     println("max(42, 17) = " + maximum);
@@ -29,5 +30,6 @@ fn main() {
     val minimum = sample.min(42, 17);
     println("min(42, 17) = " + minimum);
 
+sample.say_kenn();
     println("\n=== All tests completed successfully! ===");
 }

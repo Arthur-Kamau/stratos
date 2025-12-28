@@ -1,6 +1,0 @@
-build/
-*.ll
-*.o
-*.exe
-.vscode/
-.idea/
