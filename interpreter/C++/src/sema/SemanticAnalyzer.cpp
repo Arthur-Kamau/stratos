@@ -238,6 +238,10 @@ void SemanticAnalyzer::visit(BlockStmt& stmt) {
     symbolTable.exitScope();
 }
 
+void SemanticAnalyzer::visit(ExpressionStmt& stmt) {
+    stmt.expression->accept(*this);
+}
+
 void SemanticAnalyzer::visit(PrintStmt& stmt) {
     stmt.expression->accept(*this);
 }
@@ -265,7 +269,11 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
 
     // Possible module file locations
     std::vector<std::string> searchPaths = {
-        // Dependencies directory (highest priority)
+        // Internal project packages (highest priority)
+        "src/" + moduleName + "/init.st",
+        "src/" + moduleName + "/" + moduleName + ".st",
+
+        // Dependencies directory
         "deps/" + moduleName + "/src/init.st",
         "deps/" + moduleName + "/src/" + moduleName + ".st",
         "../deps/" + moduleName + "/src/init.st",
@@ -299,10 +307,23 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
     };
 
     std::string moduleFilePath;
+    bool isUserModule = false;
+
     for (const auto& path : searchPaths) {
         if (fs::exists(path)) {
             moduleFilePath = path;
+            // Check if this is a user-defined module (in src/ directory)
+            isUserModule = path.starts_with("src/");
             break;
+        }
+    }
+
+    // If no specific module file was found, check if module directory exists
+    if (moduleFilePath.empty()) {
+        std::string moduleDir = "src/" + moduleName;
+        if (fs::exists(moduleDir) && fs::is_directory(moduleDir)) {
+            moduleFilePath = moduleDir;
+            isUserModule = true;
         }
     }
 
@@ -311,15 +332,76 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
         return;
     }
 
-    // Module file exists - just register it
-    // We don't parse the module file because:
-    // 1. Native functions are implemented in C++ (NativeRegistry)
-    // 2. Module files may use advanced syntax not yet fully supported
-    // 3. We only need to know the module exists and is available
-    // 4. Actual function validation happens during CallExpr analysis via NativeRegistry
+    // For built-in/native modules, just register the module name
+    if (!isUserModule) {
+        // Module file exists - just register it
+        // We don't parse the module file because:
+        // 1. Native functions are implemented in C++ (NativeRegistry)
+        // 2. Module files may use advanced syntax not yet fully supported
+        // 3. We only need to know the module exists and is available
+        // 4. Actual function validation happens during CallExpr analysis via NativeRegistry
 
-    // Register the module in the symbol table
-    symbolTable.define(Symbol::Variable(moduleName, "module", false));
+        // Register the module in the symbol table
+        symbolTable.define(Symbol::Variable(moduleName, "module", false));
+        return;
+    }
+
+    // For user-defined modules, parse all files in the module directory
+    std::vector<std::string> moduleFiles;
+
+    // If moduleFilePath is a directory, scan for all .st files
+    // Otherwise, it's a file and we also need to scan its directory
+    fs::path modulePath(moduleFilePath);
+
+    if (fs::is_directory(modulePath)) {
+        // moduleFilePath is already the directory, scan it
+        for (const auto& entry : fs::directory_iterator(modulePath)) {
+            if (entry.path().extension() == ".st") {
+                moduleFiles.push_back(entry.path().string());
+            }
+        }
+    } else if (fs::is_regular_file(modulePath)) {
+        // moduleFilePath is a specific file, scan its parent directory
+        fs::path moduleDir = modulePath.parent_path();
+        for (const auto& entry : fs::directory_iterator(moduleDir)) {
+            if (entry.path().extension() == ".st") {
+                moduleFiles.push_back(entry.path().string());
+            }
+        }
+    } else {
+        // Fallback: just use the file itself if it exists
+        moduleFiles.push_back(moduleFilePath);
+    }
+
+    // Parse and process each file in the module
+    for (const auto& filePath : moduleFiles) {
+        std::ifstream file(filePath);
+        if (!file.is_open()) {
+            continue; // Skip files we can't open
+        }
+
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        std::string source = buffer.str();
+
+        try {
+            // Lex and parse the module file
+            Lexer lexer(source);
+            std::vector<Token> tokens = lexer.scanTokens();
+
+            Parser parser(tokens);
+            std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+            // Process declarations in the module
+            for (const auto& stmt : statements) {
+                if (stmt) {
+                    stmt->accept(*this);
+                }
+            }
+        } catch (const std::exception& e) {
+            error("Error loading module '" + moduleName + "' from " + filePath + ": " + e.what());
+        }
+    }
 }
 
 std::string SemanticAnalyzer::inferType(Expr* expr) {

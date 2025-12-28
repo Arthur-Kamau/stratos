@@ -22,6 +22,7 @@ class VarDecl;
 class FunctionDecl;
 class ClassDecl;
 class BlockStmt;
+class ExpressionStmt;
 class PrintStmt;
 class IfStmt;
 class WhileStmt;
@@ -46,6 +47,7 @@ public:
     virtual void visit(PackageDecl& stmt) = 0;
     virtual void visit(UseStmt& stmt) = 0;
     virtual void visit(BlockStmt& stmt) = 0;
+    virtual void visit(ExpressionStmt& stmt) = 0;
     virtual void visit(PrintStmt& stmt) = 0;
     virtual void visit(IfStmt& stmt) = 0;
     virtual void visit(WhileStmt& stmt) = 0;
@@ -213,13 +215,23 @@ public:
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };
 
+class ExpressionStmt : public Stmt {
+public:
+    std::unique_ptr<Expr> expression;
+
+    ExpressionStmt(std::unique_ptr<Expr> expression)
+        : expression(std::move(expression)) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
 class PrintStmt : public Stmt {
 public:
     std::unique_ptr<Expr> expression;
-    
+
     PrintStmt(std::unique_ptr<Expr> expression)
         : expression(std::move(expression)) {}
-        
+
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };
 

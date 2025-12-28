@@ -12,10 +12,16 @@
 
 namespace stratos {
 
+// Class instance (object) representation
+struct ClassInstance {
+    std::string className;
+    std::unordered_map<std::string, struct RuntimeValue> fields;
+};
+
 // Runtime value representation
 struct RuntimeValue {
     std::any value;
-    std::string type; // "int", "double", "string", "bool", "void", "function"
+    std::string type; // "int", "double", "string", "bool", "void", "function", "object"
 
     RuntimeValue() : type("void") {}
     RuntimeValue(std::any val, std::string t) : value(val), type(t) {}
@@ -25,6 +31,9 @@ struct RuntimeValue {
     double asDouble() const { return std::any_cast<double>(value); }
     std::string asString() const { return std::any_cast<std::string>(value); }
     bool asBool() const { return std::any_cast<bool>(value); }
+    std::shared_ptr<ClassInstance> asObject() const {
+        return std::any_cast<std::shared_ptr<ClassInstance>>(value);
+    }
 };
 
 // Exception for return statements
@@ -57,6 +66,7 @@ public:
     void visit(PackageDecl& stmt) override;
     void visit(UseStmt& stmt) override;
     void visit(BlockStmt& stmt) override;
+    void visit(ExpressionStmt& stmt) override;
     void visit(PrintStmt& stmt) override;
     void visit(IfStmt& stmt) override;
     void visit(WhileStmt& stmt) override;
@@ -107,6 +117,16 @@ private:
     };
     std::unordered_map<std::string, Function> functions;
 
+    // Class storage
+    struct Class {
+        std::string name;
+        std::vector<std::unique_ptr<Stmt>>* methods; // Pointer to methods in ClassDecl
+    };
+    std::unordered_map<std::string, Class> classes;
+
+    // Storage for parsed module statements to keep them alive
+    std::vector<std::vector<std::unique_ptr<Stmt>>> moduleStatements;
+
     // Result of last expression evaluation
     RuntimeValue lastValue;
 
@@ -119,6 +139,8 @@ private:
                                     const std::vector<RuntimeValue>& args);
 
     RuntimeValue callFunction(const std::string& name, const std::vector<RuntimeValue>& args);
+
+    RuntimeValue instantiateClass(const std::string& className, const std::vector<RuntimeValue>& args);
 
     bool isTruthy(const RuntimeValue& value);
 

@@ -1,6 +1,11 @@
 #include "stratos/Interpreter.h"
+#include "stratos/Lexer.h"
+#include "stratos/Parser.h"
 #include <iostream>
 #include <cmath>
+#include <fstream>
+#include <sstream>
+#include <filesystem>
 
 namespace stratos {
 
@@ -40,10 +45,97 @@ void Interpreter::error(const std::string& message) {
 // --- Expression Visitors ---
 
 void Interpreter::visit(BinaryExpr& expr) {
+    // Special handling for assignment (=, +=, -=)
+    if (expr.op.type == TokenType::EQUAL || expr.op.type == TokenType::PLUS_EQUAL ||
+        expr.op.type == TokenType::MINUS_EQUAL) {
+
+        // Evaluate the right side (the value being assigned)
+        expr.right->accept(*this);
+        RuntimeValue value = lastValue;
+
+        // Check if left side is member access (this.field)
+        if (auto* dotExpr = dynamic_cast<BinaryExpr*>(expr.left.get())) {
+            if (dotExpr->op.type == TokenType::DOT) {
+                dotExpr->left->accept(*this);
+                RuntimeValue target = lastValue;
+
+                if (target.type == "object") {
+                    auto instance = target.asObject();
+                    if (auto* rightVar = dynamic_cast<VariableExpr*>(dotExpr->right.get())) {
+                        std::string fieldName = rightVar->name.lexeme;
+
+                        if (expr.op.type == TokenType::EQUAL) {
+                            instance->fields[fieldName] = value;
+                        } else if (expr.op.type == TokenType::PLUS_EQUAL) {
+                            auto& field = instance->fields[fieldName];
+                            if (field.type == "int" && value.type == "int") {
+                                field = RuntimeValue(std::any(field.asInt() + value.asInt()), "int");
+                            } else if (field.type == "double" && value.type == "double") {
+                                field = RuntimeValue(std::any(field.asDouble() + value.asDouble()), "double");
+                            }
+                        } else if (expr.op.type == TokenType::MINUS_EQUAL) {
+                            auto& field = instance->fields[fieldName];
+                            if (field.type == "int" && value.type == "int") {
+                                field = RuntimeValue(std::any(field.asInt() - value.asInt()), "int");
+                            } else if (field.type == "double" && value.type == "double") {
+                                field = RuntimeValue(std::any(field.asDouble() - value.asDouble()), "double");
+                            }
+                        }
+
+                        lastValue = value;
+                        return;
+                    }
+                }
+            }
+        }
+
+        // Simple variable assignment
+        if (auto* varExpr = dynamic_cast<VariableExpr*>(expr.left.get())) {
+            std::string varName = varExpr->name.lexeme;
+
+            if (expr.op.type == TokenType::EQUAL) {
+                currentEnv->assign(varName, value);
+            } else if (expr.op.type == TokenType::PLUS_EQUAL) {
+                RuntimeValue current = currentEnv->get(varName);
+                if (current.type == "int" && value.type == "int") {
+                    value = RuntimeValue(std::any(current.asInt() + value.asInt()), "int");
+                } else if (current.type == "double" && value.type == "double") {
+                    value = RuntimeValue(std::any(current.asDouble() + value.asDouble()), "double");
+                }
+                currentEnv->assign(varName, value);
+            } else if (expr.op.type == TokenType::MINUS_EQUAL) {
+                RuntimeValue current = currentEnv->get(varName);
+                if (current.type == "int" && value.type == "int") {
+                    value = RuntimeValue(std::any(current.asInt() - value.asInt()), "int");
+                } else if (current.type == "double" && value.type == "double") {
+                    value = RuntimeValue(std::any(current.asDouble() - value.asDouble()), "double");
+                }
+                currentEnv->assign(varName, value);
+            }
+
+            lastValue = value;
+            return;
+        }
+    }
+
     // Special handling for DOT operator - don't evaluate right side as a variable
     if (expr.op.type == TokenType::DOT) {
         expr.left->accept(*this);
         RuntimeValue left = lastValue;
+
+        // Member access for objects
+        if (left.type == "object") {
+            auto instance = left.asObject();
+            if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
+                std::string memberName = rightVar->name.lexeme;
+
+                // Check if it's a field
+                if (instance->fields.count(memberName)) {
+                    lastValue = instance->fields[memberName];
+                    return;
+                }
+            }
+        }
 
         // Member access for module.constant or module.property
         if (left.type == "module") {
@@ -245,24 +337,80 @@ void Interpreter::visit(VariableExpr& expr) {
 }
 
 void Interpreter::visit(CallExpr& expr) {
-    // Check if this is a native module call (module.function())
+    // Check if this is a dot call (module.function() or object.method())
     if (auto* binExpr = dynamic_cast<BinaryExpr*>(expr.callee.get())) {
         if (binExpr->op.type == TokenType::DOT) {
-            if (auto* leftVar = dynamic_cast<VariableExpr*>(binExpr->left.get())) {
-                if (auto* rightVar = dynamic_cast<VariableExpr*>(binExpr->right.get())) {
-                    std::string moduleName = leftVar->name.lexeme;
-                    std::string functionName = rightVar->name.lexeme;
+            // Evaluate the left side
+            binExpr->left->accept(*this);
+            RuntimeValue leftValue = lastValue;
 
-                    // Evaluate arguments
-                    std::vector<RuntimeValue> args;
-                    for (const auto& arg : expr.arguments) {
-                        arg->accept(*this);
-                        args.push_back(lastValue);
+            if (auto* rightVar = dynamic_cast<VariableExpr*>(binExpr->right.get())) {
+                std::string methodName = rightVar->name.lexeme;
+
+                // Evaluate arguments
+                std::vector<RuntimeValue> args;
+                for (const auto& arg : expr.arguments) {
+                    arg->accept(*this);
+                    args.push_back(lastValue);
+                }
+
+                // Handle object method calls
+                if (leftValue.type == "object") {
+                    auto instance = leftValue.asObject();
+
+                    // Find the method in the class definition
+                    if (classes.count(instance->className)) {
+                        Class& cls = classes[instance->className];
+
+                        for (const auto& member : *cls.methods) {
+                            if (auto* funcDecl = dynamic_cast<FunctionDecl*>(member.get())) {
+                                if (funcDecl->name.lexeme == methodName) {
+                                    // Call the method with 'this' bound to the instance
+                                    enterScope();
+
+                                    // Bind 'this' to the instance
+                                    RuntimeValue thisValue(std::any(instance), "object");
+                                    currentEnv->define("this", thisValue);
+
+                                    // Bind method parameters
+                                    for (size_t i = 0; i < funcDecl->params.size() && i < args.size(); ++i) {
+                                        currentEnv->define(funcDecl->params[i].lexeme, args[i]);
+                                    }
+
+                                    // Execute method body
+                                    RuntimeValue result;
+                                    try {
+                                        if (funcDecl->body) {
+                                            for (const auto& stmt : *funcDecl->body) {
+                                                if (stmt) {
+                                                    stmt->accept(*this);
+                                                }
+                                            }
+                                        }
+                                        result = RuntimeValue(std::any(), "void");
+                                    } catch (ReturnException& ret) {
+                                        result = ret.value;
+                                    }
+
+                                    exitScope();
+                                    lastValue = result;
+                                    return;
+                                }
+                            }
+                        }
                     }
 
-                    // Call native function
-                    lastValue = evaluateNativeCall(moduleName, functionName, args);
+                    error("Undefined method: " + instance->className + "::" + methodName);
                     return;
+                }
+
+                // Handle native module calls
+                if (leftValue.type == "module") {
+                    if (auto* leftVar = dynamic_cast<VariableExpr*>(binExpr->left.get())) {
+                        std::string moduleName = leftVar->name.lexeme;
+                        lastValue = evaluateNativeCall(moduleName, methodName, args);
+                        return;
+                    }
                 }
             }
         }
@@ -293,6 +441,12 @@ void Interpreter::visit(CallExpr& expr) {
                 }
             }
             lastValue = RuntimeValue(std::any(), "void");
+            return;
+        }
+
+        // Check if this is a class instantiation
+        if (classes.count(functionName)) {
+            lastValue = instantiateClass(functionName, args);
             return;
         }
 
@@ -352,8 +506,11 @@ void Interpreter::visit(FunctionDecl& stmt) {
 }
 
 void Interpreter::visit(ClassDecl& stmt) {
-    // Class declarations not fully supported in interpreter yet
-    // For now, just skip
+    // Store class definition for later instantiation
+    Class cls;
+    cls.name = stmt.name.lexeme;
+    cls.methods = &stmt.methods;
+    classes[stmt.name.lexeme] = cls;
 }
 
 void Interpreter::visit(PackageDecl& stmt) {
@@ -364,13 +521,50 @@ void Interpreter::visit(PackageDecl& stmt) {
 }
 
 void Interpreter::visit(UseStmt& stmt) {
-    // Register the module as a module object in the environment
-    // This allows module.function() syntax to work
+    namespace fs = std::filesystem;
     std::string moduleName = stmt.moduleName.lexeme;
 
-    // Create a module object (represented as a special RuntimeValue)
+    // First, register the module as a module object in the environment
+    // This allows module.function() syntax to work
     RuntimeValue moduleValue(std::any(), "module");
     currentEnv->define(moduleName, moduleValue);
+
+    // Check if this is a user-defined module that needs to be loaded
+    std::string moduleDir = "src/" + moduleName;
+    if (fs::exists(moduleDir) && fs::is_directory(moduleDir)) {
+        // Load all .st files in the module directory
+        for (const auto& entry : fs::directory_iterator(moduleDir)) {
+            if (entry.path().extension() == ".st") {
+                std::ifstream file(entry.path());
+                if (!file.is_open()) continue;
+
+                std::stringstream buffer;
+                buffer << file.rdbuf();
+                std::string source = buffer.str();
+
+                try {
+                    // Lex, parse, and execute the module file
+                    Lexer lexer(source);
+                    std::vector<Token> tokens = lexer.scanTokens();
+
+                    Parser parser(tokens);
+                    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+                    // Store the statements first to keep ClassDecl alive
+                    moduleStatements.push_back(std::move(statements));
+
+                    // Execute the module statements (this will register classes, functions, etc.)
+                    for (const auto& moduleStmt : moduleStatements.back()) {
+                        if (moduleStmt) {
+                            moduleStmt->accept(*this);
+                        }
+                    }
+                } catch (const std::exception& e) {
+                    error("Error loading module '" + moduleName + "': " + e.what());
+                }
+            }
+        }
+    }
 }
 
 void Interpreter::visit(BlockStmt& stmt) {
@@ -379,6 +573,11 @@ void Interpreter::visit(BlockStmt& stmt) {
         if (s) s->accept(*this);
     }
     exitScope();
+}
+
+void Interpreter::visit(ExpressionStmt& stmt) {
+    // Just evaluate the expression and discard the result
+    stmt.expression->accept(*this);
 }
 
 void Interpreter::visit(PrintStmt& stmt) {
@@ -526,6 +725,80 @@ RuntimeValue Interpreter::callFunction(const std::string& name,
 
     exitScope();
     return result;
+}
+
+RuntimeValue Interpreter::instantiateClass(const std::string& className,
+                                           const std::vector<RuntimeValue>& args) {
+    if (classes.find(className) == classes.end()) {
+        error("Undefined class: " + className);
+    }
+
+    Class& cls = classes[className];
+
+    // Create a new class instance
+    auto instance = std::make_shared<ClassInstance>();
+    instance->className = className;
+
+    // Process class members (fields and methods)
+    // Find constructor and field declarations
+    FunctionDecl* constructor = nullptr;
+
+    for (const auto& member : *cls.methods) {
+        if (auto* fieldDecl = dynamic_cast<VarDecl*>(member.get())) {
+            // Initialize field with default value
+            RuntimeValue defaultValue;
+            if (fieldDecl->typeName == "int") {
+                defaultValue = RuntimeValue(std::any(0), "int");
+            } else if (fieldDecl->typeName == "double") {
+                defaultValue = RuntimeValue(std::any(0.0), "double");
+            } else if (fieldDecl->typeName == "string") {
+                defaultValue = RuntimeValue(std::any(std::string("")), "string");
+            } else if (fieldDecl->typeName == "bool") {
+                defaultValue = RuntimeValue(std::any(false), "bool");
+            } else {
+                defaultValue = RuntimeValue(std::any(), "void");
+            }
+            instance->fields[fieldDecl->name.lexeme] = defaultValue;
+        } else if (auto* funcDecl = dynamic_cast<FunctionDecl*>(member.get())) {
+            // Check if this is the constructor
+            if (funcDecl->name.lexeme == "constructor") {
+                constructor = funcDecl;
+            }
+        }
+    }
+
+    // Call constructor if exists
+    if (constructor) {
+        // Create a temporary environment with 'this' bound to the instance
+        enterScope();
+
+        // Bind 'this' to the instance
+        RuntimeValue thisValue(std::any(instance), "object");
+        currentEnv->define("this", thisValue);
+
+        // Bind constructor parameters
+        for (size_t i = 0; i < constructor->params.size() && i < args.size(); ++i) {
+            currentEnv->define(constructor->params[i].lexeme, args[i]);
+        }
+
+        // Execute constructor body
+        try {
+            if (constructor->body) {
+                for (const auto& stmt : *constructor->body) {
+                    if (stmt) {
+                        stmt->accept(*this);
+                    }
+                }
+            }
+        } catch (ReturnException& ret) {
+            // Constructor shouldn't return, but handle it anyway
+        }
+
+        exitScope();
+    }
+
+    // Return the instance wrapped in a RuntimeValue
+    return RuntimeValue(std::any(instance), "object");
 }
 
 bool Interpreter::isTruthy(const RuntimeValue& value) {

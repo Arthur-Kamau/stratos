@@ -36,6 +36,7 @@ public:
     void visit(PackageDecl& stmt) override;
     void visit(UseStmt& stmt) override;
     void visit(BlockStmt& stmt) override;
+    void visit(ExpressionStmt& stmt) override;
     void visit(PrintStmt& stmt) override;
     void visit(IfStmt& stmt) override;
     void visit(WhileStmt& stmt) override;

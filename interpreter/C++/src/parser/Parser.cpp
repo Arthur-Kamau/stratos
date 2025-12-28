@@ -120,14 +120,41 @@ std::unique_ptr<Stmt> Parser::classDeclaration() {
         } else if (match({TokenType::FN})) {
              methods.push_back(fnDeclaration("method"));
         } else if (match({TokenType::CONSTRUCTOR})) {
-            // Treat constructor like a function named "constructor"
-            // Hack for now to reuse fnDeclaration logic logic mostly
-            // But fnDeclaration expects name.
-            Token ctorName = previous(); // "constructor"
+            // Parse constructor as a special function named "constructor"
+            Token ctorName = previous(); // "constructor" keyword
             consume(TokenType::LEFT_PAREN, "Expect '(' after constructor.");
-             // ... duplicate logic or refactor. For now, skip body
-             while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) advance(); // SKIP
-             advance(); // consume }
+
+            std::vector<Token> params;
+            std::vector<std::string> paramTypes;
+
+            if (!check(TokenType::RIGHT_PAREN)) {
+                do {
+                    Token param = consume(TokenType::IDENTIFIER, "Expect parameter name.");
+                    params.push_back(param);
+
+                    std::string paramType = "";
+                    if (match({TokenType::COLON})) {
+                        paramType = parseType();
+                    }
+                    paramTypes.push_back(paramType);
+                } while (match({TokenType::COMMA}));
+            }
+
+            consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
+
+            // Constructors don't have return types
+            std::string returnType = "void";
+
+            // Parse constructor body
+            consume(TokenType::LEFT_BRACE, "Expect '{' before constructor body.");
+            auto body = std::make_unique<std::vector<std::unique_ptr<Stmt>>>();
+            while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
+                body->push_back(declaration());
+            }
+            consume(TokenType::RIGHT_BRACE, "Expect '}' after constructor body.");
+
+            // Create a FunctionDecl with name "constructor"
+            methods.push_back(std::make_unique<FunctionDecl>(ctorName, params, paramTypes, returnType, std::move(body)));
         } else {
              // Skip unknown things inside class for now to avoid infinite loops
              advance();
@@ -248,7 +275,7 @@ std::unique_ptr<Stmt> Parser::block() {
 std::unique_ptr<Stmt> Parser::expressionStatement() {
     std::unique_ptr<Expr> expr = expression();
     consume(TokenType::SEMICOLON, "Expect ';' after expression.");
-    return std::make_unique<PrintStmt>(std::move(expr));
+    return std::make_unique<ExpressionStmt>(std::move(expr));
 }
 
 // --- Expressions ---

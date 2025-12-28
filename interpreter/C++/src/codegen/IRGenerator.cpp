@@ -665,6 +665,10 @@ void IRGenerator::visit(UseStmt& stmt) {
     // The actual native function calls are handled in visit(CallExpr&)
 }
 
+void IRGenerator::visit(ExpressionStmt& stmt) {
+    stmt.expression->accept(*this);
+}
+
 void IRGenerator::visit(PrintStmt& stmt) {
     stmt.expression->accept(*this);
 

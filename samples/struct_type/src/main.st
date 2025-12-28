@@ -32,7 +32,7 @@ class student implements User {
    }
 }
 
-function main(){ 
+fn main(){ 
  
    let me = User {
       age = 20,
