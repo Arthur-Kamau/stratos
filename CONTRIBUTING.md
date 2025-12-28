@@ -167,6 +167,65 @@ stratos run samples/hello_world/src/main.st
 stratos run samples/dependency_test/src/main.st -v
 ```
 
+### Quick Validation with Check Command
+
+For faster feedback during development, use the `check` command which validates syntax and semantics without code generation:
+
+```bash
+# Check single file (5x faster than compile)
+stratos check src/main.st
+
+# Check with verbose output
+stratos check src/main.st -v
+
+# Check all files in a directory
+stratos check src/
+
+# Check entire project
+stratos check .
+```
+
+This is useful for:
+- Quick syntax validation during editing
+- Pre-commit hooks
+- IDE integration
+- CI/CD pipelines (faster than full compilation)
+
+### Formatting Code with Fmt Command
+
+Format your code according to Stratos style guidelines using the `fmt` command:
+
+```bash
+# Check if file is formatted
+stratos fmt src/main.st --check
+
+# Format file in-place
+stratos fmt src/main.st -w
+
+# Format all files in directory
+stratos fmt src/ -w
+
+# Print formatted code to stdout
+stratos fmt src/main.st
+```
+
+**Style Guidelines:**
+- 4 spaces for indentation (no tabs)
+- Opening braces on same line
+- Space after keywords (if, while, for, fn, class)
+- Space around operators (=, +, -, *, /, ==, !=, etc.)
+- Blank line between top-level declarations
+
+**Pre-commit Hook:**
+Add this to `.git/hooks/pre-commit` to auto-format before committing:
+```bash
+#!/bin/bash
+stratos fmt . --check || {
+    echo "Code is not formatted. Run: stratos fmt . -w"
+    exit 1
+}
+```
+
 ### Creating New Tests
 
 To add a new test:

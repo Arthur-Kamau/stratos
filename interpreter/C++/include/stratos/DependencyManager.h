@@ -6,6 +6,7 @@
 #include <optional>
 #include <vector>
 #include <set>
+#include "CacheManager.h"
 
 namespace stratos {
 
@@ -59,8 +60,9 @@ public:
 private:
     std::string projectRoot_;
     std::string depsDir_;
+    CacheManager cacheManager_;  // Global dependency cache
 
-    // Clone a git repository with retry logic
+    // Clone a git repository with retry logic (uses cache)
     bool cloneGitRepo(const std::string& url, const std::string& destPath,
                      const std::string& tag, const std::string& branch,
                      const std::string& hash, bool verbose);

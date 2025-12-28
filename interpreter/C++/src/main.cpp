@@ -22,6 +22,7 @@
 #include "stratos/Interpreter.h"
 #include "stratos/DependencyManager.h"
 #include "stratos/LockFile.h"
+#include "stratos/Formatter.h"
 
 using namespace stratos;
 namespace fs = std::filesystem;
@@ -37,6 +38,10 @@ void printHelp() {
     std::cout << "  stratos compile <file.st>      Compile a single file\n";
     std::cout << "  stratos compile <directory>    Compile all .st files in directory\n";
     std::cout << "  stratos run <file.st>          Execute a Stratos program directly\n";
+    std::cout << "  stratos check <file.st>        Parse and analyze without code generation\n";
+    std::cout << "  stratos check <directory>      Check all .st files in directory\n";
+    std::cout << "  stratos fmt <file.st>          Format a Stratos source file\n";
+    std::cout << "  stratos fmt <directory> -w     Format all .st files in directory\n";
     std::cout << "  stratos build                  Build project (looks for stratos.conf)\n";
     std::cout << "  stratos build <project_dir>    Build project in specified directory\n";
     std::cout << "  stratos new <project-name>     Create a new Stratos project\n";
@@ -857,6 +862,311 @@ int handleNew(int argc, char* argv[]) {
     }
 }
 
+int handleFmt(int argc, char* argv[]) {
+    // Parse arguments
+    std::vector<std::string> inputPaths;
+    bool writeToFile = false;
+    bool checkOnly = false;
+    bool verbose = false;
+
+    if (argc < 3) {
+        std::cerr << "Error: No input file specified\n";
+        std::cerr << "Usage: stratos fmt <file.st> [options]\n";
+        std::cerr << "       stratos fmt <directory> [options]\n";
+        std::cerr << "Options:\n";
+        std::cerr << "  -w, --write    Write formatted code back to file (in-place)\n";
+        std::cerr << "  --check        Check if files are formatted (exit 1 if not)\n";
+        std::cerr << "  -v, --verbose  Verbose output\n";
+        return 1;
+    }
+
+    // Parse arguments
+    for (int i = 2; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "-w" || arg == "--write") {
+            writeToFile = true;
+        } else if (arg == "--check") {
+            checkOnly = true;
+        } else if (arg == "-v" || arg == "--verbose") {
+            verbose = true;
+        } else {
+            inputPaths.push_back(arg);
+        }
+    }
+
+    if (inputPaths.empty()) {
+        std::cerr << "Error: No input file specified\n";
+        return 1;
+    }
+
+    if (writeToFile && checkOnly) {
+        std::cerr << "Error: Cannot use --write and --check together\n";
+        return 1;
+    }
+
+    int filesFormatted = 0;
+    int filesChecked = 0;
+    int filesNeedFormatting = 0;
+
+    auto formatFile = [&](const std::string& filePath) -> bool {
+        if (verbose) {
+            std::cout << "Processing: " << filePath << "\n";
+        }
+
+        // Read source file
+        std::ifstream file(filePath);
+        if (!file.is_open()) {
+            std::cerr << "✗ Could not open file: " << filePath << "\n";
+            return false;
+        }
+
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        std::string source = buffer.str();
+        file.close();
+
+        try {
+            // Lexical Analysis
+            Lexer lexer(source);
+            std::vector<Token> tokens = lexer.scanTokens();
+
+            // Parsing
+            Parser parser(tokens);
+            std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+            // Format
+            Formatter formatter;
+            std::string formattedCode = formatter.format(statements);
+
+            if (checkOnly) {
+                // Check if formatted code differs from original
+                if (formattedCode != source) {
+                    std::cout << "✗ " << filePath << " is not formatted\n";
+                    filesNeedFormatting++;
+                    return false;
+                } else {
+                    if (verbose) {
+                        std::cout << "✓ " << filePath << " is formatted\n";
+                    }
+                    filesChecked++;
+                    return true;
+                }
+            } else if (writeToFile) {
+                // Write formatted code back to file
+                std::ofstream outFile(filePath);
+                if (!outFile.is_open()) {
+                    std::cerr << "✗ Could not write to file: " << filePath << "\n";
+                    return false;
+                }
+                outFile << formattedCode;
+                outFile.close();
+
+                std::cout << "✓ Formatted: " << filePath << "\n";
+                filesFormatted++;
+                return true;
+            } else {
+                // Print formatted code to stdout
+                std::cout << formattedCode;
+                return true;
+            }
+
+        } catch (const std::exception& e) {
+            std::cerr << "✗ Error formatting " << filePath << ": " << e.what() << "\n";
+            return false;
+        }
+    };
+
+    // Process each input path
+    for (const auto& inputPath : inputPaths) {
+        if (fs::is_directory(inputPath)) {
+            if (!checkOnly && !writeToFile) {
+                std::cerr << "Error: Cannot print multiple files to stdout\n";
+                std::cerr << "Use --write or --check when formatting directories\n";
+                return 1;
+            }
+
+            if (verbose) {
+                std::cout << "Formatting all .st files in: " << inputPath << "\n";
+            }
+
+            for (const auto& entry : fs::recursive_directory_iterator(inputPath)) {
+                if (entry.path().extension() == ".st") {
+                    formatFile(entry.path().string());
+                }
+            }
+        } else {
+            // Single file
+            formatFile(inputPath);
+        }
+    }
+
+    // Print summary for --write or --check
+    if (writeToFile && filesFormatted > 0) {
+        std::cout << "\nFormatted " << filesFormatted << " file(s)\n";
+    }
+
+    if (checkOnly) {
+        std::cout << "\n========================================\n";
+        std::cout << "Format Check Summary\n";
+        std::cout << "========================================\n";
+        std::cout << "Files checked:       " << (filesChecked + filesNeedFormatting) << "\n";
+        std::cout << "Already formatted:   " << filesChecked << "\n";
+        std::cout << "Need formatting:     " << filesNeedFormatting << "\n";
+
+        if (filesNeedFormatting > 0) {
+            std::cout << "\nSome files are not formatted.\n";
+            std::cout << "Run: stratos fmt <file> -w to format them\n";
+            return 1;
+        } else {
+            std::cout << "\nAll files are formatted! ✓\n";
+            return 0;
+        }
+    }
+
+    return 0;
+}
+
+int handleCheck(int argc, char* argv[]) {
+    // Parse arguments
+    std::string inputPath;
+    bool verbose = false;
+
+    if (argc < 3) {
+        std::cerr << "Error: No input file specified\n";
+        std::cerr << "Usage: stratos check <file.st>\n";
+        std::cerr << "       stratos check <directory>\n";
+        return 1;
+    }
+
+    inputPath = argv[2];
+
+    // Parse options
+    for (int i = 3; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "-v" || arg == "--verbose") {
+            verbose = true;
+        }
+    }
+
+    // Check if input is a directory
+    if (fs::is_directory(inputPath)) {
+        std::cout << "Checking all .st files in: " << inputPath << "\n";
+
+        int totalFiles = 0;
+        int successCount = 0;
+        int failCount = 0;
+
+        for (const auto& entry : fs::recursive_directory_iterator(inputPath)) {
+            if (entry.path().extension() == ".st") {
+                totalFiles++;
+                std::string filePath = entry.path().string();
+
+                if (verbose) {
+                    std::cout << "\n[" << totalFiles << "] Checking: " << filePath << "\n";
+                }
+
+                // Read source file
+                std::ifstream file(filePath);
+                if (!file.is_open()) {
+                    std::cerr << "✗ Could not open file: " << filePath << "\n";
+                    failCount++;
+                    continue;
+                }
+
+                std::stringstream buffer;
+                buffer << file.rdbuf();
+                std::string source = buffer.str();
+
+                try {
+                    // Lexical Analysis
+                    Lexer lexer(source);
+                    std::vector<Token> tokens = lexer.scanTokens();
+                    if (verbose) std::cout << "  ✓ Lexer OK (" << tokens.size() << " tokens)\n";
+
+                    // Parsing
+                    Parser parser(tokens);
+                    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+                    if (verbose) std::cout << "  ✓ Parser OK (" << statements.size() << " statements)\n";
+
+                    // Semantic Analysis
+                    SemanticAnalyzer analyzer;
+                    if (!analyzer.analyze(statements)) {
+                        std::cerr << "✗ " << filePath << ": Semantic analysis failed\n";
+                        failCount++;
+                        continue;
+                    }
+                    if (verbose) std::cout << "  ✓ Semantics OK\n";
+
+                    std::cout << "✓ " << filePath << "\n";
+                    successCount++;
+
+                } catch (const std::exception& e) {
+                    std::cerr << "✗ " << filePath << ": " << e.what() << "\n";
+                    failCount++;
+                }
+            }
+        }
+
+        std::cout << "\n========================================\n";
+        std::cout << "Check Summary\n";
+        std::cout << "========================================\n";
+        std::cout << "Total files:    " << totalFiles << "\n";
+        std::cout << "Passed:         " << successCount << "\n";
+        std::cout << "Failed:         " << failCount << "\n";
+
+        if (failCount == 0) {
+            std::cout << "\nAll files passed! ✓\n";
+            return 0;
+        } else {
+            std::cout << "\nSome files failed.\n";
+            return 1;
+        }
+    }
+
+    // Single file check
+    if (verbose) {
+        std::cout << "Checking: " << inputPath << "\n";
+    }
+
+    // Read source file
+    std::ifstream file(inputPath);
+    if (!file.is_open()) {
+        std::cerr << "Error: Could not open file: " << inputPath << "\n";
+        return 1;
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    std::string source = buffer.str();
+
+    try {
+        // Lexical Analysis
+        Lexer lexer(source);
+        std::vector<Token> tokens = lexer.scanTokens();
+        if (verbose) std::cout << "  ✓ Lexer OK (" << tokens.size() << " tokens)\n";
+
+        // Parsing
+        Parser parser(tokens);
+        std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+        if (verbose) std::cout << "  ✓ Parser OK (" << statements.size() << " statements)\n";
+
+        // Semantic Analysis
+        SemanticAnalyzer analyzer;
+        if (!analyzer.analyze(statements)) {
+            std::cerr << "✗ Semantic analysis failed\n";
+            return 1;
+        }
+        if (verbose) std::cout << "  ✓ Semantics OK\n";
+
+        std::cout << "✓ " << inputPath << " is valid\n";
+        return 0;
+
+    } catch (const std::exception& e) {
+        std::cerr << "✗ Error: " << e.what() << "\n";
+        return 1;
+    }
+}
+
 // ============================================================================
 // MAIN
 // ============================================================================
@@ -895,6 +1205,14 @@ int main(int argc, char* argv[]) {
 
     if (command == "run") {
         return handleRun(argc, argv);
+    }
+
+    if (command == "check") {
+        return handleCheck(argc, argv);
+    }
+
+    if (command == "fmt") {
+        return handleFmt(argc, argv);
     }
 
     if (command == "get") {

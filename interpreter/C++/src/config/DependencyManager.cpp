@@ -305,14 +305,6 @@ bool DependencyManager::cloneGitRepo(const std::string& url, const std::string& 
         fs::create_directories(depsDir_);
     }
 
-    // Remove existing directory if present
-    if (fs::exists(destPath)) {
-        if (verbose) {
-            std::cout << "Removing existing dependency at: " << destPath << std::endl;
-        }
-        fs::remove_all(destPath);
-    }
-
     // Determine version to use (priority: tag > branch > hash > default)
     std::string version;
     if (!tag.empty()) {
@@ -323,6 +315,63 @@ bool DependencyManager::cloneGitRepo(const std::string& url, const std::string& 
         version = hash;
     } else {
         version = "main";
+    }
+
+    // Check if dependency is in cache
+    auto cachedPath = cacheManager_.getCachedDependency(url, version);
+    if (cachedPath) {
+        if (verbose) {
+            std::cout << "Using cached dependency: " << *cachedPath << std::endl;
+        }
+
+        // Remove existing directory if present
+        if (fs::exists(destPath)) {
+            if (verbose) {
+                std::cout << "Removing existing dependency at: " << destPath << std::endl;
+            }
+            fs::remove_all(destPath);
+        }
+
+        // Copy from cache to project deps
+        try {
+            fs::copy(*cachedPath, destPath, fs::copy_options::recursive);
+            std::cout << "✓ Copied from cache: " << url << " (" << version << ")" << std::endl;
+
+            // Validate dependency
+            if (!validateDependency(destPath, verbose)) {
+                return false;
+            }
+
+            // Save metadata for project
+            Dependency metaDep;
+            metaDep.name = fs::path(destPath).filename().string();
+            metaDep.url = url;
+            metaDep.type = "git";
+            metaDep.tag = tag;
+            metaDep.branch = branch;
+            metaDep.hash = hash;
+            saveMetadata(metaDep.name, metaDep, hash.empty() ? "" : hash);
+
+            return true;
+
+        } catch (const fs::filesystem_error& e) {
+            std::cerr << "Failed to copy from cache: " << e.what() << std::endl;
+            std::cerr << "Falling back to git clone..." << std::endl;
+            // Fall through to git clone below
+        }
+    }
+
+    // Not in cache, need to clone
+    if (verbose) {
+        std::cout << "Dependency not in cache, cloning from git..." << std::endl;
+    }
+
+    // Remove existing directory if present
+    if (fs::exists(destPath)) {
+        if (verbose) {
+            std::cout << "Removing existing dependency at: " << destPath << std::endl;
+        }
+        fs::remove_all(destPath);
     }
 
     // Build git clone command
@@ -411,6 +460,12 @@ bool DependencyManager::cloneGitRepo(const std::string& url, const std::string& 
     // Validate dependency
     if (!validateDependency(destPath, verbose)) {
         return false;
+    }
+
+    // Add to global cache
+    std::string newCachedPath = cacheManager_.cacheDependency(url, version, destPath);
+    if (newCachedPath.empty()) {
+        std::cerr << "Warning: Failed to cache dependency (continuing anyway)" << std::endl;
     }
 
     // Save metadata for caching
