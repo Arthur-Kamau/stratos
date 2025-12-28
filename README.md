@@ -67,7 +67,30 @@ Check the GitHub projects dashboard.
 Some design notes are available in the `design` folder.
 
 ## Contributing
-Please be sure to review Stratos contributing guidelines to learn how to help the project. (Check Documentation)
+
+We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for:
+
+- Development setup and building from source
+- Making the `stratos` binary globally available during development
+- Running tests and using git hooks
+- Code style guidelines and PR submission process
+
+Quick start for developers:
+```bash
+# Clone and build
+git clone https://github.com/Arthur-Kamau/stratos.git
+cd stratos/interpreter/C++
+bash build.sh
+
+# Make binary globally available (so you can use 'stratos' from anywhere)
+mkdir -p ~/bin
+ln -sf "$(pwd)/interpreter/C++/build/stratos" ~/bin/stratos
+export PATH="$HOME/bin:$PATH"  # Add to ~/.bashrc to make permanent
+
+# Run tests
+cd ../..
+./test-all.sh
+```
 
 ## Icon
 <p align="left">

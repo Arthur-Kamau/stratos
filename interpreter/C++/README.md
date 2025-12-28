@@ -32,12 +32,33 @@ The compiler currently supports:
 
 ## Building the Compiler
 
-To build the `stratos.exe` compiler, ensure you have CMake and a C++20 compatible compiler (e.g., MinGW-w64 GCC, MSVC) installed.
+### Prerequisites
 
-1.  **Navigate to the build directory:**
+Ensure you have the following installed:
+- **C++ compiler** (g++ 9+ or clang 10+)
+- **CMake** 3.15 or later
+- **LLVM** 14 or later (optional, for LLVM IR generation)
+- **Git**
+
+### Quick Build
+
+The easiest way to build:
+
+```bash
+cd interpreter/C++
+bash build.sh
+```
+
+This will produce the `stratos` binary in the `build/` directory.
+
+### Manual Build (Alternative)
+
+If you prefer to build manually:
+
+1.  **Navigate to the C++ directory:**
     ```bash
-    cd compiler/C++
-    mkdir build
+    cd interpreter/C++
+    mkdir -p build
     cd build
     ```
 2.  **Configure CMake:**
@@ -48,25 +69,62 @@ To build the `stratos.exe` compiler, ensure you have CMake and a C++20 compatibl
     ```bash
     cmake --build .
     ```
-    This will produce `stratos.exe` in the `build` directory.
+
+This will produce the `stratos` binary in the `build/` directory.
 
 ## Usage
 
-You can run the `stratos.exe` on Stratos source files (`.st`) to generate LLVM IR.
+### Basic Usage
 
-### Basic Compilation
-To compile a single Stratos source file:
-```bash
-./stratos.exe <path_to_your_file.st>
-```
-This will generate `path_to_your_file.st.ll` in the same directory.
+The `stratos` binary supports both compilation and interpretation modes:
 
-### Running Test Cases
-The compiler comes with a set of test cases in the `cases/` directory. You can run the compiler on all of them:
 ```bash
-./stratos.exe ../../cases
+# Run a Stratos program directly (interpreter mode)
+./build/stratos run <path_to_file.st>
+
+# Compile a Stratos program (compiler mode)
+./build/stratos compile <path_to_file.st>
+
+# Show version information
+./build/stratos --version
 ```
-This command will process each `.st` file in the `cases/` directory, perform Lexing, Parsing, Semantic Analysis, and Code Generation, printing the status for each.
+
+### Making the Binary Globally Available (For Developers)
+
+During development, you can make `stratos` available globally so you don't need to type the full path:
+
+```bash
+# Create symlink (run from project root)
+mkdir -p ~/bin
+ln -sf "$(pwd)/interpreter/C++/build/stratos" ~/bin/stratos
+
+# Add to PATH (add this to ~/.bashrc or ~/.zshrc)
+export PATH="$HOME/bin:$PATH"
+
+# Reload shell
+source ~/.bashrc  # or ~/.zshrc
+
+# Now you can use 'stratos' from anywhere:
+stratos --version
+stratos run samples/hello_world/src/main.st
+```
+
+**Benefits**: Every time you rebuild, the global `stratos` command automatically uses the new binary.
+
+### Running Tests
+
+From the project root:
+
+```bash
+# Run all tests
+../../test-all.sh
+
+# Run with verbose output
+../../test-all.sh -v
+
+# Run specific test
+../../test-all.sh --test hello_world
+```
 
 ## Further Development
 *   Expanding type checking and inference.
