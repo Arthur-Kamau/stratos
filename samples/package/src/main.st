@@ -1,24 +1,34 @@
 package main;
 
-// import util package 
-// and string package
-import "./util";
+use util;
+use name;
 
+// Classes defined in the main package
+class Base{
+     fn hello(){
+         print("base hello");
+     }
+}
 
+class Core{
+     fn hello(){
+         print("core hello");
+     }
+}
 
 // files in src belong to main package
-function main(){ 
-    
-    // user classes in base.st file wthout import as they belong to the same file
-    val u = Base();
-    u.hello(); 
+fn main(){
 
-    // use class util from util package
+    // use classes defined above in the same file
+    val b = Base();
+    b.hello();
+
+    // use class Util from util package
     val u = Util();
-    u.hello(); 
+    u.hello();
 
-    // use class Name from util/name package
-    val r = Name();
-    r.helloName(); 
+    // use class Name from name package
+    val n = Name();
+    n.helloName();
 
 }

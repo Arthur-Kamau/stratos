@@ -30,6 +30,7 @@ struct RuntimeValue {
     int asInt() const { return std::any_cast<int>(value); }
     double asDouble() const { return std::any_cast<double>(value); }
     std::string asString() const { return std::any_cast<std::string>(value); }
+    char asChar() const { return std::any_cast<char>(value); }
     bool asBool() const { return std::any_cast<bool>(value); }
     std::shared_ptr<ClassInstance> asObject() const {
         return std::any_cast<std::shared_ptr<ClassInstance>>(value);

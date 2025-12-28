@@ -150,6 +150,7 @@ void Lexer::scanToken() {
             column = 0;
             break;
         case '"': string(); break;
+        case '\'': character(); break;
         default:
             if (isDigit(c)) {
                 number();
@@ -179,6 +180,47 @@ void Lexer::string() {
     advance(); // The closing "
     std::string value = source.substr(start + 1, current - start - 2);
     addToken(TokenType::STRING, value);
+}
+
+void Lexer::character() {
+    // Character literals should contain exactly one character
+    if (isAtEnd() || peek() == '\'') {
+        std::cerr << "Empty character literal at line " << line << std::endl;
+        return;
+    }
+
+    // Handle escape sequences
+    char charValue;
+    if (peek() == '\\') {
+        advance(); // consume backslash
+        if (isAtEnd()) {
+            std::cerr << "Unterminated character literal at line " << line << std::endl;
+            return;
+        }
+        char escaped = advance();
+        switch (escaped) {
+            case 'n': charValue = '\n'; break;
+            case 't': charValue = '\t'; break;
+            case 'r': charValue = '\r'; break;
+            case '\\': charValue = '\\'; break;
+            case '\'': charValue = '\''; break;
+            case '0': charValue = '\0'; break;
+            default:
+                std::cerr << "Invalid escape sequence in character literal at line " << line << std::endl;
+                return;
+        }
+    } else {
+        charValue = advance();
+    }
+
+    // Expect closing quote
+    if (peek() != '\'') {
+        std::cerr << "Unterminated character literal at line " << line << std::endl;
+        return;
+    }
+
+    advance(); // The closing '
+    addToken(TokenType::CHAR, std::string(1, charValue));
 }
 
 void Lexer::number() {

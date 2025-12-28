@@ -25,7 +25,7 @@ enum class TokenType {
     ELVIS, // ?:
 
     // Literals
-    IDENTIFIER, STRING, NUMBER,
+    IDENTIFIER, STRING, NUMBER, CHAR,
 
     // Keywords
     AND, OR, NOT,

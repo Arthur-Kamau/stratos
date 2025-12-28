@@ -1,12 +1,13 @@
-package "main";
-import "&&&";
+package main;
+
+use util;
 
 // import util package
-// imports everything 
+// imports everything
 // files in src belong to main package
-function main(){ 
-    
+fn main(){
+
     // use class util from util package
     val u = Util();
-    u.hello(); 
+    u.hello();
 }

@@ -315,6 +315,13 @@ void Interpreter::visit(LiteralExpr& expr) {
             lastValue = RuntimeValue(std::any(expr.value), "string");
             break;
 
+        case TokenType::CHAR:
+            // Store char as a single character (first character of the string)
+            if (!expr.value.empty()) {
+                lastValue = RuntimeValue(std::any(expr.value[0]), "char");
+            }
+            break;
+
         case TokenType::TRUE:
             lastValue = RuntimeValue(std::any(true), "bool");
             break;
@@ -586,6 +593,8 @@ void Interpreter::visit(PrintStmt& stmt) {
 
     if (value.type == "string") {
         std::cout << value.asString() << std::endl;
+    } else if (value.type == "char") {
+        std::cout << value.asChar() << std::endl;
     } else if (value.type == "int") {
         std::cout << value.asInt() << std::endl;
     } else if (value.type == "double") {

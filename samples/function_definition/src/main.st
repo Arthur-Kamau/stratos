@@ -2,45 +2,57 @@ package main ;
 
 
 // function without parameters
-function hello(){
-   print ("hello world ")
+fn hello(){
+   print("hello world");
 }
-function nn() {
-  
+
+fn nn() {
+
 }
 
 // function with parameters
-function printName(val name : String){
-   print("hello $name  ")
+fn printName(name: String){
+   print("hello");
+   print(name);
 }
 
 // function with multiple  parameters
-function printNameAndIsMale(val name : String, val isMale : bool ){
-   print ("Hello $name are you male $isMale  ")
+fn printNameAndIsMale(name: String, isMale: bool){
+   print("Hello");
+   print(name);
+   print("are you male");
+   print(isMale);
 }
 
-// function with parameters
-function returnAge(val name : String){
-      return 26
+// function with return value
+fn returnAge(name: String) int {
+   return 26;
 }
 
 // function with parameters and return type
-function printHelloNameAndReturnHight(val name : String ) int {
-   print("hello $name  ")
-   return 170
+fn printHelloNameAndReturnHeight(name: String) int {
+   print("hello");
+   print(name);
+   return 170;
 }
 
-function m(){
+fn main(){
    // call function
    hello();
-   // parameter 
+
+   // parameter
    printName("Arthur");
+
    // multiple parameters
-   printNameAndIsMale(name="Arthur", isMale=true);
-   // return 
-   val me = returnAge();
-   print("my age $age");
-   // parameter and return 
-   val h : int = returnAge();
-   print("my height $h");
+   printNameAndIsMale("Arthur", true);
+
+   // return
+   val me = returnAge("Arthur");
+   print("my age:");
+   print(me);
+
+   // parameter and return
+   val h = printHelloNameAndReturnHeight("Arthur");
+   print("my height:");
+   print(h);
 }

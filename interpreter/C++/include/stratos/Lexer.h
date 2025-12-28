@@ -31,6 +31,7 @@ private:
     char peek();
     char peekNext();
     void string();
+    void character();
     void number();
     void identifier();
     void scanToken();

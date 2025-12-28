@@ -421,7 +421,7 @@ std::unique_ptr<Expr> Parser::primary() {
     if (match({TokenType::TRUE})) return std::make_unique<LiteralExpr>("true", TokenType::TRUE);
     if (match({TokenType::NONE})) return std::make_unique<LiteralExpr>("None", TokenType::NONE);
 
-    if (match({TokenType::NUMBER, TokenType::STRING})) {
+    if (match({TokenType::NUMBER, TokenType::STRING, TokenType::CHAR})) {
         return std::make_unique<LiteralExpr>(previous().lexeme, previous().type);
     }
 
