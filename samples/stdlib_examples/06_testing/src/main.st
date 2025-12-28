@@ -174,7 +174,7 @@ fn main() {
     val report = testing.runAllTests();
 
     log.info("\n=== Test Results ===");
-    report.print();
+    report.println();
 
     log.infoWith("Summary", {
         total: report.totalTests,

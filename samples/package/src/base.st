@@ -5,12 +5,12 @@ package main;
 // a file can hold multiple classes
 class Base{
      fn hello(){
-         print("base hello");
+         println("base hello");
      }
 }
 // example of an extra class
 class Core{
      fn hello(){
-         print("core hello");
+         println("core hello");
      }
 }

@@ -13,8 +13,8 @@ class Test {
 }
 
 fn main() {
-    print("Before creating Test");
+    println("Before creating Test");
     val t = Test();
-    print("After creating Test");
-    print(t.getValue());
+    println("After creating Test");
+    println(t.getValue());
 }

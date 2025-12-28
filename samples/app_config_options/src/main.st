@@ -2,7 +2,7 @@ package main;
 
 function start(){
  
-  print("Hey there");
+  println("Hey there");
 
 
 }

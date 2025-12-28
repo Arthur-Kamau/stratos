@@ -19,27 +19,27 @@ fn factorial(n: int) int {
 }
 
 fn main() {
-    print("=== Simple Math Demo ===");
+    println("=== Simple Math Demo ===");
 
     // Basic arithmetic
     val x = 10;
     val y = 20;
-    print("x = " + x);
-    print("y = " + y);
-    print("x + y = " + add(x, y));
-    print("x * y = " + multiply(x, y));
+    println("x = " + x);
+    println("y = " + y);
+    println("x + y = " + add(x, y));
+    println("x * y = " + multiply(x, y));
 
     // Factorial
     val n = 5;
-    print("factorial(" + n + ") = " + factorial(n));
+    println("factorial(" + n + ") = " + factorial(n));
 
     // Control flow
-    print("\nCounting to 5:");
+    println("\nCounting to 5:");
     var i = 1;
     while (i <= 5) {
-        print(i);
+        println(i);
         i = i + 1;
     }
 
-    print("\nDemo complete!");
+    println("\nDemo complete!");
 }

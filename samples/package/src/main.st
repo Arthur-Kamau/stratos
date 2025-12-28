@@ -6,13 +6,13 @@ use name;
 // Classes defined in the main package
 class Base{
      fn hello(){
-         print("base hello");
+         println("base hello");
      }
 }
 
 class Core{
      fn hello(){
-         print("core hello");
+         println("core hello");
      }
 }
 

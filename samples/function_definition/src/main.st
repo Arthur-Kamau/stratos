@@ -3,7 +3,7 @@ package main ;
 
 // function without parameters
 fn hello(){
-   print("hello world");
+   println("hello world");
 }
 
 fn nn() {
@@ -12,16 +12,16 @@ fn nn() {
 
 // function with parameters
 fn printName(name: String){
-   print("hello");
-   print(name);
+   println("hello");
+   println(name);
 }
 
 // function with multiple  parameters
 fn printNameAndIsMale(name: String, isMale: bool){
-   print("Hello");
-   print(name);
-   print("are you male");
-   print(isMale);
+   println("Hello");
+   println(name);
+   println("are you male");
+   println(isMale);
 }
 
 // function with return value
@@ -31,8 +31,8 @@ fn returnAge(name: String) int {
 
 // function with parameters and return type
 fn printHelloNameAndReturnHeight(name: String) int {
-   print("hello");
-   print(name);
+   println("hello");
+   println(name);
    return 170;
 }
 
@@ -48,11 +48,11 @@ fn main(){
 
    // return
    val me = returnAge("Arthur");
-   print("my age:");
-   print(me);
+   println("my age:");
+   println(me);
 
    // parameter and return
    val h = printHelloNameAndReturnHeight("Arthur");
-   print("my height:");
-   print(h);
+   println("my height:");
+   println(h);
 }

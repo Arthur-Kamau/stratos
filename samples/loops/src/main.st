@@ -4,7 +4,7 @@ package main;
 fn simpleWhileLoop() {
     var i = 1;
     while (i <= 5) {
-        print(i);
+        println(i);
         i = i + 1;
     }
 }
@@ -13,10 +13,10 @@ fn simpleWhileLoop() {
 fn countDown() {
     var count = 10;
     while (count > 0) {
-        print(count);
+        println(count);
         count = count - 1;
     }
-    print("Liftoff!");
+    println("Liftoff!");
 }
 
 // Sum numbers from 1 to 10
@@ -27,8 +27,8 @@ fn sumNumbers() {
         sum = sum + i;
         i = i + 1;
     }
-    print("Sum of 1 to 10:");
-    print(sum);
+    println("Sum of 1 to 10:");
+    println(sum);
 }
 
 // Find maximum in a series of numbers
@@ -38,7 +38,7 @@ fn findMax() {
 
     while (i <= 5) {
         var value = i * i;  // Square of i
-        print(value);
+        println(value);
 
         if (value > max) {
             max = value;
@@ -46,8 +46,8 @@ fn findMax() {
         i = i + 1;
     }
 
-    print("Maximum value:");
-    print(max);
+    println("Maximum value:");
+    println(max);
 }
 
 // Nested loops - multiplication table (3x3)
@@ -57,7 +57,7 @@ fn nestedLoops() {
         var j = 1;
         while (j <= 3) {
             var product = i * j;
-            print(product);
+            println(product);
             j = j + 1;
         }
         i = i + 1;
@@ -72,35 +72,35 @@ fn loopWithCondition() {
     while (value < 100) {
         value = value * 2;  // Double each time
         iterations = iterations + 1;
-        print(value);
+        println(value);
     }
 
-    print("Reached 100 in iterations:");
-    print(iterations);
+    println("Reached 100 in iterations:");
+    println(iterations);
 }
 
 // Main function - runs all loop examples
 fn main() {
-    print("=== Simple While Loop ===");
+    println("=== Simple While Loop ===");
     simpleWhileLoop();
 
-    print("");
-    print("=== Count Down ===");
+    println("");
+    println("=== Count Down ===");
     countDown();
 
-    print("");
-    print("=== Sum Numbers ===");
+    println("");
+    println("=== Sum Numbers ===");
     sumNumbers();
 
-    print("");
-    print("=== Find Maximum ===");
+    println("");
+    println("=== Find Maximum ===");
     findMax();
 
-    print("");
-    print("=== Nested Loops ===");
+    println("");
+    println("=== Nested Loops ===");
     nestedLoops();
 
-    print("");
-    print("=== Loop with Condition ===");
+    println("");
+    println("=== Loop with Condition ===");
     loopWithCondition();
 }

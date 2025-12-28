@@ -3,9 +3,9 @@ package main;
 use math;
 
 fn main() {
-    print("Hello, Stratos!");
+    println("Hello, Stratos!");
     val x = 42;
-    print(x);
+    println(x);
     var g = PI(8)
-    print(g);
+    println(g);
 }

@@ -7,17 +7,17 @@ class User{
     // class initialization before  
     // constructor is called
     init {
-        print("Class initialization")
+        println("Class initialization")
     }
     // class destructor  before
     // class is destroyed
     destroy{
-        print("Class destruction")
+        println("Class destruction")
     }
 
     // constructor 
     function User(){
-       print("Class constructo")
+       println("Class constructo")
     }
 }
 
@@ -61,14 +61,14 @@ class Arthur extends Student{
 // class with constructor 
 class Country (val name :String , val population : int){
  override function toString(){
-    print("Country name $name with population of ");
+    println("Country name $name with population of ");
   }
 }
 
 // a class with getter and setters
 data class City (val latitude :double , val height : int, val name : string){
  override function  toString(){
-    print("City $name height above sea level $height latitude  ${latitude} ")
+    println("City $name height above sea level $height latitude  ${latitude} ")
   }
 }
 

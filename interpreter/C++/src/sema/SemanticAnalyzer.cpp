@@ -121,7 +121,22 @@ void SemanticAnalyzer::visit(CallExpr& expr) {
         }
     }
 
-    // Not a module call, process as regular function call
+    // Check if this is a prelude function call (auto-imported)
+    if (auto* varExpr = dynamic_cast<VariableExpr*>(expr.callee.get())) {
+        std::string functionName = varExpr->name.lexeme;
+        auto& registry = NativeRegistry::getInstance();
+
+        // Check if this function exists in the prelude module
+        if (registry.isNative("prelude", functionName)) {
+            // Validate arguments exist
+            for (const auto& arg : expr.arguments) {
+                arg->accept(*this);
+            }
+            return;  // Valid prelude function call
+        }
+    }
+
+    // Not a module call or prelude call, process as regular function call
     expr.callee->accept(*this); // Verify function exists (if it's a variable access)
 
     // TODO: Advanced check - ensure callee is actually a callable type

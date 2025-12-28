@@ -4,6 +4,6 @@ package util;
 // unless in root folder(ie under src)
 class Util{
    fn hello(){
-         print("util hello");
+         println("util hello");
      }
 }

@@ -4,33 +4,33 @@
 package main;
 
 fn main() {
-    print("=== Basic Math Example ===");
-    print("");
+    println("=== Basic Math Example ===");
+    println("");
 
     // Basic arithmetic
     val a = 10;
     val b = 5;
-    print("a = 10, b = 5");
-    print("a + b =");
-    print(a + b);
-    print("a - b =");
-    print(a - b);
-    print("a * b =");
-    print(a * b);
-    print("");
+    println("a = 10, b = 5");
+    println("a + b =");
+    println(a + b);
+    println("a - b =");
+    println(a - b);
+    println("a * b =");
+    println(a * b);
+    println("");
 
     // Working with doubles
     val x = 10.5;
     val y = 2.0;
-    print("x = 10.5, y = 2.0");
-    print("x + y =");
-    print(x + y);
-    print("x * y =");
-    print(x * y);
-    print("");
+    println("x = 10.5, y = 2.0");
+    println("x + y =");
+    println(x + y);
+    println("x * y =");
+    println(x * y);
+    println("");
 
     // Factorial calculation
-    print("Factorial of 5:");
+    println("Factorial of 5:");
     val n = 5;
     var result = 1;
     var i = 1;
@@ -38,5 +38,5 @@ fn main() {
         result = result * i;
         i = i + 1;
     }
-    print(result);
+    println(result);
 }

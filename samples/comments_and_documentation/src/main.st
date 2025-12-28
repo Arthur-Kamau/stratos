@@ -6,5 +6,5 @@ package main;
 function main() int{
 
  //print hello world
- print("hello world")
+ println("hello world")
 }

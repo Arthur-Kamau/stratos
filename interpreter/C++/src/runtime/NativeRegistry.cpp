@@ -63,6 +63,7 @@ std::string NativeRegistry::getQualifiedName(const std::string& moduleName, cons
 }
 
 void NativeRegistry::initializeStdlib() {
+    initPrelude();   // Auto-imported functions (print, println, printf)
     initMath();
     initStrings();
     initIO();
@@ -73,6 +74,148 @@ void NativeRegistry::initializeStdlib() {
     initCSV();
     initCrypto();
     initZip();
+}
+
+// ============================================================================
+// Prelude Module - Auto-imported Functions
+// ============================================================================
+
+void NativeRegistry::initPrelude() {
+    // print - prints value without newline
+    registerFunction("prelude", "print", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) return std::any();
+
+        const auto& arg = args[0];
+
+        // Try different types
+        try {
+            if (arg.type() == typeid(int)) {
+                std::cout << std::any_cast<int>(arg);
+            } else if (arg.type() == typeid(double)) {
+                std::cout << std::any_cast<double>(arg);
+            } else if (arg.type() == typeid(std::string)) {
+                std::cout << std::any_cast<std::string>(arg);
+            } else if (arg.type() == typeid(bool)) {
+                std::cout << (std::any_cast<bool>(arg) ? "true" : "false");
+            } else if (arg.type() == typeid(char)) {
+                std::cout << std::any_cast<char>(arg);
+            } else {
+                std::cout << "[unknown type]";
+            }
+        } catch (...) {
+            std::cout << "[error printing value]";
+        }
+
+        std::cout.flush();
+        return std::any();
+    }, FunctionSignature{{"any"}, "void"});
+
+    // println - prints value with newline
+    registerFunction("prelude", "println", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) {
+            std::cout << std::endl;
+            return std::any();
+        }
+
+        const auto& arg = args[0];
+
+        // Try different types
+        try {
+            if (arg.type() == typeid(int)) {
+                std::cout << std::any_cast<int>(arg) << std::endl;
+            } else if (arg.type() == typeid(double)) {
+                std::cout << std::any_cast<double>(arg) << std::endl;
+            } else if (arg.type() == typeid(std::string)) {
+                std::cout << std::any_cast<std::string>(arg) << std::endl;
+            } else if (arg.type() == typeid(bool)) {
+                std::cout << (std::any_cast<bool>(arg) ? "true" : "false") << std::endl;
+            } else if (arg.type() == typeid(char)) {
+                std::cout << std::any_cast<char>(arg) << std::endl;
+            } else {
+                std::cout << "[unknown type]" << std::endl;
+            }
+        } catch (...) {
+            std::cout << "[error printing value]" << std::endl;
+        }
+
+        return std::any();
+    }, FunctionSignature{{"any"}, "void"});
+
+    // printf - formatted printing with {} placeholders
+    registerFunction("prelude", "printf", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) return std::any();
+
+        std::string format;
+        try {
+            format = std::any_cast<std::string>(args[0]);
+        } catch (...) {
+            std::cout << "[printf error: first argument must be string]" << std::endl;
+            return std::any();
+        }
+
+        std::string result = format;
+        size_t argIndex = 1;
+
+        // Replace {} with arguments in order
+        size_t pos = 0;
+        while ((pos = result.find("{}", pos)) != std::string::npos && argIndex < args.size()) {
+            std::string replacement;
+            const auto& arg = args[argIndex];
+
+            try {
+                if (arg.type() == typeid(int)) {
+                    replacement = std::to_string(std::any_cast<int>(arg));
+                } else if (arg.type() == typeid(double)) {
+                    replacement = std::to_string(std::any_cast<double>(arg));
+                } else if (arg.type() == typeid(std::string)) {
+                    replacement = std::any_cast<std::string>(arg);
+                } else if (arg.type() == typeid(bool)) {
+                    replacement = std::any_cast<bool>(arg) ? "true" : "false";
+                } else if (arg.type() == typeid(char)) {
+                    replacement = std::string(1, std::any_cast<char>(arg));
+                } else {
+                    replacement = "[unknown]";
+                }
+            } catch (...) {
+                replacement = "[error]";
+            }
+
+            result.replace(pos, 2, replacement);
+            pos += replacement.length();
+            argIndex++;
+        }
+
+        // Process escape sequences
+        size_t escPos = 0;
+        while ((escPos = result.find('\\', escPos)) != std::string::npos) {
+            if (escPos + 1 < result.length()) {
+                char nextChar = result[escPos + 1];
+                switch (nextChar) {
+                    case 'n':
+                        result.replace(escPos, 2, "\n");
+                        break;
+                    case 't':
+                        result.replace(escPos, 2, "\t");
+                        break;
+                    case 'r':
+                        result.replace(escPos, 2, "\r");
+                        break;
+                    case '\\':
+                        result.replace(escPos, 2, "\\");
+                        escPos++;  // Skip the replacement to avoid infinite loop
+                        break;
+                    default:
+                        escPos++;  // Skip unknown escape sequences
+                        break;
+                }
+            }
+            escPos++;
+        }
+
+        std::cout << result;
+        std::cout.flush();
+        return std::any();
+    }, FunctionSignature{{"string", "..."}, "void"});
 }
 
 // ============================================================================

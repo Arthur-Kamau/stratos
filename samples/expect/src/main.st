@@ -16,10 +16,10 @@ function main(){
 when(flp){
 
   some->{
-     print(" file " + file.type); // direcory of file
+     println(" file " + file.type); // direcory of file
   }
   none ->{
-    print("eror opening file")
+    println("eror opening file")
   }
 
 
@@ -29,10 +29,10 @@ val network : Excpect<NetworkResult> = net.get("http://google.com");
 when(network){
 
   some<NetworkResult->{
-     print(" network " + network.status); // direcory of file
+     println(" network " + network.status); // direcory of file
   }
   none<Exeption> ->{
-    print("eror  "+ )
+    println("eror  "+ )
   }
 
 }

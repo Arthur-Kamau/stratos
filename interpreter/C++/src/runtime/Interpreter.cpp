@@ -434,20 +434,10 @@ void Interpreter::visit(CallExpr& expr) {
             args.push_back(lastValue);
         }
 
-        // Handle built-in print function
-        if (functionName == "print") {
-            if (args.size() > 0) {
-                if (args[0].type == "string") {
-                    std::cout << args[0].asString() << std::endl;
-                } else if (args[0].type == "int") {
-                    std::cout << args[0].asInt() << std::endl;
-                } else if (args[0].type == "double") {
-                    std::cout << args[0].asDouble() << std::endl;
-                } else if (args[0].type == "bool") {
-                    std::cout << (args[0].asBool() ? "true" : "false") << std::endl;
-                }
-            }
-            lastValue = RuntimeValue(std::any(), "void");
+        // Check if this is a prelude function (auto-imported)
+        auto& registry = NativeRegistry::getInstance();
+        if (registry.isNative("prelude", functionName)) {
+            lastValue = evaluateNativeCall("prelude", functionName, args);
             return;
         }
 

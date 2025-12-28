@@ -19,8 +19,8 @@ class Circle {
 
 fn main() {
     val circle = Circle(5.0);
-    print("Radius:");
-    print(circle.getRadius());
-    print("Area:");
-    print(circle.area());
+    println("Radius:");
+    println(circle.getRadius());
+    println("Area:");
+    println(circle.area());
 }

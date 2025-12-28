@@ -27,7 +27,7 @@ class student implements User {
        // evluates to true
       val isAdult  age > 18;
       // print is adult
-      print(" is the user adult $isAdult ")
+      println(" is the user adult $isAdult ")
 
    }
 }
@@ -39,7 +39,7 @@ fn main(){
       name = "Alex"
    }
    // should print name and defailt value
-   print("User name is ${me.name}  is audible ${me.isAudible}") 
+   println("User name is ${me.name}  is audible ${me.isAudible}") 
 
 
 

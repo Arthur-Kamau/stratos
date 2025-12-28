@@ -61,6 +61,7 @@ private:
     std::unordered_map<std::string, FunctionSignature> signatures_;
 
     // Module initialization functions
+    void initPrelude();      // Auto-imported functions
     void initMath();
     void initStrings();
     void initIO();
