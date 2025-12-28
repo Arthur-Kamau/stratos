@@ -69,9 +69,9 @@ Exit code: 0 ✅
    - **Impact:** Segmentation fault on program exit (AFTER successful execution)
    - **Affects:** ALL programs, not just dependency system
 
-2. **Escape sequences in string literals**: Minor issue ⚠️
-   - `\n` is printed as literal `\n` instead of newline
-   - Cosmetic issue, doesn't affect functionality
+2. **Escape sequences in string literals**: ✅ **FIXED** (2025-12-28)
+   - `\n`, `\t`, `\r`, `\\`, `\"`, `\0` now work correctly
+   - Strings are processed during lexing to convert escape sequences
 
 ---
 
@@ -181,7 +181,7 @@ Add explicit destructor that doesn't access stored pointers. **NOT RECOMMENDED**
 - [ ] Support transitive dependencies (dep of dep)
 - [ ] Cache parsed modules to avoid reloading
 - [ ] Better error messages for missing dependencies
-- [ ] Fix string escape sequences (\n, \t, etc.)
+- [x] Fix string escape sequences (\n, \t, etc.) - **DONE**
 
 ### Phase 4: Configuration Support (FUTURE)
 - [x] Parse `dependencies = []` from stratos.conf (DependencyManager exists)

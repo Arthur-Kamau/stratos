@@ -251,20 +251,33 @@ jobs:
         run: ./test-all.sh
 ```
 
-### Pre-commit Hook
+### Pre-commit Hook ✅ **ACTIVE**
 
-Create `.git/hooks/pre-commit`:
+**Status:** Pre-commit hook is installed and working!
 
+**Location:** `.git/hooks/pre-commit`
+
+**What it does:**
+- Runs automatically when you `git commit`
+- Executes `./test-all.sh --no-rebuild`
+- If tests pass → commit succeeds
+- If tests fail → commit is aborted
+
+**Usage:**
 ```bash
-#!/bin/bash
-echo "Running Stratos tests before commit..."
-./test-all.sh --no-rebuild
+# Just commit normally
+git commit -m "Your changes"
 
-if [ $? -ne 0 ]; then
-    echo "Tests failed! Commit aborted."
-    exit 1
-fi
+# Hook runs automatically
+# Tests must pass for commit to succeed
 ```
+
+**Bypass (emergency only):**
+```bash
+git commit --no-verify -m "Emergency fix"
+```
+
+**Documentation:** See `GIT_HOOKS_SETUP.md` for full details
 
 ---
 

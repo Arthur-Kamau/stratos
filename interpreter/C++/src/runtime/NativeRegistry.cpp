@@ -216,6 +216,117 @@ void NativeRegistry::initPrelude() {
         std::cout.flush();
         return std::any();
     }, FunctionSignature{{"string", "..."}, "void"});
+
+    // panic - Unrecoverable error (terminates program)
+    registerFunction("prelude", "panic", [](const std::vector<std::any>& args) -> std::any {
+        std::string message = "panic: program terminated";
+
+        if (!args.empty()) {
+            try {
+                if (args[0].type() == typeid(std::string)) {
+                    message = "panic: " + std::any_cast<std::string>(args[0]);
+                } else if (args[0].type() == typeid(int)) {
+                    message = "panic: " + std::to_string(std::any_cast<int>(args[0]));
+                } else if (args[0].type() == typeid(double)) {
+                    message = "panic: " + std::to_string(std::any_cast<double>(args[0]));
+                } else if (args[0].type() == typeid(bool)) {
+                    message = "panic: " + std::string(std::any_cast<bool>(args[0]) ? "true" : "false");
+                }
+            } catch (...) {
+                message = "panic: [error formatting message]";
+            }
+        }
+
+        std::cerr << message << std::endl;
+        std::exit(1);
+        return std::any(); // Never reached
+    }, FunctionSignature{{"any"}, "void"});
+
+    // assert - Runtime assertion (panics if condition is false)
+    registerFunction("prelude", "assert", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) {
+            std::cerr << "panic: assert called with no arguments" << std::endl;
+            std::exit(1);
+        }
+
+        bool condition = false;
+        try {
+            if (args[0].type() == typeid(bool)) {
+                condition = std::any_cast<bool>(args[0]);
+            } else if (args[0].type() == typeid(int)) {
+                condition = std::any_cast<int>(args[0]) != 0;
+            } else if (args[0].type() == typeid(double)) {
+                condition = std::any_cast<double>(args[0]) != 0.0;
+            } else {
+                std::cerr << "panic: assert condition must be boolean or numeric" << std::endl;
+                std::exit(1);
+            }
+        } catch (...) {
+            std::cerr << "panic: assert condition evaluation failed" << std::endl;
+            std::exit(1);
+        }
+
+        if (!condition) {
+            std::string message = "assertion failed";
+
+            if (args.size() > 1) {
+                try {
+                    if (args[1].type() == typeid(std::string)) {
+                        message = "assertion failed: " + std::any_cast<std::string>(args[1]);
+                    }
+                } catch (...) {
+                    // Keep default message
+                }
+            }
+
+            std::cerr << "panic: " << message << std::endl;
+            std::exit(1);
+        }
+
+        return std::any();
+    }, FunctionSignature{{"bool", "string"}, "void"});
+
+    // dbg - Debug print with value inspection
+    registerFunction("prelude", "dbg", [](const std::vector<std::any>& args) -> std::any {
+        std::cerr << "[DEBUG] ";
+
+        if (args.empty()) {
+            std::cerr << "(no value)" << std::endl;
+            return std::any();
+        }
+
+        const auto& arg = args[0];
+
+        try {
+            if (arg.type() == typeid(int)) {
+                int val = std::any_cast<int>(arg);
+                std::cerr << "int = " << val << std::endl;
+                return val;
+            } else if (arg.type() == typeid(double)) {
+                double val = std::any_cast<double>(arg);
+                std::cerr << "double = " << val << std::endl;
+                return val;
+            } else if (arg.type() == typeid(std::string)) {
+                std::string val = std::any_cast<std::string>(arg);
+                std::cerr << "string = \"" << val << "\"" << std::endl;
+                return val;
+            } else if (arg.type() == typeid(bool)) {
+                bool val = std::any_cast<bool>(arg);
+                std::cerr << "bool = " << (val ? "true" : "false") << std::endl;
+                return val;
+            } else if (arg.type() == typeid(char)) {
+                char val = std::any_cast<char>(arg);
+                std::cerr << "char = '" << val << "'" << std::endl;
+                return val;
+            } else {
+                std::cerr << "unknown type" << std::endl;
+            }
+        } catch (...) {
+            std::cerr << "[error inspecting value]" << std::endl;
+        }
+
+        return arg; // Return the value for chaining
+    }, FunctionSignature{{"any"}, "any"});
 }
 
 // ============================================================================

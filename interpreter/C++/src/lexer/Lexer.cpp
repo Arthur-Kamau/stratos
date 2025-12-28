@@ -164,12 +164,36 @@ void Lexer::scanToken() {
 }
 
 void Lexer::string() {
+    std::string value = "";
+
     while (peek() != '"' && !isAtEnd()) {
-        if (peek() == '\n') {
-            line++;
-            column = 0;
+        if (peek() == '\\') {
+            // Handle escape sequence
+            advance(); // consume backslash
+            if (isAtEnd()) {
+                std::cerr << "Unterminated string at line " << line << std::endl;
+                return;
+            }
+            char escaped = advance();
+            switch (escaped) {
+                case 'n': value += '\n'; break;
+                case 't': value += '\t'; break;
+                case 'r': value += '\r'; break;
+                case '\\': value += '\\'; break;
+                case '"': value += '"'; break;
+                case '0': value += '\0'; break;
+                default:
+                    std::cerr << "Invalid escape sequence in string literal at line " << line << std::endl;
+                    value += escaped; // Include the character anyway
+                    break;
+            }
+        } else {
+            if (peek() == '\n') {
+                line++;
+                column = 0;
+            }
+            value += advance();
         }
-        advance();
     }
 
     if (isAtEnd()) {
@@ -178,7 +202,6 @@ void Lexer::string() {
     }
 
     advance(); // The closing "
-    std::string value = source.substr(start + 1, current - start - 2);
     addToken(TokenType::STRING, value);
 }
 
