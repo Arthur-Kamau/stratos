@@ -484,6 +484,24 @@ fn hello() {
 
 ## Using the Formatter
 
+### Important Requirements
+
+**The formatter requires syntactically valid code.** If your code has syntax errors (missing semicolons, incorrect keywords, etc.), the formatter may crash with a segmentation fault.
+
+**Before formatting:**
+```bash
+# Always validate your code first with the check command
+stratos check src/main.st
+
+# Then format if validation passes
+stratos fmt src/main.st -w
+```
+
+If you encounter a segfault:
+1. Run `stratos check <file>` to identify syntax errors
+2. Fix the syntax errors
+3. Then run `stratos fmt` again
+
 ### Check if Code is Formatted
 
 ```bash

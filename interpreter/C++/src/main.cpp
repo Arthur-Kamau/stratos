@@ -930,9 +930,31 @@ int handleFmt(int argc, char* argv[]) {
             Lexer lexer(source);
             std::vector<Token> tokens = lexer.scanTokens();
 
+            if (tokens.empty()) {
+                throw std::runtime_error("No tokens found in file");
+            }
+
             // Parsing
             Parser parser(tokens);
-            std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+            std::vector<std::unique_ptr<Stmt>> statements;
+
+            // Catch parser errors
+            try {
+                statements = parser.parse();
+            } catch (const std::exception& parseError) {
+                throw std::runtime_error(std::string("Parse error: ") + parseError.what());
+            }
+
+            if (statements.empty()) {
+                throw std::runtime_error("No statements found (possible parse error)");
+            }
+
+            // Validate AST - check for null statements
+            for (const auto& stmt : statements) {
+                if (!stmt) {
+                    throw std::runtime_error("Invalid AST: null statement encountered (possible parse error)");
+                }
+            }
 
             // Format
             Formatter formatter;

@@ -282,7 +282,19 @@ Run: stratos fmt <file> -w to format them
 - **Pre-commit Hooks**: Auto-format before committing
 - **Editor Integration**: Format on save
 
-**Note:** Comments are not preserved during formatting as they are not part of the AST.
+**Important Notes:**
+- Comments are not preserved during formatting as they are not part of the AST
+- **The formatter requires syntactically valid code** - files with syntax errors may cause crashes
+- Always run `stratos check <file>` before formatting to ensure code is valid
+
+**Example workflow:**
+```bash
+# 1. Check for syntax errors first
+stratos check src/main.st
+
+# 2. If check passes, format the code
+stratos fmt src/main.st -w
+```
 
 ### build
 
