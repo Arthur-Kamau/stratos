@@ -19,6 +19,8 @@ g++ -std=c++20 -I include \
   src/config/LockFile.cpp \
   src/config/CacheManager.cpp \
   src/formatter/Formatter.cpp \
+  src/devtools/Logger.cpp \
+  src/devtools/DevToolsServer.cpp \
   -o build/stratos -lpthread
 
 if [ $? -eq 0 ]; then

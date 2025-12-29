@@ -23,6 +23,8 @@
 #include "stratos/DependencyManager.h"
 #include "stratos/LockFile.h"
 #include "stratos/Formatter.h"
+#include "stratos/DevToolsServer.h"
+#include "stratos/Logger.h"
 
 using namespace stratos;
 namespace fs = std::filesystem;
@@ -363,6 +365,7 @@ int handleRun(int argc, char* argv[]) {
     // Parse arguments
     std::string inputPath;
     bool verbose = false;
+    bool devtools = false;
 
     // Parse arguments - allow running without specifying file (will use stratos.conf)
     int argIdx = 2;
@@ -371,6 +374,9 @@ int handleRun(int argc, char* argv[]) {
         std::string firstArg = argv[2];
         if (firstArg == "-v" || firstArg == "--verbose") {
             verbose = true;
+            argIdx = 3;
+        } else if (firstArg == "--devtools") {
+            devtools = true;
             argIdx = 3;
         } else {
             inputPath = argv[2];
@@ -383,6 +389,8 @@ int handleRun(int argc, char* argv[]) {
         std::string arg = argv[i];
         if (arg == "-v" || arg == "--verbose") {
             verbose = true;
+        } else if (arg == "--devtools") {
+            devtools = true;
         } else if (inputPath.empty()) {
             inputPath = arg;
         }
@@ -446,8 +454,35 @@ int handleRun(int argc, char* argv[]) {
         }
     }
 
+    // Start DevTools server if requested
+    std::unique_ptr<DevToolsServer> devtoolsServer;
+    std::shared_ptr<DevToolsSink> devtoolsSink;
+
+    if (devtools) {
+        devtoolsServer = std::make_unique<DevToolsServer>(9222);
+        devtoolsServer->start();
+
+        // Add DevToolsSink to logger
+        devtoolsSink = std::make_shared<DevToolsSink>(devtoolsServer.get());
+        Logger::instance().addSink(devtoolsSink);
+
+        std::cout << "\n";
+        std::cout << "═══════════════════════════════════════════════════════\n";
+        std::cout << "  Stratos DevTools Server\n";
+        std::cout << "═══════════════════════════════════════════════════════\n";
+        std::cout << "  Server:  http://localhost:9222\n";
+        std::cout << "  UI:      http://localhost:8080\n";
+        std::cout << "═══════════════════════════════════════════════════════\n";
+        std::cout << "\n";
+    }
+
     // Execute the file
     CompileResult result = compileFile(resolvedPath, "", verbose, true); // run=true
+
+    // Stop DevTools server
+    if (devtoolsServer) {
+        devtoolsServer->stop();
+    }
 
     // Restore original directory if changed
     if (changedDir) {

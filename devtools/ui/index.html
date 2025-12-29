@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stratos DevTools</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/logging.css">
+</head>
+<body>
+    <div class="devtools-container">
+        <!-- Header -->
+        <header class="devtools-header">
+            <h1>Stratos DevTools</h1>
+            <div class="connection-status">
+                <span class="status-indicator disconnected"></span>
+                <span class="status-text">Disconnected</span>
+            </div>
+        </header>
+
+        <!-- Tab Bar -->
+        <nav class="tab-bar">
+            <button class="tab-button" data-tab="debugger">Debugger</button>
+            <button class="tab-button" data-tab="memory">Memory</button>
+            <button class="tab-button" data-tab="network">Network</button>
+            <button class="tab-button active" data-tab="logging">Logging</button>
+            <button class="tab-button" data-tab="performance">Performance</button>
+        </nav>
+
+        <!-- Tab Content -->
+        <main class="tab-content">
+            <!-- Debugger View -->
+            <div class="tab-pane" id="debugger">
+                <div class="coming-soon">
+                    <h2>Debugger View</h2>
+                    <p>Breakpoints, stepping, and variable inspection coming soon...</p>
+                </div>
+            </div>
+
+            <!-- Memory View -->
+            <div class="tab-pane" id="memory">
+                <div class="coming-soon">
+                    <h2>Memory View</h2>
+                    <p>Heap analysis and GC statistics coming soon...</p>
+                </div>
+            </div>
+
+            <!-- Network View -->
+            <div class="tab-pane" id="network">
+                <div class="coming-soon">
+                    <h2>Network View</h2>
+                    <p>HTTP request monitoring coming soon...</p>
+                </div>
+            </div>
+
+            <!-- Logging View -->
+            <div class="tab-pane active" id="logging">
+                <div class="logging-view">
+                    <!-- Toolbar -->
+                    <div class="toolbar">
+                        <div class="toolbar-left">
+                            <input type="text" class="search-input" placeholder="Filter logs..." id="logSearch">
+                            <select class="level-filter" id="levelFilter">
+                                <option value="all">All Levels</option>
+                                <option value="DEBUG">DEBUG</option>
+                                <option value="INFO">INFO</option>
+                                <option value="WARN">WARN</option>
+                                <option value="ERROR">ERROR</option>
+                                <option value="FATAL">FATAL</option>
+                            </select>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="btn" id="clearLogs">Clear</button>
+                            <button class="btn" id="exportLogs">Export</button>
+                        </div>
+                    </div>
+
+                    <!-- Log Entries -->
+                    <div class="log-container" id="logContainer">
+                        <table class="log-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-time">Time</th>
+                                    <th class="col-level">Level</th>
+                                    <th class="col-source">Source</th>
+                                    <th class="col-message">Message</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logEntries">
+                                <!-- Log entries will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Log Details Panel (shows when clicking a log entry) -->
+                    <div class="log-details" id="logDetails" style="display: none;">
+                        <div class="details-header">
+                            <h3>Log Entry Details</h3>
+                            <button class="close-btn" id="closeDetails">&times;</button>
+                        </div>
+                        <div class="details-content" id="detailsContent">
+                            <!-- Details will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance View -->
+            <div class="tab-pane" id="performance">
+                <div class="coming-soon">
+                    <h2>Performance View</h2>
+                    <p>CPU profiling and flame graphs coming soon...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="js/logging.js"></script>
+</body>
+</html>

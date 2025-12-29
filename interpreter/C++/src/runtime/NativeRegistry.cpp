@@ -1,4 +1,5 @@
 #include "stratos/NativeRegistry.h"
+#include "stratos/Logger.h"
 #include <cmath>
 #include <random>
 #include <chrono>
@@ -942,36 +943,80 @@ void NativeRegistry::initIO() {
 // ============================================================================
 
 void NativeRegistry::initLog() {
+    // log.debug(message) - Log debug message
     registerFunction("log", "debug", [](const std::vector<std::any>& args) -> std::any {
-        std::string message = std::any_cast<std::string>(args[0]);
-        std::cout << "[DEBUG] " << message << std::endl;
-        return std::any();
-    });
+        if (args.empty()) return std::any();
 
+        try {
+            std::string message = std::any_cast<std::string>(args[0]);
+            Logger::instance().debug(message);
+        } catch (...) {
+            Logger::instance().error("Failed to log debug message: invalid type");
+        }
+
+        return std::any();
+    }, FunctionSignature{{"string"}, "void"});
+
+    // log.info(message) - Log info message
     registerFunction("log", "info", [](const std::vector<std::any>& args) -> std::any {
-        std::string message = std::any_cast<std::string>(args[0]);
-        std::cout << "[INFO] " << message << std::endl;
-        return std::any();
-    });
+        if (args.empty()) return std::any();
 
+        try {
+            std::string message = std::any_cast<std::string>(args[0]);
+            Logger::instance().info(message);
+        } catch (...) {
+            Logger::instance().error("Failed to log info message: invalid type");
+        }
+
+        return std::any();
+    }, FunctionSignature{{"string"}, "void"});
+
+    // log.warn(message) - Log warning message
     registerFunction("log", "warn", [](const std::vector<std::any>& args) -> std::any {
-        std::string message = std::any_cast<std::string>(args[0]);
-        std::cout << "[WARN] " << message << std::endl;
-        return std::any();
-    });
+        if (args.empty()) return std::any();
 
+        try {
+            std::string message = std::any_cast<std::string>(args[0]);
+            Logger::instance().warn(message);
+        } catch (...) {
+            Logger::instance().error("Failed to log warning message: invalid type");
+        }
+
+        return std::any();
+    }, FunctionSignature{{"string"}, "void"});
+
+    // log.error(message) - Log error message
     registerFunction("log", "error", [](const std::vector<std::any>& args) -> std::any {
-        std::string message = std::any_cast<std::string>(args[0]);
-        std::cerr << "[ERROR] " << message << std::endl;
-        return std::any();
-    });
+        if (args.empty()) return std::any();
 
-    registerFunction("log", "fatal", [](const std::vector<std::any>& args) -> std::any {
-        std::string message = std::any_cast<std::string>(args[0]);
-        std::cerr << "[FATAL] " << message << std::endl;
-        std::exit(1);
+        try {
+            std::string message = std::any_cast<std::string>(args[0]);
+            Logger::instance().error(message);
+        } catch (...) {
+            std::cerr << "[ERROR] Failed to log error message: invalid type" << std::endl;
+        }
+
         return std::any();
-    });
+    }, FunctionSignature{{"string"}, "void"});
+
+    // log.fatal(message) - Log fatal message and exit
+    registerFunction("log", "fatal", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) {
+            Logger::instance().fatal("Fatal error occurred");
+            std::exit(1);
+        }
+
+        try {
+            std::string message = std::any_cast<std::string>(args[0]);
+            Logger::instance().fatal(message);
+            std::exit(1);
+        } catch (...) {
+            std::cerr << "[FATAL] Failed to log fatal message: invalid type" << std::endl;
+            std::exit(1);
+        }
+
+        return std::any();
+    }, FunctionSignature{{"string"}, "void"});
 }
 
 // ============================================================================
