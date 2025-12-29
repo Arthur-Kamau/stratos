@@ -532,7 +532,7 @@ void Interpreter::visit(FunctionDecl& stmt) {
         func.params = stmt.params;
         func.paramTypes = stmt.paramTypes;
         func.returnType = stmt.returnType;
-        func.body = &stmt.body;
+        func.body = std::ref(stmt.body);  // Safe reference instead of raw pointer
 
         functions[stmt.name.lexeme] = func;
     }
@@ -542,7 +542,7 @@ void Interpreter::visit(ClassDecl& stmt) {
     // Store class definition for later instantiation
     Class cls;
     cls.name = stmt.name.lexeme;
-    cls.methods = &stmt.methods;
+    cls.methods = std::ref(stmt.methods);  // Safe reference instead of raw pointer
     classes[stmt.name.lexeme] = cls;
 }
 
@@ -742,8 +742,8 @@ RuntimeValue Interpreter::callFunction(const std::string& name,
         enterScope();
 
         try {
-            if (func.body && *func.body) {
-                for (const auto& stmt : **func.body) {
+            if (func.body && func.body->get()) {
+                for (const auto& stmt : *func.body->get()) {
                     if (stmt) stmt->accept(*this);
                 }
             }
@@ -766,8 +766,8 @@ RuntimeValue Interpreter::callFunction(const std::string& name,
 
     RuntimeValue result;
     try {
-        if (func.body && *func.body) {
-            for (const auto& stmt : **func.body) {
+        if (func.body && func.body->get()) {
+            for (const auto& stmt : *func.body->get()) {
                 if (stmt) stmt->accept(*this);
             }
         }

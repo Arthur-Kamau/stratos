@@ -117,14 +117,18 @@ private:
         std::vector<Token> params;
         std::vector<std::string> paramTypes;
         std::string returnType;
-        std::unique_ptr<std::vector<std::unique_ptr<Stmt>>>* body;
+        // SAFETY: Non-owning reference to FunctionDecl::body
+        // The AST in mainStatements/moduleStatements keeps this alive
+        std::optional<std::reference_wrapper<std::unique_ptr<std::vector<std::unique_ptr<Stmt>>>>> body;
     };
     std::unordered_map<std::string, Function> functions;
 
     // Class storage
     struct Class {
         std::string name;
-        std::vector<std::unique_ptr<Stmt>>* methods; // Pointer to methods in ClassDecl
+        // SAFETY: Non-owning reference to ClassDecl::methods
+        // The AST in mainStatements/moduleStatements keeps this alive
+        std::optional<std::reference_wrapper<std::vector<std::unique_ptr<Stmt>>>> methods;
     };
     std::unordered_map<std::string, Class> classes;
 
