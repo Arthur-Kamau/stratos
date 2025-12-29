@@ -3,6 +3,7 @@
 
 #include "stratos/AST.h"
 #include "stratos/NativeRegistry.h"
+#include "stratos/GarbageCollector.h"
 #include <any>
 #include <optional>
 #include <variant>
@@ -129,6 +130,9 @@ public:
     // Execute a program (takes ownership of statements)
     void execute(std::vector<std::unique_ptr<Stmt>>&& statements);
 
+    // Cleanup after program execution (run GC, clear environments)
+    void cleanup();
+
     // Call a function by name
     RuntimeValue callFunction(const std::string& name, const std::vector<RuntimeValue>& args);
 
@@ -245,9 +249,16 @@ private:
     // Result of last expression evaluation
     RuntimeValue lastValue;
 
+    // Garbage collector for cycle detection
+    GarbageCollector gc;
+
     // Helper methods
     void enterScope();
     void exitScope();
+
+    // GC helper methods
+    void collectRoots(std::vector<RuntimeValue>& roots);
+    void maybeCollectGarbage();
 
     RuntimeValue evaluateNativeCall(const std::string& moduleName,
                                     const std::string& functionName,

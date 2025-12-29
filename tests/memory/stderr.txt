@@ -1,0 +1,19 @@
+[GC DEBUG] Popping 0 local environments
+[GC DEBUG] Total objects tracked: 0
+[GC DEBUG] Roots collected: 0
+[GC DEBUG] Live objects after mark: 0
+[GC DEBUG] Cycles broken: 0
+[SCOPE] Entered scope, total environments: 2
+[SCOPE] Entered scope, total environments: 3
+[GC] Registered object, total allocations: 1
+[SCOPE] Entered scope, total environments: 4
+[SCOPE] Exited scope, total environments: 4
+[GC] Registered object, total allocations: 2
+[SCOPE] Entered scope, total environments: 5
+[SCOPE] Exited scope, total environments: 5
+[SCOPE] Entered scope, total environments: 6
+[SCOPE] Exited scope, total environments: 6
+[SCOPE] Entered scope, total environments: 7
+[SCOPE] Exited scope, total environments: 7
+[SCOPE] Exited scope, total environments: 7
+[SCOPE] Exited scope, total environments: 7

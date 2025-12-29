@@ -153,6 +153,9 @@ CompileResult compileFile(const std::string& path, const std::string& outputPath
                 if (verbose) std::cout << "  [Execution] Complete (no main function)" << std::endl;
             }
 
+            // Cleanup after execution (run GC to detect cycles)
+            interpreter.cleanup();
+
         } else {
             // Optimization
             Optimizer optimizer;

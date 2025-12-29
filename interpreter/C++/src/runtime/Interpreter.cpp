@@ -30,8 +30,35 @@ void Interpreter::execute(std::vector<std::unique_ptr<Stmt>>&& statements) {
     for (const auto& stmt : mainStatements) {
         if (stmt) {
             stmt->accept(*this);
+            // Periodically collect garbage to handle cycles
+            maybeCollectGarbage();
         }
     }
+}
+
+void Interpreter::cleanup() {
+    // Clear local environments to allow cycle detection
+    // Keep only global environment (first one)
+    while (environments.size() > 1) {
+        environments.pop_back();
+    }
+    currentEnv = environments[0].get();
+
+    // Run GC BEFORE clearing global environment
+    // This allows GC to detect cycles while objects still exist
+    std::vector<RuntimeValue> roots;
+    collectRoots(roots);
+
+    size_t collected = gc.collect(roots);
+
+    // Optional: Report cycles broken
+    if (collected > 0) {
+        std::cerr << "[GC] Broke " << collected << " circular reference(s)\n";
+    }
+
+    // Clear global environment variables after GC
+    // This allows refcount cleanup to work on non-cyclic objects
+    currentEnv->variables.clear();
 }
 
 void Interpreter::enterScope() {
@@ -863,6 +890,9 @@ RuntimeValue Interpreter::instantiateClass(const std::string& className,
     auto instance = std::make_shared<ClassInstance>();
     instance->className = className;
 
+    // Register with garbage collector for cycle detection
+    gc.registerObject(instance);
+
     // Process class members (fields and methods)
     // Find constructor and field declarations
     FunctionDecl* constructor = nullptr;
@@ -938,6 +968,43 @@ bool Interpreter::isTruthy(const RuntimeValue& value) {
         return !value.asString().empty();
     }
     return false;
+}
+
+void Interpreter::collectRoots(std::vector<RuntimeValue>& roots) {
+    // Collect RuntimeValues from the active environment chain only
+    // Walk from current environment up to root via parent pointers
+    Environment* env = currentEnv;
+    while (env) {
+        for (const auto& var : env->variables) {
+            roots.push_back(var.second);
+        }
+        env = env->parent;
+    }
+
+    // Add lastValue as a root (it might be on the "stack")
+    if (lastValue.type == "object") {
+        roots.push_back(lastValue);
+    }
+}
+
+void Interpreter::maybeCollectGarbage() {
+    // Only collect if threshold is reached
+    if (!gc.shouldCollect()) {
+        return;
+    }
+
+    // Collect roots
+    std::vector<RuntimeValue> roots;
+    collectRoots(roots);
+
+    // Run GC
+    size_t collected = gc.collect(roots);
+
+    // Optional: print GC statistics in verbose mode
+    // Uncomment for debugging:
+    // if (collected > 0) {
+    //     std::cerr << "[GC] Collected " << collected << " cyclic objects\n";
+    // }
 }
 
 } // namespace stratos

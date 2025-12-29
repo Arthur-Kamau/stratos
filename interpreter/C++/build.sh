@@ -12,6 +12,7 @@ g++ -std=c++20 -I include \
   src/codegen/IRGenerator.cpp \
   src/optimizer/Optimizer.cpp \
   src/runtime/Interpreter.cpp \
+  src/runtime/GarbageCollector.cpp \
   src/runtime/NativeRegistry.cpp \
   src/config/ProjectConfig.cpp \
   src/config/DependencyManager.cpp \
