@@ -56,9 +56,12 @@ run_test() {
                  --log-file="valgrind_${test_name}.log" \
                  "$STRATOS_BIN" run "$test_file" > /dev/null 2>&1
 
-        # Check Valgrind output
-        if grep -q "definitely lost: 0 bytes" "valgrind_${test_name}.log" && \
-           grep -q "indirectly lost: 0 bytes" "valgrind_${test_name}.log"; then
+        # Check Valgrind output for leaks
+        if grep -q "All heap blocks were freed -- no leaks are possible" "valgrind_${test_name}.log"; then
+            result="NO_LEAK"
+            echo -e "${GREEN}✓ No memory leaks detected${NC}"
+        elif grep -q "definitely lost: 0 bytes" "valgrind_${test_name}.log" && \
+             grep -q "indirectly lost: 0 bytes" "valgrind_${test_name}.log"; then
             result="NO_LEAK"
             echo -e "${GREEN}✓ No memory leaks detected${NC}"
         else
