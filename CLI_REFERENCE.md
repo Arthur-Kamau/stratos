@@ -74,19 +74,31 @@ Execute a Stratos program directly without explicit compilation step.
 
 **Usage:**
 ```bash
-stratos run <file.st> [args...]
+stratos run <file.st> [options]
+stratos run <directory> [options]  # Uses stratos.conf
+stratos run [options]              # Uses stratos.conf in current dir
 ```
+
+**Options:**
+- `-v, --verbose` - Show detailed execution information
 
 **Examples:**
 ```bash
 # Run a simple program
 stratos run hello.st
 
-# Run with arguments
-stratos run calculator.st 10 20
+# Run project directory (automatically detects stratos.conf)
+stratos run samples/oop_demo/
+
+# Run from inside project directory
+cd samples/oop_demo
+stratos run  # Uses stratos.conf entry point
 
 # Run with verbose output
 stratos run -v server.st
+
+# Run with arguments
+stratos run calculator.st 10 20
 ```
 
 **How it works:**
@@ -94,6 +106,20 @@ stratos run -v server.st
 2. Parsing
 3. Semantic analysis
 4. Direct execution via interpreter (no code generation)
+
+**Project Directory Mode:**
+When you run `stratos run` with a directory path or without arguments (in a directory with `stratos.conf`):
+1. Detects `stratos.conf` and reads the entry point
+2. **Changes working directory** to the project directory
+3. Runs the entry point file
+4. Restores the original directory
+
+This ensures proper module resolution for multi-file projects:
+```bash
+# Both work identically:
+cd /anywhere && stratos run /path/to/my-project/
+cd /path/to/my-project && stratos run
+```
 
 **Note:** The `run` command uses the interpreter for immediate execution, while `compile` generates LLVM IR for optimized native code.
 

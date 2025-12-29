@@ -38,6 +38,7 @@ void printHelp() {
     std::cout << "  stratos compile <file.st>      Compile a single file\n";
     std::cout << "  stratos compile <directory>    Compile all .st files in directory\n";
     std::cout << "  stratos run <file.st>          Execute a Stratos program directly\n";
+    std::cout << "  stratos run                    Execute project (uses stratos.conf in current dir)\n";
     std::cout << "  stratos check <file.st>        Parse and analyze without code generation\n";
     std::cout << "  stratos check <directory>      Check all .st files in directory\n";
     std::cout << "  stratos fmt <file.st>          Format a Stratos source file\n";
@@ -360,20 +361,41 @@ int handleRun(int argc, char* argv[]) {
     std::string inputPath;
     bool verbose = false;
 
-    if (argc < 3) {
-        std::cerr << "Error: No input file specified\n\n";
-        printHelp();
-        return 1;
+    // Parse arguments - allow running without specifying file (will use stratos.conf)
+    int argIdx = 2;
+    if (argc > 2) {
+        // Check if first argument is an option or a file path
+        std::string firstArg = argv[2];
+        if (firstArg == "-v" || firstArg == "--verbose") {
+            verbose = true;
+            argIdx = 3;
+        } else {
+            inputPath = argv[2];
+            argIdx = 3;
+        }
     }
 
-    inputPath = argv[2];
-
-    // Parse options
-    for (int i = 3; i < argc; i++) {
+    // Parse remaining options
+    for (int i = argIdx; i < argc; i++) {
         std::string arg = argv[i];
         if (arg == "-v" || arg == "--verbose") {
             verbose = true;
+        } else if (inputPath.empty()) {
+            inputPath = arg;
         }
+    }
+
+    // If no input path specified, use empty string to trigger stratos.conf lookup
+    if (inputPath.empty()) {
+        // Check if stratos.conf exists in current directory
+        if (!fs::exists("stratos.conf")) {
+            std::cerr << "Error: No input file specified and no stratos.conf found in current directory\n\n";
+            std::cerr << "Usage: stratos run [file.st] [options]\n";
+            std::cerr << "   or: stratos run (in directory with stratos.conf)\n";
+            return 1;
+        }
+        // Set inputPath to current directory to trigger config lookup
+        inputPath = ".";
     }
 
     // Resolve the entry point file
@@ -401,8 +423,33 @@ int handleRun(int argc, char* argv[]) {
         std::cout << "Resolved entry point: " << resolvedPath << std::endl;
     }
 
+    // If running a project directory, change to that directory for proper module resolution
+    fs::path currentDir = fs::current_path();
+    bool changedDir = false;
+
+    if (fs::is_directory(inputPath)) {
+        // Change to the project directory
+        fs::path projectDir = fs::absolute(inputPath);
+        fs::current_path(projectDir);
+        changedDir = true;
+
+        // Make resolvedPath relative to the new working directory
+        fs::path absResolved = fs::absolute(currentDir / resolvedPath);
+        resolvedPath = fs::relative(absResolved, projectDir).string();
+
+        if (verbose) {
+            std::cout << "Changed working directory to: " << projectDir << std::endl;
+            std::cout << "Running: " << resolvedPath << std::endl;
+        }
+    }
+
     // Execute the file
     CompileResult result = compileFile(resolvedPath, "", verbose, true); // run=true
+
+    // Restore original directory if changed
+    if (changedDir) {
+        fs::current_path(currentDir);
+    }
 
     if (!result.success) {
         std::cerr << "Execution failed: " << result.errorMessage << std::endl;
