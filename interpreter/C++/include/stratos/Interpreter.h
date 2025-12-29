@@ -4,6 +4,8 @@
 #include "stratos/AST.h"
 #include "stratos/NativeRegistry.h"
 #include <any>
+#include <optional>
+#include <variant>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -18,22 +20,97 @@ struct ClassInstance {
     std::unordered_map<std::string, struct RuntimeValue> fields;
 };
 
-// Runtime value representation
+// Runtime value representation using std::variant for better performance and type safety
 struct RuntimeValue {
-    std::any value;
-    std::string type; // "int", "double", "string", "bool", "void", "function", "object"
+    using ValueType = std::variant<
+        std::monostate,                      // void
+        int,                                 // int
+        double,                              // double
+        std::string,                         // string
+        char,                                // char
+        bool,                                // bool
+        std::shared_ptr<ClassInstance>       // object
+    >;
 
-    RuntimeValue() : type("void") {}
-    RuntimeValue(std::any val, std::string t) : value(val), type(t) {}
+    ValueType value;
+    std::string type; // "int", "double", "string", "char", "bool", "void", "object"
 
-    // Helper methods to extract typed values
-    int asInt() const { return std::any_cast<int>(value); }
-    double asDouble() const { return std::any_cast<double>(value); }
-    std::string asString() const { return std::any_cast<std::string>(value); }
-    char asChar() const { return std::any_cast<char>(value); }
-    bool asBool() const { return std::any_cast<bool>(value); }
+    // Default constructor: void value
+    RuntimeValue() : value(std::monostate{}), type("void") {}
+
+    // Backward compatibility constructor (accepts std::any for migration)
+    RuntimeValue(std::any val, std::string t) : type(t) {
+        // Convert std::any to std::variant based on type string
+        if (t == "int") {
+            value = std::any_cast<int>(val);
+        } else if (t == "double") {
+            value = std::any_cast<double>(val);
+        } else if (t == "string") {
+            value = std::any_cast<std::string>(val);
+        } else if (t == "char") {
+            value = std::any_cast<char>(val);
+        } else if (t == "bool") {
+            value = std::any_cast<bool>(val);
+        } else if (t == "object") {
+            value = std::any_cast<std::shared_ptr<ClassInstance>>(val);
+        } else {
+            value = std::monostate{};
+        }
+    }
+
+    // Direct variant constructors for better performance
+    RuntimeValue(int v) : value(v), type("int") {}
+    RuntimeValue(double v) : value(v), type("double") {}
+    RuntimeValue(const std::string& v) : value(v), type("string") {}
+    RuntimeValue(const char* v) : value(std::string(v)), type("string") {}
+    RuntimeValue(char v) : value(v), type("char") {}
+    RuntimeValue(bool v) : value(v), type("bool") {}
+    RuntimeValue(std::shared_ptr<ClassInstance> v) : value(v), type("object") {}
+
+    // Helper methods to extract typed values with compile-time type safety
+    int asInt() const {
+        if (auto* v = std::get_if<int>(&value)) {
+            return *v;
+        }
+        throw std::runtime_error("Type error: expected int, got " + type);
+    }
+
+    double asDouble() const {
+        if (auto* v = std::get_if<double>(&value)) {
+            return *v;
+        }
+        throw std::runtime_error("Type error: expected double, got " + type);
+    }
+
+    std::string asString() const {
+        if (auto* v = std::get_if<std::string>(&value)) {
+            return *v;
+        }
+        throw std::runtime_error("Type error: expected string, got " + type);
+    }
+
+    char asChar() const {
+        if (auto* v = std::get_if<char>(&value)) {
+            return *v;
+        }
+        throw std::runtime_error("Type error: expected char, got " + type);
+    }
+
+    bool asBool() const {
+        if (auto* v = std::get_if<bool>(&value)) {
+            return *v;
+        }
+        throw std::runtime_error("Type error: expected bool, got " + type);
+    }
+
     std::shared_ptr<ClassInstance> asObject() const {
-        return std::any_cast<std::shared_ptr<ClassInstance>>(value);
+        if (auto* v = std::get_if<std::shared_ptr<ClassInstance>>(&value)) {
+            if (!(*v)) {
+                throw std::runtime_error("Null object reference");
+            }
+            return *v;
+        }
+        throw std::runtime_error("Type error: expected object, got " + type);
     }
 };
 
@@ -80,6 +157,9 @@ private:
     // Runtime environment (variable storage)
     struct Environment {
         std::unordered_map<std::string, RuntimeValue> variables;
+        // LIFETIME: Non-owning pointer to parent environment in the environments vector
+        // Valid as long as parent environment exists in environments vector
+        // Parent is never removed during execution, only appended
         Environment* parent = nullptr;
 
         void define(const std::string& name, RuntimeValue value) {
@@ -109,7 +189,14 @@ private:
         }
     };
 
+    // LIFETIME: Non-owning pointer to current environment in environments vector
+    // SAFETY: environments.reserve(1000) called in constructor prevents reallocation
+    // Valid as long as environments vector is not reallocated (guaranteed by reserve)
+    // Points to an element in environments vector
     Environment* currentEnv;
+
+    // Owns all Environment objects
+    // SAFETY: Reserved capacity (1000) in constructor ensures no reallocation
     std::vector<std::unique_ptr<Environment>> environments;
 
     // Function storage
@@ -117,8 +204,10 @@ private:
         std::vector<Token> params;
         std::vector<std::string> paramTypes;
         std::string returnType;
-        // SAFETY: Non-owning reference to FunctionDecl::body
-        // The AST in mainStatements/moduleStatements keeps this alive
+        // LIFETIME: Non-owning reference to FunctionDecl::body (stored in AST)
+        // SAFETY: The AST in mainStatements/moduleStatements keeps the referenced body alive
+        // Valid as long as the owning FunctionDecl exists in mainStatements or moduleStatements
+        // Uses std::optional<std::reference_wrapper<>> for safe non-owning semantics
         std::optional<std::reference_wrapper<std::unique_ptr<std::vector<std::unique_ptr<Stmt>>>>> body;
     };
     std::unordered_map<std::string, Function> functions;
@@ -126,8 +215,10 @@ private:
     // Class storage
     struct Class {
         std::string name;
-        // SAFETY: Non-owning reference to ClassDecl::methods
-        // The AST in mainStatements/moduleStatements keeps this alive
+        // LIFETIME: Non-owning reference to ClassDecl::methods (stored in AST)
+        // SAFETY: The AST in mainStatements/moduleStatements keeps the referenced methods alive
+        // Valid as long as the owning ClassDecl exists in mainStatements or moduleStatements
+        // Uses std::optional<std::reference_wrapper<>> for safe non-owning semantics
         std::optional<std::reference_wrapper<std::vector<std::unique_ptr<Stmt>>>> methods;
     };
     std::unordered_map<std::string, Class> classes;
@@ -138,8 +229,12 @@ private:
     // Storage for main file statements to keep them alive
     std::vector<std::unique_ptr<Stmt>> mainStatements;
 
-    // Module function registry: moduleName -> functionName -> FunctionDecl*
-    std::unordered_map<std::string, std::unordered_map<std::string, FunctionDecl*>> moduleFunctions;
+    // Module function registry: moduleName -> functionName -> FunctionDecl reference
+    // LIFETIME: Non-owning references to FunctionDecl nodes in moduleStatements
+    // SAFETY: The AST in moduleStatements vector keeps FunctionDecl objects alive
+    // Valid as long as moduleStatements is not cleared (guaranteed during execution)
+    // Uses std::reference_wrapper instead of raw pointers for safer semantics
+    std::unordered_map<std::string, std::unordered_map<std::string, std::reference_wrapper<FunctionDecl>>> moduleFunctions;
 
     // Track which module we're currently loading
     std::string currentModuleName;

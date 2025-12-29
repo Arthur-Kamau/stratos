@@ -10,6 +10,10 @@
 namespace stratos {
 
 Interpreter::Interpreter() {
+    // Reserve capacity to prevent vector reallocation (which would invalidate currentEnv pointer)
+    // This ensures currentEnv remains valid throughout execution
+    environments.reserve(1000);
+
     // Create global environment
     auto globalEnv = std::make_unique<Environment>();
     currentEnv = globalEnv.get();
@@ -72,6 +76,11 @@ void Interpreter::visit(BinaryExpr& expr) {
                         if (expr.op.type == TokenType::EQUAL) {
                             instance->fields[fieldName] = value;
                         } else if (expr.op.type == TokenType::PLUS_EQUAL) {
+                            // Defensive check: ensure field exists before accessing
+                            if (!instance->fields.count(fieldName)) {
+                                error("Undefined field: " + instance->className + "::" + fieldName);
+                                return;
+                            }
                             auto& field = instance->fields[fieldName];
                             if (field.type == "int" && value.type == "int") {
                                 field = RuntimeValue(std::any(field.asInt() + value.asInt()), "int");
@@ -79,6 +88,11 @@ void Interpreter::visit(BinaryExpr& expr) {
                                 field = RuntimeValue(std::any(field.asDouble() + value.asDouble()), "double");
                             }
                         } else if (expr.op.type == TokenType::MINUS_EQUAL) {
+                            // Defensive check: ensure field exists before accessing
+                            if (!instance->fields.count(fieldName)) {
+                                error("Undefined field: " + instance->className + "::" + fieldName);
+                                return;
+                            }
                             auto& field = instance->fields[fieldName];
                             if (field.type == "int" && value.type == "int") {
                                 field = RuntimeValue(std::any(field.asInt() - value.asInt()), "int");
@@ -374,39 +388,41 @@ void Interpreter::visit(CallExpr& expr) {
                     if (classes.count(instance->className)) {
                         Class& cls = classes[instance->className];
 
-                        for (const auto& member : *cls.methods) {
-                            if (auto* funcDecl = dynamic_cast<FunctionDecl*>(member.get())) {
-                                if (funcDecl->name.lexeme == methodName) {
-                                    // Call the method with 'this' bound to the instance
-                                    enterScope();
+                        if (cls.methods) {
+                            for (const auto& member : cls.methods->get()) {
+                                if (auto* funcDecl = dynamic_cast<FunctionDecl*>(member.get())) {
+                                    if (funcDecl->name.lexeme == methodName) {
+                                        // Call the method with 'this' bound to the instance
+                                        enterScope();
 
-                                    // Bind 'this' to the instance
-                                    RuntimeValue thisValue(std::any(instance), "object");
-                                    currentEnv->define("this", thisValue);
+                                        // Bind 'this' to the instance
+                                        RuntimeValue thisValue(std::any(instance), "object");
+                                        currentEnv->define("this", thisValue);
 
-                                    // Bind method parameters
-                                    for (size_t i = 0; i < funcDecl->params.size() && i < args.size(); ++i) {
-                                        currentEnv->define(funcDecl->params[i].lexeme, args[i]);
-                                    }
+                                        // Bind method parameters
+                                        for (size_t i = 0; i < funcDecl->params.size() && i < args.size(); ++i) {
+                                            currentEnv->define(funcDecl->params[i].lexeme, args[i]);
+                                        }
 
-                                    // Execute method body
-                                    RuntimeValue result;
-                                    try {
-                                        if (funcDecl->body) {
-                                            for (const auto& stmt : *funcDecl->body) {
-                                                if (stmt) {
-                                                    stmt->accept(*this);
+                                        // Execute method body
+                                        RuntimeValue result;
+                                        try {
+                                            if (funcDecl->body) {
+                                                for (const auto& stmt : *funcDecl->body) {
+                                                    if (stmt) {
+                                                        stmt->accept(*this);
+                                                    }
                                                 }
                                             }
+                                            result = RuntimeValue(std::any(), "void");
+                                        } catch (ReturnException& ret) {
+                                            result = ret.value;
                                         }
-                                        result = RuntimeValue(std::any(), "void");
-                                    } catch (ReturnException& ret) {
-                                        result = ret.value;
-                                    }
 
-                                    exitScope();
-                                    lastValue = result;
-                                    return;
+                                        exitScope();
+                                        lastValue = result;
+                                        return;
+                                    }
                                 }
                             }
                         }
@@ -423,9 +439,9 @@ void Interpreter::visit(CallExpr& expr) {
 
                         // FIRST: Check if it's a user-defined module function
                         if (moduleFunctions.count(moduleName) &&
-                            moduleFunctions[moduleName].count(methodName)) {
-                            FunctionDecl* funcDecl = moduleFunctions[moduleName][methodName];
-                            lastValue = callModuleFunction(moduleName, methodName, args, funcDecl);
+                            moduleFunctions.at(moduleName).count(methodName)) {
+                            FunctionDecl& funcDeclRef = moduleFunctions.at(moduleName).at(methodName).get();
+                            lastValue = callModuleFunction(moduleName, methodName, args, &funcDeclRef);
                             return;
                         }
 
@@ -472,9 +488,9 @@ void Interpreter::visit(CallExpr& expr) {
         // If we're executing within a module, check if the function exists in that module first
         if (!currentExecutingModule.empty() &&
             moduleFunctions.count(currentExecutingModule) &&
-            moduleFunctions[currentExecutingModule].count(functionName)) {
-            FunctionDecl* funcDecl = moduleFunctions[currentExecutingModule][functionName];
-            lastValue = callModuleFunction(currentExecutingModule, functionName, args, funcDecl);
+            moduleFunctions.at(currentExecutingModule).count(functionName)) {
+            FunctionDecl& funcDeclRef = moduleFunctions.at(currentExecutingModule).at(functionName).get();
+            lastValue = callModuleFunction(currentExecutingModule, functionName, args, &funcDeclRef);
             return;
         }
 
@@ -525,7 +541,7 @@ void Interpreter::visit(VarDecl& stmt) {
 void Interpreter::visit(FunctionDecl& stmt) {
     // If we're loading a module, register function in module namespace
     if (!currentModuleName.empty()) {
-        moduleFunctions[currentModuleName][stmt.name.lexeme] = &stmt;
+        moduleFunctions[currentModuleName].emplace(stmt.name.lexeme, std::ref(stmt));  // Safe reference
     } else {
         // Store function for later execution in global scope
         Function func;
@@ -695,9 +711,25 @@ RuntimeValue Interpreter::evaluateNativeCall(const std::string& moduleName,
     }
 
     // Convert RuntimeValue arguments to std::any for NativeRegistry
+    // Extract actual values from variant before converting to std::any
     std::vector<std::any> nativeArgs;
     for (const auto& arg : args) {
-        nativeArgs.push_back(arg.value);
+        std::any anyValue;
+        if (std::holds_alternative<int>(arg.value)) {
+            anyValue = std::get<int>(arg.value);
+        } else if (std::holds_alternative<double>(arg.value)) {
+            anyValue = std::get<double>(arg.value);
+        } else if (std::holds_alternative<std::string>(arg.value)) {
+            anyValue = std::get<std::string>(arg.value);
+        } else if (std::holds_alternative<char>(arg.value)) {
+            anyValue = std::get<char>(arg.value);
+        } else if (std::holds_alternative<bool>(arg.value)) {
+            anyValue = std::get<bool>(arg.value);
+        } else if (std::holds_alternative<std::shared_ptr<ClassInstance>>(arg.value)) {
+            anyValue = std::get<std::shared_ptr<ClassInstance>>(arg.value);
+        }
+        // std::monostate (void) remains as empty std::any
+        nativeArgs.push_back(anyValue);
     }
 
     // Call the native function
@@ -835,8 +867,9 @@ RuntimeValue Interpreter::instantiateClass(const std::string& className,
     // Find constructor and field declarations
     FunctionDecl* constructor = nullptr;
 
-    for (const auto& member : *cls.methods) {
-        if (auto* fieldDecl = dynamic_cast<VarDecl*>(member.get())) {
+    if (cls.methods) {
+        for (const auto& member : cls.methods->get()) {
+            if (auto* fieldDecl = dynamic_cast<VarDecl*>(member.get())) {
             // Initialize field with default value
             RuntimeValue defaultValue;
             if (fieldDecl->typeName == "int") {
@@ -856,6 +889,7 @@ RuntimeValue Interpreter::instantiateClass(const std::string& className,
             if (funcDecl->name.lexeme == "constructor") {
                 constructor = funcDecl;
             }
+        }
         }
     }
 

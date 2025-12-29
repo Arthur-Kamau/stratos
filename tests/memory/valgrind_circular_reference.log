@@ -1,0 +1,43 @@
+==604559== Memcheck, a memory error detector
+==604559== Copyright (C) 2002-2022, and GNU GPL'd, by Julian Seward et al.
+==604559== Using Valgrind-3.22.0-bd4db67b1d-20231031 and LibVEX; rerun with -h for copyright info
+==604559== Command: ../../interpreter/C++/build/stratos run ./circular_reference.st
+==604559== Parent PID: 604477
+==604559== 
+--604559-- 
+--604559-- Valgrind options:
+--604559--    --leak-check=full
+--604559--    --show-leak-kinds=all
+--604559--    --track-origins=yes
+--604559--    --verbose
+--604559--    --log-file=valgrind_circular_reference.log
+--604559-- Contents of /proc/version:
+--604559--   Linux version 6.14.0-37-generic (buildd@lcy02-amd64-031) (x86_64-linux-gnu-gcc-13 (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0, GNU ld (GNU Binutils for Ubuntu) 2.42) #37~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Thu Nov 20 10:25:38 UTC 2
+--604559-- 
+--604559-- Arch and hwcaps: AMD64, LittleEndian, amd64-cx16-lzcnt-rdtscp-sse3-ssse3-avx-avx2-bmi-f16c-rdrand-rdseed
+--604559-- Page sizes: currently 4096, max supported 4096
+--604559-- Valgrind library directory: /usr/libexec/valgrind
+--604559-- Reading syms from /home/kamau/Development/Projects/stratos/interpreter/C++/build/stratos
+--604559-- Reading syms from /usr/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2
+--604559--   Considering /usr/lib/debug/.build-id/52/0e05878220fb2fc6d28ff46b63b3fd5d48e763.debug ..
+--604559--   .. build-id is valid
+--604559-- Reading syms from /usr/libexec/valgrind/memcheck-amd64-linux
+--604559--    object doesn't have a dynamic symbol table
+--604559-- Scheduler: using generic scheduler lock implementation.
+--604559-- Reading suppressions file: /usr/libexec/valgrind/default.supp
+==604559== embedded gdbserver: reading from /tmp/vgdb-pipe-from-vgdb-to-604559-by-kamau-on-???
+==604559== embedded gdbserver: writing to   /tmp/vgdb-pipe-to-vgdb-from-604559-by-kamau-on-???
+==604559== embedded gdbserver: shared mem   /tmp/vgdb-pipe-shared-mem-vgdb-604559-by-kamau-on-???
+==604559== 
+==604559== TO CONTROL THIS PROCESS USING vgdb (which you probably
+==604559== don't want to do, unless you know exactly what you're doing,
+==604559== or are doing some strange experiment):
+==604559==   /usr/bin/vgdb --pid=604559 ...command...
+==604559== 
+==604559== TO DEBUG THIS PROCESS USING GDB: start GDB like this
+==604559==   /path/to/gdb ../../interpreter/C++/build/stratos
+==604559== and then give GDB the following command
+==604559==   target remote | /usr/bin/vgdb --pid=604559
+==604559== --pid is optional if only one valgrind process is running
+==604559== 
+--604559-- REDIR: 0x4028b00 (ld-linux-x86-64.so.2:strlen) redirected to 0x580c2e1a (???)
