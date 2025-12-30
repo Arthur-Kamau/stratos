@@ -16,6 +16,7 @@
 #else
     #include <sys/socket.h>
     #include <netinet/in.h>
+    #include <netinet/tcp.h>
     #include <arpa/inet.h>
     #include <netdb.h>
     #include <unistd.h>
@@ -178,6 +179,10 @@ int WebSocketManager::connect(const std::string& url) {
     if (sock < 0) {
         throw std::runtime_error("Failed to create socket");
     }
+
+    // Disable Nagle's algorithm for low-latency messaging
+    int flag = 1;
+    setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(int));
 
     // Resolve host
     struct hostent* server = gethostbyname(host.c_str());
@@ -521,6 +526,10 @@ int WebSocketManager::acceptClient(int serverId, int timeoutMs) {
     if (clientSocket < 0) {
         return -1;
     }
+
+    // Disable Nagle's algorithm for low-latency messaging
+    int flag = 1;
+    setsockopt(clientSocket, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(int));
 
     // Perform WebSocket handshake
     if (!performServerHandshake(clientSocket)) {

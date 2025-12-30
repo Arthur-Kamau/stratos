@@ -170,23 +170,40 @@ val result = str1 == str2;   // false
 
 ## Logical Operators
 
+Stratos supports logical operators using both keyword and symbolic syntax (like Kotlin):
+
 ```stratos
 val isAdult = true;
 val hasLicense = false;
 
-// AND operator
-val canDrive = isAdult && hasLicense;  // false
+// AND operator (keyword syntax - recommended)
+val canDrive = isAdult and hasLicense;  // false
 
-// OR operator
-val canVote = isAdult || hasLicense;   // true
+// OR operator (keyword syntax - recommended)
+val canVote = isAdult or hasLicense;   // true
 
 // NOT operator
-val isMinor = !isAdult;                // false
+val isMinor = not isAdult;              // false
 
-// Complex expressions
+// Alternative symbolic syntax (also supported)
+val canDrive2 = isAdult && hasLicense;  // false (equivalent to 'and')
+val canVote2 = isAdult || hasLicense;   // true (equivalent to 'or')
+val isMinor2 = !isAdult;                // false (equivalent to 'not')
+
+// Complex expressions with keyword syntax
 val age = 25;
-val hasPermission = age >= 18 && (hasLicense || isAdult);
+val hasPermission = age >= 18 and (hasLicense or isAdult);
+
+// Short-circuit evaluation
+// 'and' stops if left side is false
+// 'or' stops if left side is true
+val result = false and expensiveCheck();  // expensiveCheck() not called
+val result2 = true or expensiveCheck();   // expensiveCheck() not called
 ```
+
+::: tip
+**Keyword syntax is recommended**: Use `and`, `or`, and `not` for better readability. The `&&`, `||`, and `!` operators are supported for compatibility but keywords are more readable.
+:::
 
 ## Type Conversion
 

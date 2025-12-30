@@ -24,6 +24,7 @@ The compiler pipeline is structured into several phases:
 The compiler currently supports:
 *   Variable declarations (`val`, `var`) with type annotations (`int`, `double`, `string`, `bool`, `Optional<T>`).
 *   Arithmetic and comparison expressions.
+*   Logical operators with short-circuit evaluation (`and`/`or`/`not` keywords, plus `&&`/`||`/`!` symbols).
 *   Basic control flow (`if`/`else`, `while`).
 *   Function declarations and calls.
 *   Classes and Namespaces (basic parsing and semantic checks; full IR generation is in progress).

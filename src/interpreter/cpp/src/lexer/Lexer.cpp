@@ -126,6 +126,10 @@ void Lexer::scanToken() {
             else if (match('|')) addToken(TokenType::OR);
             else { /* Bitwise OR handling if needed */ }
             break;
+        case '&':
+            if (match('&')) addToken(TokenType::AND);
+            else { /* Bitwise AND handling if needed */ }
+            break;
         case '?':
              if (match('.')) addToken(TokenType::QUESTION_DOT);
              else if (match(':')) addToken(TokenType::ELVIS);

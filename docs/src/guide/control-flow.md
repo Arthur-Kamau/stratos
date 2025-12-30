@@ -233,7 +233,7 @@ val age = 25;
 val hasLicense = true;
 
 when (age) {
-    _ if age >= 18 && hasLicense -> {
+    _ if age >= 18 and hasLicense -> {
         print("Can drive");
     }
     _ if age >= 18 -> {
@@ -246,6 +246,10 @@ when (age) {
 // Output: Can drive
 ```
 
+::: info
+**Logical operators**: Use `and`, `or`, and `not` keywords for better readability. The `&&`, `||`, and `!` symbols are also supported for compatibility.
+:::
+
 ## Complete Example: Number Classifier
 
 Here's a complete program demonstrating various control flow constructs:
@@ -257,8 +261,8 @@ fn classifyNumber(num: int) string {
     return when {
         num < 0 -> "Negative"
         num == 0 -> "Zero"
-        num > 0 && num <= 10 -> "Small Positive"
-        num > 10 && num <= 100 -> "Medium Positive"
+        num > 0 and num <= 10 -> "Small Positive"
+        num > 10 and num <= 100 -> "Medium Positive"
         else -> "Large Positive"
     };
 }

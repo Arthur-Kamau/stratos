@@ -33,8 +33,39 @@ namespace fs = std::filesystem;
 // HELPER FUNCTIONS
 // ============================================================================
 
+// Read version from .env file
+std::string getVersion() {
+    // Try to find .env file in executable directory or parent directories
+    fs::path exePath = fs::path(fs::current_path());
+    std::vector<fs::path> searchPaths = {
+        exePath / ".env",
+        exePath.parent_path() / ".env",
+        exePath.parent_path().parent_path() / ".env",
+        exePath.parent_path().parent_path().parent_path() / ".env",
+        // Also check the build directory's parent (where .env is located)
+        fs::path(__FILE__).parent_path().parent_path() / ".env"
+    };
+
+    for (const auto& envPath : searchPaths) {
+        if (fs::exists(envPath)) {
+            std::ifstream envFile(envPath);
+            std::string line;
+            while (std::getline(envFile, line)) {
+                // Parse VERSION=x.y.z
+                if (line.find("VERSION=") == 0) {
+                    return line.substr(8); // Return everything after "VERSION="
+                }
+            }
+        }
+    }
+
+    // Fallback version if .env not found
+    return "0.1.0";
+}
+
 void printHelp() {
-    std::cout << "Stratos Compiler v0.1.0\n\n";
+    std::string version = getVersion();
+    std::cout << "Stratos Interpreter v" << version << "\n\n";
     std::cout << "Usage:\n";
     std::cout << "  stratos <file.st>              Compile a single file\n";
     std::cout << "  stratos compile <file.st>      Compile a single file\n";
@@ -75,8 +106,9 @@ void printHelp() {
 }
 
 void printVersion() {
-    std::cout << "Stratos Compiler v0.1.0\n";
-    std::cout << "LLVM Backend\n";
+    std::string version = getVersion();
+    std::cout << "Stratos Interpreter v" << version << "\n";
+    std::cout << "Tree-walking Interpreter\n";
     std::cout << "Built: " << __DATE__ << " " << __TIME__ << "\n";
 }
 

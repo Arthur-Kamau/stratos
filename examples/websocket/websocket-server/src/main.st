@@ -24,13 +24,26 @@ fn main() {
     println("Waiting for first client...");
     println("");
 
-    // Accept one client
-    val client: int = websocket.acceptClient(server, 10000);
+    // Accept one client (poll with retry)
+    val client: int = -1;
+    val retries: int = 0;
+    val maxRetries: int = 20;  // Wait up to ~10 seconds (20 * 0.5s)
 
-    if (client == -1) {
-        println("No client connected within 10 seconds");
-        websocket.closeServer(server);
-        return;
+    while (client == -1) {
+        client = websocket.acceptClient(server);
+        if (client == -1) {
+            retries = retries + 1;
+            if (retries >= maxRetries) {
+                println("No client connected after " + retries + " attempts");
+                websocket.closeServer(server);
+                return;
+            }
+            // Small delay before retry (simulated with loop - not ideal but works)
+            val i: int = 0;
+            while (i < 100000) {
+                i = i + 1;
+            }
+        }
     }
 
     println("✓ Client connected!");

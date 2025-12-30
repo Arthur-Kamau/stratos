@@ -205,6 +205,39 @@ void Interpreter::visit(BinaryExpr& expr) {
         return;
     }
 
+    // Handle logical operators with short-circuit evaluation
+    if (expr.op.type == TokenType::AND) {
+        expr.left->accept(*this);
+        RuntimeValue left = lastValue;
+
+        // Short-circuit: if left is false, don't evaluate right
+        if (!isTruthy(left)) {
+            lastValue = RuntimeValue(std::any(false), "bool");
+            return;
+        }
+
+        expr.right->accept(*this);
+        RuntimeValue right = lastValue;
+        lastValue = RuntimeValue(std::any(isTruthy(right)), "bool");
+        return;
+    }
+
+    if (expr.op.type == TokenType::OR) {
+        expr.left->accept(*this);
+        RuntimeValue left = lastValue;
+
+        // Short-circuit: if left is true, don't evaluate right
+        if (isTruthy(left)) {
+            lastValue = RuntimeValue(std::any(true), "bool");
+            return;
+        }
+
+        expr.right->accept(*this);
+        RuntimeValue right = lastValue;
+        lastValue = RuntimeValue(std::any(isTruthy(right)), "bool");
+        return;
+    }
+
     // Regular binary operators - evaluate both sides
     expr.left->accept(*this);
     RuntimeValue left = lastValue;
