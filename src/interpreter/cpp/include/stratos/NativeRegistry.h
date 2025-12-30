@@ -80,6 +80,7 @@ private:
     void initZip();
     void initTesting();
     void initFFI();
+    void initWebSocket();
 };
 
 // Helper macros for registering native functions

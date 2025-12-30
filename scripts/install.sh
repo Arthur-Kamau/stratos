@@ -137,7 +137,7 @@ build_from_source() {
     }
 
     # Build
-    cd "$repo_dir/interpreter/C++"
+    cd "$repo_dir/src/interpreter/cpp"
     echo -e "${BLUE}Building...${NC}"
     bash build.sh || {
         echo -e "${RED}Error: Build failed${NC}"
@@ -216,7 +216,7 @@ verify_installation() {
         echo "  3. Get started: stratos new my-project"
         echo ""
         echo -e "${BLUE}Documentation:${NC} https://stratos-lang.org/docs"
-        echo -e "${BLUE}Examples:${NC} https://github.com/$GITHUB_REPO/tree/master/samples"
+        echo -e "${BLUE}Examples:${NC} https://github.com/$GITHUB_REPO/tree/master/examples"
         echo ""
     else
         echo -e "${RED}Error: Installation verification failed${NC}"

@@ -1,6 +1,7 @@
 #include "stratos/NativeRegistry.h"
 #include "stratos/Logger.h"
 #include "stratos/FFI.h"
+#include "stratos/WebSocket.h"
 #include <cmath>
 #include <random>
 #include <chrono>
@@ -77,6 +78,7 @@ void NativeRegistry::initializeStdlib() {
     initCrypto();
     initZip();
     initFFI();
+    initWebSocket();
 }
 
 // ============================================================================
@@ -1506,6 +1508,257 @@ void NativeRegistry::initFFI() {
             throw;
         }
     }, FunctionSignature{{"int", "string", "array", "array"}, "double"});
+}
+
+// ============================================================================
+// WebSocket Module - WebSocket client support
+// ============================================================================
+
+void NativeRegistry::initWebSocket() {
+    // websocket.connect - Connect to WebSocket server
+    // Usage: val ws = websocket.connect("ws://localhost:8080/chat")
+    // Returns: WebSocket connection ID (int)
+    registerFunction("websocket", "connect", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) {
+            throw std::runtime_error("websocket.connect requires a URL");
+        }
+
+        std::string url = std::any_cast<std::string>(args[0]);
+
+        try {
+            int wsId = WebSocketManager::instance().connect(url);
+            return std::any(wsId);
+        } catch (const std::exception& e) {
+            std::cerr << "WebSocket Error: " << e.what() << std::endl;
+            return std::any(-1);  // Error indicator
+        }
+    }, FunctionSignature{{"string"}, "int"});
+
+    // websocket.send - Send text message
+    // Usage: websocket.send(ws, "Hello!")
+    registerFunction("websocket", "send", [](const std::vector<std::any>& args) -> std::any {
+        if (args.size() < 2) {
+            throw std::runtime_error("websocket.send requires (wsId, message)");
+        }
+
+        int wsId = std::any_cast<int>(args[0]);
+        std::string message = std::any_cast<std::string>(args[1]);
+
+        try {
+            WebSocketManager::instance().send(wsId, message);
+        } catch (const std::exception& e) {
+            std::cerr << "WebSocket Error: " << e.what() << std::endl;
+        }
+
+        return std::any();
+    }, FunctionSignature{{"int", "string"}, "void"});
+
+    // websocket.receive - Receive message (blocking with timeout)
+    // Usage: val message = websocket.receive(ws)
+    // Returns: Message string (empty if timeout/error)
+    registerFunction("websocket", "receive", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) {
+            throw std::runtime_error("websocket.receive requires a WebSocket ID");
+        }
+
+        int wsId = std::any_cast<int>(args[0]);
+
+        // Optional timeout parameter (default 5000ms)
+        int timeout = 5000;
+        if (args.size() > 1) {
+            timeout = std::any_cast<int>(args[1]);
+        }
+
+        try {
+            std::string message = WebSocketManager::instance().receive(wsId, timeout);
+            return std::any(message);
+        } catch (const std::exception& e) {
+            std::cerr << "WebSocket Error: " << e.what() << std::endl;
+            return std::any(std::string(""));
+        }
+    }, FunctionSignature{{"int"}, "string"});
+
+    // websocket.close - Close WebSocket connection
+    // Usage: websocket.close(ws)
+    registerFunction("websocket", "close", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) {
+            throw std::runtime_error("websocket.close requires a WebSocket ID");
+        }
+
+        int wsId = std::any_cast<int>(args[0]);
+
+        try {
+            WebSocketManager::instance().close(wsId);
+        } catch (const std::exception& e) {
+            std::cerr << "WebSocket Error: " << e.what() << std::endl;
+        }
+
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // websocket.isConnected - Check if WebSocket is connected
+    // Usage: val connected = websocket.isConnected(ws)
+    // Returns: true if connected, false otherwise
+    registerFunction("websocket", "isConnected", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) {
+            throw std::runtime_error("websocket.isConnected requires a WebSocket ID");
+        }
+
+        int wsId = std::any_cast<int>(args[0]);
+
+        try {
+            bool connected = WebSocketManager::instance().isConnected(wsId);
+            return std::any(connected ? 1 : 0);  // Return as int (Stratos bool)
+        } catch (const std::exception& e) {
+            return std::any(0);  // Return false on error
+        }
+    }, FunctionSignature{{"int"}, "bool"});
+
+    // ====================================================================
+    // SERVER FUNCTIONS
+    // ====================================================================
+
+    // websocket.createServer - Create WebSocket server listening on port
+    // Usage: val server = websocket.createServer(8080)
+    // Returns: Server ID (int), -1 on error
+    registerFunction("websocket", "createServer", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) {
+            throw std::runtime_error("websocket.createServer requires a port number");
+        }
+
+        int port = std::any_cast<int>(args[0]);
+
+        try {
+            int serverId = WebSocketManager::instance().createServer(port);
+            return std::any(serverId);
+        } catch (const std::exception& e) {
+            std::cerr << "WebSocket Server Error: " << e.what() << std::endl;
+            return std::any(-1);
+        }
+    }, FunctionSignature{{"int"}, "int"});
+
+    // websocket.acceptClient - Accept incoming client connection (non-blocking)
+    // Usage: val client = websocket.acceptClient(server)
+    // Returns: Client ID (int), -1 if no connection or timeout
+    registerFunction("websocket", "acceptClient", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) {
+            throw std::runtime_error("websocket.acceptClient requires a server ID");
+        }
+
+        int serverId = std::any_cast<int>(args[0]);
+
+        // Optional timeout parameter (default 1000ms)
+        int timeout = 1000;
+        if (args.size() > 1) {
+            timeout = std::any_cast<int>(args[1]);
+        }
+
+        try {
+            int clientId = WebSocketManager::instance().acceptClient(serverId, timeout);
+            return std::any(clientId);
+        } catch (const std::exception& e) {
+            std::cerr << "WebSocket Server Error: " << e.what() << std::endl;
+            return std::any(-1);
+        }
+    }, FunctionSignature{{"int"}, "int"});
+
+    // websocket.sendToClient - Send message to specific client
+    // Usage: websocket.sendToClient(client, "Hello!")
+    registerFunction("websocket", "sendToClient", [](const std::vector<std::any>& args) -> std::any {
+        if (args.size() < 2) {
+            throw std::runtime_error("websocket.sendToClient requires (clientId, message)");
+        }
+
+        int clientId = std::any_cast<int>(args[0]);
+        std::string message = std::any_cast<std::string>(args[1]);
+
+        try {
+            WebSocketManager::instance().sendToClient(clientId, message);
+        } catch (const std::exception& e) {
+            std::cerr << "WebSocket Server Error: " << e.what() << std::endl;
+        }
+
+        return std::any();
+    }, FunctionSignature{{"int", "string"}, "void"});
+
+    // websocket.receiveFromClient - Receive message from specific client
+    // Usage: val message = websocket.receiveFromClient(client)
+    // Returns: Message string (empty if timeout/error)
+    registerFunction("websocket", "receiveFromClient", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) {
+            throw std::runtime_error("websocket.receiveFromClient requires a client ID");
+        }
+
+        int clientId = std::any_cast<int>(args[0]);
+
+        // Optional timeout parameter (default 5000ms)
+        int timeout = 5000;
+        if (args.size() > 1) {
+            timeout = std::any_cast<int>(args[1]);
+        }
+
+        try {
+            std::string message = WebSocketManager::instance().receiveFromClient(clientId, timeout);
+            return std::any(message);
+        } catch (const std::exception& e) {
+            std::cerr << "WebSocket Server Error: " << e.what() << std::endl;
+            return std::any(std::string(""));
+        }
+    }, FunctionSignature{{"int"}, "string"});
+
+    // websocket.closeClient - Close client connection
+    // Usage: websocket.closeClient(client)
+    registerFunction("websocket", "closeClient", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) {
+            throw std::runtime_error("websocket.closeClient requires a client ID");
+        }
+
+        int clientId = std::any_cast<int>(args[0]);
+
+        try {
+            WebSocketManager::instance().closeClient(clientId);
+        } catch (const std::exception& e) {
+            std::cerr << "WebSocket Server Error: " << e.what() << std::endl;
+        }
+
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // websocket.closeServer - Close server
+    // Usage: websocket.closeServer(server)
+    registerFunction("websocket", "closeServer", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) {
+            throw std::runtime_error("websocket.closeServer requires a server ID");
+        }
+
+        int serverId = std::any_cast<int>(args[0]);
+
+        try {
+            WebSocketManager::instance().closeServer(serverId);
+        } catch (const std::exception& e) {
+            std::cerr << "WebSocket Server Error: " << e.what() << std::endl;
+        }
+
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // websocket.isClientConnected - Check if client is connected
+    // Usage: val connected = websocket.isClientConnected(client)
+    // Returns: true if connected, false otherwise
+    registerFunction("websocket", "isClientConnected", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) {
+            throw std::runtime_error("websocket.isClientConnected requires a client ID");
+        }
+
+        int clientId = std::any_cast<int>(args[0]);
+
+        try {
+            bool connected = WebSocketManager::instance().isClientConnected(clientId);
+            return std::any(connected ? 1 : 0);  // Return as int (Stratos bool)
+        } catch (const std::exception& e) {
+            return std::any(0);  // Return false on error
+        }
+    }, FunctionSignature{{"int"}, "bool"});
 }
 
 } // namespace stratos

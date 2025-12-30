@@ -12,10 +12,25 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INTERPRETER_DIR="$PROJECT_ROOT/interpreter/C++"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"  # Go up one level since we're in scripts/
+
+# Support both old and new directory structures
+if [ -d "$PROJECT_ROOT/src/interpreter/cpp" ]; then
+    INTERPRETER_DIR="$PROJECT_ROOT/src/interpreter/cpp"
+else
+    INTERPRETER_DIR="$PROJECT_ROOT/interpreter/C++"
+fi
+
 BUILD_DIR="$INTERPRETER_DIR/build"
-SAMPLES_DIR="$PROJECT_ROOT/samples"
+
+# Support both old (samples) and new (examples) directory names
+if [ -d "$PROJECT_ROOT/examples" ]; then
+    SAMPLES_DIR="$PROJECT_ROOT/examples"
+else
+    SAMPLES_DIR="$PROJECT_ROOT/samples"
+fi
+
 STRATOS_BIN="$BUILD_DIR/stratos"
 
 # Test results
@@ -121,6 +136,9 @@ SKIP_SAMPLES=(
     "threads"                # No entry point
     "math_lib"               # No entry point - library only
     "imports"                # May have issues
+    "ffi"                    # FFI tests directory (contains subdirs)
+    "ffi-c-math"             # Requires building .so library first
+    "ffi-cpp-string"         # Requires building .so library first
     "type_checking_test.st"  # Single file, not a project
     "test_prelude.st"        # Single file, not a project
     "PRELUDE_README.md"      # Documentation
@@ -143,9 +161,20 @@ run_test() {
     local sample=$1
     local sample_path="$SAMPLES_DIR/$sample"
 
+    # If directory doesn't exist, try converting snake_case to kebab-case
     if [ ! -d "$sample_path" ]; then
-        echo -e "${RED}✗ $sample - Directory not found${NC}"
-        return 1
+        local kebab_name=$(echo "$sample" | tr '_' '-')
+        local kebab_path="$SAMPLES_DIR/$kebab_name"
+
+        if [ -d "$kebab_path" ]; then
+            sample_path="$kebab_path"
+            sample="$kebab_name"
+        else
+            echo -e "${RED}✗ $sample - Directory not found${NC}"
+            echo "  Tried: $SAMPLES_DIR/$sample"
+            echo "  Tried: $kebab_path"
+            return 1
+        fi
     fi
 
     # Find entry point
