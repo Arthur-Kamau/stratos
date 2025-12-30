@@ -66,6 +66,12 @@ void printHelp() {
     std::cout << "  -o, --output <file>            Specify output file path\n";
     std::cout << "  -v, --verbose                  Enable verbose output\n";
     std::cout << "  -r, --run                      Execute program instead of compiling\n";
+    std::cout << "  --devtools                     Enable DevTools server for debugging (use with run)\n";
+    std::cout << "                                 Opens server on http://localhost:9222\n";
+    std::cout << "                                 UI available at http://localhost:8080\n\n";
+    std::cout << "Examples:\n";
+    std::cout << "  stratos run --devtools app.st  Run with DevTools for real-time logging\n";
+    std::cout << "  stratos run app.st             Run without DevTools\n";
 }
 
 void printVersion() {

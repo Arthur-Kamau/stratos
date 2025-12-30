@@ -1,5 +1,6 @@
 #include "stratos/NativeRegistry.h"
 #include "stratos/Logger.h"
+#include "stratos/FFI.h"
 #include <cmath>
 #include <random>
 #include <chrono>
@@ -75,6 +76,7 @@ void NativeRegistry::initializeStdlib() {
     initCSV();
     initCrypto();
     initZip();
+    initFFI();
 }
 
 // ============================================================================
@@ -1336,6 +1338,174 @@ void NativeRegistry::initZip() {
 
         return true;
     });
+}
+
+// ============================================================================
+// FFI Module - Foreign Function Interface
+// ============================================================================
+
+void NativeRegistry::initFFI() {
+    // ffi.load - Load a shared library
+    // Usage: val lib = ffi.load("path/to/library.so")
+    // Returns: Library ID (int)
+    registerFunction("ffi", "load", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) {
+            throw std::runtime_error("ffi.load requires a library path");
+        }
+
+        std::string path = std::any_cast<std::string>(args[0]);
+
+        try {
+            int libraryId = FFIManager::instance().loadLibrary(path);
+            return std::any(libraryId);
+        } catch (const std::exception& e) {
+            std::cerr << "FFI Error: " << e.what() << std::endl;
+            return std::any(-1);  // Error indicator
+        }
+    }, FunctionSignature{{"string"}, "int"});
+
+    // ffi.unload - Unload a shared library
+    // Usage: ffi.unload(lib)
+    registerFunction("ffi", "unload", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) {
+            throw std::runtime_error("ffi.unload requires a library ID");
+        }
+
+        int libraryId = std::any_cast<int>(args[0]);
+        FFIManager::instance().unloadLibrary(libraryId);
+
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // ffi.call - Call a foreign function
+    // Usage: val result = ffi.call(lib, "function_name", "return_type", ["param_types"], [args])
+    // Example: val result = ffi.call(lib, "add", "int", ["int", "int"], [5, 3])
+    registerFunction("ffi", "call", [](const std::vector<std::any>& args) -> std::any {
+        if (args.size() < 5) {
+            throw std::runtime_error("ffi.call requires: (lib_id, func_name, return_type, param_types, args)");
+        }
+
+        int libraryId = std::any_cast<int>(args[0]);
+        std::string functionName = std::any_cast<std::string>(args[1]);
+        std::string returnTypeStr = std::any_cast<std::string>(args[2]);
+
+        // Parse parameter types
+        std::vector<std::string> paramTypeStrs = std::any_cast<std::vector<std::string>>(args[3]);
+        std::vector<FFIType> paramTypes;
+        for (const auto& typeStr : paramTypeStrs) {
+            paramTypes.push_back(FFIManager::parseType(typeStr));
+        }
+
+        // Parse return type
+        FFIType returnType = FFIManager::parseType(returnTypeStr);
+
+        // Extract function arguments
+        std::vector<std::any> funcArgs = std::any_cast<std::vector<std::any>>(args[4]);
+
+        // Create signature
+        FFISignature signature{paramTypes, returnType};
+
+        try {
+            return FFIManager::instance().callFunction(libraryId, functionName, signature, funcArgs);
+        } catch (const std::exception& e) {
+            std::cerr << "FFI Error calling " << functionName << ": " << e.what() << std::endl;
+            throw;
+        }
+    });
+
+    // ffi.callVoid - Simplified version for void return functions
+    // Usage: ffi.callVoid(lib, "function_name", ["param_types"], [args])
+    registerFunction("ffi", "callVoid", [](const std::vector<std::any>& args) -> std::any {
+        if (args.size() < 4) {
+            throw std::runtime_error("ffi.callVoid requires: (lib_id, func_name, param_types, args)");
+        }
+
+        int libraryId = std::any_cast<int>(args[0]);
+        std::string functionName = std::any_cast<std::string>(args[1]);
+
+        // Parse parameter types
+        std::vector<std::string> paramTypeStrs = std::any_cast<std::vector<std::string>>(args[2]);
+        std::vector<FFIType> paramTypes;
+        for (const auto& typeStr : paramTypeStrs) {
+            paramTypes.push_back(FFIManager::parseType(typeStr));
+        }
+
+        // Extract function arguments
+        std::vector<std::any> funcArgs = std::any_cast<std::vector<std::any>>(args[3]);
+
+        // Create signature with void return
+        FFISignature signature{paramTypes, FFIType::VOID};
+
+        try {
+            FFIManager::instance().callFunction(libraryId, functionName, signature, funcArgs);
+        } catch (const std::exception& e) {
+            std::cerr << "FFI Error calling " << functionName << ": " << e.what() << std::endl;
+            throw;
+        }
+
+        return std::any();
+    });
+
+    // ffi.callInt - Simplified version for int return functions
+    // Usage: val result = ffi.callInt(lib, "add", ["int", "int"], [5, 3])
+    registerFunction("ffi", "callInt", [](const std::vector<std::any>& args) -> std::any {
+        if (args.size() < 4) {
+            throw std::runtime_error("ffi.callInt requires: (lib_id, func_name, param_types, args)");
+        }
+
+        int libraryId = std::any_cast<int>(args[0]);
+        std::string functionName = std::any_cast<std::string>(args[1]);
+
+        // Parse parameter types
+        std::vector<std::string> paramTypeStrs = std::any_cast<std::vector<std::string>>(args[2]);
+        std::vector<FFIType> paramTypes;
+        for (const auto& typeStr : paramTypeStrs) {
+            paramTypes.push_back(FFIManager::parseType(typeStr));
+        }
+
+        // Extract function arguments
+        std::vector<std::any> funcArgs = std::any_cast<std::vector<std::any>>(args[3]);
+
+        // Create signature with int return
+        FFISignature signature{paramTypes, FFIType::INT};
+
+        try {
+            return FFIManager::instance().callFunction(libraryId, functionName, signature, funcArgs);
+        } catch (const std::exception& e) {
+            std::cerr << "FFI Error calling " << functionName << ": " << e.what() << std::endl;
+            throw;
+        }
+    }, FunctionSignature{{"int", "string", "array", "array"}, "int"});
+
+    // ffi.callDouble - Simplified version for double return functions
+    registerFunction("ffi", "callDouble", [](const std::vector<std::any>& args) -> std::any {
+        if (args.size() < 4) {
+            throw std::runtime_error("ffi.callDouble requires: (lib_id, func_name, param_types, args)");
+        }
+
+        int libraryId = std::any_cast<int>(args[0]);
+        std::string functionName = std::any_cast<std::string>(args[1]);
+
+        // Parse parameter types
+        std::vector<std::string> paramTypeStrs = std::any_cast<std::vector<std::string>>(args[2]);
+        std::vector<FFIType> paramTypes;
+        for (const auto& typeStr : paramTypeStrs) {
+            paramTypes.push_back(FFIManager::parseType(typeStr));
+        }
+
+        // Extract function arguments
+        std::vector<std::any> funcArgs = std::any_cast<std::vector<std::any>>(args[3]);
+
+        // Create signature with double return
+        FFISignature signature{paramTypes, FFIType::DOUBLE};
+
+        try {
+            return FFIManager::instance().callFunction(libraryId, functionName, signature, funcArgs);
+        } catch (const std::exception& e) {
+            std::cerr << "FFI Error calling " << functionName << ": " << e.what() << std::endl;
+            throw;
+        }
+    }, FunctionSignature{{"int", "string", "array", "array"}, "double"});
 }
 
 } // namespace stratos

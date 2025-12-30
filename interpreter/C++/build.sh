@@ -14,6 +14,7 @@ g++ -std=c++20 -I include \
   src/runtime/Interpreter.cpp \
   src/runtime/GarbageCollector.cpp \
   src/runtime/NativeRegistry.cpp \
+  src/runtime/FFI.cpp \
   src/config/ProjectConfig.cpp \
   src/config/DependencyManager.cpp \
   src/config/LockFile.cpp \
@@ -21,7 +22,7 @@ g++ -std=c++20 -I include \
   src/formatter/Formatter.cpp \
   src/devtools/Logger.cpp \
   src/devtools/DevToolsServer.cpp \
-  -o build/stratos -lpthread
+  -o build/stratos -lpthread -ldl
 
 if [ $? -eq 0 ]; then
     echo "✓ Build successful! Binary: build/stratos"

@@ -764,25 +764,32 @@ RuntimeValue Interpreter::evaluateNativeCall(const std::string& moduleName,
     std::any result = nativeFunc(nativeArgs);
 
     // Convert result back to RuntimeValue
-    // Determine type based on module and function
+    // Use FunctionSignature if available, otherwise infer from module
     std::string resultType = "void";
 
-    if (moduleName == "math") {
-        if (functionName == "randomInt" || functionName == "sign") {
-            resultType = "int";
-        } else {
-            resultType = "double";
+    if (registry.hasSignature(moduleName, functionName)) {
+        // Use the registered signature's return type
+        auto signature = registry.getSignature(moduleName, functionName);
+        resultType = signature.returnType;
+    } else {
+        // Fallback: Determine type based on module and function for legacy functions
+        if (moduleName == "math") {
+            if (functionName == "randomInt" || functionName == "sign") {
+                resultType = "int";
+            } else {
+                resultType = "double";
+            }
+        } else if (moduleName == "strings") {
+            if (functionName == "length" || functionName == "indexOf") {
+                resultType = "int";
+            } else if (functionName == "contains" || functionName == "isEmpty") {
+                resultType = "bool";
+            } else {
+                resultType = "string";
+            }
+        } else if (moduleName == "log" || moduleName == "io") {
+            resultType = "void";
         }
-    } else if (moduleName == "strings") {
-        if (functionName == "length" || functionName == "indexOf") {
-            resultType = "int";
-        } else if (functionName == "contains" || functionName == "isEmpty") {
-            resultType = "bool";
-        } else {
-            resultType = "string";
-        }
-    } else if (moduleName == "log" || moduleName == "io") {
-        resultType = "void";
     }
 
     return RuntimeValue(result, resultType);

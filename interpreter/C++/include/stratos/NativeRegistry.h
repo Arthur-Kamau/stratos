@@ -79,6 +79,7 @@ private:
     void initCrypto();
     void initZip();
     void initTesting();
+    void initFFI();
 };
 
 // Helper macros for registering native functions

@@ -4,8 +4,27 @@
 
 ## What You Can Do NOW
 
-### 1. Run a Stratos Program with DevTools
+### 1. Start the DevTools UI Server (Required!)
 
+**First, start the UI server in a terminal:**
+```bash
+cd /home/kamau/Development/Projects/stratos/devtools/ui
+python3 -m http.server 8080
+```
+
+Keep this terminal running!
+
+### 2. Open the DevTools UI in Your Browser
+
+```
+http://localhost:8080
+```
+
+You should see the DevTools interface with tabs. It will show "Disconnected" until you run a program.
+
+### 3. Run a Stratos Program with DevTools
+
+**In a new terminal:**
 ```bash
 cd /home/kamau/Development/Projects/stratos
 ./interpreter/C++/build/stratos run --devtools tests/devtools/logging_demo.st
@@ -14,18 +33,9 @@ cd /home/kamau/Development/Projects/stratos
 This will:
 - ✅ Start the DevTools server on http://localhost:9222
 - ✅ Run your Stratos program
-- ✅ Stream all log events to connected DevTools clients
+- ✅ Stream all log events to the browser UI
 
-### 2. Open the DevTools UI
-
-The DevTools UI is already running at:
-```
-http://localhost:8080
-```
-
-**Open this URL in your browser now!**
-
-### 3. What You'll See
+### 4. What You'll See
 
 When you open the UI:
 1. **Connection Status**: "Connected • localhost:9222" (green indicator)
