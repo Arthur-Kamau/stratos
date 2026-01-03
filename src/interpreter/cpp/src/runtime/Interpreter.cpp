@@ -654,47 +654,72 @@ void Interpreter::visit(UseStmt& stmt) {
 
     // Search paths in priority order
     std::vector<std::string> searchPaths = {
-        "src/" + moduleName,           // Internal packages
-        "deps/" + moduleName + "/src", // External dependencies
-        "deps/" + moduleName,          // Alternative layout
+        "src/" + moduleName,                                  // Internal packages (highest priority)
+        "deps/" + moduleName + "/src",                        // External dependencies
+        "deps/" + moduleName,                                  // Alternative layout
+        "std/" + moduleName,                                  // Standard library
+        "std/encoding/" + moduleName,                         // Encoding modules
+        "../std/" + moduleName,                               // One level up
+        "../std/encoding/" + moduleName,
+        "../../std/" + moduleName,                            // Two levels up
+        "../../std/encoding/" + moduleName,
+        "../../../std/" + moduleName,                         // Three levels up
+        "../../../std/encoding/" + moduleName,
     };
 
     // Try each search path until we find the module
-    for (const auto& moduleDir : searchPaths) {
-        if (fs::exists(moduleDir) && fs::is_directory(moduleDir)) {
+    for (const auto& modulePath : searchPaths) {
+        std::vector<std::string> filesToLoad;
+
+        // Check if it's a directory
+        if (fs::exists(modulePath) && fs::is_directory(modulePath)) {
+            // Load all .st files in the module directory
+            for (const auto& entry : fs::directory_iterator(modulePath)) {
+                if (entry.path().extension() == ".st") {
+                    filesToLoad.push_back(entry.path().string());
+                }
+            }
+        }
+        // Check if init.st exists in this path
+        else {
+            std::string initFile = modulePath + "/init.st";
+            if (fs::exists(initFile)) {
+                filesToLoad.push_back(initFile);
+            }
+        }
+
+        // If we found files to load, process them
+        if (!filesToLoad.empty()) {
             // Set current module name to track module context
             currentModuleName = moduleName;
 
-            // Load all .st files in the module directory
-            for (const auto& entry : fs::directory_iterator(moduleDir)) {
-                if (entry.path().extension() == ".st") {
-                    std::ifstream file(entry.path());
-                    if (!file.is_open()) continue;
+            for (const auto& filePath : filesToLoad) {
+                std::ifstream file(filePath);
+                if (!file.is_open()) continue;
 
-                    std::stringstream buffer;
-                    buffer << file.rdbuf();
-                    std::string source = buffer.str();
+                std::stringstream buffer;
+                buffer << file.rdbuf();
+                std::string source = buffer.str();
 
-                    try {
-                        // Lex, parse, and execute the module file
-                        Lexer lexer(source);
-                        std::vector<Token> tokens = lexer.scanTokens();
+                try {
+                    // Lex, parse, and execute the module file
+                    Lexer lexer(source);
+                    std::vector<Token> tokens = lexer.scanTokens();
 
-                        Parser parser(tokens);
-                        std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+                    Parser parser(tokens);
+                    std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
 
-                        // Store the statements first to keep ClassDecl alive
-                        moduleStatements.push_back(std::move(statements));
+                    // Store the statements first to keep ClassDecl alive
+                    moduleStatements.push_back(std::move(statements));
 
-                        // Execute the module statements (this will register classes, functions, etc.)
-                        for (const auto& moduleStmt : moduleStatements.back()) {
-                            if (moduleStmt) {
-                                moduleStmt->accept(*this);
-                            }
+                    // Execute the module statements (this will register classes, functions, etc.)
+                    for (const auto& moduleStmt : moduleStatements.back()) {
+                        if (moduleStmt) {
+                            moduleStmt->accept(*this);
                         }
-                    } catch (const std::exception& e) {
-                        error("Error loading module '" + moduleName + "': " + e.what());
                     }
+                } catch (const std::exception& e) {
+                    error("Error loading module '" + moduleName + "' from " + filePath + ": " + e.what());
                 }
             }
 

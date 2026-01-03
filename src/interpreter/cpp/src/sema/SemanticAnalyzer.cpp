@@ -348,21 +348,28 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
         return;
     }
 
-    // For built-in/native modules, just register the module name
-    if (!isUserModule) {
-        // Module file exists - just register it
-        // We don't parse the module file because:
-        // 1. Native functions are implemented in C++ (NativeRegistry)
-        // 2. Module files may use advanced syntax not yet fully supported
-        // 3. We only need to know the module exists and is available
-        // 4. Actual function validation happens during CallExpr analysis via NativeRegistry
+    // UPDATED: Now we parse ALL modules (std and user-defined) to support pure Stratos implementations
+    // /* OLD BEHAVIOR - commented out to preserve history
+    // // For built-in/native modules, just register the module name
+    // if (!isUserModule) {
+    //     // Module file exists - just register it
+    //     // We don't parse the module file because:
+    //     // 1. Native functions are implemented in C++ (NativeRegistry)
+    //     // 2. Module files may use advanced syntax not yet fully supported
+    //     // 3. We only need to know the module exists and is available
+    //     // 4. Actual function validation happens during CallExpr analysis via NativeRegistry
+    //
+    //     // Register the module in the symbol table
+    //     symbolTable.define(Symbol::Variable(moduleName, "module", false));
+    //     return;
+    // }
+    // */
 
-        // Register the module in the symbol table
-        symbolTable.define(Symbol::Variable(moduleName, "module", false));
-        return;
-    }
+    // Register the module in the symbol table
+    symbolTable.define(Symbol::Variable(moduleName, "module", false));
 
-    // For user-defined modules, parse all files in the module directory
+    // Parse all files in the module directory (both std and user-defined)
+    // This enables pure Stratos implementations alongside native C++ functions
     std::vector<std::string> moduleFiles;
 
     // If moduleFilePath is a directory, scan for all .st files
