@@ -12,6 +12,19 @@
 #include <filesystem>
 #include <algorithm>
 #include <cstring>
+#include <regex>
+
+// Platform-specific includes for terminal control
+#ifdef _WIN32
+    #include <windows.h>
+    #include <conio.h>
+    #include <io.h>
+#else
+    #include <termios.h>
+    #include <unistd.h>
+    #include <sys/ioctl.h>
+    #include <sys/select.h>
+#endif
 
 namespace stratos {
 
@@ -69,6 +82,7 @@ void NativeRegistry::initializeStdlib() {
     initPrelude();   // Auto-imported functions (print, println, printf)
     initMath();
     initStrings();
+    initConvert();   // Number/type conversion functions
     initIO();
     initLog();
     initTime();
@@ -79,6 +93,8 @@ void NativeRegistry::initializeStdlib() {
     initZip();
     initFFI();
     initWebSocket();
+    initTerminal();
+    initRegex();
 }
 
 // ============================================================================
@@ -774,6 +790,174 @@ void NativeRegistry::initStrings() {
         std::reverse(s.begin(), s.end());
         return s;
     });
+}
+
+// ============================================================================
+// Convert Module - Number and Type Conversions
+// ============================================================================
+
+void NativeRegistry::initConvert() {
+    // String to number conversions
+    registerFunction("convert", "toInt", [](const std::vector<std::any>& args) -> std::any {
+        try {
+            if (args[0].type() == typeid(std::string)) {
+                std::string s = std::any_cast<std::string>(args[0]);
+                return std::stoi(s);
+            } else if (args[0].type() == typeid(double)) {
+                return static_cast<int>(std::any_cast<double>(args[0]));
+            } else if (args[0].type() == typeid(int)) {
+                return std::any_cast<int>(args[0]);
+            } else if (args[0].type() == typeid(bool)) {
+                return std::any_cast<bool>(args[0]) ? 1 : 0;
+            }
+        } catch (...) {
+            return 0;  // Default on error
+        }
+        return 0;
+    }, FunctionSignature{{"any"}, "int"});
+
+    registerFunction("convert", "toDouble", [](const std::vector<std::any>& args) -> std::any {
+        try {
+            if (args[0].type() == typeid(std::string)) {
+                std::string s = std::any_cast<std::string>(args[0]);
+                return std::stod(s);
+            } else if (args[0].type() == typeid(int)) {
+                return static_cast<double>(std::any_cast<int>(args[0]));
+            } else if (args[0].type() == typeid(double)) {
+                return std::any_cast<double>(args[0]);
+            } else if (args[0].type() == typeid(bool)) {
+                return std::any_cast<bool>(args[0]) ? 1.0 : 0.0;
+            }
+        } catch (...) {
+            return 0.0;  // Default on error
+        }
+        return 0.0;
+    }, FunctionSignature{{"any"}, "double"});
+
+    registerFunction("convert", "toString", [](const std::vector<std::any>& args) -> std::any {
+        try {
+            if (args[0].type() == typeid(std::string)) {
+                return std::any_cast<std::string>(args[0]);
+            } else if (args[0].type() == typeid(int)) {
+                return std::to_string(std::any_cast<int>(args[0]));
+            } else if (args[0].type() == typeid(double)) {
+                return std::to_string(std::any_cast<double>(args[0]));
+            } else if (args[0].type() == typeid(bool)) {
+                return std::any_cast<bool>(args[0]) ? std::string("true") : std::string("false");
+            } else if (args[0].type() == typeid(char)) {
+                return std::string(1, std::any_cast<char>(args[0]));
+            }
+        } catch (...) {
+            return std::string("");
+        }
+        return std::string("");
+    }, FunctionSignature{{"any"}, "string"});
+
+    registerFunction("convert", "toBool", [](const std::vector<std::any>& args) -> std::any {
+        try {
+            if (args[0].type() == typeid(bool)) {
+                return std::any_cast<bool>(args[0]);
+            } else if (args[0].type() == typeid(int)) {
+                return std::any_cast<int>(args[0]) != 0;
+            } else if (args[0].type() == typeid(double)) {
+                return std::any_cast<double>(args[0]) != 0.0;
+            } else if (args[0].type() == typeid(std::string)) {
+                std::string s = std::any_cast<std::string>(args[0]);
+                return s == "true" || s == "1" || s == "yes";
+            }
+        } catch (...) {
+            return false;
+        }
+        return false;
+    }, FunctionSignature{{"any"}, "bool"});
+
+    // Number formatting functions
+    registerFunction("convert", "toFixed", [](const std::vector<std::any>& args) -> std::any {
+        double value = std::any_cast<double>(args[0]);
+        int decimals = std::any_cast<int>(args[1]);
+
+        std::ostringstream out;
+        out << std::fixed << std::setprecision(decimals) << value;
+        return out.str();
+    }, FunctionSignature{{"double", "int"}, "string"});
+
+    registerFunction("convert", "toPrecision", [](const std::vector<std::any>& args) -> std::any {
+        double value = std::any_cast<double>(args[0]);
+        int precision = std::any_cast<int>(args[1]);
+
+        std::ostringstream out;
+        out << std::setprecision(precision) << value;
+        return out.str();
+    }, FunctionSignature{{"double", "int"}, "string"});
+
+    registerFunction("convert", "toExponential", [](const std::vector<std::any>& args) -> std::any {
+        double value = std::any_cast<double>(args[0]);
+        int decimals = args.size() > 1 ? std::any_cast<int>(args[1]) : 2;
+
+        std::ostringstream out;
+        out << std::scientific << std::setprecision(decimals) << value;
+        return out.str();
+    }, FunctionSignature{{"double", "int"}, "string"});
+
+    // Integer conversions with base
+    registerFunction("convert", "toHex", [](const std::vector<std::any>& args) -> std::any {
+        int value = std::any_cast<int>(args[0]);
+        std::ostringstream out;
+        out << "0x" << std::hex << value;
+        return out.str();
+    }, FunctionSignature{{"int"}, "string"});
+
+    registerFunction("convert", "toOct", [](const std::vector<std::any>& args) -> std::any {
+        int value = std::any_cast<int>(args[0]);
+        std::ostringstream out;
+        out << "0" << std::oct << value;
+        return out.str();
+    }, FunctionSignature{{"int"}, "string"});
+
+    registerFunction("convert", "toBinary", [](const std::vector<std::any>& args) -> std::any {
+        int value = std::any_cast<int>(args[0]);
+        if (value == 0) return std::string("0b0");
+
+        std::string binary;
+        int n = value;
+        bool negative = n < 0;
+        if (negative) n = -n;
+
+        while (n > 0) {
+            binary = (char)('0' + (n % 2)) + binary;
+            n /= 2;
+        }
+
+        return (negative ? std::string("-0b") : std::string("0b")) + binary;
+    }, FunctionSignature{{"int"}, "string"});
+
+    // Parse from different bases
+    registerFunction("convert", "parseHex", [](const std::vector<std::any>& args) -> std::any {
+        std::string s = std::any_cast<std::string>(args[0]);
+        // Remove 0x prefix if present
+        if (s.substr(0, 2) == "0x" || s.substr(0, 2) == "0X") {
+            s = s.substr(2);
+        }
+        return static_cast<int>(std::strtol(s.c_str(), nullptr, 16));
+    }, FunctionSignature{{"string"}, "int"});
+
+    registerFunction("convert", "parseOct", [](const std::vector<std::any>& args) -> std::any {
+        std::string s = std::any_cast<std::string>(args[0]);
+        // Remove 0 prefix if present
+        if (s[0] == '0' && s.length() > 1) {
+            s = s.substr(1);
+        }
+        return static_cast<int>(std::strtol(s.c_str(), nullptr, 8));
+    }, FunctionSignature{{"string"}, "int"});
+
+    registerFunction("convert", "parseBinary", [](const std::vector<std::any>& args) -> std::any {
+        std::string s = std::any_cast<std::string>(args[0]);
+        // Remove 0b prefix if present
+        if (s.substr(0, 2) == "0b" || s.substr(0, 2) == "0B") {
+            s = s.substr(2);
+        }
+        return static_cast<int>(std::strtol(s.c_str(), nullptr, 2));
+    }, FunctionSignature{{"string"}, "int"});
 }
 
 // ============================================================================
@@ -1759,6 +1943,672 @@ void NativeRegistry::initWebSocket() {
             return std::any(0);  // Return false on error
         }
     }, FunctionSignature{{"int"}, "bool"});
+}
+
+// ============================================================================
+// Terminal Module Native Functions
+// ============================================================================
+
+void NativeRegistry::initTerminal() {
+    // Terminal state for raw mode
+    static bool rawModeEnabled = false;
+
+#ifdef _WIN32
+    static HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE);
+    static HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+    static DWORD originalMode = 0;
+#else
+    static struct termios originalTermios;
+#endif
+
+    // terminal.clear - Clear the entire screen
+    registerFunction("terminal", "clear", [](const std::vector<std::any>& args) -> std::any {
+        std::cout << "\x1b[2J\x1b[H" << std::flush;
+        return std::any();
+    }, FunctionSignature{{}, "void"});
+
+    // terminal.clearLine - Clear from cursor to end of line
+    registerFunction("terminal", "clearLine", [](const std::vector<std::any>& args) -> std::any {
+        std::cout << "\x1b[K" << std::flush;
+        return std::any();
+    }, FunctionSignature{{}, "void"});
+
+    // terminal.clearToBottom - Clear from cursor to end of screen
+    registerFunction("terminal", "clearToBottom", [](const std::vector<std::any>& args) -> std::any {
+        std::cout << "\x1b[J" << std::flush;
+        return std::any();
+    }, FunctionSignature{{}, "void"});
+
+    // terminal.clearToTop - Clear from cursor to start of screen
+    registerFunction("terminal", "clearToTop", [](const std::vector<std::any>& args) -> std::any {
+        std::cout << "\x1b[1J" << std::flush;
+        return std::any();
+    }, FunctionSignature{{}, "void"});
+
+    // terminal.moveCursor - Move cursor to specific position (1-based)
+    registerFunction("terminal", "moveCursor", [](const std::vector<std::any>& args) -> std::any {
+        int row = std::any_cast<int>(args[0]);
+        int col = std::any_cast<int>(args[1]);
+        std::cout << "\x1b[" << row << ";" << col << "H" << std::flush;
+        return std::any();
+    }, FunctionSignature{{"int", "int"}, "void"});
+
+    // terminal.cursorUp - Move cursor up by n lines
+    registerFunction("terminal", "cursorUp", [](const std::vector<std::any>& args) -> std::any {
+        int n = std::any_cast<int>(args[0]);
+        std::cout << "\x1b[" << n << "A" << std::flush;
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // terminal.cursorDown - Move cursor down by n lines
+    registerFunction("terminal", "cursorDown", [](const std::vector<std::any>& args) -> std::any {
+        int n = std::any_cast<int>(args[0]);
+        std::cout << "\x1b[" << n << "B" << std::flush;
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // terminal.cursorLeft - Move cursor left by n columns
+    registerFunction("terminal", "cursorLeft", [](const std::vector<std::any>& args) -> std::any {
+        int n = std::any_cast<int>(args[0]);
+        std::cout << "\x1b[" << n << "D" << std::flush;
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // terminal.cursorRight - Move cursor right by n columns
+    registerFunction("terminal", "cursorRight", [](const std::vector<std::any>& args) -> std::any {
+        int n = std::any_cast<int>(args[0]);
+        std::cout << "\x1b[" << n << "C" << std::flush;
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // terminal.saveCursor - Save cursor position
+    registerFunction("terminal", "saveCursor", [](const std::vector<std::any>& args) -> std::any {
+        std::cout << "\x1b[s" << std::flush;
+        return std::any();
+    }, FunctionSignature{{}, "void"});
+
+    // terminal.restoreCursor - Restore cursor position
+    registerFunction("terminal", "restoreCursor", [](const std::vector<std::any>& args) -> std::any {
+        std::cout << "\x1b[u" << std::flush;
+        return std::any();
+    }, FunctionSignature{{}, "void"});
+
+    // terminal.hideCursor - Hide cursor
+    registerFunction("terminal", "hideCursor", [](const std::vector<std::any>& args) -> std::any {
+        std::cout << "\x1b[?25l" << std::flush;
+        return std::any();
+    }, FunctionSignature{{}, "void"});
+
+    // terminal.showCursor - Show cursor
+    registerFunction("terminal", "showCursor", [](const std::vector<std::any>& args) -> std::any {
+        std::cout << "\x1b[?25h" << std::flush;
+        return std::any();
+    }, FunctionSignature{{}, "void"});
+
+    // terminal.setForeground - Set foreground color
+    registerFunction("terminal", "setForeground", [](const std::vector<std::any>& args) -> std::any {
+        int color = std::any_cast<int>(args[0]);
+
+        // Map color enum to ANSI code
+        int code = 39; // Default
+        if (color >= 0 && color <= 7) code = 30 + color;       // Normal colors
+        else if (color >= 8 && color <= 15) code = 90 + (color - 8);  // Bright colors
+
+        std::cout << "\x1b[" << code << "m" << std::flush;
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // terminal.setBackground - Set background color
+    registerFunction("terminal", "setBackground", [](const std::vector<std::any>& args) -> std::any {
+        int color = std::any_cast<int>(args[0]);
+
+        // Map color enum to ANSI code
+        int code = 49; // Default
+        if (color >= 0 && color <= 7) code = 40 + color;       // Normal colors
+        else if (color >= 8 && color <= 15) code = 100 + (color - 8);  // Bright colors
+
+        std::cout << "\x1b[" << code << "m" << std::flush;
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // terminal.setForegroundRGB - Set foreground color using RGB
+    registerFunction("terminal", "setForegroundRGB", [](const std::vector<std::any>& args) -> std::any {
+        int r = std::any_cast<int>(args[0]);
+        int g = std::any_cast<int>(args[1]);
+        int b = std::any_cast<int>(args[2]);
+        std::cout << "\x1b[38;2;" << r << ";" << g << ";" << b << "m" << std::flush;
+        return std::any();
+    }, FunctionSignature{{"int", "int", "int"}, "void"});
+
+    // terminal.setBackgroundRGB - Set background color using RGB
+    registerFunction("terminal", "setBackgroundRGB", [](const std::vector<std::any>& args) -> std::any {
+        int r = std::any_cast<int>(args[0]);
+        int g = std::any_cast<int>(args[1]);
+        int b = std::any_cast<int>(args[2]);
+        std::cout << "\x1b[48;2;" << r << ";" << g << ";" << b << "m" << std::flush;
+        return std::any();
+    }, FunctionSignature{{"int", "int", "int"}, "void"});
+
+    // terminal.setStyle - Set text style
+    registerFunction("terminal", "setStyle", [](const std::vector<std::any>& args) -> std::any {
+        int style = std::any_cast<int>(args[0]);
+
+        // Style codes: 0=reset, 1=bold, 2=dim, 3=italic, 4=underline, 5=blink, 7=reverse, 8=hidden, 9=strikethrough
+        std::cout << "\x1b[" << style << "m" << std::flush;
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // terminal.reset - Reset all styles and colors
+    registerFunction("terminal", "reset", [](const std::vector<std::any>& args) -> std::any {
+        std::cout << "\x1b[0m" << std::flush;
+        return std::any();
+    }, FunctionSignature{{}, "void"});
+
+    // terminal.getSize - Get terminal size
+    registerFunction("terminal", "getSize", [](const std::vector<std::any>& args) -> std::any {
+        int width = 80;
+        int height = 24;
+
+#ifdef _WIN32
+        CONSOLE_SCREEN_BUFFER_INFO csbi;
+        if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
+            width = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+            height = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+        }
+#else
+        struct winsize w;
+        if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == 0) {
+            width = w.ws_col;
+            height = w.ws_row;
+        }
+#endif
+
+        // Return as a simple array-like structure (for now, just return width)
+        // TODO: Return proper TerminalSize struct when struct support is ready
+        return std::any(width);
+    }, FunctionSignature{{}, "int"});
+
+    // terminal.getWidth - Get terminal width
+    registerFunction("terminal", "getWidth", [](const std::vector<std::any>& args) -> std::any {
+        int width = 80;
+
+#ifdef _WIN32
+        CONSOLE_SCREEN_BUFFER_INFO csbi;
+        if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
+            width = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+        }
+#else
+        struct winsize w;
+        if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == 0) {
+            width = w.ws_col;
+        }
+#endif
+
+        return std::any(width);
+    }, FunctionSignature{{}, "int"});
+
+    // terminal.getHeight - Get terminal height
+    registerFunction("terminal", "getHeight", [](const std::vector<std::any>& args) -> std::any {
+        int height = 24;
+
+#ifdef _WIN32
+        CONSOLE_SCREEN_BUFFER_INFO csbi;
+        if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)) {
+            height = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+        }
+#else
+        struct winsize w;
+        if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == 0) {
+            height = w.ws_row;
+        }
+#endif
+
+        return std::any(height);
+    }, FunctionSignature{{}, "int"});
+
+    // terminal.supportsColor - Check if terminal supports colors
+    registerFunction("terminal", "supportsColor", [](const std::vector<std::any>& args) -> std::any {
+        // Check COLORTERM or TERM environment variables
+        const char* colorterm = std::getenv("COLORTERM");
+        const char* term = std::getenv("TERM");
+
+        bool supportsColor = false;
+        if (colorterm != nullptr) {
+            supportsColor = true;
+        } else if (term != nullptr) {
+            std::string termStr(term);
+            supportsColor = (termStr.find("color") != std::string::npos ||
+                           termStr.find("xterm") != std::string::npos ||
+                           termStr.find("screen") != std::string::npos);
+        }
+
+        return std::any(supportsColor ? 1 : 0);
+    }, FunctionSignature{{}, "bool"});
+
+    // terminal.isTTY - Check if running in a TTY
+    registerFunction("terminal", "isTTY", [](const std::vector<std::any>& args) -> std::any {
+#ifdef _WIN32
+        bool isTty = _isatty(_fileno(stdout)) != 0;
+#else
+        bool isTty = isatty(STDOUT_FILENO) != 0;
+#endif
+        return std::any(isTty ? 1 : 0);
+    }, FunctionSignature{{}, "bool"});
+
+    // terminal.enableRawMode - Enable raw mode
+    registerFunction("terminal", "enableRawMode", [](const std::vector<std::any>& args) -> std::any {
+#ifdef _WIN32
+        if (!rawModeEnabled) {
+            GetConsoleMode(hStdin, &originalMode);
+            DWORD mode = originalMode;
+            mode &= ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
+            mode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+            SetConsoleMode(hStdin, mode);
+            rawModeEnabled = true;
+        }
+#else
+        if (!rawModeEnabled) {
+            tcgetattr(STDIN_FILENO, &originalTermios);
+            struct termios raw = originalTermios;
+            raw.c_lflag &= ~(ECHO | ICANON);
+            raw.c_cc[VMIN] = 0;
+            raw.c_cc[VTIME] = 1;
+            tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+            rawModeEnabled = true;
+        }
+#endif
+        return std::any();
+    }, FunctionSignature{{}, "void"});
+
+    // terminal.disableRawMode - Disable raw mode
+    registerFunction("terminal", "disableRawMode", [](const std::vector<std::any>& args) -> std::any {
+#ifdef _WIN32
+        if (rawModeEnabled) {
+            SetConsoleMode(hStdin, originalMode);
+            rawModeEnabled = false;
+        }
+#else
+        if (rawModeEnabled) {
+            tcsetattr(STDIN_FILENO, TCSAFLUSH, &originalTermios);
+            rawModeEnabled = false;
+        }
+#endif
+        return std::any();
+    }, FunctionSignature{{}, "void"});
+
+    // terminal.readChar - Read a single character
+    registerFunction("terminal", "readChar", [](const std::vector<std::any>& args) -> std::any {
+        char c = 0;
+#ifdef _WIN32
+        if (_kbhit()) {
+            c = _getch();
+        }
+#else
+        if (read(STDIN_FILENO, &c, 1) != 1) {
+            c = 0;
+        }
+#endif
+        return std::any(std::string(1, c));
+    }, FunctionSignature{{}, "string"});
+
+    // terminal.readLine - Read a line of input
+    registerFunction("terminal", "readLine", [](const std::vector<std::any>& args) -> std::any {
+        std::string line;
+        std::getline(std::cin, line);
+        return std::any(line);
+    }, FunctionSignature{{}, "string"});
+
+    // terminal.input - Read input with a prompt
+    registerFunction("terminal", "input", [](const std::vector<std::any>& args) -> std::any {
+        std::string prompt = std::any_cast<std::string>(args[0]);
+        std::cout << prompt << std::flush;
+        std::string line;
+        std::getline(std::cin, line);
+        return std::any(line);
+    }, FunctionSignature{{"string"}, "string"});
+
+    // terminal.hasInput - Check if input is available (non-blocking)
+    registerFunction("terminal", "hasInput", [](const std::vector<std::any>& args) -> std::any {
+#ifdef _WIN32
+        bool hasInput = _kbhit() != 0;
+#else
+        // Use select to check if input is available
+        fd_set readfds;
+        FD_ZERO(&readfds);
+        FD_SET(STDIN_FILENO, &readfds);
+        struct timeval timeout = {0, 0};
+        bool hasInput = select(STDIN_FILENO + 1, &readfds, nullptr, nullptr, &timeout) > 0;
+#endif
+        return std::any(hasInput ? 1 : 0);
+    }, FunctionSignature{{}, "bool"});
+
+    // terminal.useAlternateScreen - Switch to alternate screen buffer
+    registerFunction("terminal", "useAlternateScreen", [](const std::vector<std::any>& args) -> std::any {
+        std::cout << "\x1b[?1049h" << std::flush;
+        return std::any();
+    }, FunctionSignature{{}, "void"});
+
+    // terminal.useMainScreen - Switch back to main screen buffer
+    registerFunction("terminal", "useMainScreen", [](const std::vector<std::any>& args) -> std::any {
+        std::cout << "\x1b[?1049l" << std::flush;
+        return std::any();
+    }, FunctionSignature{{}, "void"});
+
+    // terminal.readKey - Read a single key press (handles escape sequences)
+    // Returns a simplified int code for the key
+    registerFunction("terminal", "readKey", [](const std::vector<std::any>& args) -> std::any {
+        char c = 0;
+
+#ifdef _WIN32
+        if (_kbhit()) {
+            c = _getch();
+
+            // Handle special keys
+            if (c == 0 || c == 0xE0) {
+                c = _getch();
+                switch (c) {
+                    case 72: return std::any(1001); // Up arrow
+                    case 80: return std::any(1002); // Down arrow
+                    case 75: return std::any(1003); // Left arrow
+                    case 77: return std::any(1004); // Right arrow
+                    case 83: return std::any(1005); // Delete
+                    case 71: return std::any(1006); // Home
+                    case 79: return std::any(1007); // End
+                    case 73: return std::any(1008); // Page Up
+                    case 81: return std::any(1009); // Page Down
+                    case 59: return std::any(1010); // F1
+                    case 60: return std::any(1011); // F2
+                    case 61: return std::any(1012); // F3
+                    case 62: return std::any(1013); // F4
+                    case 63: return std::any(1014); // F5
+                    case 64: return std::any(1015); // F6
+                    case 65: return std::any(1016); // F7
+                    case 66: return std::any(1017); // F8
+                    case 67: return std::any(1018); // F9
+                    case 68: return std::any(1019); // F10
+                }
+            }
+        }
+#else
+        if (read(STDIN_FILENO, &c, 1) == 1) {
+            if (c == 27) { // ESC sequence
+                char seq[3];
+                if (read(STDIN_FILENO, &seq[0], 1) == 1) {
+                    if (seq[0] == '[') {
+                        if (read(STDIN_FILENO, &seq[1], 1) == 1) {
+                            switch (seq[1]) {
+                                case 'A': return std::any(1001); // Up arrow
+                                case 'B': return std::any(1002); // Down arrow
+                                case 'D': return std::any(1003); // Left arrow
+                                case 'C': return std::any(1004); // Right arrow
+                                case 'H': return std::any(1006); // Home
+                                case 'F': return std::any(1007); // End
+                                case '3': // Delete
+                                    if (read(STDIN_FILENO, &seq[2], 1) == 1 && seq[2] == '~') {
+                                        return std::any(1005);
+                                    }
+                                    break;
+                                case '5': // Page Up
+                                    if (read(STDIN_FILENO, &seq[2], 1) == 1 && seq[2] == '~') {
+                                        return std::any(1008);
+                                    }
+                                    break;
+                                case '6': // Page Down
+                                    if (read(STDIN_FILENO, &seq[2], 1) == 1 && seq[2] == '~') {
+                                        return std::any(1009);
+                                    }
+                                    break;
+                            }
+                        }
+                    } else if (seq[0] == 'O') {
+                        if (read(STDIN_FILENO, &seq[1], 1) == 1) {
+                            switch (seq[1]) {
+                                case 'P': return std::any(1010); // F1
+                                case 'Q': return std::any(1011); // F2
+                                case 'R': return std::any(1012); // F3
+                                case 'S': return std::any(1013); // F4
+                            }
+                        }
+                    }
+                }
+                return std::any(27); // ESC
+            }
+        }
+#endif
+
+        return std::any(static_cast<int>(c));
+    }, FunctionSignature{{}, "int"});
+}
+
+// ============================================================================
+// Regex Module Native Functions
+// ============================================================================
+
+void NativeRegistry::initRegex() {
+    // regex.compile - Compile and validate a regex pattern
+    registerFunction("regex", "compile", [](const std::vector<std::any>& args) -> std::any {
+        std::string pattern = std::any_cast<std::string>(args[0]);
+
+        try {
+            std::regex re(pattern);
+            return std::any(1);  // Valid
+        } catch (const std::regex_error& e) {
+            return std::any(0);  // Invalid
+        }
+    }, FunctionSignature{{"string"}, "int"});
+
+    // regex.compileWithFlags - Compile with flags
+    registerFunction("regex", "compileWithFlags", [](const std::vector<std::any>& args) -> std::any {
+        std::string pattern = std::any_cast<std::string>(args[0]);
+        int flags = std::any_cast<int>(args[1]);
+
+        try {
+            std::regex_constants::syntax_option_type regexFlags = std::regex_constants::ECMAScript;
+
+            if (flags & 1) regexFlags |= std::regex_constants::icase;  // Case insensitive
+
+            std::regex re(pattern, regexFlags);
+            return std::any(1);  // Valid
+        } catch (const std::regex_error& e) {
+            return std::any(0);  // Invalid
+        }
+    }, FunctionSignature{{"string", "int"}, "int"});
+
+    // regex.matches - Test if entire string matches pattern
+    registerFunction("regex", "matches", [](const std::vector<std::any>& args) -> std::any {
+        std::string pattern = std::any_cast<std::string>(args[0]);
+        std::string text = std::any_cast<std::string>(args[1]);
+
+        try {
+            std::regex re(pattern);
+            bool result = std::regex_match(text, re);
+            return std::any(result ? 1 : 0);
+        } catch (const std::regex_error& e) {
+            return std::any(0);  // Return false on error
+        }
+    }, FunctionSignature{{"string", "string"}, "bool"});
+
+    // regex.contains - Test if pattern is found anywhere in string
+    registerFunction("regex", "contains", [](const std::vector<std::any>& args) -> std::any {
+        std::string pattern = std::any_cast<std::string>(args[0]);
+        std::string text = std::any_cast<std::string>(args[1]);
+
+        try {
+            std::regex re(pattern);
+            bool result = std::regex_search(text, re);
+            return std::any(result ? 1 : 0);
+        } catch (const std::regex_error& e) {
+            return std::any(0);
+        }
+    }, FunctionSignature{{"string", "string"}, "bool"});
+
+    // regex.find - Find first match position
+    registerFunction("regex", "find", [](const std::vector<std::any>& args) -> std::any {
+        std::string pattern = std::any_cast<std::string>(args[0]);
+        std::string text = std::any_cast<std::string>(args[1]);
+
+        try {
+            std::regex re(pattern);
+            std::smatch match;
+
+            if (std::regex_search(text, match, re)) {
+                return std::any(static_cast<int>(match.position(0)));
+            }
+
+            return std::any(-1);  // Not found
+        } catch (const std::regex_error& e) {
+            return std::any(-1);
+        }
+    }, FunctionSignature{{"string", "string"}, "int"});
+
+    // regex.replace - Replace first occurrence
+    registerFunction("regex", "replace", [](const std::vector<std::any>& args) -> std::any {
+        std::string pattern = std::any_cast<std::string>(args[0]);
+        std::string text = std::any_cast<std::string>(args[1]);
+        std::string replacement = std::any_cast<std::string>(args[2]);
+
+        try {
+            std::regex re(pattern);
+            std::string result = std::regex_replace(text, re, replacement,
+                std::regex_constants::format_first_only);
+            return std::any(result);
+        } catch (const std::regex_error& e) {
+            return std::any(text);  // Return original on error
+        }
+    }, FunctionSignature{{"string", "string", "string"}, "string"});
+
+    // regex.replaceAll - Replace all occurrences
+    registerFunction("regex", "replaceAll", [](const std::vector<std::any>& args) -> std::any {
+        std::string pattern = std::any_cast<std::string>(args[0]);
+        std::string text = std::any_cast<std::string>(args[1]);
+        std::string replacement = std::any_cast<std::string>(args[2]);
+
+        try {
+            std::regex re(pattern);
+            std::string result = std::regex_replace(text, re, replacement);
+            return std::any(result);
+        } catch (const std::regex_error& e) {
+            return std::any(text);
+        }
+    }, FunctionSignature{{"string", "string", "string"}, "string"});
+
+    // regex.split - Split string by pattern
+    registerFunction("regex", "split", [](const std::vector<std::any>& args) -> std::any {
+        std::string pattern = std::any_cast<std::string>(args[0]);
+        std::string text = std::any_cast<std::string>(args[1]);
+
+        try {
+            std::regex re(pattern);
+            std::sregex_token_iterator iter(text.begin(), text.end(), re, -1);
+            std::sregex_token_iterator end;
+
+            // For now, we'll return the count of parts
+            // TODO: Return actual array when array support is ready
+            int count = 0;
+            for (; iter != end; ++iter) {
+                count++;
+            }
+
+            return std::any(count);
+        } catch (const std::regex_error& e) {
+            return std::any(1);  // Return 1 (original string) on error
+        }
+    }, FunctionSignature{{"string", "string"}, "int"});
+
+    // regex.escape - Escape special regex characters
+    registerFunction("regex", "escape", [](const std::vector<std::any>& args) -> std::any {
+        std::string text = std::any_cast<std::string>(args[0]);
+        std::string escaped;
+
+        // Characters that need escaping in regex
+        const std::string specialChars = ".^$*+?()[]{}|\\";
+
+        for (char c : text) {
+            if (specialChars.find(c) != std::string::npos) {
+                escaped += '\\';
+            }
+            escaped += c;
+        }
+
+        return std::any(escaped);
+    }, FunctionSignature{{"string"}, "string"});
+
+    // regex.groups - Get capture groups from first match
+    // Returns semicolon-separated string of groups
+    registerFunction("regex", "groups", [](const std::vector<std::any>& args) -> std::any {
+        std::string pattern = std::any_cast<std::string>(args[0]);
+        std::string text = std::any_cast<std::string>(args[1]);
+
+        try {
+            std::regex re(pattern);
+            std::smatch match;
+
+            if (std::regex_search(text, match, re)) {
+                std::string result;
+                for (size_t i = 0; i < match.size(); ++i) {
+                    if (i > 0) result += ";";
+                    result += match[i].str();
+                }
+                return std::any(result);
+            }
+
+            return std::any(std::string(""));
+        } catch (const std::regex_error& e) {
+            return std::any(std::string(""));
+        }
+    }, FunctionSignature{{"string", "string"}, "string"});
+
+    // regex.findAll - Find all match positions
+    // Returns semicolon-separated positions
+    registerFunction("regex", "findAll", [](const std::vector<std::any>& args) -> std::any {
+        std::string pattern = std::any_cast<std::string>(args[0]);
+        std::string text = std::any_cast<std::string>(args[1]);
+
+        try {
+            std::regex re(pattern);
+            std::sregex_iterator iter(text.begin(), text.end(), re);
+            std::sregex_iterator end;
+
+            std::string positions;
+            for (; iter != end; ++iter) {
+                if (!positions.empty()) positions += ";";
+                positions += std::to_string(iter->position(0));
+            }
+
+            return std::any(positions);
+        } catch (const std::regex_error& e) {
+            return std::any(std::string(""));
+        }
+    }, FunctionSignature{{"string", "string"}, "string"});
+
+    // regex.matchAll - Get all matches with capture groups
+    // Returns pipe-separated matches, with groups semicolon-separated
+    registerFunction("regex", "matchAll", [](const std::vector<std::any>& args) -> std::any {
+        std::string pattern = std::any_cast<std::string>(args[0]);
+        std::string text = std::any_cast<std::string>(args[1]);
+
+        try {
+            std::regex re(pattern);
+            std::sregex_iterator iter(text.begin(), text.end(), re);
+            std::sregex_iterator end;
+
+            std::string result;
+            for (; iter != end; ++iter) {
+                if (!result.empty()) result += "|";
+
+                std::string matchGroups;
+                for (size_t i = 0; i < iter->size(); ++i) {
+                    if (i > 0) matchGroups += ";";
+                    matchGroups += (*iter)[i].str();
+                }
+                result += matchGroups;
+            }
+
+            return std::any(result);
+        } catch (const std::regex_error& e) {
+            return std::any(std::string(""));
+        }
+    }, FunctionSignature{{"string", "string"}, "string"});
 }
 
 } // namespace stratos

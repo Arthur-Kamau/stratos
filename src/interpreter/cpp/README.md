@@ -21,7 +21,7 @@ The compiler pipeline is structured into several phases:
 3.  **Ability to generate standalone executables:** Achieved (via LLVM IR).
 
 ## Supported Language Features
-The compiler currently supports:
+The interpreter currently supports:
 *   Variable declarations (`val`, `var`) with type annotations (`int`, `double`, `string`, `bool`, `Optional<T>`).
 *   Arithmetic and comparison expressions.
 *   Logical operators with short-circuit evaluation (`and`/`or`/`not` keywords, plus `&&`/`||`/`!` symbols).
@@ -30,6 +30,13 @@ The compiler currently supports:
 *   Classes and Namespaces (basic parsing and semantic checks; full IR generation is in progress).
 *   Literal values (numbers, strings, booleans, `None`).
 *   Pipe operator (`|>`).
+*   Standard library modules:
+    - `math` - Mathematical functions (sin, cos, sqrt, etc.)
+    - `strings` - String manipulation (toUpper, toLower, trim, etc.)
+    - `convert` - Type conversions and number formatting (toInt, toDouble, toFixed, toHex, etc.)
+    - `websocket` - WebSocket client and server
+    - `ffi` - Foreign function interface
+    - `io`, `log`, `time`, `json`, `base64`, `csv`, `crypto`, `zip` (more modules)
 
 ## Building the Compiler
 

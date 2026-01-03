@@ -88,26 +88,34 @@ class DevTools {
             clearInterval(this.pollingInterval);
         }
 
+        console.log('[DevTools] Starting event polling...');
+
         this.pollingInterval = setInterval(() => {
             if (!this.connected) {
+                console.log('[DevTools] Not connected, stopping poll');
                 clearInterval(this.pollingInterval);
                 return;
             }
 
             // Poll for events
             fetch('http://localhost:9222/events')
-                .then(response => response.json())
+                .then(response => {
+                    console.log('[DevTools] Poll response status:', response.status);
+                    return response.json();
+                })
                 .then(events => {
-                    if (Array.isArray(events)) {
+                    console.log('[DevTools] Poll received:', events);
+                    if (Array.isArray(events) && events.length > 0) {
+                        console.log(`[DevTools] Received ${events.length} events`, events);
                         events.forEach(event => {
                             if (event.method) {
-                                this.handleEvent(event.method, event.params);
+                                this.handleEvent(event.method, event.params, event.id);
                             }
                         });
                     }
                 })
                 .catch(error => {
-                    console.error('Error polling events:', error);
+                    console.error('[DevTools] Error polling events:', error);
                 });
         }, 100); // Poll every 100ms
     }
@@ -120,10 +128,16 @@ class DevTools {
             indicator.classList.remove('disconnected');
             indicator.classList.add('connected');
             text.textContent = 'Connected • localhost:9222';
+
+            // Dispatch connection event
+            window.dispatchEvent(new CustomEvent('devtools-connected'));
         } else {
             indicator.classList.remove('connected');
             indicator.classList.add('disconnected');
             text.textContent = 'Disconnected';
+
+            // Dispatch disconnection event
+            window.dispatchEvent(new CustomEvent('devtools-disconnected'));
         }
     }
 
@@ -177,18 +191,23 @@ class DevTools {
         }
     }
 
-    handleEvent(method, params) {
+    handleEvent(method, params, eventId) {
+        // Dispatch window-level event for all views to listen
+        window.dispatchEvent(new CustomEvent('devtools-event', {
+            detail: { method, params, eventId }
+        }));
+
         // Dispatch to appropriate handler
         const [domain, event] = method.split('.');
 
         switch (domain) {
             case 'Log':
                 if (window.loggingView) {
-                    window.loggingView.handleEvent(event, params);
+                    window.loggingView.handleEvent(event, params, eventId);
                 }
                 break;
             case 'Memory':
-                // Memory events
+                // Memory events handled via window events
                 break;
             case 'Network':
                 // Network events

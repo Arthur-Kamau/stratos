@@ -64,6 +64,7 @@ private:
     void initPrelude();      // Auto-imported functions
     void initMath();
     void initStrings();
+    void initConvert();      // Number/type conversions
     void initIO();
     void initLog();
     void initTime();
@@ -81,6 +82,8 @@ private:
     void initTesting();
     void initFFI();
     void initWebSocket();
+    void initTerminal();
+    void initRegex();
 };
 
 // Helper macros for registering native functions

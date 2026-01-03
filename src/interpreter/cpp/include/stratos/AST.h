@@ -2,6 +2,7 @@
 #define STRATOS_AST_H
 
 #include "Token.h"
+#include "DocComment.h"
 #include <memory>
 #include <vector>
 #include <string>
@@ -148,12 +149,13 @@ class Stmt : public ASTNode {};
 class VarDecl : public Stmt {
 public:
     Token name;
-    std::string typeName; 
+    std::string typeName;
     std::unique_ptr<Expr> initializer;
     bool isMutable;
+    std::unique_ptr<DocComment> documentation;
 
     VarDecl(Token name, std::string typeName, std::unique_ptr<Expr> initializer, bool isMutable)
-        : name(name), typeName(typeName), initializer(std::move(initializer)), isMutable(isMutable) {}
+        : name(name), typeName(typeName), initializer(std::move(initializer)), isMutable(isMutable), documentation(nullptr) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };
@@ -165,9 +167,10 @@ public:
     std::vector<std::string> paramTypes;
     std::string returnType;
     std::unique_ptr<std::vector<std::unique_ptr<Stmt>>> body; // Can be null for interfaces
+    std::unique_ptr<DocComment> documentation;
 
     FunctionDecl(Token name, std::vector<Token> params, std::vector<std::string> paramTypes, std::string returnType, std::unique_ptr<std::vector<std::unique_ptr<Stmt>>> body)
-        : name(name), params(params), paramTypes(paramTypes), returnType(returnType), body(std::move(body)) {}
+        : name(name), params(params), paramTypes(paramTypes), returnType(returnType), body(std::move(body)), documentation(nullptr) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };
@@ -177,9 +180,10 @@ public:
     Token name;
     std::unique_ptr<VariableExpr> superclass; // Optional
     std::vector<std::unique_ptr<Stmt>> methods; // Mix of VarDecl and FunctionDecl
+    std::unique_ptr<DocComment> documentation;
 
     ClassDecl(Token name, std::unique_ptr<VariableExpr> superclass, std::vector<std::unique_ptr<Stmt>> methods)
-        : name(name), superclass(std::move(superclass)), methods(std::move(methods)) {}
+        : name(name), superclass(std::move(superclass)), methods(std::move(methods)), documentation(nullptr) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };
@@ -188,9 +192,10 @@ class PackageDecl : public Stmt {
 public:
     Token name;
     std::vector<std::unique_ptr<Stmt>> declarations;
+    std::unique_ptr<DocComment> documentation;
 
     PackageDecl(Token name, std::vector<std::unique_ptr<Stmt>> declarations)
-        : name(name), declarations(std::move(declarations)) {}
+        : name(name), declarations(std::move(declarations)), documentation(nullptr) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };

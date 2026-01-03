@@ -1,5 +1,6 @@
 #include "stratos/Parser.h"
 #include <iostream>
+#include <sstream>
 
 namespace stratos {
 
@@ -22,11 +23,18 @@ std::vector<std::unique_ptr<Stmt>> Parser::parse() {
 
 std::unique_ptr<Stmt> Parser::declaration() {
     try {
+        // Check for doc comment before declaration
+        consumeDocComment();
+
         if (match({TokenType::VAR, TokenType::VAL})) return varDeclaration();
         if (match({TokenType::FN})) return fnDeclaration("function");
         if (match({TokenType::CLASS, TokenType::STRUCT, TokenType::INTERFACE})) return classDeclaration();
         if (match({TokenType::PACKAGE})) return packageDeclaration();
         if (match({TokenType::USE})) return useStatement();
+
+        // Clear pending doc comment if not used
+        pendingDocComment.reset();
+
         return statement();
     } catch (ParseError& error) {
         synchronize();
@@ -49,7 +57,9 @@ std::unique_ptr<Stmt> Parser::varDeclaration() {
     }
 
     consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.");
-    return std::make_unique<VarDecl>(name, typeName, std::move(initializer), isMutable);
+    auto var = std::make_unique<VarDecl>(name, typeName, std::move(initializer), isMutable);
+    var->documentation = takePendingDoc();
+    return var;
 }
 
 std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind) {
@@ -88,7 +98,9 @@ std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind) {
     if (check(TokenType::SEMICOLON)) {
         consume(TokenType::SEMICOLON, "Expect ';' after interface method signature.");
         // Return function declaration with null body (interface method)
-        return std::make_unique<FunctionDecl>(name, params, paramTypes, returnType, nullptr);
+        auto func = std::make_unique<FunctionDecl>(name, params, paramTypes, returnType, nullptr);
+        func->documentation = takePendingDoc();
+        return func;
     }
 
     consume(TokenType::LEFT_BRACE, "Expect '{' before " + kind + " body.");
@@ -99,7 +111,9 @@ std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind) {
     consume(TokenType::RIGHT_BRACE, "Expect '}' after " + kind + " body.");
 
     auto bodyPtr = std::make_unique<std::vector<std::unique_ptr<Stmt>>>(std::move(body));
-    return std::make_unique<FunctionDecl>(name, params, paramTypes, returnType, std::move(bodyPtr));
+    auto func = std::make_unique<FunctionDecl>(name, params, paramTypes, returnType, std::move(bodyPtr));
+    func->documentation = takePendingDoc();
+    return func;
 }
 
 std::unique_ptr<Stmt> Parser::classDeclaration() {
@@ -162,7 +176,9 @@ std::unique_ptr<Stmt> Parser::classDeclaration() {
     }
     consume(TokenType::RIGHT_BRACE, "Expect '}' after class body.");
 
-    return std::make_unique<ClassDecl>(name, std::move(superclass), std::move(methods));
+    auto cls = std::make_unique<ClassDecl>(name, std::move(superclass), std::move(methods));
+    cls->documentation = takePendingDoc();
+    return cls;
 }
 
 std::unique_ptr<Stmt> Parser::packageDeclaration() {
@@ -177,7 +193,9 @@ std::unique_ptr<Stmt> Parser::packageDeclaration() {
             body.push_back(declaration());
         }
         consume(TokenType::RIGHT_BRACE, "Expect '}' after package body.");
-        return std::make_unique<PackageDecl>(name, std::move(body));
+        auto pkg = std::make_unique<PackageDecl>(name, std::move(body));
+        pkg->documentation = takePendingDoc();
+        return pkg;
     }
     // Go-style: package declaration at top, no braces
     // Consume the semicolon if present
@@ -185,7 +203,9 @@ std::unique_ptr<Stmt> Parser::packageDeclaration() {
         advance(); // consume the semicolon
     }
     // Return empty package declaration (body will be rest of file)
-    return std::make_unique<PackageDecl>(name, std::vector<std::unique_ptr<Stmt>>());
+    auto pkg = std::make_unique<PackageDecl>(name, std::vector<std::unique_ptr<Stmt>>());
+    pkg->documentation = takePendingDoc();
+    return pkg;
 }
 
 std::unique_ptr<Stmt> Parser::useStatement() {
@@ -540,6 +560,111 @@ void Parser::synchronize() {
         }
         advance();
     }
+}
+
+// --- Documentation Parsing ---
+
+void Parser::consumeDocComment() {
+    // Check if current token is a doc comment
+    if (check(TokenType::DOC_COMMENT)) {
+        Token docToken = advance();
+        pendingDocComment = parseDocComment(docToken.docText);
+        pendingDocComment->line = docToken.line;
+        pendingDocComment->rawText = docToken.docText;
+    }
+}
+
+std::unique_ptr<DocComment> Parser::takePendingDoc() {
+    return std::move(pendingDocComment);
+}
+
+std::unique_ptr<DocComment> Parser::parseDocComment(const std::string& rawText) {
+    auto doc = std::make_unique<DocComment>();
+
+    std::istringstream stream(rawText);
+    std::string line;
+    std::string currentSection;
+    bool inDescription = true;
+
+    while (std::getline(stream, line)) {
+        // Trim whitespace
+        size_t start = line.find_first_not_of(" \t");
+        if (start == std::string::npos) {
+            // Empty line - paragraph break
+            if (inDescription && !currentSection.empty()) {
+                currentSection += "\n\n";
+            }
+            continue;
+        }
+
+        line = line.substr(start);
+
+        // Check for tags
+        if (line[0] == '@') {
+            inDescription = false;
+
+            // Parse tag
+            size_t spacePos = line.find(' ');
+            std::string tagName = (spacePos != std::string::npos)
+                ? line.substr(1, spacePos - 1)
+                : line.substr(1);
+            std::string tagContent = (spacePos != std::string::npos)
+                ? line.substr(spacePos + 1)
+                : "";
+
+            if (tagName == "param") {
+                // Format: @param name description
+                ParamDoc param;
+                std::istringstream paramStream(tagContent);
+                paramStream >> param.name;
+
+                // Rest is description
+                std::getline(paramStream, param.description);
+                if (!param.description.empty() && param.description[0] == ' ') {
+                    param.description = param.description.substr(1);
+                }
+
+                doc->params.push_back(param);
+            } else if (tagName == "return") {
+                doc->returnDoc = tagContent;
+            } else if (tagName == "throws") {
+                doc->throws.push_back(tagContent);
+            } else if (tagName == "example") {
+                doc->examples.push_back(tagContent);
+            } else if (tagName == "since") {
+                doc->since = tagContent;
+            } else if (tagName == "deprecated") {
+                doc->deprecated = tagContent;
+            } else {
+                doc->customTags[tagName] = tagContent;
+            }
+        } else {
+            // Regular description text
+            if (inDescription) {
+                currentSection += line + " ";
+            }
+        }
+    }
+
+    // Finalize description
+    if (!currentSection.empty()) {
+        // Split summary from description at first paragraph break
+        size_t doubleNewline = currentSection.find("\n\n");
+        if (doubleNewline != std::string::npos) {
+            doc->summary = currentSection.substr(0, doubleNewline);
+            doc->description = currentSection;
+        } else {
+            doc->summary = currentSection;
+            doc->description = currentSection;
+        }
+
+        // Trim trailing whitespace
+        while (!doc->summary.empty() && std::isspace(doc->summary.back())) {
+            doc->summary.pop_back();
+        }
+    }
+
+    return doc;
 }
 
 } // namespace stratos

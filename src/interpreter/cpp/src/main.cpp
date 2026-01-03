@@ -25,6 +25,11 @@
 #include "stratos/Formatter.h"
 #include "stratos/DevToolsServer.h"
 #include "stratos/Logger.h"
+#include "stratos/MemoryProfiler.h"
+#include "stratos/DocExtractor.h"
+#include "stratos/HTMLDocGenerator.h"
+#include "stratos/MarkdownDocGenerator.h"
+#include "stratos/JSONDocGenerator.h"
 
 using namespace stratos;
 namespace fs = std::filesystem;
@@ -85,6 +90,11 @@ void printHelp() {
     std::cout << "  stratos get --verify           Verify lock file matches installed dependencies\n";
     std::cout << "  stratos test                   Run test cases from cases/ directory\n";
     std::cout << "  stratos test --verbose         Run tests with detailed output\n";
+    std::cout << "  stratos doc generate           Generate documentation (uses stratos.conf)\n";
+    std::cout << "  stratos doc generate -s <dir>  Generate docs from source directory\n";
+    std::cout << "  stratos doc generate -f html   Generate HTML documentation\n";
+    std::cout << "  stratos doc generate -f md     Generate Markdown documentation\n";
+    std::cout << "  stratos doc generate -f json   Generate JSON documentation\n";
     std::cout << "  stratos --help                 Show this help\n";
     std::cout << "  stratos --version              Show version\n\n";
     std::cout << "Dependency URL formats:\n";
@@ -503,6 +513,9 @@ int handleRun(int argc, char* argv[]) {
         // Add DevToolsSink to logger
         devtoolsSink = std::make_shared<DevToolsSink>(devtoolsServer.get());
         Logger::instance().addSink(devtoolsSink);
+
+        // Connect MemoryProfiler to DevTools
+        MemoryProfiler::instance().setDevToolsServer(devtoolsServer.get());
 
         std::cout << "\n";
         std::cout << "═══════════════════════════════════════════════════════\n";
@@ -985,6 +998,172 @@ int handleNew(int argc, char* argv[]) {
     }
 }
 
+// ============================================================================
+// DOCUMENTATION GENERATION
+// ============================================================================
+
+int handleDocGenerate(int argc, char* argv[]) {
+    // Parse arguments
+    std::string sourceDir = "src";
+    std::string outputDir = "docs";
+    std::string format = "html";
+    std::string projectTitle = "Stratos Documentation";
+    bool verbose = false;
+
+    for (int i = 3; i < argc; i++) {
+        std::string arg = argv[i];
+
+        if ((arg == "-s" || arg == "--source") && i + 1 < argc) {
+            sourceDir = argv[++i];
+        } else if ((arg == "-o" || arg == "--output") && i + 1 < argc) {
+            outputDir = argv[++i];
+        } else if ((arg == "-f" || arg == "--format") && i + 1 < argc) {
+            format = argv[++i];
+        } else if ((arg == "-t" || arg == "--title") && i + 1 < argc) {
+            projectTitle = argv[++i];
+        } else if (arg == "-v" || arg == "--verbose") {
+            verbose = true;
+        }
+    }
+
+    // Validate format
+    if (format != "html" && format != "markdown" && format != "md" && format != "json") {
+        std::cerr << "Error: Invalid format '" << format << "'\n";
+        std::cerr << "Supported formats: html, markdown (or md), json\n";
+        return 1;
+    }
+
+    // Normalize format
+    if (format == "md") format = "markdown";
+
+    // Check source directory
+    if (!fs::exists(sourceDir) || !fs::is_directory(sourceDir)) {
+        std::cerr << "Error: Source directory not found: " << sourceDir << "\n";
+        return 1;
+    }
+
+    std::cout << "Generating " << format << " documentation...\n";
+    std::cout << "Source: " << sourceDir << "\n";
+    std::cout << "Output: " << outputDir << "\n\n";
+
+    // Create complete documentation
+    auto completeDoc = std::make_unique<Documentation>();
+    completeDoc->projectName = projectTitle;
+
+    int filesProcessed = 0;
+    int filesWithDocs = 0;
+
+    // Process all .st files in source directory
+    for (const auto& entry : fs::recursive_directory_iterator(sourceDir)) {
+        if (entry.path().extension() != ".st") continue;
+
+        filesProcessed++;
+        std::string filePath = entry.path().string();
+
+        if (verbose) {
+            std::cout << "Processing: " << filePath << "\n";
+        }
+
+        // Read source file
+        std::ifstream file(filePath);
+        if (!file.is_open()) {
+            std::cerr << "Warning: Could not open " << filePath << "\n";
+            continue;
+        }
+
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        std::string source = buffer.str();
+
+        try {
+            // Lex
+            Lexer lexer(source);
+            std::vector<Token> tokens = lexer.scanTokens();
+
+            // Parse
+            Parser parser(tokens);
+            std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+            // Extract documentation
+            DocExtractor extractor(filePath);
+            auto fileDoc = extractor.extract(statements);
+
+            // Merge into complete documentation
+            for (auto& pkg : fileDoc->packages) {
+                if (!pkg->functions.empty() || !pkg->classes.empty() ||
+                    !pkg->variables.empty() || !pkg->doc.isEmpty()) {
+                    filesWithDocs++;
+                }
+                completeDoc->packages.push_back(std::move(pkg));
+            }
+
+        } catch (const std::exception& e) {
+            std::cerr << "Warning: Error processing " << filePath << ": "
+                      << e.what() << "\n";
+        }
+    }
+
+    std::cout << "\nProcessed " << filesProcessed << " file(s)\n";
+    std::cout << "Found documentation in " << filesWithDocs << " file(s)\n";
+    std::cout << "Total packages: " << completeDoc->packages.size() << "\n\n";
+
+    // Generate output
+    try {
+        // Create output directory
+        fs::create_directories(outputDir);
+
+        if (format == "html") {
+            std::cout << "Generating HTML documentation...\n";
+            HTMLDocGenerator generator;
+            generator.generate(*completeDoc, outputDir);
+            std::cout << "HTML documentation generated in: " << outputDir << "\n";
+            std::cout << "Open " << outputDir << "/index.html in your browser\n";
+        } else if (format == "markdown") {
+            std::cout << "Generating Markdown documentation...\n";
+            MarkdownDocGenerator generator;
+            generator.generate(*completeDoc, outputDir);
+            std::cout << "Markdown documentation generated in: " << outputDir << "\n";
+        } else if (format == "json") {
+            std::cout << "Generating JSON documentation...\n";
+            JSONDocGenerator generator;
+            std::string jsonPath = outputDir + "/documentation.json";
+            generator.generate(*completeDoc, jsonPath);
+            std::cout << "JSON documentation generated: " << jsonPath << "\n";
+        }
+
+        std::cout << "\n✓ Documentation generation complete!\n";
+        return 0;
+
+    } catch (const std::exception& e) {
+        std::cerr << "Error generating documentation: " << e.what() << "\n";
+        return 1;
+    }
+}
+
+int handleDoc(int argc, char* argv[]) {
+    if (argc < 3) {
+        std::cerr << "Error: doc command requires subcommand\n";
+        std::cerr << "Usage: stratos doc generate [options]\n";
+        std::cerr << "\nOptions:\n";
+        std::cerr << "  -s, --source <dir>       Source directory (default: src/)\n";
+        std::cerr << "  -o, --output <dir>       Output directory (default: docs/)\n";
+        std::cerr << "  -f, --format <fmt>       Output format: html, markdown, json (default: html)\n";
+        std::cerr << "  -t, --title <name>       Project title\n";
+        std::cerr << "  -v, --verbose            Verbose output\n";
+        return 1;
+    }
+
+    std::string subcommand = argv[2];
+
+    if (subcommand == "generate") {
+        return handleDocGenerate(argc, argv);
+    }
+
+    std::cerr << "Unknown doc subcommand: " << subcommand << "\n";
+    std::cerr << "Available subcommands: generate\n";
+    return 1;
+}
+
 int handleFmt(int argc, char* argv[]) {
     // Parse arguments
     std::vector<std::string> inputPaths;
@@ -1366,6 +1545,10 @@ int main(int argc, char* argv[]) {
 
     if (command == "new") {
         return handleNew(argc, argv);
+    }
+
+    if (command == "doc") {
+        return handleDoc(argc, argv);
     }
 
     if (command == "compile" || command.ends_with(".st")) {

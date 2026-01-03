@@ -1,0 +1,203 @@
+/* Memory View Styles */
+
+.memory-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+/* Stats Overview */
+.memory-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.stat-card {
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 1rem;
+}
+
+.stat-card h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stat-card .value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.stat-card .unit {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.stat-card .trend {
+    font-size: 0.75rem;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.trend.positive {
+    color: var(--success-color, #10b981);
+}
+
+.trend.negative {
+    color: var(--error-color, #ef4444);
+}
+
+/* GC History Section */
+.gc-history {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.gc-history h2 {
+    margin: 0;
+    padding: 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.gc-history-table {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.gc-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.gc-table thead {
+    position: sticky;
+    top: 0;
+    background: var(--background-color);
+    z-index: 1;
+}
+
+.gc-table th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.gc-table td {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.gc-table tbody tr:hover {
+    background: var(--hover-color);
+}
+
+/* Memory Timeline (placeholder for future chart) */
+.memory-timeline {
+    height: 200px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Toolbar */
+.memory-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.5rem;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
+.memory-toolbar button {
+    padding: 0.5rem 1rem;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: opacity 0.2s;
+}
+
+.memory-toolbar button:hover {
+    opacity: 0.9;
+}
+
+.memory-toolbar button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.memory-toolbar .spacer {
+    flex: 1;
+}
+
+/* Empty state */
+.memory-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    gap: 1rem;
+}
+
+.memory-empty-icon {
+    font-size: 3rem;
+    opacity: 0.3;
+}
+
+.memory-empty-text {
+    font-size: 1rem;
+}
+
+/* Memory usage bar */
+.memory-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.memory-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success-color, #10b981), var(--warning-color, #f59e0b));
+    transition: width 0.3s ease;
+}
+
+.memory-bar-fill.high {
+    background: var(--error-color, #ef4444);
+}

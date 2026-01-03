@@ -17,6 +17,7 @@ public:
 private:
     const std::vector<Token>& tokens;
     int current = 0;
+    std::unique_ptr<DocComment> pendingDocComment;  // Track pending doc comment
 
     // Declarations
     std::unique_ptr<Stmt> declaration();
@@ -61,6 +62,11 @@ private:
     Token peek();
     Token previous();
     Token consume(TokenType type, std::string message);
+
+    // Documentation
+    void consumeDocComment();
+    std::unique_ptr<DocComment> parseDocComment(const std::string& rawText);
+    std::unique_ptr<DocComment> takePendingDoc();
 
     void synchronize();
 };

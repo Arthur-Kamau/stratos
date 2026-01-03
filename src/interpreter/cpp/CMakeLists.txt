@@ -17,6 +17,8 @@ file(GLOB_RECURSE SOURCES
     "src/optimizer/*.cpp"
     "src/runtime/*.cpp"
     "src/config/*.cpp"
+    "src/devtools/*.cpp"
+    "src/doc/*.cpp"
 )
 
 add_executable(stratos ${SOURCES})

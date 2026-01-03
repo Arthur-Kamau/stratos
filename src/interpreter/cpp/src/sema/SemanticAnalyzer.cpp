@@ -102,7 +102,8 @@ void SemanticAnalyzer::visit(CallExpr& expr) {
                                 std::string argType = inferType(expr.arguments[i].get());
                                 std::string expectedType = signature.paramTypes[i];
 
-                                if (argType != expectedType && argType != "unknown") {
+                                // Allow any type if expectedType is "any", or if argType is unknown
+                                if (argType != expectedType && argType != "unknown" && expectedType != "any") {
                                     error(rightVar->name, "Function '" + moduleName + "." + functionName +
                                          "' expects argument " + std::to_string(i + 1) +
                                          " to be of type '" + expectedType + "', found '" + argType + "'");

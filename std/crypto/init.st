@@ -157,6 +157,14 @@ fn generateToken(length: int) string {
     return randomHex(length);
 }
 
+// Helper function to convert byte to hex
+fn byteToHex(b: int) string {
+    val hexChars = "0123456789abcdef";
+    val high = (b >> 4) & 0x0f;
+    val low = b & 0x0f;
+    return strings.charAt(hexChars, high) + strings.charAt(hexChars, low);
+}
+
 // Generate UUID v4
 fn uuid() string {
     val bytes = randomBytes(16);
@@ -167,14 +175,13 @@ fn uuid() string {
     // Set variant to RFC 4122
     bytes[8] = (bytes[8] & 0x3f) | 0x80;
 
-    // Format as UUID string
+    // Format as UUID string (xxxxxxxx-xxxx-4xxx-xxxx-xxxxxxxxxxxx)
     var result = "";
     for i in 0..bytes.length() {
         if i == 4 || i == 6 || i == 8 || i == 10 {
             result = result + "-";
         }
-        // Convert byte to hex
-        result = result + "00"; // Simplified - need proper hex conversion
+        result = result + byteToHex(bytes[i]);
     }
 
     return result;

@@ -1,4 +1,5 @@
 #include "stratos/DevToolsServer.h"
+#include "stratos/MemoryProfiler.h"
 #include <iostream>
 #include <sstream>
 #include <cstring>
@@ -17,9 +18,13 @@ namespace stratos {
 DevToolsSink::DevToolsSink(DevToolsServer* server) : server_(server) {}
 
 void DevToolsSink::write(const LogEntry& entry) {
-    if (!server_) return;
+    if (!server_) {
+        std::cerr << "[DevToolsSink] ERROR: server_ is null!\n";
+        return;
+    }
 
     std::string json = entryToJson(entry);
+    std::cerr << "[DevToolsSink] Broadcasting event: Log.entryAdded\n";
     server_->broadcastEvent("Log.entryAdded", "{\"entry\":" + json + "}");
 }
 
@@ -78,7 +83,7 @@ std::string DevToolsSink::entryToJson(const LogEntry& entry) {
 // ============================================================================
 
 DevToolsServer::DevToolsServer(int port)
-    : port_(port), serverSocket_(-1), running_(false) {
+    : port_(port), serverSocket_(-1), running_(false), nextEventId_(1) {
     initializeHandlers();
 }
 
@@ -218,19 +223,38 @@ void DevToolsServer::handleClient(int clientSocket) {
         // Return pending events
         std::lock_guard<std::mutex> lock(eventsMutex_);
 
+        // Remove events older than 5 seconds (allows multiple tabs to poll)
+        auto now = std::chrono::system_clock::now();
+        auto fiveSecondsAgo = now - std::chrono::seconds(5);
+
+        pendingEvents_.erase(
+            std::remove_if(pendingEvents_.begin(), pendingEvents_.end(),
+                [fiveSecondsAgo](const JsonRpcEvent& e) {
+                    return e.timestamp < fiveSecondsAgo;
+                }),
+            pendingEvents_.end()
+        );
+
+        std::cerr << "[DevToolsServer] /events polled. Sending " << pendingEvents_.size() << " events\n";
+
         std::ostringstream oss;
         oss << "[";
         for (size_t i = 0; i < pendingEvents_.size(); ++i) {
             if (i > 0) oss << ",";
             oss << "{\"jsonrpc\":\"" << pendingEvents_[i].jsonrpc << "\",";
+            oss << "\"id\":" << pendingEvents_[i].id << ",";
             oss << "\"method\":\"" << pendingEvents_[i].method << "\",";
             oss << "\"params\":" << pendingEvents_[i].params << "}";
         }
         oss << "]";
 
-        pendingEvents_.clear(); // Clear after sending
+        std::string jsonResponse = oss.str();
+        std::cerr << "[DevToolsServer] JSON Response: " << jsonResponse.substr(0, 200) << "...\n";
 
-        response = createHttpResponse(oss.str());
+        // Don't clear immediately - let time-based expiry handle it
+        // This allows multiple browser tabs to receive the same events
+
+        response = createHttpResponse(jsonResponse);
     }
     // Handle JSON-RPC requests
     else if (!body.empty() && body.find("jsonrpc") != std::string::npos) {
@@ -324,10 +348,13 @@ void DevToolsServer::broadcastEvent(const std::string& method, const std::string
     std::lock_guard<std::mutex> lock(eventsMutex_);
 
     JsonRpcEvent event;
+    event.id = nextEventId_++;
     event.method = method;
     event.params = params;
+    event.timestamp = std::chrono::system_clock::now();
 
     pendingEvents_.push_back(event);
+    std::cerr << "[DevToolsServer] Event added. Queue size: " << pendingEvents_.size() << "\n";
 
     // Keep only last 1000 events
     if (pendingEvents_.size() > 1000) {
@@ -364,6 +391,76 @@ void DevToolsServer::initializeHandlers() {
             bufferSink->clear();
         }
         return "{}";
+    });
+
+    // Memory.enable
+    registerHandler("Memory.enable", [](const std::string&) -> std::string {
+        MemoryProfiler::instance().enable();
+        return "{}";
+    });
+
+    // Memory.disable
+    registerHandler("Memory.disable", [](const std::string&) -> std::string {
+        MemoryProfiler::instance().disable();
+        return "{}";
+    });
+
+    // Memory.getStats
+    registerHandler("Memory.getStats", [](const std::string&) -> std::string {
+        auto stats = MemoryProfiler::instance().getStats();
+
+        std::ostringstream oss;
+        oss << "{";
+        oss << "\"totalAllocated\":" << stats.totalAllocated << ",";
+        oss << "\"currentUsage\":" << stats.currentUsage << ",";
+        oss << "\"objectCount\":" << stats.objectCount << ",";
+
+        // objectsByType
+        oss << "\"objectsByType\":{";
+        bool first = true;
+        for (const auto& [type, count] : stats.objectsByType) {
+            if (!first) oss << ",";
+            oss << "\"" << type << "\":" << count;
+            first = false;
+        }
+        oss << "},";
+
+        // gcStats
+        auto lastMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+            stats.lastCollectionTime.time_since_epoch()).count();
+        oss << "\"gcStats\":{";
+        oss << "\"collectionsTotal\":" << stats.collectionsTotal << ",";
+        oss << "\"cyclesBroken\":" << stats.cyclesBrokenTotal << ",";
+        oss << "\"lastCollectionTime\":" << lastMs << ",";
+        oss << "\"avgPauseTime\":" << stats.avgPauseTimeMs;
+        oss << "}";
+
+        oss << "}";
+        return oss.str();
+    });
+
+    // Memory.getGCHistory
+    registerHandler("Memory.getGCHistory", [](const std::string&) -> std::string {
+        auto history = MemoryProfiler::instance().getGCHistory(50);
+
+        std::ostringstream oss;
+        oss << "{\"events\":[";
+        for (size_t i = 0; i < history.size(); ++i) {
+            if (i > 0) oss << ",";
+
+            auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                history[i].timestamp.time_since_epoch()).count();
+
+            oss << "{";
+            oss << "\"timestamp\":" << ms << ",";
+            oss << "\"pauseTime\":" << history[i].pauseTimeMs << ",";
+            oss << "\"freedBytes\":" << history[i].freedBytes << ",";
+            oss << "\"freedObjects\":" << history[i].freedObjects << ",";
+            oss << "\"cyclesBroken\":" << history[i].cyclesBroken;
+            oss << "}";
+        }
+        oss << "]}";
+        return oss.str();
     });
 }
 

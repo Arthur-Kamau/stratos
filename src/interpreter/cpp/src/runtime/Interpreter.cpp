@@ -1,11 +1,13 @@
 #include "stratos/Interpreter.h"
 #include "stratos/Lexer.h"
 #include "stratos/Parser.h"
+#include "stratos/MemoryProfiler.h"
 #include <iostream>
 #include <cmath>
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#include <chrono>
 
 namespace stratos {
 
@@ -18,6 +20,9 @@ Interpreter::Interpreter() {
     auto globalEnv = std::make_unique<Environment>();
     currentEnv = globalEnv.get();
     environments.push_back(std::move(globalEnv));
+
+    // Connect MemoryProfiler with GC
+    MemoryProfiler::instance().setGarbageCollector(&gc);
 }
 
 void Interpreter::execute(std::vector<std::unique_ptr<Stmt>>&& statements) {
@@ -49,11 +54,20 @@ void Interpreter::cleanup() {
     std::vector<RuntimeValue> roots;
     collectRoots(roots);
 
+    // Measure GC pause time
+    auto start = std::chrono::high_resolution_clock::now();
     size_t collected = gc.collect(roots);
+    auto end = std::chrono::high_resolution_clock::now();
+
+    double pauseMs = std::chrono::duration<double, std::milli>(end - start).count();
+
+    // Report to MemoryProfiler
+    MemoryProfiler::instance().recordCollection(pauseMs, collected, collected);
 
     // Optional: Report cycles broken
     if (collected > 0) {
-        std::cerr << "[GC] Broke " << collected << " circular reference(s)\n";
+        std::cerr << "[GC] Broke " << collected << " circular reference(s) in "
+                  << pauseMs << "ms\n";
     }
 
     // Clear global environment variables after GC
@@ -1037,13 +1051,21 @@ void Interpreter::maybeCollectGarbage() {
     std::vector<RuntimeValue> roots;
     collectRoots(roots);
 
-    // Run GC
+    // Run GC with timing
+    auto start = std::chrono::high_resolution_clock::now();
     size_t collected = gc.collect(roots);
+    auto end = std::chrono::high_resolution_clock::now();
+
+    double pauseMs = std::chrono::duration<double, std::milli>(end - start).count();
+
+    // Report to MemoryProfiler
+    MemoryProfiler::instance().recordCollection(pauseMs, collected, collected);
 
     // Optional: print GC statistics in verbose mode
     // Uncomment for debugging:
     // if (collected > 0) {
-    //     std::cerr << "[GC] Collected " << collected << " cyclic objects\n";
+    //     std::cerr << "[GC] Collected " << collected << " cyclic objects in "
+    //               << pauseMs << "ms\n";
     // }
 }
 

@@ -1,5 +1,6 @@
 #include "stratos/Lexer.h"
 #include <iostream>
+#include <sstream>
 
 namespace stratos {
 
@@ -136,8 +137,11 @@ void Lexer::scanToken() {
              break;
         case '/':
             if (match('/')) {
-                // Comment
+                // Single-line comment
                 while (peek() != '\n' && !isAtEnd()) advance();
+            } else if (match('*')) {
+                // Block comment or doc comment
+                blockComment();
             } else if (match('=')) {
                 addToken(TokenType::SLASH_EQUAL);
             } else {
@@ -284,6 +288,75 @@ bool Lexer::isAlphaNumeric(char c) {
 
 bool Lexer::isDigit(char c) {
     return c >= '0' && c <= '9';
+}
+
+void Lexer::blockComment() {
+    // Check if this is a doc comment (starts with /**)
+    bool isDocComment = (peek() == '*' && peekNext() != '/');
+
+    if (isDocComment) {
+        advance(); // consume second *
+    }
+
+    std::string content = "";
+    int startLine = line;
+    int startColumn = column;
+
+    // Consume comment content
+    while (!(peek() == '*' && peekNext() == '/') && !isAtEnd()) {
+        if (peek() == '\n') {
+            content += peek();
+            line++;
+            column = 0;
+        } else {
+            content += peek();
+        }
+        advance();
+    }
+
+    if (isAtEnd()) {
+        std::cerr << "Unterminated block comment at line " << startLine << std::endl;
+        return;
+    }
+
+    advance(); // *
+    advance(); // /
+
+    // If doc comment, create token with content
+    if (isDocComment) {
+        Token docToken;
+        docToken.type = TokenType::DOC_COMMENT;
+        docToken.lexeme = "/**" + content + "*/";
+        docToken.docText = trimDocComment(content);
+        docToken.line = startLine;
+        docToken.column = startColumn;
+        tokens.push_back(docToken);
+    }
+    // Otherwise, regular comment is discarded (current behavior)
+}
+
+std::string Lexer::trimDocComment(const std::string& raw) {
+    // Remove leading asterisks and whitespace from each line
+    std::string result;
+    std::istringstream stream(raw);
+    std::string line;
+
+    while (std::getline(stream, line)) {
+        // Trim leading whitespace and asterisk
+        size_t start = line.find_first_not_of(" \t*");
+        if (start != std::string::npos) {
+            result += line.substr(start) + "\n";
+        } else {
+            result += "\n";
+        }
+    }
+
+    // Remove trailing newlines
+    while (!result.empty() && (result.back() == '\n' || result.back() == '\r')) {
+        result.pop_back();
+    }
+
+    return result;
 }
 
 } // namespace stratos

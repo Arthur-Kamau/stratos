@@ -33,8 +33,10 @@ struct JsonRpcResponse {
 
 struct JsonRpcEvent {
     std::string jsonrpc = "2.0";
+    int id;
     std::string method;
     std::string params; // JSON string
+    std::chrono::system_clock::time_point timestamp;
 };
 
 // DevTools sink that sends logs to DevTools clients
@@ -88,6 +90,7 @@ private:
 
     mutable std::mutex eventsMutex_;
     std::vector<JsonRpcEvent> pendingEvents_;
+    int nextEventId_;
 
     std::unordered_map<std::string, RequestHandler> handlers_;
     mutable std::mutex handlersMutex_;

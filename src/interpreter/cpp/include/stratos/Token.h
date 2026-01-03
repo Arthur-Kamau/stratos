@@ -36,6 +36,9 @@ enum class TokenType {
     INT, DOUBLE, BOOL, VOID, UNIT, OPTIONAL,
     CONSTRUCTOR,
 
+    // Documentation
+    DOC_COMMENT,
+
     // EOF
     END_OF_FILE,
     ERROR
@@ -46,6 +49,7 @@ struct Token {
     std::string lexeme;
     int line;
     int column;
+    std::string docText;  // For DOC_COMMENT tokens - stores the raw comment text
 
     // Helper to print token for debugging
     std::string toString() const {

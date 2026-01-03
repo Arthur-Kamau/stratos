@@ -6,7 +6,8 @@ class LoggingView {
         this.filteredLogs = [];
         this.selectedLog = null;
         this.searchTerm = '';
-        this.levelFilter = 'all';
+        this.currentLevelFilter = 'all';
+        this.receivedEventIds = new Set();  // Track processed event IDs
 
         this.init();
     }
@@ -18,7 +19,7 @@ class LoggingView {
         this.logDetails = document.getElementById('logDetails');
         this.detailsContent = document.getElementById('detailsContent');
         this.searchInput = document.getElementById('logSearch');
-        this.levelFilter = document.getElementById('levelFilter');
+        this.levelFilterSelect = document.getElementById('levelFilter');
         this.clearBtn = document.getElementById('clearLogs');
         this.exportBtn = document.getElementById('exportLogs');
         this.closeDetailsBtn = document.getElementById('closeDetails');
@@ -29,8 +30,8 @@ class LoggingView {
             this.filterLogs();
         });
 
-        this.levelFilter.addEventListener('change', (e) => {
-            this.levelFilter = e.target.value;
+        this.levelFilterSelect.addEventListener('change', (e) => {
+            this.currentLevelFilter = e.target.value;
             this.filterLogs();
         });
 
@@ -50,18 +51,33 @@ class LoggingView {
         this.renderLogs();
     }
 
-    handleEvent(event, params) {
+    handleEvent(event, params, eventId) {
+        console.log('[LoggingView] Event received:', event, params, 'eventId:', eventId);
+
+        // Skip duplicate events based on ID
+        if (eventId !== undefined && this.receivedEventIds.has(eventId)) {
+            console.log('[LoggingView] Skipping duplicate event ID:', eventId);
+            return;
+        }
+
+        // Mark event as processed
+        if (eventId !== undefined) {
+            this.receivedEventIds.add(eventId);
+        }
+
         switch (event) {
             case 'entryAdded':
                 this.addLogEntry(params.entry);
                 break;
             default:
-                console.log('Unknown log event:', event, params);
+                console.log('[LoggingView] Unknown log event:', event, params);
         }
     }
 
     addLogEntry(entry) {
+        console.log('[LoggingView] Adding log entry:', entry);
         this.logs.push(entry);
+        console.log('[LoggingView] Total logs:', this.logs.length);
         this.filterLogs();
         this.scrollToBottom();
     }
@@ -69,7 +85,7 @@ class LoggingView {
     filterLogs() {
         this.filteredLogs = this.logs.filter(log => {
             // Level filter
-            if (this.levelFilter !== 'all' && log.level !== this.levelFilter) {
+            if (this.currentLevelFilter !== 'all' && log.level !== this.currentLevelFilter) {
                 return false;
             }
 
@@ -205,6 +221,7 @@ class LoggingView {
         if (confirm('Clear all log entries?')) {
             this.logs = [];
             this.filteredLogs = [];
+            this.receivedEventIds.clear();  // Clear event ID tracking
             this.renderLogs();
             this.hideDetails();
 

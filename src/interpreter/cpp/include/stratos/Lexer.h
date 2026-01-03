@@ -35,6 +35,8 @@ private:
     void number();
     void identifier();
     void scanToken();
+    void blockComment();
+    std::string trimDocComment(const std::string& raw);
     bool isAlpha(char c);
     bool isAlphaNumeric(char c);
     bool isDigit(char c);

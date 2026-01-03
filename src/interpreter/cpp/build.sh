@@ -23,6 +23,11 @@ g++ -std=c++20 -I include \
   src/formatter/Formatter.cpp \
   src/devtools/Logger.cpp \
   src/devtools/DevToolsServer.cpp \
+  src/devtools/MemoryProfiler.cpp \
+  src/doc/DocExtractor.cpp \
+  src/doc/HTMLDocGenerator.cpp \
+  src/doc/MarkdownDocGenerator.cpp \
+  src/doc/JSONDocGenerator.cpp \
   -o build/stratos -lpthread -ldl -lssl -lcrypto
 
 if [ $? -eq 0 ]; then
