@@ -20,7 +20,7 @@ fn main() {
     log.info(fileContent);
 
     // Check if file exists
-    if (io.exists("test.txt")) {
+    if io.exists("test.txt") {
         log.info("test.txt exists");
         log.info("Is file: " + io.isFile("test.txt"));
     }

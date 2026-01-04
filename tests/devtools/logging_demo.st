@@ -6,12 +6,12 @@ fn processOrder(orderId: int, amount: int) {
     log.info("Processing order");
     log.debug("Order details received");
 
-    if (amount < 0) {
+    if amount < 0 {
         log.error("Invalid order amount: negative value");
         return;
     }
 
-    if (amount > 10000) {
+    if amount > 10000 {
         log.warn("Large order amount detected");
     }
 

@@ -15,19 +15,19 @@
        val hasLicense: bool = true;
        val hasInsurance: bool = true;
    
-       if (age >= 18 and hasLicense and hasInsurance) {
+       if age >= 18 and hasLicense and hasInsurance {
            println("✓ Can drive: age >= 18 AND has license AND has insurance");
        }
    
        val isWeekend: bool = false;
        val isHoliday: bool = false;
    
-       if (not isWeekend and not isHoliday) {
+       if not isWeekend and not isHoliday {
            println("✓ It's a workday: NOT weekend AND NOT holiday");
        }
    
        val temp: int = 75;
-       if (temp < 60 or temp > 85) {
+       if temp < 60 or temp > 85 {
            println("Temperature out of comfort range");
        } else {
            println("✓ Temperature comfortable: NOT (temp < 60 OR temp > 85)");
@@ -64,7 +64,7 @@
        val input: string = "128";
        val value: int = convert.toInt(input);
    
-       if (value >= 0 and value <= 255) {
+       if value >= 0 and value <= 255 {
            println("Value " + value + " is valid byte");
            println("  Decimal: " + value);
            println("  Hex: " + convert.toHex(value));

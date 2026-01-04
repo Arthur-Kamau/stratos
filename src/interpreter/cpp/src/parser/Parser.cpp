@@ -251,9 +251,7 @@ std::unique_ptr<Stmt> Parser::whenStatement() {
 }
 
 std::unique_ptr<Stmt> Parser::ifStatement() {
-    consume(TokenType::LEFT_PAREN, "Expect '(' after 'if'.");
     std::unique_ptr<Expr> condition = expression();
-    consume(TokenType::RIGHT_PAREN, "Expect ')' after if condition.");
 
     std::unique_ptr<Stmt> thenBranch = statement();
     std::unique_ptr<Stmt> elseBranch = nullptr;
@@ -266,9 +264,7 @@ std::unique_ptr<Stmt> Parser::ifStatement() {
 }
 
 std::unique_ptr<Stmt> Parser::whileStatement() {
-    consume(TokenType::LEFT_PAREN, "Expect '(' after 'while'.");
     std::unique_ptr<Expr> condition = expression();
-    consume(TokenType::RIGHT_PAREN, "Expect ')' after while condition.");
     std::unique_ptr<Stmt> body = statement();
     return std::make_unique<WhileStmt>(std::move(condition), std::move(body));
 }

@@ -7,9 +7,9 @@ val age = 20;
 val status = if (age >= 18) "Adult" else "Minor";
 
 // Standard If
-if (age > 60) {
+if age > 60 {
     print("Senior");
-} else if (age > 18) {
+} else if age > 18 {
     print("Adult");
 } else {
     print("Child");
@@ -17,7 +17,7 @@ if (age > 60) {
 
 // While Loop
 var i = 0;
-while (i < 10) {
+while i < 10 {
     print(i);
     i++;
 }

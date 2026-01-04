@@ -9,7 +9,7 @@ fn main() {
     // Generate and display 5 UUIDs
     log.info("Generating 5 random UUIDs:");
     var count = 0;
-    while (count < 5) {
+    while count < 5 {
         val uuid = crypto.uuid();
         log.info("  UUID: " + uuid);
         count = count + 1;

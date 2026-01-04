@@ -43,8 +43,8 @@ stmt           ::= exprStmt
 
 exprStmt       ::= expression ";"
 block          ::= "{" declaration* "}"
-ifStmt         ::= "if" "(" expression ")" stmt ("else" stmt)?
-whileStmt      ::= "while" "(" expression ")" stmt
+ifStmt         ::= "if" expression stmt ("else" stmt)?
+whileStmt      ::= "while" expression stmt
 returnStmt     ::= "return" expression? ";"
 
 // Expressions (Precedence: lowest to highest)

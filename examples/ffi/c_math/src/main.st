@@ -10,7 +10,7 @@ fn main() {
     println("Loading libmathlib.so...");
     val lib: int = ffi.load("./libmathlib.so");
 
-    if (lib == -1) {
+    if lib == -1 {
         println("ERROR: Failed to load library!");
         println("Make sure you built libmathlib.so first (run build.sh)");
         return;

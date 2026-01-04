@@ -19,11 +19,11 @@ fn main() {
 
     // Create many objects to trigger garbage collection
     val count = 0;
-    while (count < 200) {
+    while count < 200 {
         val node = Node(count);
 
         // Create a circular reference that GC will break
-        if (count % 10 == 0) {
+        if count % 10 == 0 {
             val node2 = Node(count + 1);
             val node.next = node2;
             // This creates a cycle: node -> node2 and both go out of scope

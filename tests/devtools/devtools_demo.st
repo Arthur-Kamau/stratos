@@ -4,11 +4,11 @@ use log;
 
 fn countdown(n: int) {
     val i = n;
-    while (i > 0) {
+    while i > 0 {
         log.info("Countdown");
         log.debug("Debug message");
 
-        if (i == 5) {
+        if i == 5 {
             log.warn("Halfway there!");
         }
 

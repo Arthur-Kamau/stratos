@@ -10,7 +10,7 @@ fn main() {
     println("Loading libstringlib.so...");
     val lib: int = ffi.load("./libstringlib.so");
 
-    if (lib == -1) {
+    if lib == -1 {
         println("ERROR: Failed to load library!");
         println("Make sure you built libstringlib.so first (run build.sh)");
         return;

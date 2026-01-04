@@ -11,13 +11,13 @@ fn handleClient(client: int) {
 
     // Handle messages
     val active: int = 1;
-    while (active == 1) {
+    while active == 1 {
         val message: string = websocket.receiveFromClient(client);
 
-        if (message == "") {
+        if message == "" {
             // Timeout or disconnection
             val connected: int = websocket.isClientConnected(client);
-            if (connected == 0) {
+            if connected == 0 {
                 println("Client disconnected");
                 active = 0;
             }
@@ -25,14 +25,14 @@ fn handleClient(client: int) {
             println("← " + message);
 
             // Handle commands
-            if (message == "ping") {
+            if message == "ping" {
                 websocket.sendToClient(client, "pong");
                 println("→ pong");
-            } else if (message == "bye" or message == "quit") {
+            } else if message == "bye" or message == "quit" {
                 websocket.sendToClient(client, "Goodbye!");
                 println("→ Goodbye!");
                 active = 0;
-            } else if (message == "What is your name?") {
+            } else if message == "What is your name?" {
                 websocket.sendToClient(client, "I am a Stratos WebSocket Server!");
                 println("→ I am a Stratos WebSocket Server!");
             } else {
@@ -57,7 +57,7 @@ fn main() {
     println("Starting WebSocket server on port 8080...");
     val server: int = websocket.createServer(8080);
 
-    if (server == -1) {
+    if server == -1 {
         println("Failed to create WebSocket server");
         return;
     }
@@ -71,20 +71,20 @@ fn main() {
     val running: int = 1;
     val clientCount: int = 0;
 
-    while (running == 1) {
+    while running == 1 {
         println("[" + clientCount + "] Waiting for client...");
 
         val client: int = -1;
         val retries: int = 0;
 
         // Poll for client connection
-        while (client == -1) {
+        while client == -1 {
             client = websocket.acceptClient(server);
-            if (client == -1) {
+            if client == -1 {
                 retries = retries + 1;
                 // Small delay
                 val i: int = 0;
-                while (i < 100000) {
+                while i < 100000 {
                     i = i + 1;
                 }
             }

@@ -12,7 +12,7 @@ fn multiply(a: int, b: int) int {
 }
 
 fn factorial(n: int) int {
-    if (n <= 1) {
+    if n <= 1 {
         return 1;
     }
     return n * factorial(n - 1);
@@ -36,7 +36,7 @@ fn main() {
     // Control flow
     println("\nCounting to 5:");
     var i = 1;
-    while (i <= 5) {
+    while i <= 5 {
         println(i);
         i = i + 1;
     }

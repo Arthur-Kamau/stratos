@@ -12,7 +12,7 @@ fn main() {
     println("Starting WebSocket server on port 8080...");
     val server: int = websocket.createServer(8080);
 
-    if (server == -1) {
+    if server == -1 {
         println("Failed to create WebSocket server");
         println("Make sure port 8080 is available");
         return;
@@ -29,18 +29,18 @@ fn main() {
     val retries: int = 0;
     val maxRetries: int = 20;  // Wait up to ~10 seconds (20 * 0.5s)
 
-    while (client == -1) {
+    while client == -1 {
         client = websocket.acceptClient(server);
-        if (client == -1) {
+        if client == -1 {
             retries = retries + 1;
-            if (retries >= maxRetries) {
+            if retries >= maxRetries {
                 println("No client connected after " + retries + " attempts");
                 websocket.closeServer(server);
                 return;
             }
             // Small delay before retry (simulated with loop - not ideal but works)
             val i: int = 0;
-            while (i < 100000) {
+            while i < 100000 {
                 i = i + 1;
             }
         }
@@ -59,14 +59,14 @@ fn main() {
     val messageCount: int = 0;
     val maxMessages: int = 5;
 
-    while (messageCount < maxMessages) {
+    while messageCount < maxMessages {
         println("Waiting for message " + "(timeout: 5s)...");
         val message: string = websocket.receiveFromClient(client);
 
-        if (message == "") {
+        if message == "" {
             println("No message received (timeout)");
             val connected: int = websocket.isClientConnected(client);
-            if (connected == 0) {
+            if connected == 0 {
                 println("Client disconnected");
                 messageCount = maxMessages;
             }
@@ -74,13 +74,13 @@ fn main() {
             println("← Received: " + message);
 
             // Handle special messages
-            if (message == "ping") {
+            if message == "ping" {
                 websocket.sendToClient(client, "pong");
                 println("→ Sent: pong");
-            } else if (message == "What is your name?") {
+            } else if message == "What is your name?" {
                 websocket.sendToClient(client, "I am a Stratos WebSocket Server!");
                 println("→ Sent: I am a Stratos WebSocket Server!");
-            } else if (message == "bye") {
+            } else if message == "bye" {
                 websocket.sendToClient(client, "Goodbye!");
                 println("→ Sent: Goodbye!");
                 messageCount = maxMessages;

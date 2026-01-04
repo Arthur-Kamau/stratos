@@ -34,7 +34,7 @@ fn main() {
     val n = 5;
     var result = 1;
     var i = 1;
-    while (i <= n) {
+    while i <= n {
         result = result * i;
         i = i + 1;
     }

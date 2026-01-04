@@ -9,7 +9,7 @@ fn main() {
     println("Loading libmathlib.so...");
     val lib = ffi.load("./samples/ffi/c_math/libmathlib.so");
 
-    if (lib == -1) {
+    if lib == -1 {
         println("ERROR: Failed to load library!");
         return;
     }

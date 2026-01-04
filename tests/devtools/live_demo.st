@@ -9,18 +9,18 @@ fn main() {
     log.info("========================================");
 
     val count = 0;
-    while (count < 30) {
+    while count < 30 {
         val count = count + 1;
 
-        if (count % 3 == 0) {
+        if count % 3 == 0 {
             log.debug("Debug message at count");
         }
 
-        if (count % 5 == 0) {
+        if count % 5 == 0 {
             log.warn("Warning at count");
         }
 
-        if (count % 10 == 0) {
+        if count % 10 == 0 {
             log.error("Error at count");
         } else {
             log.info("Info message at count");
@@ -28,7 +28,7 @@ fn main() {
 
         // Sleep for ~1 second (busy wait)
         val sleep_count = 0;
-        while (sleep_count < 100000000) {
+        while sleep_count < 100000000 {
             val sleep_count = sleep_count + 1;
         }
     }
@@ -39,7 +39,7 @@ fn main() {
 
     // Final sleep
     val final_sleep = 0;
-    while (final_sleep < 500000000) {
+    while final_sleep < 500000000 {
         val final_sleep = final_sleep + 1;
     }
 }

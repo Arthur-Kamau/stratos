@@ -12,7 +12,7 @@ fn main() {
     println("Connecting to ws://localhost:8080...");
     val ws: int = websocket.connect("ws://localhost:8080");
 
-    if (ws == -1) {
+    if ws == -1 {
         println("Failed to connect to WebSocket server");
         println("Make sure the server is running:");
         println("  cd ../websocket-server");
@@ -26,7 +26,7 @@ fn main() {
     // Receive welcome message
     println("Waiting for welcome message...");
     val welcome: string = websocket.receive(ws);
-    if (welcome != "") {
+    if welcome != "" {
         println("Received: " + welcome);
     }
     println("");
