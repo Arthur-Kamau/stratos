@@ -20,14 +20,14 @@ public:
     // Enter a new nested scope (e.g., entering a block or function)
     void enterScope() {
         scopes.push_back({});
-        // std::cout << "  [Scope] Enter (Depth: " << scopes.size() << ")" << std::endl;
+        std::cout << "  [Scope] Enter (Depth: " << scopes.size() << ")" << std::endl;
     }
 
     // Exit the current scope
     void exitScope() {
         if (!scopes.empty()) {
             scopes.pop_back();
-            // std::cout << "  [Scope] Exit (Depth: " << scopes.size() << ")" << std::endl;
+            std::cout << "  [Scope] Exit (Depth: " << scopes.size() << ")" << std::endl;
         }
     }
 
@@ -35,15 +35,15 @@ public:
     // Returns false if symbol already exists in this specific scope
     bool define(Symbol symbol) {
         if (scopes.empty()) return false;
-        
+
         auto& currentScope = scopes.back();
         if (currentScope.find(symbol.name) != currentScope.end()) {
-            // std::cout << "  [Define] FAILED: " << symbol.name << " already exists in scope " << scopes.size() << std::endl;
+            std::cout << "  [Define] FAILED: " << symbol.name << " already exists in scope " << scopes.size() << std::endl;
             return false; // Already defined in this scope
         }
 
         currentScope[symbol.name] = symbol;
-        // std::cout << "  [Define] " << symbol.name << " (Scope " << scopes.size() << ")" << std::endl;
+        std::cout << "  [Define] " << symbol.name << " (Scope " << scopes.size() << ")" << std::endl;
         return true;
     }
 
@@ -52,11 +52,11 @@ public:
         for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
             auto found = it->find(name);
             if (found != it->end()) {
-                // std::cout << "  [Resolve] Found " << name << std::endl;
+                std::cout << "  [Resolve] Found " << name << std::endl;
                 return found->second;
             }
         }
-        // std::cout << "  [Resolve] FAILED " << name << std::endl;
+        std::cout << "  [Resolve] FAILED " << name << std::endl;
         return std::nullopt;
     }
 

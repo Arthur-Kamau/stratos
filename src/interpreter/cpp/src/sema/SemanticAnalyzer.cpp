@@ -28,9 +28,16 @@ void SemanticAnalyzer::defineNativeFunctions() {
 }
 
 bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& statements) {
+    std::cout << "  [Analyze] Analyzing " << statements.size() << " top-level statements" << std::endl;
     hadError = false;
-    for (const auto& stmt : statements) {
-        if (stmt) stmt->accept(*this);
+    for (size_t i = 0; i < statements.size(); ++i) {
+        std::cout << "  [Analyze] Statement " << (i+1) << "/" << statements.size();
+        if (!statements[i]) {
+            std::cout << " - nullptr (skipped)" << std::endl;
+            continue;
+        }
+        std::cout << " - calling accept()" << std::endl;
+        statements[i]->accept(*this);
     }
     return !hadError;
 }
@@ -175,6 +182,7 @@ void SemanticAnalyzer::visit(VarDecl& stmt) {
 }
 
 void SemanticAnalyzer::visit(FunctionDecl& stmt) {
+    std::cout << "  [FunctionDecl] Visiting function: " << stmt.name.lexeme << std::endl;
     // 1. Define function name in current scope (so it can recurse)
     Symbol funcSymbol = Symbol::Function(stmt.name.lexeme, stmt.paramTypes, stmt.returnType);
     if (!symbolTable.define(funcSymbol)) {
@@ -220,6 +228,7 @@ void SemanticAnalyzer::visit(ClassDecl& stmt) {
 }
 
 void SemanticAnalyzer::visit(PackageDecl& stmt) {
+    std::cout << "  [PackageDecl] Package: " << stmt.name.lexeme << " with " << stmt.declarations.size() << " declarations" << std::endl;
     // Package declaration (like "package main;") just declares what package
     // this file belongs to - it doesn't create a symbol in the namespace.
     // Don't define the package name as a symbol to avoid conflicts.
@@ -227,8 +236,9 @@ void SemanticAnalyzer::visit(PackageDecl& stmt) {
 
     // Process declarations within the package without creating a new scope
     // or defining the package name as a symbol
-    for (const auto& s : stmt.declarations) {
-        if (s) s->accept(*this);
+    for (size_t i = 0; i < stmt.declarations.size(); ++i) {
+        std::cout << "  [PackageDecl] Processing declaration " << (i+1) << "/" << stmt.declarations.size() << std::endl;
+        if (stmt.declarations[i]) stmt.declarations[i]->accept(*this);
     }
 }
 

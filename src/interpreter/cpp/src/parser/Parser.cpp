@@ -8,9 +8,16 @@ Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens) {}
 
 std::vector<std::unique_ptr<Stmt>> Parser::parse() {
     std::vector<std::unique_ptr<Stmt>> statements;
+    int count = 0;
     while (!isAtEnd()) {
         try {
-            statements.push_back(declaration());
+            auto stmt = declaration();
+            if (stmt) {
+                std::cout << "[Parser] Statement " << (++count) << ": valid" << std::endl;
+            } else {
+                std::cout << "[Parser] Statement " << (++count) << ": nullptr" << std::endl;
+            }
+            statements.push_back(std::move(stmt));
         } catch (ParseError& error) {
             std::cerr << "[Error] " << error.line << ":" << error.column << ": " << error.what() << std::endl;
             synchronize();
@@ -26,6 +33,8 @@ std::unique_ptr<Stmt> Parser::declaration() {
         // Check for doc comment before declaration
         consumeDocComment();
 
+        std::cout << "[Parser::declaration] Current token: " << peek().lexeme << " (type " << static_cast<int>(peek().type) << ")" << std::endl;
+
         if (match({TokenType::VAR, TokenType::VAL})) return varDeclaration();
         if (match({TokenType::FN})) return fnDeclaration("function");
         if (match({TokenType::CLASS, TokenType::STRUCT, TokenType::INTERFACE})) return classDeclaration();
@@ -37,6 +46,7 @@ std::unique_ptr<Stmt> Parser::declaration() {
 
         return statement();
     } catch (ParseError& error) {
+        std::cout << "[Parser::declaration] Caught ParseError: " << error.what() << " at " << error.line << ":" << error.column << std::endl;
         synchronize();
         return nullptr;
     }
@@ -84,7 +94,7 @@ std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind) {
     consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
 
     std::string returnType = "void";
-    if (check(TokenType::IDENTIFIER) || check(TokenType::INT) || check(TokenType::DOUBLE) || check(TokenType::STRING) || check(TokenType::BOOL)) {
+    if (check(TokenType::IDENTIFIER) || check(TokenType::INT) || check(TokenType::DOUBLE) || check(TokenType::STRING) || check(TokenType::BOOL) || check(TokenType::VOID)) {
         // Optional return type parsing without colon if it's just the type
         // The grammar says `fn name() type {` or `fn name() {`
         // We need to be careful not to mistake the start of the block for a type if it's an identifier (unlikely)
