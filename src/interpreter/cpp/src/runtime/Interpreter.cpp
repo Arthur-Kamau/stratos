@@ -257,12 +257,18 @@ void Interpreter::visit(BinaryExpr& expr) {
     }
 
     // Regular binary operators - evaluate both sides
+   // std::cerr << "[DEBUG] BinaryExpr: operator type=" << static_cast<int>(expr.op.type) << std::endl;
+   // std::cerr << "[DEBUG] Evaluating left side..." << std::endl;
     expr.left->accept(*this);
     RuntimeValue left = lastValue;
+ //   std::cerr << "[DEBUG] Left side evaluated, type=" << left.type << std::endl;
 
+  //  std::cerr << "[DEBUG] Evaluating right side..." << std::endl;
     expr.right->accept(*this);
     RuntimeValue right = lastValue;
+   // std::cerr << "[DEBUG] Right side evaluated, type=" << right.type << std::endl;
 
+  //  std::cerr << "[DEBUG] Entering switch statement..." << std::endl;
     switch (expr.op.type) {
         case TokenType::PLUS:
             if (left.type == "double" && right.type == "double") {
@@ -322,51 +328,70 @@ void Interpreter::visit(BinaryExpr& expr) {
 
         case TokenType::EQUAL_EQUAL:
             if (left.type == "int" && right.type == "int") {
-                lastValue = RuntimeValue(std::any(left.asInt() == right.asInt()), "bool");
+                lastValue = RuntimeValue(left.asInt() == right.asInt());
             } else if (left.type == "double" && right.type == "double") {
-                lastValue = RuntimeValue(std::any(left.asDouble() == right.asDouble()), "bool");
+                lastValue = RuntimeValue(left.asDouble() == right.asDouble());
             } else if (left.type == "string" && right.type == "string") {
-                lastValue = RuntimeValue(std::any(left.asString() == right.asString()), "bool");
+                lastValue = RuntimeValue(left.asString() == right.asString());
             }
             break;
 
         case TokenType::BANG_EQUAL:
             if (left.type == "int" && right.type == "int") {
-                lastValue = RuntimeValue(std::any(left.asInt() != right.asInt()), "bool");
+                lastValue = RuntimeValue(left.asInt() != right.asInt());
             } else if (left.type == "double" && right.type == "double") {
-                lastValue = RuntimeValue(std::any(left.asDouble() != right.asDouble()), "bool");
+                lastValue = RuntimeValue(left.asDouble() != right.asDouble());
             }
             break;
 
         case TokenType::LESS:
+          //  std::cerr << "[DEBUG] LESS operator: left.type=" << left.type << ", right.type=" << right.type << std::endl;
             if (left.type == "double" && right.type == "double") {
-                lastValue = RuntimeValue(std::any(left.asDouble() < right.asDouble()), "bool");
+              //  std::cerr << "[DEBUG] Taking double path" << std::endl;
+                bool result = left.asDouble() < right.asDouble();
+              //  std::cerr << "[DEBUG] Comparison result: " << result << std::endl;
+                lastValue = RuntimeValue(result);
+             //   std::cerr << "[DEBUG] Created RuntimeValue" << std::endl;
+            } else if (left.type == "int" && right.type == "int") {
+              //  std::cerr << "[DEBUG] Taking int path" << std::endl;
+              //  std::cerr << "[DEBUG] About to call asInt() on left" << std::endl;
+                int leftVal = left.asInt();
+              //  std::cerr << "[DEBUG] left value: " << leftVal << std::endl;
+              //  std::cerr << "[DEBUG] About to call asInt() on right" << std::endl;
+                int rightVal = right.asInt();
+              //  std::cerr << "[DEBUG] right value: " << rightVal << std::endl;
+                bool result = leftVal < rightVal;
+              //  std::cerr << "[DEBUG] Comparison result: " << result << std::endl;
+                lastValue = RuntimeValue(result);
+             //   std::cerr << "[DEBUG] Created RuntimeValue" << std::endl;
             } else {
-                lastValue = RuntimeValue(std::any(left.asInt() < right.asInt()), "bool");
+              //  std::cerr << "[DEBUG] Type mismatch!" << std::endl;
+                error("Type error in < comparison: cannot compare " + left.type + " with " + right.type);
             }
+            //std::cerr << "[DEBUG] LESS operator complete" << std::endl;
             break;
 
         case TokenType::LESS_EQUAL:
             if (left.type == "double" && right.type == "double") {
-                lastValue = RuntimeValue(std::any(left.asDouble() <= right.asDouble()), "bool");
+                lastValue = RuntimeValue(left.asDouble() <= right.asDouble());
             } else {
-                lastValue = RuntimeValue(std::any(left.asInt() <= right.asInt()), "bool");
+                lastValue = RuntimeValue(left.asInt() <= right.asInt());
             }
             break;
 
         case TokenType::GREATER:
             if (left.type == "double" && right.type == "double") {
-                lastValue = RuntimeValue(std::any(left.asDouble() > right.asDouble()), "bool");
+                lastValue = RuntimeValue(left.asDouble() > right.asDouble());
             } else {
-                lastValue = RuntimeValue(std::any(left.asInt() > right.asInt()), "bool");
+                lastValue = RuntimeValue(left.asInt() > right.asInt());
             }
             break;
 
         case TokenType::GREATER_EQUAL:
             if (left.type == "double" && right.type == "double") {
-                lastValue = RuntimeValue(std::any(left.asDouble() >= right.asDouble()), "bool");
+                lastValue = RuntimeValue(left.asDouble() >= right.asDouble());
             } else {
-                lastValue = RuntimeValue(std::any(left.asInt() >= right.asInt()), "bool");
+                lastValue = RuntimeValue(left.asInt() >= right.asInt());
             }
             break;
 
@@ -390,7 +415,7 @@ void Interpreter::visit(UnaryExpr& expr) {
 
         case TokenType::NOT:
         case TokenType::BANG:
-            lastValue = RuntimeValue(std::any(!isTruthy(operand)), "bool");
+            lastValue = RuntimeValue(!isTruthy(operand));
             break;
 
         default:
@@ -420,11 +445,11 @@ void Interpreter::visit(LiteralExpr& expr) {
             break;
 
         case TokenType::TRUE:
-            lastValue = RuntimeValue(std::any(true), "bool");
+            lastValue = RuntimeValue(true);
             break;
 
         case TokenType::FALSE:
-            lastValue = RuntimeValue(std::any(false), "bool");
+            lastValue = RuntimeValue(false);
             break;
 
         case TokenType::NONE:
@@ -437,7 +462,9 @@ void Interpreter::visit(LiteralExpr& expr) {
 }
 
 void Interpreter::visit(VariableExpr& expr) {
+   // std::cerr << "[DEBUG] VariableExpr: looking up '" << expr.name.lexeme << "'" << std::endl;
     lastValue = currentEnv->get(expr.name.lexeme);
+  //  std::cerr << "[DEBUG] VariableExpr: found type=" << lastValue.type << std::endl;
 }
 
 void Interpreter::visit(CallExpr& expr) {
@@ -741,12 +768,16 @@ void Interpreter::visit(GroupingExpr& expr) {
 // --- Statement Visitors ---
 
 void Interpreter::visit(VarDecl& stmt) {
+    //std::cerr << "[DEBUG] VarDecl: declaring variable '" << stmt.name.lexeme << "'" << std::endl;
     RuntimeValue value;
 
     if (stmt.initializer) {
+       // std::cerr << "[DEBUG] VarDecl: evaluating initializer..." << std::endl;
         stmt.initializer->accept(*this);
         value = lastValue;
+       // std::cerr << "[DEBUG] VarDecl: initializer evaluated, type=" << value.type << std::endl;
     } else {
+        //std::cerr << "[DEBUG] VarDecl: no initializer, using default" << std::endl;
         // Default initialization
         if (stmt.typeName == "int") {
             value = RuntimeValue(std::any(0), "int");
@@ -761,7 +792,9 @@ void Interpreter::visit(VarDecl& stmt) {
         }
     }
 
+  //  std::cerr << "[DEBUG] VarDecl: defining variable with type=" << value.type << std::endl;
     currentEnv->define(stmt.name.lexeme, value);
+  //  std::cerr << "[DEBUG] VarDecl: variable defined successfully" << std::endl;
 }
 
 void Interpreter::visit(FunctionDecl& stmt) {
@@ -922,13 +955,22 @@ void Interpreter::visit(PrintStmt& stmt) {
 }
 
 void Interpreter::visit(IfStmt& stmt) {
+   // std::cerr << "[DEBUG] IfStmt: evaluating condition..." << std::endl;
     stmt.condition->accept(*this);
     RuntimeValue condition = lastValue;
+   // std::cerr << "[DEBUG] IfStmt: condition type=" << condition.type << std::endl;
 
-    if (isTruthy(condition)) {
+    bool truthiness = isTruthy(condition);
+  //  std::cerr << "[DEBUG] IfStmt: isTruthy=" << truthiness << std::endl;
+
+    if (truthiness) {
+     //   std::cerr << "[DEBUG] IfStmt: executing then branch" << std::endl;
         stmt.thenBranch->accept(*this);
     } else if (stmt.elseBranch) {
+     //   std::cerr << "[DEBUG] IfStmt: executing else branch" << std::endl;
         stmt.elseBranch->accept(*this);
+    } else {
+        std::cerr << "[DEBUG] IfStmt: no branch executed" << std::endl;
     }
 }
 
@@ -948,14 +990,74 @@ void Interpreter::visit(ForStmt& stmt) {
     stmt.iterable->accept(*this);
     RuntimeValue iterableValue = lastValue;
 
-    // TODO: Implement proper iteration over collections
-    // For now, this is a stub that allows compilation
-    // Full implementation requires:
-    // 1. Collection/Array type support
-    // 2. Iterator protocol
-    // 3. Proper element extraction
+    // Handle array iteration
+    if (iterableValue.type.starts_with("array")) {
+        if (!std::holds_alternative<std::any>(iterableValue.value)) {
+            error("Invalid array value in for loop");
+        }
 
-    throw std::runtime_error("For loops are not yet fully implemented in the runtime. Semantic analysis is complete.");
+        auto& anyValue = std::get<std::any>(iterableValue.value);
+
+        // Handle array<string>
+        if (iterableValue.type == "array<string>") {
+            try {
+                auto& vec = std::any_cast<std::vector<std::string>&>(anyValue);
+
+                // Iterate over each element
+                for (const auto& element : vec) {
+                    // Create new scope for loop body
+                    enterScope();
+
+                    // Define loop variable with current element
+                    currentEnv->define(stmt.variable.lexeme, RuntimeValue(element));
+
+                    // Execute loop body
+                    stmt.body->accept(*this);
+
+                    exitScope();
+                }
+            } catch (const std::bad_any_cast&) {
+                error("Failed to iterate over array in for loop");
+            }
+        } else {
+            error("Unsupported array type in for loop: " + iterableValue.type);
+        }
+    }
+    // Handle map iteration (iterate over keys)
+    else if (iterableValue.type.starts_with("map")) {
+        if (!std::holds_alternative<std::any>(iterableValue.value)) {
+            error("Invalid map value in for loop");
+        }
+
+        auto& anyValue = std::get<std::any>(iterableValue.value);
+
+        if (iterableValue.type == "map<string,string>") {
+            try {
+                auto& map = std::any_cast<std::unordered_map<std::string, std::string>&>(anyValue);
+
+                // Iterate over each key
+                for (const auto& pair : map) {
+                    // Create new scope for loop body
+                    enterScope();
+
+                    // Define loop variable with current key
+                    currentEnv->define(stmt.variable.lexeme, RuntimeValue(pair.first));
+
+                    // Execute loop body
+                    stmt.body->accept(*this);
+
+                    exitScope();
+                }
+            } catch (const std::bad_any_cast&) {
+                error("Failed to iterate over map in for loop");
+            }
+        } else {
+            error("Unsupported map type in for loop: " + iterableValue.type);
+        }
+    }
+    else {
+        error("For loop requires an iterable (array or map), got: " + iterableValue.type);
+    }
 }
 
 void Interpreter::visit(ReturnStmt& stmt) {

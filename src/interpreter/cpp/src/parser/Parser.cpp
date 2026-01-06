@@ -463,12 +463,18 @@ std::unique_ptr<Expr> Parser::call() {
 
     // Handle generic type parameters for constructors like Array<T>()
     // Check if we have an identifier followed by <
+    // IMPORTANT: Only treat < as generics if followed by a ( after the closing >
+    // This prevents false positive with comparisons like: x < 10
     if (auto* varExpr = dynamic_cast<VariableExpr*>(expr.get())) {
         if (check(TokenType::LESS)) {
-            // Try to parse generic type parameters
-            // We skip them for now since we don't use them in semantic analysis yet
+            // Look ahead to see if this is actually generics (has matching > followed by ()
+            // Save current position
+            int savedCurrent = current;
+
+            // Try to find matching >
             advance(); // consume <
             int depth = 1;
+            bool foundMatchingBracket = false;
             while (depth > 0 && !isAtEnd()) {
                 if (check(TokenType::LESS)) {
                     depth++;
@@ -476,10 +482,25 @@ std::unique_ptr<Expr> Parser::call() {
                 } else if (check(TokenType::GREATER)) {
                     depth--;
                     advance();
+                    if (depth == 0) {
+                        foundMatchingBracket = true;
+                        break;
+                    }
                 } else {
                     advance();
                 }
             }
+
+            // Check if this looks like a generic constructor call
+            // (should have ( after the closing >)
+            bool isGenericCall = foundMatchingBracket && check(TokenType::LEFT_PAREN);
+
+            if (!isGenericCall) {
+                // Not a generic call, restore position
+                // This is likely a comparison operator like x < 10
+                current = savedCurrent;
+            }
+            // If it is a generic call, we've already consumed the tokens, which is what we want
         }
     }
 
