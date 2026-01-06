@@ -58,6 +58,9 @@ struct RuntimeValue {
         } else if (t.starts_with("array")) {
             // For arrays, store the std::any directly
             value = val;
+        } else if (t.starts_with("map")) {
+            // For maps, store the std::any directly
+            value = val;
         } else {
             value = std::monostate{};
         }

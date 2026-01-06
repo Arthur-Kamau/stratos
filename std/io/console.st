@@ -1,4 +1,4 @@
-package std.io
+package io
 
 // Native C bindings
 // 'any' maps to i8* (void*) in our IR, which works for printf varargs (mostly)

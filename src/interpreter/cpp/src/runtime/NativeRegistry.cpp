@@ -2642,6 +2642,179 @@ void NativeRegistry::initRegex() {
             return std::any(std::string(""));
         }
     }, FunctionSignature{{"string", "string"}, "string"});
+
+    // ========================================================================
+    // MAPS MODULE - HashMap/Dictionary operations
+    // ========================================================================
+
+    // maps.create - Create a new empty map
+    registerFunction("maps", "create", [](const std::vector<std::any>& args) -> std::any {
+        return std::unordered_map<std::string, std::string>();
+    }, FunctionSignature{{}, "map<string,string>"});
+
+    // maps.set - Set a key-value pair in the map
+    registerFunction("maps", "set", [](const std::vector<std::any>& args) -> std::any {
+        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+        std::string key = std::any_cast<std::string>(args[1]);
+        std::string value = std::any_cast<std::string>(args[2]);
+        map[key] = value;
+        return map;
+    }, FunctionSignature{{"map<string,string>", "string", "string"}, "map<string,string>"});
+
+    // maps.get - Get a value by key (returns empty string if not found)
+    registerFunction("maps", "get", [](const std::vector<std::any>& args) -> std::any {
+        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+        std::string key = std::any_cast<std::string>(args[1]);
+        auto it = map.find(key);
+        if (it != map.end()) {
+            return it->second;
+        }
+        return std::string("");
+    }, FunctionSignature{{"map<string,string>", "string"}, "string"});
+
+    // maps.has - Check if a key exists in the map
+    registerFunction("maps", "has", [](const std::vector<std::any>& args) -> std::any {
+        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+        std::string key = std::any_cast<std::string>(args[1]);
+        return map.find(key) != map.end();
+    }, FunctionSignature{{"map<string,string>", "string"}, "bool"});
+
+    // maps.remove - Remove a key from the map
+    registerFunction("maps", "remove", [](const std::vector<std::any>& args) -> std::any {
+        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+        std::string key = std::any_cast<std::string>(args[1]);
+        map.erase(key);
+        return map;
+    }, FunctionSignature{{"map<string,string>", "string"}, "map<string,string>"});
+
+    // maps.size - Get the number of entries in the map
+    registerFunction("maps", "size", [](const std::vector<std::any>& args) -> std::any {
+        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+        return static_cast<int>(map.size());
+    }, FunctionSignature{{"map<string,string>"}, "int"});
+
+    // maps.keys - Get all keys as an array
+    registerFunction("maps", "keys", [](const std::vector<std::any>& args) -> std::any {
+        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+        std::vector<std::string> keys;
+        for (const auto& pair : map) {
+            keys.push_back(pair.first);
+        }
+        return keys;
+    }, FunctionSignature{{"map<string,string>"}, "array<string>"});
+
+    // maps.values - Get all values as an array
+    registerFunction("maps", "values", [](const std::vector<std::any>& args) -> std::any {
+        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+        std::vector<std::string> values;
+        for (const auto& pair : map) {
+            values.push_back(pair.second);
+        }
+        return values;
+    }, FunctionSignature{{"map<string,string>"}, "array<string>"});
+
+    // maps.clear - Remove all entries from the map
+    registerFunction("maps", "clear", [](const std::vector<std::any>& args) -> std::any {
+        return std::unordered_map<std::string, std::string>();
+    }, FunctionSignature{{"map<string,string>"}, "map<string,string>"});
+
+    // maps.isEmpty - Check if the map is empty
+    registerFunction("maps", "isEmpty", [](const std::vector<std::any>& args) -> std::any {
+        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+        return map.empty();
+    }, FunctionSignature{{"map<string,string>"}, "bool"});
+
+    // maps.first - Get the first key in the map (useful for iteration)
+    registerFunction("maps", "first", [](const std::vector<std::any>& args) -> std::any {
+        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+        if (!map.empty()) {
+            return map.begin()->first;
+        }
+        return std::string("");
+    }, FunctionSignature{{"map<string,string>"}, "string"});
+
+    // maps.last - Get the last key in the map (note: unordered, so "last" means any element)
+    registerFunction("maps", "last", [](const std::vector<std::any>& args) -> std::any {
+        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+        if (!map.empty()) {
+            // For unordered_map, get the last element we can access
+            auto it = map.begin();
+            std::advance(it, map.size() - 1);
+            return it->first;
+        }
+        return std::string("");
+    }, FunctionSignature{{"map<string,string>"}, "string"});
+
+    // maps.firstValue - Get the first value in the map
+    registerFunction("maps", "firstValue", [](const std::vector<std::any>& args) -> std::any {
+        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+        if (!map.empty()) {
+            return map.begin()->second;
+        }
+        return std::string("");
+    }, FunctionSignature{{"map<string,string>"}, "string"});
+
+    // maps.lastValue - Get the last value in the map
+    registerFunction("maps", "lastValue", [](const std::vector<std::any>& args) -> std::any {
+        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+        if (!map.empty()) {
+            auto it = map.begin();
+            std::advance(it, map.size() - 1);
+            return it->second;
+        }
+        return std::string("");
+    }, FunctionSignature{{"map<string,string>"}, "string"});
+
+    // maps.merge - Merge two maps (second map overwrites first on conflicts)
+    registerFunction("maps", "merge", [](const std::vector<std::any>& args) -> std::any {
+        auto map1 = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+        auto map2 = std::any_cast<std::unordered_map<std::string, std::string>>(args[1]);
+        
+        // Merge map2 into map1
+        for (const auto& pair : map2) {
+            map1[pair.first] = pair.second;
+        }
+        return map1;
+    }, FunctionSignature{{"map<string,string>", "map<string,string>"}, "map<string,string>"});
+
+    // maps.entries - Get all entries as array of "key:value" strings
+    registerFunction("maps", "entries", [](const std::vector<std::any>& args) -> std::any {
+        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+        std::vector<std::string> entries;
+        for (const auto& pair : map) {
+            entries.push_back(pair.first + ":" + pair.second);
+        }
+        return entries;
+    }, FunctionSignature{{"map<string,string>"}, "array<string>"});
+
+    // maps.containsValue - Check if a value exists in the map
+    registerFunction("maps", "containsValue", [](const std::vector<std::any>& args) -> std::any {
+        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+        std::string value = std::any_cast<std::string>(args[1]);
+        
+        for (const auto& pair : map) {
+            if (pair.second == value) {
+                return true;
+            }
+        }
+        return false;
+    }, FunctionSignature{{"map<string,string>", "string"}, "bool"});
+
+    // maps.fromEntries - Create a map from an array of "key:value" strings
+    registerFunction("maps", "fromEntries", [](const std::vector<std::any>& args) -> std::any {
+        auto entries = std::any_cast<std::vector<std::string>>(args[0]);
+        std::unordered_map<std::string, std::string> map;
+        
+        for (const auto& entry : entries) {
+            size_t colonPos = entry.find(':');
+            if (colonPos != std::string::npos) {
+                std::string key = entry.substr(0, colonPos);
+                std::string value = entry.substr(colonPos + 1);
+                map[key] = value;
+            }
+        }
+        return map;
+    }, FunctionSignature{{"array<string>"}, "map<string,string>"});
 }
 
 } // namespace stratos

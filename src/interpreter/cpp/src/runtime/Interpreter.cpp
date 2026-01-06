@@ -21,6 +21,10 @@ Interpreter::Interpreter() {
     currentEnv = globalEnv.get();
     environments.push_back(std::move(globalEnv));
 
+    // Auto-import core modules (prelude modules - available without 'use' statement)
+    RuntimeValue mapsModule(std::any(), "module");
+    currentEnv->define("maps", mapsModule);
+
     // Connect MemoryProfiler with GC
     MemoryProfiler::instance().setGarbageCollector(&gc);
 }
@@ -463,24 +467,87 @@ void Interpreter::visit(CallExpr& expr) {
                     return;
                 }
 
-                // Handle array method calls (array.length(), etc.)
+                // Handle array method calls (array.length(), array.first(), etc.)
                 if (leftValue.type.starts_with("array")) {
-                    if (methodName == "length") {
-                        // Get the length of the array
-                        if (auto* anyPtr = std::get_if<std::any>(&leftValue.value)) {
-                            if (leftValue.type == "array<string>") {
-                                try {
-                                    auto& vec = std::any_cast<std::vector<std::string>&>(*anyPtr);
+                    if (auto* anyPtr = std::get_if<std::any>(&leftValue.value)) {
+                        if (leftValue.type == "array<string>") {
+                            try {
+                                auto& vec = std::any_cast<std::vector<std::string>&>(*anyPtr);
+
+                                if (methodName == "length") {
                                     lastValue = RuntimeValue(static_cast<int>(vec.size()));
                                     return;
-                                } catch (const std::bad_any_cast&) {
-                                    error("Internal error: Failed to cast array value");
+                                } else if (methodName == "isEmpty") {
+                                    lastValue = RuntimeValue(vec.empty());
+                                    return;
+                                } else if (methodName == "first") {
+                                    if (!vec.empty()) {
+                                        lastValue = RuntimeValue(vec.front());
+                                    } else {
+                                        lastValue = RuntimeValue(std::string(""));
+                                    }
+                                    return;
+                                } else if (methodName == "last") {
+                                    if (!vec.empty()) {
+                                        lastValue = RuntimeValue(vec.back());
+                                    } else {
+                                        lastValue = RuntimeValue(std::string(""));
+                                    }
+                                    return;
+                                } else if (methodName == "clear") {
+                                    lastValue = RuntimeValue(std::any(std::vector<std::string>()), "array<string>");
+                                    return;
+                                } else if (methodName == "contains") {
+                                    if (!args.empty()) {
+                                        std::string searchValue = args[0].asString();
+                                        bool found = std::find(vec.begin(), vec.end(), searchValue) != vec.end();
+                                        lastValue = RuntimeValue(found);
+                                    } else {
+                                        error("contains() requires a value argument");
+                                    }
+                                    return;
+                                } else if (methodName == "indexOf") {
+                                    if (!args.empty()) {
+                                        std::string searchValue = args[0].asString();
+                                        auto it = std::find(vec.begin(), vec.end(), searchValue);
+                                        if (it != vec.end()) {
+                                            lastValue = RuntimeValue(static_cast<int>(std::distance(vec.begin(), it)));
+                                        } else {
+                                            lastValue = RuntimeValue(-1);
+                                        }
+                                    } else {
+                                        error("indexOf() requires a value argument");
+                                    }
+                                    return;
+                                } else if (methodName == "reverse") {
+                                    std::vector<std::string> reversed(vec.rbegin(), vec.rend());
+                                    lastValue = RuntimeValue(std::any(reversed), "array<string>");
+                                    return;
+                                } else if (methodName == "join") {
+                                    std::string separator = args.empty() ? "," : args[0].asString();
+                                    std::string result;
+                                    for (size_t i = 0; i < vec.size(); i++) {
+                                        result += vec[i];
+                                        if (i < vec.size() - 1) result += separator;
+                                    }
+                                    lastValue = RuntimeValue(result);
+                                    return;
                                 }
+                            } catch (const std::bad_any_cast&) {
+                                error("Internal error: Failed to cast array value");
                             }
-                            // Add more array types here as needed
                         }
+                        // Add more array types here as needed
                     }
                     error("Unknown array method: " + methodName);
+                }
+
+                // Handle map method calls (map.get(), map.set(), map.has(), etc.)
+                if (leftValue.type.starts_with("map")) {
+                    // Map methods forward to the maps module with map as first argument
+                    args.insert(args.begin(), leftValue);
+                    lastValue = evaluateNativeCall("maps", methodName, args);
+                    return;
                 }
 
                 // Handle object method calls
@@ -636,7 +703,35 @@ void Interpreter::visit(IndexExpr& expr) {
         }
     }
 
-    error("Cannot index non-array type: " + arrayValue.type);
+    // Check if this is a map type
+    if (arrayValue.type.starts_with("map")) {
+        // Extract the std::any containing the map
+        if (auto* anyPtr = std::get_if<std::any>(&arrayValue.value)) {
+            // Get the key as a string
+            std::string key = indexValue.asString();
+
+            // Try to cast to unordered_map<string, string>
+            if (arrayValue.type == "map<string,string>") {
+                try {
+                    auto& map = std::any_cast<std::unordered_map<std::string, std::string>&>(*anyPtr);
+                    auto it = map.find(key);
+                    if (it != map.end()) {
+                        lastValue = RuntimeValue(it->second);
+                        return;
+                    } else {
+                        // Return empty string for missing keys (similar to maps.get)
+                        lastValue = RuntimeValue(std::string(""));
+                        return;
+                    }
+                } catch (const std::bad_any_cast&) {
+                    error("Internal error: Failed to cast map value");
+                }
+            }
+            // Add more map types here as needed
+        }
+    }
+
+    error("Cannot index type: " + arrayValue.type);
 }
 
 void Interpreter::visit(GroupingExpr& expr) {
@@ -904,6 +999,9 @@ RuntimeValue Interpreter::evaluateNativeCall(const std::string& moduleName,
             anyValue = std::get<bool>(arg.value);
         } else if (std::holds_alternative<std::shared_ptr<ClassInstance>>(arg.value)) {
             anyValue = std::get<std::shared_ptr<ClassInstance>>(arg.value);
+        } else if (std::holds_alternative<std::any>(arg.value)) {
+            // Handle arrays and maps (stored as std::any)
+            anyValue = std::get<std::any>(arg.value);
         }
         // std::monostate (void) remains as empty std::any
         nativeArgs.push_back(anyValue);
