@@ -34,6 +34,7 @@ public:
     void visit(PrintStmt& stmt) override;
     void visit(IfStmt& stmt) override;
     void visit(WhileStmt& stmt) override;
+    void visit(ForStmt& stmt) override;
     void visit(ReturnStmt& stmt) override;
 
 private:
@@ -41,6 +42,7 @@ private:
     bool hadError = false;
     std::vector<std::string> loadedModules; // Track already loaded modules
     std::string lastExprType; // Track the type of the last evaluated expression
+    std::string currentClassName; // Track current class name for 'this' context
 
     void error(const std::string& message); // Generic (no loc)
     void error(Token token, const std::string& message); // With loc

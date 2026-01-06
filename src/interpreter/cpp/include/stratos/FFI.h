@@ -6,7 +6,18 @@
 #include <unordered_map>
 #include <any>
 #include <memory>
-#include <dlfcn.h>
+
+#ifdef _WIN32
+    #include <windows.h>
+    // Undefine Windows macros that conflict with our enums
+    #undef VOID
+    #undef INT
+    #undef DOUBLE
+    #undef STRING
+    #undef ERROR
+#else
+    #include <dlfcn.h>
+#endif
 
 namespace stratos {
 
@@ -19,7 +30,11 @@ struct FFILibrary {
 
     ~FFILibrary() {
         if (handle) {
+#ifdef _WIN32
+            FreeLibrary((HMODULE)handle);
+#else
             dlclose(handle);
+#endif
         }
     }
 };

@@ -15,28 +15,44 @@ SemanticAnalyzer::SemanticAnalyzer() {
 }
 
 void SemanticAnalyzer::defineNativeFunctions() {
-    // Define 'print' as a native function
-    // fn print(any) -> void
-    symbolTable.define(Symbol::Function("print", {"any"}, "void"));
+    // Don't pre-define 'print' or 'println' - they're defined in std/io/console.st
+    // symbolTable.define(Symbol::Function("print", {"any"}, "void"));
+    // symbolTable.define(Symbol::Function("println", {"any"}, "void"));
 
     // Define standard types/constructors
     symbolTable.define(Symbol::Variable("Some", "constructor", false)); // Mock for now
     symbolTable.define(Symbol::Variable("None", "Optional", false));
-    
+    symbolTable.define(Symbol::Function("Array", {}, "any")); // Generic array constructor
+
     // Internal intrinsics
     symbolTable.define(Symbol::Function("__if_expr", {"bool", "any", "any"}, "any"));
 }
 
 bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& statements) {
-    std::cout << "  [Analyze] Analyzing " << statements.size() << " top-level statements" << std::endl;
     hadError = false;
+
+    // First pass: Collect all function and class declarations
     for (size_t i = 0; i < statements.size(); ++i) {
-        std::cout << "  [Analyze] Statement " << (i+1) << "/" << statements.size();
+        if (!statements[i]) continue;
+
+        // Only process declarations, not their bodies
+        if (auto* funcDecl = dynamic_cast<FunctionDecl*>(statements[i].get())) {
+            Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, funcDecl->paramTypes, funcDecl->returnType);
+            if (!symbolTable.define(funcSymbol)) {
+                error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined.");
+            }
+        } else if (auto* classDecl = dynamic_cast<ClassDecl*>(statements[i].get())) {
+            if (!symbolTable.define(Symbol{classDecl->name.lexeme, SymbolKind::CLASS, classDecl->name.lexeme, false})) {
+                error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined.");
+            }
+        }
+    }
+
+    // Second pass: Analyze all statements including bodies
+    for (size_t i = 0; i < statements.size(); ++i) {
         if (!statements[i]) {
-            std::cout << " - nullptr (skipped)" << std::endl;
             continue;
         }
-        std::cout << " - calling accept()" << std::endl;
         statements[i]->accept(*this);
     }
     return !hadError;
@@ -175,60 +191,78 @@ void SemanticAnalyzer::visit(VarDecl& stmt) {
     // 2. Define variable in current scope
     std::string type = stmt.typeName.empty() ? "inferred" : stmt.typeName;
     Symbol symbol = Symbol::Variable(stmt.name.lexeme, type, stmt.isMutable);
-    
+
     if (!symbolTable.define(symbol)) {
         error(stmt.name, "Variable '" + stmt.name.lexeme + "' is already defined in this scope.");
     }
 }
 
 void SemanticAnalyzer::visit(FunctionDecl& stmt) {
-    std::cout << "  [FunctionDecl] Visiting function: " << stmt.name.lexeme << std::endl;
-    // 1. Define function name in current scope (so it can recurse)
+    // Try to define function name in current scope (may already be defined from first pass for top-level functions)
     Symbol funcSymbol = Symbol::Function(stmt.name.lexeme, stmt.paramTypes, stmt.returnType);
     if (!symbolTable.define(funcSymbol)) {
-        error(stmt.name, "Function '" + stmt.name.lexeme + "' is already defined.");
-    }
-
-    // 2. Enter new scope for function body
-    symbolTable.enterScope();
-
-    // 3. Define parameters as variables
-    for (size_t i = 0; i < stmt.params.size(); ++i) {
-        std::string pType = stmt.paramTypes[i];
-        // Params are usually immutable (val) by default in many modern langs, let's assume so or var
-        Symbol paramSym = Symbol::Variable(stmt.params[i].lexeme, pType, false); // val
-        symbolTable.define(paramSym);
-    }
-
-    // 4. Analyze body
-    if (stmt.body) {
-        for (const auto& s : *stmt.body) {
-            if (s) s->accept(*this);
+        // Only error if we're in a class (class methods should be defined fresh)
+        // Top-level functions are expected to fail here due to first pass registration
+        if (!currentClassName.empty()) {
+            error(stmt.name, "Function '" + stmt.name.lexeme + "' is already defined.");
         }
     }
 
-    // 5. Exit scope
+    // Only analyze body if it exists (skip function declarations without bodies)
+    if (!stmt.body) {
+        return;
+    }
+
+    // Enter new scope for function body
+    symbolTable.enterScope();
+
+    // If we're in a class, define 'this' in the method scope
+    if (!currentClassName.empty()) {
+        symbolTable.define(Symbol::Variable("this", currentClassName, false));
+    }
+
+    // Define parameters as variables
+    for (size_t i = 0; i < stmt.params.size(); ++i) {
+        std::string pType = stmt.paramTypes[i];
+        Symbol paramSym = Symbol::Variable(stmt.params[i].lexeme, pType, false);
+        symbolTable.define(paramSym);
+    }
+
+    // Analyze body
+    for (const auto& s : *stmt.body) {
+        if (s) s->accept(*this);
+    }
+
+    // Exit scope
     symbolTable.exitScope();
 }
 
 void SemanticAnalyzer::visit(ClassDecl& stmt) {
-    if (!symbolTable.define(Symbol{stmt.name.lexeme, SymbolKind::CLASS, stmt.name.lexeme, false})) {
-         error(stmt.name, "Class '" + stmt.name.lexeme + "' is already defined.");
-    }
+    // Try to define class (may already be defined from first pass)
+    symbolTable.define(Symbol{stmt.name.lexeme, SymbolKind::CLASS, stmt.name.lexeme, false});
+
+    // Set current class context
+    std::string previousClassName = currentClassName;
+    currentClassName = stmt.name.lexeme;
 
     symbolTable.enterScope();
     // Define 'this'
     symbolTable.define(Symbol::Variable("this", stmt.name.lexeme, false));
-    
+
     for (const auto& member : stmt.methods) {
-        if (member) member->accept(*this);
+        if (member) {
+            member->accept(*this);
+        }
     }
-    
+
     symbolTable.exitScope();
+
+    // Restore previous class context
+    currentClassName = previousClassName;
 }
 
 void SemanticAnalyzer::visit(PackageDecl& stmt) {
-    std::cout << "  [PackageDecl] Package: " << stmt.name.lexeme << " with " << stmt.declarations.size() << " declarations" << std::endl;
+    // std::cout << "  [PackageDecl] Package: " << stmt.name.lexeme << " with " << stmt.declarations.size() << " declarations" << std::endl;
     // Package declaration (like "package main;") just declares what package
     // this file belongs to - it doesn't create a symbol in the namespace.
     // Don't define the package name as a symbol to avoid conflicts.
@@ -237,7 +271,7 @@ void SemanticAnalyzer::visit(PackageDecl& stmt) {
     // Process declarations within the package without creating a new scope
     // or defining the package name as a symbol
     for (size_t i = 0; i < stmt.declarations.size(); ++i) {
-        std::cout << "  [PackageDecl] Processing declaration " << (i+1) << "/" << stmt.declarations.size() << std::endl;
+        // std::cout << "  [PackageDecl] Processing declaration " << (i+1) << "/" << stmt.declarations.size() << std::endl;
         if (stmt.declarations[i]) stmt.declarations[i]->accept(*this);
     }
 }
@@ -258,8 +292,10 @@ void SemanticAnalyzer::visit(UseStmt& stmt) {
 
 void SemanticAnalyzer::visit(BlockStmt& stmt) {
     symbolTable.enterScope();
-    for (const auto& s : stmt.statements) {
-        if (s) s->accept(*this);
+    for (size_t i = 0; i < stmt.statements.size(); ++i) {
+        if (stmt.statements[i]) {
+            stmt.statements[i]->accept(*this);
+        }
     }
     symbolTable.exitScope();
 }
@@ -281,6 +317,28 @@ void SemanticAnalyzer::visit(IfStmt& stmt) {
 void SemanticAnalyzer::visit(WhileStmt& stmt) {
     stmt.condition->accept(*this);
     stmt.body->accept(*this);
+}
+
+void SemanticAnalyzer::visit(ForStmt& stmt) {
+    // Analyze the iterable expression first (in outer scope)
+    stmt.iterable->accept(*this);
+
+    // Enter new scope for loop variable and body
+    symbolTable.enterScope();
+
+    // Define the loop variable in this scope
+    // For now, use the provided type or infer from iterable if possible
+    std::string loopVarType = stmt.varType.empty() ? "any" : stmt.varType;
+    Symbol loopVar = Symbol::Variable(stmt.variable.lexeme, loopVarType, stmt.isMutable);
+    if (!symbolTable.define(loopVar)) {
+        error(stmt.variable, "Loop variable '" + stmt.variable.lexeme + "' is already defined in this scope.");
+    }
+
+    // Analyze loop body
+    stmt.body->accept(*this);
+
+    // Exit loop scope
+    symbolTable.exitScope();
 }
 
 void SemanticAnalyzer::visit(ReturnStmt& stmt) {
@@ -405,6 +463,9 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
         // Fallback: just use the file itself if it exists
         moduleFiles.push_back(moduleFilePath);
     }
+
+    // Sort files to ensure consistent processing order (e.g., console.st before init.st)
+    std::sort(moduleFiles.begin(), moduleFiles.end());
 
     // Parse and process each file in the module
     for (const auto& filePath : moduleFiles) {

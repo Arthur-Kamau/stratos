@@ -19,7 +19,11 @@ void ConsoleSink::write(const LogEntry& entry) {
         entry.timestamp.time_since_epoch()) % 1000;
 
     std::tm tm;
+#ifdef _WIN32
+    localtime_s(&tm, &time_t);
+#else
     localtime_r(&time_t, &tm);
+#endif
 
     std::ostringstream oss;
     oss << std::put_time(&tm, "%H:%M:%S");

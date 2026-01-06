@@ -12,11 +12,11 @@ std::vector<std::unique_ptr<Stmt>> Parser::parse() {
     while (!isAtEnd()) {
         try {
             auto stmt = declaration();
-            if (stmt) {
-                std::cout << "[Parser] Statement " << (++count) << ": valid" << std::endl;
-            } else {
-                std::cout << "[Parser] Statement " << (++count) << ": nullptr" << std::endl;
-            }
+            // if (stmt) {
+            //     std::cout << "[Parser] Statement " << (++count) << ": valid" << std::endl;
+            // } else {
+            //     std::cout << "[Parser] Statement " << (++count) << ": nullptr" << std::endl;
+            // }
             statements.push_back(std::move(stmt));
         } catch (ParseError& error) {
             std::cerr << "[Error] " << error.line << ":" << error.column << ": " << error.what() << std::endl;
@@ -33,7 +33,7 @@ std::unique_ptr<Stmt> Parser::declaration() {
         // Check for doc comment before declaration
         consumeDocComment();
 
-        std::cout << "[Parser::declaration] Current token: " << peek().lexeme << " (type " << static_cast<int>(peek().type) << ")" << std::endl;
+        // std::cout << "[Parser::declaration] Current token: " << peek().lexeme << " (type " << static_cast<int>(peek().type) << ")" << std::endl;
 
         if (match({TokenType::VAR, TokenType::VAL})) return varDeclaration();
         if (match({TokenType::FN})) return fnDeclaration("function");
@@ -46,7 +46,7 @@ std::unique_ptr<Stmt> Parser::declaration() {
 
         return statement();
     } catch (ParseError& error) {
-        std::cout << "[Parser::declaration] Caught ParseError: " << error.what() << " at " << error.line << ":" << error.column << std::endl;
+        // std::cout << "[Parser::declaration] Caught ParseError: " << error.what() << " at " << error.line << ":" << error.column << std::endl;
         synchronize();
         return nullptr;
     }
@@ -128,7 +128,21 @@ std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind) {
 
 std::unique_ptr<Stmt> Parser::classDeclaration() {
     Token name = consume(TokenType::IDENTIFIER, "Expect class name.");
-    
+
+    // Skip generic type parameters if present (e.g., <T, E>)
+    if (match({TokenType::LESS})) {
+        int depth = 1;
+        while (depth > 0 && !isAtEnd()) {
+            if (match({TokenType::LESS})) {
+                depth++;
+            } else if (match({TokenType::GREATER})) {
+                depth--;
+            } else {
+                advance();
+            }
+        }
+    }
+
     std::unique_ptr<VariableExpr> superclass = nullptr;
     if (match({TokenType::COLON})) {
         consume(TokenType::IDENTIFIER, "Expect superclass name.");
@@ -234,10 +248,11 @@ std::unique_ptr<Stmt> Parser::useStatement() {
 std::unique_ptr<Stmt> Parser::statement() {
     if (match({TokenType::IF})) return ifStatement();
     if (match({TokenType::WHILE})) return whileStatement();
+    if (match({TokenType::FOR})) return forStatement();
     if (match({TokenType::RETURN})) return returnStatement();
     if (match({TokenType::WHEN})) return whenStatement();
     if (match({TokenType::LEFT_BRACE})) return block();
-    
+
     return expressionStatement();
 }
 
@@ -277,6 +292,45 @@ std::unique_ptr<Stmt> Parser::whileStatement() {
     std::unique_ptr<Expr> condition = expression();
     std::unique_ptr<Stmt> body = statement();
     return std::make_unique<WhileStmt>(std::move(condition), std::move(body));
+}
+
+std::unique_ptr<Stmt> Parser::forStatement() {
+    // Parse: for (val|var) variable (: type)? in iterable { body }
+
+    // Check for val or var
+    bool isMutable = false;
+    if (match({TokenType::VAR})) {
+        isMutable = true;
+    } else if (match({TokenType::VAL})) {
+        isMutable = false;
+    } else {
+        throw ParseError("Expect 'val' or 'var' after 'for'", peek().line, peek().column);
+    }
+
+    // Get variable name
+    Token variable = consume(TokenType::IDENTIFIER, "Expect variable name in for loop.");
+
+    // Optional type annotation
+    std::string varType = "";
+    if (match({TokenType::COLON})) {
+        varType = parseType();
+    }
+
+    // Expect 'in' keyword
+    if (!match({TokenType::IDENTIFIER})) {
+        throw ParseError("Expect 'in' keyword in for loop", peek().line, peek().column);
+    }
+    if (previous().lexeme != "in") {
+        throw ParseError("Expect 'in' keyword in for loop, got '" + previous().lexeme + "'", previous().line, previous().column);
+    }
+
+    // Parse iterable expression
+    std::unique_ptr<Expr> iterable = expression();
+
+    // Parse loop body
+    std::unique_ptr<Stmt> body = statement();
+
+    return std::make_unique<ForStmt>(variable, isMutable, varType, std::move(iterable), std::move(body));
 }
 
 std::unique_ptr<Stmt> Parser::returnStatement() {
@@ -407,6 +461,28 @@ std::unique_ptr<Expr> Parser::unary() {
 std::unique_ptr<Expr> Parser::call() {
     std::unique_ptr<Expr> expr = primary();
 
+    // Handle generic type parameters for constructors like Array<T>()
+    // Check if we have an identifier followed by <
+    if (auto* varExpr = dynamic_cast<VariableExpr*>(expr.get())) {
+        if (check(TokenType::LESS)) {
+            // Try to parse generic type parameters
+            // We skip them for now since we don't use them in semantic analysis yet
+            advance(); // consume <
+            int depth = 1;
+            while (depth > 0 && !isAtEnd()) {
+                if (check(TokenType::LESS)) {
+                    depth++;
+                    advance();
+                } else if (check(TokenType::GREATER)) {
+                    depth--;
+                    advance();
+                } else {
+                    advance();
+                }
+            }
+        }
+    }
+
     while (true) {
         if (match({TokenType::LEFT_PAREN})) {
             expr = finishCall(std::move(expr));
@@ -490,6 +566,23 @@ std::unique_ptr<Expr> Parser::primary() {
         return std::make_unique<GroupingExpr>(std::move(expr));
     }
 
+    // Handle array literals: [expr, expr, ...]
+    if (match({TokenType::LEFT_BRACKET})) {
+        std::vector<std::unique_ptr<Expr>> elements;
+        if (!check(TokenType::RIGHT_BRACKET)) {
+            do {
+                elements.push_back(expression());
+            } while (match({TokenType::COMMA}));
+        }
+        Token bracket = consume(TokenType::RIGHT_BRACKET, "Expect ']' after array elements.");
+        // Represent array literal as a call to Array constructor with elements as arguments
+        return std::make_unique<CallExpr>(
+            std::make_unique<VariableExpr>(Token{TokenType::IDENTIFIER, "Array", bracket.line, bracket.column}),
+            bracket,
+            std::move(elements)
+        );
+    }
+
     throw ParseError("Expect expression. Found: " + peek().lexeme, peek().line, peek().column);
 }
 
@@ -503,7 +596,24 @@ std::string Parser::parseType() {
         return "Optional<" + inner + ">";
     }
     if (match({TokenType::IDENTIFIER, TokenType::INT, TokenType::STRING, TokenType::BOOL, TokenType::DOUBLE, TokenType::VOID})) {
-        return previous().lexeme;
+        std::string typeName = previous().lexeme;
+
+        // Handle generic type parameters (e.g., Result<string, Error>, Array<int>)
+        if (match({TokenType::LESS})) {
+            typeName += "<";
+            int depth = 1;
+            while (depth > 0 && !isAtEnd()) {
+                Token token = advance();
+                typeName += token.lexeme;
+                if (token.type == TokenType::LESS) {
+                    depth++;
+                } else if (token.type == TokenType::GREATER) {
+                    depth--;
+                }
+            }
+        }
+
+        return typeName;
     }
     Token t = peek();
     throw ParseError("Expect type. Found: " + t.lexeme, t.line, t.column);

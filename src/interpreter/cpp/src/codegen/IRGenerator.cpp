@@ -606,6 +606,12 @@ void IRGenerator::visit(WhileStmt& stmt) {
     emitRaw("\n" + endLabel + ":");
 }
 
+void IRGenerator::visit(ForStmt& stmt) {
+    // TODO: Implement IR generation for for loops
+    // For now, emit a comment
+    emit("; For loop not yet implemented in IR generation");
+}
+
 void IRGenerator::visit(UnaryExpr& expr) {
     expr.right->accept(*this);
     // TODO: Implement unary operations (negation, logical NOT, etc.)

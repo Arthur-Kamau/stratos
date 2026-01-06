@@ -19,7 +19,8 @@ fn main() {
 
     // Example 1: File exists check before reading
     println("1. Safe file reading:");
-    val path1 = "examples/expect/src/main.st";
+    // val path1 = "/examples/expect/src/main.st";
+    val path1 = "src/main.st";
 
     if io.exists(path1) {
         println("✓ File exists: " + path1);
@@ -57,8 +58,8 @@ fn main() {
         println(readContent);
 
         // Clean up
-        io.remove(testFile);
-        println("✓ Cleaned up test file");
+        //         io.remove(testFile);
+        println("✓ File preserved for verification (cleanup disabled) test file");
     }
 
     // Example 4: Directory checks
@@ -70,8 +71,8 @@ fn main() {
 
     // Example 5: File vs Directory
     println("\n5. Distinguishing files and directories:");
-    checkFileType("examples/expect/stratos.conf");
-    checkFileType("examples/expect/src");
+    checkFileType("stratos.conf");
+    checkFileType("src");
     checkFileType("README.md");
 
     println("\n=== All checks completed successfully ===");

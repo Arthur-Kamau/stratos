@@ -27,6 +27,7 @@ class ExpressionStmt;
 class PrintStmt;
 class IfStmt;
 class WhileStmt;
+class ForStmt;
 class ReturnStmt;
 class PackageDecl;
 class UseStmt;
@@ -52,6 +53,7 @@ public:
     virtual void visit(PrintStmt& stmt) = 0;
     virtual void visit(IfStmt& stmt) = 0;
     virtual void visit(WhileStmt& stmt) = 0;
+    virtual void visit(ForStmt& stmt) = 0;
     virtual void visit(ReturnStmt& stmt) = 0;
 };
 
@@ -259,6 +261,22 @@ public:
 
     WhileStmt(std::unique_ptr<Expr> condition, std::unique_ptr<Stmt> body)
         : condition(std::move(condition)), body(std::move(body)) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class ForStmt : public Stmt {
+public:
+    Token variable;         // Loop variable name (e.g., 'file')
+    bool isMutable;         // true if 'var', false if 'val'
+    std::string varType;    // Type annotation if provided
+    std::unique_ptr<Expr> iterable;  // Expression to iterate over
+    std::unique_ptr<Stmt> body;      // Loop body
+
+    ForStmt(Token variable, bool isMutable, std::string varType,
+            std::unique_ptr<Expr> iterable, std::unique_ptr<Stmt> body)
+        : variable(variable), isMutable(isMutable), varType(varType),
+          iterable(std::move(iterable)), body(std::move(body)) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };

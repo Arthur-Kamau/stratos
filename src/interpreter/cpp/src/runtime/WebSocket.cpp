@@ -12,7 +12,9 @@
     #include <winsock2.h>
     #include <ws2tcpip.h>
     #pragma comment(lib, "ws2_32.lib")
-    #define close closesocket
+
+    // Platform-specific socket close
+    inline int socket_close(int sock) { return closesocket(sock); }
 #else
     #include <sys/socket.h>
     #include <netinet/in.h>
@@ -22,6 +24,9 @@
     #include <unistd.h>
     #include <fcntl.h>
     #include <sys/select.h>
+
+    // Platform-specific socket close
+    inline int socket_close(int sock) { return ::close(sock); }
 #endif
 
 // Simple SHA-1 implementation for WebSocket handshake
@@ -40,7 +45,7 @@ WebSocketManager& WebSocketManager::instance() {
 WebSocketManager::~WebSocketManager() {
     for (auto& pair : connections) {
         if (pair.second->connected) {
-            close(pair.first);
+            socket_close(pair.second->socket);
         }
     }
 }
@@ -187,7 +192,7 @@ int WebSocketManager::connect(const std::string& url) {
     // Resolve host
     struct hostent* server = gethostbyname(host.c_str());
     if (server == nullptr) {
-        ::close(sock);
+        socket_close(sock);
         throw std::runtime_error("Failed to resolve host: " + host);
     }
 
@@ -199,13 +204,13 @@ int WebSocketManager::connect(const std::string& url) {
     std::memcpy(&serverAddr.sin_addr.s_addr, server->h_addr, server->h_length);
 
     if (::connect(sock, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
-        ::close(sock);
+        socket_close(sock);
         throw std::runtime_error("Failed to connect to " + host + ":" + std::to_string(port));
     }
 
     // Perform WebSocket handshake
     if (!performHandshake(sock, host, path)) {
-        ::close(sock);
+        socket_close(sock);
         throw std::runtime_error("WebSocket handshake failed");
     }
 
@@ -375,7 +380,7 @@ void WebSocketManager::close(int wsId) {
     if (it->second->connected) {
         // Send close frame
         sendFrame(it->second->socket, "", 0x8);
-        ::close(it->second->socket);
+        socket_close(it->second->socket);
         it->second->connected = false;
     }
 
@@ -462,7 +467,7 @@ int WebSocketManager::createServer(int port) {
 
     // Set socket options to reuse address
     int opt = 1;
-    setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));
 
     // Bind to port
     struct sockaddr_in serverAddr;
@@ -472,13 +477,13 @@ int WebSocketManager::createServer(int port) {
     serverAddr.sin_port = htons(port);
 
     if (::bind(serverSocket, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
-        ::close(serverSocket);
+        socket_close(serverSocket);
         throw std::runtime_error("Failed to bind to port " + std::to_string(port));
     }
 
     // Listen for connections
     if (::listen(serverSocket, 5) < 0) {
-        ::close(serverSocket);
+        socket_close(serverSocket);
         throw std::runtime_error("Failed to listen on port " + std::to_string(port));
     }
 
@@ -533,7 +538,7 @@ int WebSocketManager::acceptClient(int serverId, int timeoutMs) {
 
     // Perform WebSocket handshake
     if (!performServerHandshake(clientSocket)) {
-        ::close(clientSocket);
+        socket_close(clientSocket);
         return -1;
     }
 
@@ -588,7 +593,7 @@ void WebSocketManager::closeClient(int clientId) {
     if (it->second->connected) {
         // Send close frame (unmasked)
         sendFrame(it->second->socket, "", 0x8, false);
-        ::close(it->second->socket);
+        socket_close(it->second->socket);
         it->second->connected = false;
     }
 
@@ -602,7 +607,7 @@ void WebSocketManager::closeServer(int serverId) {
     }
 
     if (it->second->connected) {
-        ::close(it->second->socket);
+        socket_close(it->second->socket);
         it->second->connected = false;
     }
 

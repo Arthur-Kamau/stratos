@@ -454,6 +454,35 @@ void Interpreter::visit(CallExpr& expr) {
                     args.push_back(lastValue);
                 }
 
+                // Handle string method calls (content.split(), content.length(), etc.)
+                if (leftValue.type == "string") {
+                    // Map string methods to strings module functions
+                    // The string itself becomes the first argument
+                    args.insert(args.begin(), leftValue);
+                    lastValue = evaluateNativeCall("strings", methodName, args);
+                    return;
+                }
+
+                // Handle array method calls (array.length(), etc.)
+                if (leftValue.type.starts_with("array")) {
+                    if (methodName == "length") {
+                        // Get the length of the array
+                        if (auto* anyPtr = std::get_if<std::any>(&leftValue.value)) {
+                            if (leftValue.type == "array<string>") {
+                                try {
+                                    auto& vec = std::any_cast<std::vector<std::string>&>(*anyPtr);
+                                    lastValue = RuntimeValue(static_cast<int>(vec.size()));
+                                    return;
+                                } catch (const std::bad_any_cast&) {
+                                    error("Internal error: Failed to cast array value");
+                                }
+                            }
+                            // Add more array types here as needed
+                        }
+                    }
+                    error("Unknown array method: " + methodName);
+                }
+
                 // Handle object method calls
                 if (leftValue.type == "object") {
                     auto instance = leftValue.asObject();
@@ -574,12 +603,40 @@ void Interpreter::visit(CallExpr& expr) {
 }
 
 void Interpreter::visit(IndexExpr& expr) {
-    // Array indexing not yet fully implemented
-    // For now, just evaluate both sides and return a default value
+    // Evaluate the object being indexed
     expr.object->accept(*this);
+    RuntimeValue arrayValue = lastValue;
+
+    // Evaluate the index
     expr.index->accept(*this);
-    // Return a default value (0 for now)
-    lastValue = RuntimeValue(std::any(0), "int");
+    RuntimeValue indexValue = lastValue;
+
+    // Check if this is an array type
+    if (arrayValue.type.starts_with("array")) {
+        // Extract the std::any containing the vector
+        if (auto* anyPtr = std::get_if<std::any>(&arrayValue.value)) {
+            // Get the index as an integer
+            int idx = indexValue.asInt();
+
+            // Try to cast to vector<string> (most common from split)
+            if (arrayValue.type == "array<string>") {
+                try {
+                    auto& vec = std::any_cast<std::vector<std::string>&>(*anyPtr);
+                    if (idx >= 0 && idx < static_cast<int>(vec.size())) {
+                        lastValue = RuntimeValue(vec[idx]);
+                        return;
+                    } else {
+                        error("Array index out of bounds: " + std::to_string(idx));
+                    }
+                } catch (const std::bad_any_cast&) {
+                    error("Internal error: Failed to cast array value");
+                }
+            }
+            // Add more array types here as needed
+        }
+    }
+
+    error("Cannot index non-array type: " + arrayValue.type);
 }
 
 void Interpreter::visit(GroupingExpr& expr) {
@@ -613,6 +670,12 @@ void Interpreter::visit(VarDecl& stmt) {
 }
 
 void Interpreter::visit(FunctionDecl& stmt) {
+    // Only register functions that have bodies
+    // Function declarations without bodies are meant to be native function declarations
+    if (!stmt.body) {
+        return;  // Skip registration - this is a native function declaration
+    }
+
     // If we're loading a module, register function in module namespace
     if (!currentModuleName.empty()) {
         moduleFunctions[currentModuleName].emplace(stmt.name.lexeme, std::ref(stmt));  // Safe reference
@@ -785,6 +848,21 @@ void Interpreter::visit(WhileStmt& stmt) {
     }
 }
 
+void Interpreter::visit(ForStmt& stmt) {
+    // Evaluate the iterable expression
+    stmt.iterable->accept(*this);
+    RuntimeValue iterableValue = lastValue;
+
+    // TODO: Implement proper iteration over collections
+    // For now, this is a stub that allows compilation
+    // Full implementation requires:
+    // 1. Collection/Array type support
+    // 2. Iterator protocol
+    // 3. Proper element extraction
+
+    throw std::runtime_error("For loops are not yet fully implemented in the runtime. Semantic analysis is complete.");
+}
+
 void Interpreter::visit(ReturnStmt& stmt) {
     RuntimeValue value;
 
@@ -859,7 +937,26 @@ RuntimeValue Interpreter::evaluateNativeCall(const std::string& moduleName,
             } else {
                 resultType = "string";
             }
-        } else if (moduleName == "log" || moduleName == "io") {
+        } else if (moduleName == "io") {
+            // File info functions that return bool
+            if (functionName == "exists" || functionName == "isFile" || functionName == "isDirectory") {
+                resultType = "bool";
+            }
+            // Functions that return int
+            else if (functionName == "fileSize") {
+                resultType = "int";
+            }
+            // Functions that return string
+            else if (functionName == "readFile" || functionName == "join" ||
+                     functionName == "basename" || functionName == "dirname" ||
+                     functionName == "extension" || functionName == "absolute") {
+                resultType = "string";
+            }
+            // Everything else defaults to void (writeFile, remove, mkdir, etc.)
+            else {
+                resultType = "void";
+            }
+        } else if (moduleName == "log") {
             resultType = "void";
         }
     }

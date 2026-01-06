@@ -8,6 +8,19 @@
 #include <sstream>
 #include <filesystem>
 #include <chrono>
+#ifdef _WIN32
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+// Undefine Windows macros that conflict with our code
+#undef FALSE
+#undef TRUE
+#undef ERROR
+#undef NONE
+#undef THIS
+#undef VOID
+#undef OPTIONAL
+#endif
 
 #include "stratos/Lexer.h"
 #include "stratos/Parser.h"
@@ -1496,6 +1509,12 @@ int handleCheck(int argc, char* argv[]) {
 // ============================================================================
 
 int main(int argc, char* argv[]) {
+    // Enable UTF-8 support on Windows console
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+    setvbuf(stdout, nullptr, _IOFBF, 1000);
+#endif
+
     // Initialize runtime systems
     NativeRegistry::getInstance().initializeStdlib();
 

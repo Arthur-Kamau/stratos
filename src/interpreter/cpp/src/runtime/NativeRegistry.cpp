@@ -621,7 +621,7 @@ void NativeRegistry::initStrings() {
             pos = found + sep.length();
         }
         return result;
-    });
+    }, FunctionSignature{{"string", "string"}, "array<string>"});
 
     registerFunction("strings", "join", [](const std::vector<std::any>& args) -> std::any {
         auto parts = std::any_cast<std::vector<std::string>>(args[0]);
@@ -1078,7 +1078,8 @@ void NativeRegistry::initIO() {
     // File info
     registerFunction("io", "exists", [](const std::vector<std::any>& args) -> std::any {
         std::string path = std::any_cast<std::string>(args[0]);
-        return fs::exists(path);
+        bool exists = fs::exists(path);
+        return exists;
     });
 
     registerFunction("io", "isFile", [](const std::vector<std::any>& args) -> std::any {

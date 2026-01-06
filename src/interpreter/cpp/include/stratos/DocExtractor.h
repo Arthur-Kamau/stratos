@@ -45,6 +45,7 @@ public:
     void visit(PrintStmt& stmt) override {}
     void visit(IfStmt& stmt) override {}
     void visit(WhileStmt& stmt) override {}
+    void visit(ForStmt& stmt) override {}
     void visit(ReturnStmt& stmt) override {}
 
 private:

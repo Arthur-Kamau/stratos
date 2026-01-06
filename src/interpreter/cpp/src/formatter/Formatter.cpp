@@ -269,6 +269,26 @@ void Formatter::visit(WhileStmt& stmt) {
     newline();
 }
 
+void Formatter::visit(ForStmt& stmt) {
+    write("for");
+    space();
+    write(stmt.isMutable ? "var" : "val");
+    space();
+    write(stmt.variable.lexeme);
+    if (!stmt.varType.empty()) {
+        write(":");
+        space();
+        write(stmt.varType);
+    }
+    space();
+    write("in");
+    space();
+    stmt.iterable->accept(*this);
+    space();
+    stmt.body->accept(*this);
+    newline();
+}
+
 void Formatter::visit(ReturnStmt& stmt) {
     write("return");
     if (stmt.value) {

@@ -114,6 +114,11 @@ void Optimizer::visit(WhileStmt& stmt) {
     stmt.body->accept(*this);
 }
 
+void Optimizer::visit(ForStmt& stmt) {
+    stmt.iterable->accept(*this);
+    stmt.body->accept(*this);
+}
+
 void Optimizer::visit(ReturnStmt& stmt) {
     if (stmt.value) stmt.value->accept(*this);
 }

@@ -3,11 +3,29 @@
 #include <iostream>
 #include <sstream>
 #include <cstring>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <chrono>
+
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    #pragma comment(lib, "ws2_32.lib")
+    typedef int socklen_t;
+
+    // Platform-specific socket functions
+    inline int socket_close(int sock) { return closesocket(sock); }
+    inline int socket_read(int sock, char* buf, int len) { return recv(sock, buf, len, 0); }
+    inline int socket_write(int sock, const char* buf, int len) { return send(sock, buf, len, 0); }
+#else
+    #include <unistd.h>
+    #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <arpa/inet.h>
+
+    // Platform-specific socket functions
+    inline int socket_close(int sock) { return close(sock); }
+    inline int socket_read(int sock, char* buf, int len) { return read(sock, buf, len); }
+    inline int socket_write(int sock, const char* buf, int len) { return write(sock, buf, len); }
+#endif
 
 namespace stratos {
 
@@ -106,7 +124,7 @@ void DevToolsServer::start() {
 
     // Set socket options
     int opt = 1;
-    setsockopt(serverSocket_, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+    setsockopt(serverSocket_, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));
 
     // Bind to port
     struct sockaddr_in address;
@@ -116,7 +134,7 @@ void DevToolsServer::start() {
 
     if (bind(serverSocket_, (struct sockaddr*)&address, sizeof(address)) < 0) {
         std::cerr << "[DevTools] Failed to bind to port " << port_ << std::endl;
-        close(serverSocket_);
+        socket_close(serverSocket_);
         serverSocket_ = -1;
         return;
     }
@@ -124,7 +142,7 @@ void DevToolsServer::start() {
     // Listen
     if (listen(serverSocket_, 5) < 0) {
         std::cerr << "[DevTools] Failed to listen" << std::endl;
-        close(serverSocket_);
+        socket_close(serverSocket_);
         serverSocket_ = -1;
         return;
     }
@@ -143,7 +161,7 @@ void DevToolsServer::stop() {
 
     // Close server socket
     if (serverSocket_ >= 0) {
-        close(serverSocket_);
+        socket_close(serverSocket_);
         serverSocket_ = -1;
     }
 
@@ -204,10 +222,10 @@ void DevToolsServer::serverLoop() {
 
 void DevToolsServer::handleClient(int clientSocket) {
     char buffer[8192];
-    ssize_t bytesRead = read(clientSocket, buffer, sizeof(buffer) - 1);
+    int bytesRead = socket_read(clientSocket, buffer, sizeof(buffer) - 1);
 
     if (bytesRead <= 0) {
-        close(clientSocket);
+        socket_close(clientSocket);
         return;
     }
 
@@ -272,8 +290,8 @@ void DevToolsServer::handleClient(int clientSocket) {
     }
 
     // Send response
-    write(clientSocket, response.c_str(), response.length());
-    close(clientSocket);
+    socket_write(clientSocket, response.c_str(), response.length());
+    socket_close(clientSocket);
 }
 
 std::string DevToolsServer::parseHttpRequest(const std::string& data) {

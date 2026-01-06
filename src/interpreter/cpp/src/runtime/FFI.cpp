@@ -13,6 +13,17 @@ FFIManager& FFIManager::instance() {
 
 int FFIManager::loadLibrary(const std::string& path) {
     // Load the shared library
+#ifdef _WIN32
+    void* handle = (void*)LoadLibraryA(path.c_str());
+
+    if (!handle) {
+        std::string error = "Failed to load library: ";
+        error += path;
+        error += " - Error code: ";
+        error += std::to_string(GetLastError());
+        throw std::runtime_error(error);
+    }
+#else
     void* handle = dlopen(path.c_str(), RTLD_LAZY);
 
     if (!handle) {
@@ -22,6 +33,7 @@ int FFIManager::loadLibrary(const std::string& path) {
         error += dlerror();
         throw std::runtime_error(error);
     }
+#endif
 
     // Create library object
     auto library = std::make_shared<FFILibrary>(handle, path);
@@ -47,6 +59,17 @@ void* FFIManager::getFunction(int libraryId, const std::string& functionName) {
         throw std::runtime_error("Invalid library ID: " + std::to_string(libraryId));
     }
 
+#ifdef _WIN32
+    void* func = (void*)GetProcAddress((HMODULE)it->second->handle, functionName.c_str());
+
+    if (!func) {
+        std::string msg = "Failed to find function '";
+        msg += functionName;
+        msg += "' in library - Error code: ";
+        msg += std::to_string(GetLastError());
+        throw std::runtime_error(msg);
+    }
+#else
     // Clear any existing error
     dlerror();
 
@@ -66,6 +89,7 @@ void* FFIManager::getFunction(int libraryId, const std::string& functionName) {
     if (!func) {
         throw std::runtime_error("Function '" + functionName + "' not found in library");
     }
+#endif
 
     return func;
 }

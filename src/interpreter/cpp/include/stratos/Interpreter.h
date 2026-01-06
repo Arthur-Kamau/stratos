@@ -30,11 +30,12 @@ struct RuntimeValue {
         std::string,                         // string
         char,                                // char
         bool,                                // bool
-        std::shared_ptr<ClassInstance>       // object
+        std::shared_ptr<ClassInstance>,      // object
+        std::any                             // array (stores vector<string>, vector<int>, etc.)
     >;
 
     ValueType value;
-    std::string type; // "int", "double", "string", "char", "bool", "void", "object"
+    std::string type; // "int", "double", "string", "char", "bool", "void", "object", "array<T>"
 
     // Default constructor: void value
     RuntimeValue() : value(std::monostate{}), type("void") {}
@@ -54,6 +55,9 @@ struct RuntimeValue {
             value = std::any_cast<bool>(val);
         } else if (t == "object") {
             value = std::any_cast<std::shared_ptr<ClassInstance>>(val);
+        } else if (t.starts_with("array")) {
+            // For arrays, store the std::any directly
+            value = val;
         } else {
             value = std::monostate{};
         }
@@ -155,6 +159,7 @@ public:
     void visit(PrintStmt& stmt) override;
     void visit(IfStmt& stmt) override;
     void visit(WhileStmt& stmt) override;
+    void visit(ForStmt& stmt) override;
     void visit(ReturnStmt& stmt) override;
 
 private:
