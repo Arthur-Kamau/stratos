@@ -1,36 +1,40 @@
 package main;
 
-/**
-*  types =>  int, number, double , string , bool, char
-*  
-*/
+fn main() {
+    println("Stratos Variables Example");
 
-function main(){
+    // 1. Immutable variables (val)
+    // Variables defined with 'val' cannot be reassigned
+    val greeting = "Hello, Stratos!";
+    println(greeting);
 
-   // mutable  and nullable 
-   var name_first  = "kamau" ;
-   //  mutable  and nullable  with explicit type
-   var name_second : String  = "kamau" ;
-   // mutable  and nullable  with explicit type string literal 
-   var name_second : String  = """ 
-       This
-       is 
-       a 
-       literal 
-   
-   """ ;
-      // mutable  and nullable
-    var letter : Char = 'v'  // ensure single quote
+    val pi = 3.14159;
+    println("Value of pi: " + pi);
 
-   // imutable and nullable
-   var userAge  = SomeFunction(); 
-   //  imutable  and nullable  with explicit type
-   var userHeight : int  = 145 ;
+    // 2. Mutable variables (var)
+    // Variables defined with 'var' can be updated
+    var counter = 0;
+    println("Counter starts at: " + counter);
 
-   // non nullable and imutable 
-   var userLat  = 12.333 ; 
-   // non nullable and imutable   with explicit type
-   var userLong : double = 12.333 ; 
-   //  non nullable and mutable
-   var mutable userAngle : double = 12.333 ; 
+    counter = counter + 1;
+    println("Counter incremented: " + counter);
+    
+    counter = 10;
+    println("Counter set to: " + counter);
+
+    // 3. Different types
+    val number = 42;          // int
+    val text = "Text string"; // string
+    val flag = true;          // bool
+    
+    println("Number: " + number);
+    println("Text: " + text);
+    
+    if flag {
+        println("Flag is true");
+    }
+
+    // 4. Variable logic
+    var total = number + 8;
+    println("Total (42 + 8): " + total);
 }
