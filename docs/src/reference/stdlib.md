@@ -7,6 +7,8 @@ description: Complete reference for Stratos standard library modules
 
 Stratos comes with a comprehensive standard library covering common programming needs. All modules are written in Stratos and C++ for optimal performance.
 
+> **Full API Documentation:** For a complete list of all packages and functions, see the [Standard Library API](/stdlib/).
+
 ## Module Overview
 
 

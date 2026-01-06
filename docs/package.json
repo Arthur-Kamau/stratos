@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "Stratos Programming Language Documentation",
   "scripts": {
-    "dev": "vuepress dev src",
-    "docs:dev": "vuepress dev src",
+    "dev": "vuepress dev src --port 8001",
+    "docs:dev": "vuepress dev src --port 8001",
     "docs:build": "vuepress build src"
   },
   "keywords": [

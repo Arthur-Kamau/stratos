@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <cstring>
 #include <regex>
+#include <sqlite3.h>
 
 // Platform-specific includes for terminal control
 #ifdef _WIN32
@@ -96,6 +97,7 @@ void NativeRegistry::initializeStdlib() {
     initWebSocket();
     initTerminal();
     initRegex();
+    initSQLite();    // SQLite database support
 }
 
 // ============================================================================
@@ -2817,4 +2819,316 @@ void NativeRegistry::initRegex() {
     }, FunctionSignature{{"array<string>"}, "map<string,string>"});
 }
 
-} // namespace stratos
+
+
+// ============================================================================
+// SQLite Module - Database Support
+// ============================================================================
+
+void NativeRegistry::initSQLite() {
+    // __sqlite_open(path: string): any
+    registerFunction("db", "__sqlite_open", [](const std::vector<std::any>& args) -> std::any {
+        auto path = std::any_cast<std::string>(args[0]);
+        sqlite3* db = nullptr;
+
+        int rc = sqlite3_open(path.c_str(), &db);
+        if (rc != SQLITE_OK) {
+            std::string error = "Failed to open database: " + std::string(sqlite3_errmsg(db));
+            sqlite3_close(db);
+            throw std::runtime_error(error);
+        }
+
+        // Return database handle as void pointer wrapped in any
+        return std::any(reinterpret_cast<void*>(db));
+    }, FunctionSignature{{"string"}, "any"});
+
+    // __sqlite_close(handle: any): void
+    registerFunction("db", "__sqlite_close", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        sqlite3* db = reinterpret_cast<sqlite3*>(handle);
+        sqlite3_close(db);
+        return std::any();
+    }, FunctionSignature{{"any"}, "void"});
+
+    // __sqlite_exec(handle: any, sql: string): int
+    registerFunction("db", "__sqlite_exec", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto sql = std::any_cast<std::string>(args[1]);
+        sqlite3* db = reinterpret_cast<sqlite3*>(handle);
+
+        char* errMsg = nullptr;
+        int rc = sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &errMsg);
+
+        if (rc != SQLITE_OK) {
+            std::string error = "SQL error: " + std::string(errMsg);
+            sqlite3_free(errMsg);
+            throw std::runtime_error(error);
+        }
+
+        return std::any(sqlite3_changes(db));
+    }, FunctionSignature{{"any", "string"}, "int"});
+
+    // __sqlite_prepare(handle: any, sql: string): any
+    registerFunction("db", "__sqlite_prepare", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto sql = std::any_cast<std::string>(args[1]);
+        sqlite3* db = reinterpret_cast<sqlite3*>(handle);
+
+        sqlite3_stmt* stmt = nullptr;
+        int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+
+        if (rc != SQLITE_OK) {
+            std::string error = "Failed to prepare statement: " + std::string(sqlite3_errmsg(db));
+            throw std::runtime_error(error);
+        }
+
+        return std::any(reinterpret_cast<void*>(stmt));
+    }, FunctionSignature{{"any", "string"}, "any"});
+
+    // __sqlite_query(handle: any, sql: string): any
+    registerFunction("db", "__sqlite_query", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto sql = std::any_cast<std::string>(args[1]);
+        sqlite3* db = reinterpret_cast<sqlite3*>(handle);
+
+        sqlite3_stmt* stmt = nullptr;
+        int rc = sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr);
+
+        if (rc != SQLITE_OK) {
+            std::string error = "Failed to prepare query: " + std::string(sqlite3_errmsg(db));
+            throw std::runtime_error(error);
+        }
+
+        return std::any(reinterpret_cast<void*>(stmt));
+    }, FunctionSignature{{"any", "string"}, "any"});
+
+    // __sqlite_bind_int(handle: any, index: int, value: int): void
+    registerFunction("db", "__sqlite_bind_int", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto index = std::any_cast<int>(args[1]);
+        auto value = std::any_cast<int>(args[2]);
+        sqlite3_stmt* stmt = reinterpret_cast<sqlite3_stmt*>(handle);
+
+        int rc = sqlite3_bind_int(stmt, index, value);
+        if (rc != SQLITE_OK) {
+            throw std::runtime_error("Failed to bind int parameter");
+        }
+        return std::any();
+    }, FunctionSignature{{"any", "int", "int"}, "void"});
+
+    // __sqlite_bind_double(handle: any, index: int, value: double): void
+    registerFunction("db", "__sqlite_bind_double", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto index = std::any_cast<int>(args[1]);
+        auto value = std::any_cast<double>(args[2]);
+        sqlite3_stmt* stmt = reinterpret_cast<sqlite3_stmt*>(handle);
+
+        int rc = sqlite3_bind_double(stmt, index, value);
+        if (rc != SQLITE_OK) {
+            throw std::runtime_error("Failed to bind double parameter");
+        }
+        return std::any();
+    }, FunctionSignature{{"any", "int", "double"}, "void"});
+
+    // __sqlite_bind_string(handle: any, index: int, value: string): void
+    registerFunction("db", "__sqlite_bind_string", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto index = std::any_cast<int>(args[1]);
+        auto value = std::any_cast<std::string>(args[2]);
+        sqlite3_stmt* stmt = reinterpret_cast<sqlite3_stmt*>(handle);
+
+        int rc = sqlite3_bind_text(stmt, index, value.c_str(), -1, SQLITE_TRANSIENT);
+        if (rc != SQLITE_OK) {
+            throw std::runtime_error("Failed to bind string parameter");
+        }
+        return std::any();
+    }, FunctionSignature{{"any", "int", "string"}, "void"});
+
+    // __sqlite_bind_null(handle: any, index: int): void
+    registerFunction("db", "__sqlite_bind_null", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto index = std::any_cast<int>(args[1]);
+        sqlite3_stmt* stmt = reinterpret_cast<sqlite3_stmt*>(handle);
+
+        int rc = sqlite3_bind_null(stmt, index);
+        if (rc != SQLITE_OK) {
+            throw std::runtime_error("Failed to bind null parameter");
+        }
+        return std::any();
+    }, FunctionSignature{{"any", "int"}, "void"});
+
+    // __sqlite_bind(handle: any, index: int, value: any): void
+    registerFunction("db", "__sqlite_bind", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto index = std::any_cast<int>(args[1]);
+        auto& value = args[2];
+        sqlite3_stmt* stmt = reinterpret_cast<sqlite3_stmt*>(handle);
+
+        int rc = SQLITE_OK;
+
+        // Try to bind based on the type of value
+        if (value.type() == typeid(int)) {
+            rc = sqlite3_bind_int(stmt, index, std::any_cast<int>(value));
+        } else if (value.type() == typeid(double)) {
+            rc = sqlite3_bind_double(stmt, index, std::any_cast<double>(value));
+        } else if (value.type() == typeid(std::string)) {
+            auto str = std::any_cast<std::string>(value);
+            rc = sqlite3_bind_text(stmt, index, str.c_str(), -1, SQLITE_TRANSIENT);
+        } else if (value.type() == typeid(bool)) {
+            rc = sqlite3_bind_int(stmt, index, std::any_cast<bool>(value) ? 1 : 0);
+        } else if (!value.has_value()) {
+            rc = sqlite3_bind_null(stmt, index);
+        } else {
+            throw std::runtime_error("Unsupported type for bind parameter");
+        }
+
+        if (rc != SQLITE_OK) {
+            throw std::runtime_error("Failed to bind parameter");
+        }
+        return std::any();
+    }, FunctionSignature{{"any", "int", "any"}, "void"});
+
+    // __sqlite_stmt_exec(handle: any): int
+    registerFunction("db", "__sqlite_stmt_exec", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        sqlite3_stmt* stmt = reinterpret_cast<sqlite3_stmt*>(handle);
+
+        int rc = sqlite3_step(stmt);
+        sqlite3_reset(stmt);
+
+        if (rc != SQLITE_DONE && rc != SQLITE_ROW) {
+            throw std::runtime_error("Failed to execute statement");
+        }
+
+        sqlite3* db = sqlite3_db_handle(stmt);
+        return std::any(sqlite3_changes(db));
+    }, FunctionSignature{{"any"}, "int"});
+
+    // __sqlite_step(handle: any): bool
+    registerFunction("db", "__sqlite_step", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        sqlite3_stmt* stmt = reinterpret_cast<sqlite3_stmt*>(handle);
+
+        int rc = sqlite3_step(stmt);
+        return std::any(rc == SQLITE_ROW);
+    }, FunctionSignature{{"any"}, "bool"});
+
+    // __sqlite_column_int(handle: any, index: int): int
+    registerFunction("db", "__sqlite_column_int", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto index = std::any_cast<int>(args[1]);
+        sqlite3_stmt* stmt = reinterpret_cast<sqlite3_stmt*>(handle);
+
+        return std::any(sqlite3_column_int(stmt, index));
+    }, FunctionSignature{{"any", "int"}, "int"});
+
+    // __sqlite_column_double(handle: any, index: int): double
+    registerFunction("db", "__sqlite_column_double", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto index = std::any_cast<int>(args[1]);
+        sqlite3_stmt* stmt = reinterpret_cast<sqlite3_stmt*>(handle);
+
+        return std::any(sqlite3_column_double(stmt, index));
+    }, FunctionSignature{{"any", "int"}, "double"});
+
+    // __sqlite_column_string(handle: any, index: int): string
+    registerFunction("db", "__sqlite_column_string", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto index = std::any_cast<int>(args[1]);
+        sqlite3_stmt* stmt = reinterpret_cast<sqlite3_stmt*>(handle);
+
+        const unsigned char* text = sqlite3_column_text(stmt, index);
+        if (text) {
+            return std::any(std::string(reinterpret_cast<const char*>(text)));
+        }
+        return std::any(std::string(""));
+    }, FunctionSignature{{"any", "int"}, "string"});
+
+    // __sqlite_column_index(handle: any, name: string): int
+    registerFunction("db", "__sqlite_column_index", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto name = std::any_cast<std::string>(args[1]);
+        sqlite3_stmt* stmt = reinterpret_cast<sqlite3_stmt*>(handle);
+
+        int columnCount = sqlite3_column_count(stmt);
+        for (int i = 0; i < columnCount; i++) {
+            const char* columnName = sqlite3_column_name(stmt, i);
+            if (columnName && name == columnName) {
+                return std::any(i);
+            }
+        }
+
+        throw std::runtime_error("Column not found: " + name);
+    }, FunctionSignature{{"any", "string"}, "int"});
+
+    // __sqlite_column_is_null(handle: any, index: int): bool
+    registerFunction("db", "__sqlite_column_is_null", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto index = std::any_cast<int>(args[1]);
+        sqlite3_stmt* stmt = reinterpret_cast<sqlite3_stmt*>(handle);
+
+        return std::any(sqlite3_column_type(stmt, index) == SQLITE_NULL);
+    }, FunctionSignature{{"any", "int"}, "bool"});
+
+    // __sqlite_column_count(handle: any): int
+    registerFunction("db", "__sqlite_column_count", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        sqlite3_stmt* stmt = reinterpret_cast<sqlite3_stmt*>(handle);
+
+        return std::any(sqlite3_column_count(stmt));
+    }, FunctionSignature{{"any"}, "int"});
+
+    // __sqlite_column_name(handle: any, index: int): string
+    registerFunction("db", "__sqlite_column_name", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto index = std::any_cast<int>(args[1]);
+        sqlite3_stmt* stmt = reinterpret_cast<sqlite3_stmt*>(handle);
+
+        const char* name = sqlite3_column_name(stmt, index);
+        if (name) {
+            return std::any(std::string(name));
+        }
+        return std::any(std::string(""));
+    }, FunctionSignature{{"any", "int"}, "string"});
+
+    // __sqlite_stmt_reset(handle: any): void
+    registerFunction("db", "__sqlite_stmt_reset", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        sqlite3_stmt* stmt = reinterpret_cast<sqlite3_stmt*>(handle);
+        sqlite3_reset(stmt);
+        return std::any();
+    }, FunctionSignature{{"any"}, "void"});
+
+    // __sqlite_stmt_close(handle: any): void
+    registerFunction("db", "__sqlite_stmt_close", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        sqlite3_stmt* stmt = reinterpret_cast<sqlite3_stmt*>(handle);
+        sqlite3_finalize(stmt);
+        return std::any();
+    }, FunctionSignature{{"any"}, "void"});
+
+    // __sqlite_rows_close(handle: any): void
+    registerFunction("db", "__sqlite_rows_close", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        sqlite3_stmt* stmt = reinterpret_cast<sqlite3_stmt*>(handle);
+        sqlite3_finalize(stmt);
+        return std::any();
+    }, FunctionSignature{{"any"}, "void"});
+
+    // __sqlite_last_insert_id(handle: any): int
+    registerFunction("db", "__sqlite_last_insert_id", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        sqlite3* db = reinterpret_cast<sqlite3*>(handle);
+
+        return std::any(static_cast<int>(sqlite3_last_insert_rowid(db)));
+    }, FunctionSignature{{"any"}, "int"});
+
+    // __sqlite_changes(handle: any): int
+    registerFunction("db", "__sqlite_changes", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        sqlite3* db = reinterpret_cast<sqlite3*>(handle);
+
+        return std::any(sqlite3_changes(db));
+    }, FunctionSignature{{"any"}, "int"});
+}
+}  // namespace stratos

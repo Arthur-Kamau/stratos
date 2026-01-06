@@ -4,7 +4,18 @@
 
 Write-Host "Building Stratos interpreter..." -ForegroundColor Cyan
 
-g++ -std=c++20 -I include `
+# Compile SQLite as C first
+Write-Host "Compiling SQLite..." -ForegroundColor Yellow
+gcc -c libs/sqlite/sqlite3.c -o build/sqlite3.o
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[FAILED] SQLite compilation failed" -ForegroundColor Red
+    exit 1
+}
+
+# Compile Stratos C++ code and link with SQLite
+Write-Host "Compiling Stratos..." -ForegroundColor Yellow
+g++ -std=c++20 -I include -I libs/sqlite `
   src/main.cpp `
   src/lexer/Lexer.cpp `
   src/parser/Parser.cpp `
@@ -28,6 +39,7 @@ g++ -std=c++20 -I include `
   src/doc/HTMLDocGenerator.cpp `
   src/doc/MarkdownDocGenerator.cpp `
   src/doc/JSONDocGenerator.cpp `
+  build/sqlite3.o `
   -o build/stratos.exe -lws2_32 -lssl -lcrypto
 
 if ($LASTEXITCODE -eq 0) {

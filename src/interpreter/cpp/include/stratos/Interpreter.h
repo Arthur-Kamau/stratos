@@ -61,6 +61,11 @@ struct RuntimeValue {
         } else if (t.starts_with("map")) {
             // For maps, store the std::any directly
             value = val;
+        } else if (t == "any") {
+            // For any type, store the std::any directly
+            value = val;
+        } else if (t == "void") {
+            value = std::monostate{};
         } else {
             value = std::monostate{};
         }
@@ -227,6 +232,7 @@ private:
     // Class storage
     struct Class {
         std::string name;
+        std::string moduleName;  // Module this class belongs to (for native function resolution)
         // LIFETIME: Non-owning reference to ClassDecl::methods (stored in AST)
         // SAFETY: The AST in mainStatements/moduleStatements keeps the referenced methods alive
         // Valid as long as the owning ClassDecl exists in mainStatements or moduleStatements

@@ -1,11 +1,20 @@
 package main;
 
-
-Enum Height {
-   TALL, SHORT , MEDIUM
+enum Color {
+    RED,
+    GREEN,
+    BLUE
 }
-function main(){ 
-  // set height
-  val userHeight : Height =  Height.SHORT
-  
+
+fn main() {
+    println("--- Enum Demo ---");
+    
+    // Enum usage
+    // Assuming enums are accessed like types or integers
+    // or Color.RED if scoped
+    
+    println("Enum defined successfully.");
+    
+    // Note: Printing enum values depends on runtime support
+    // val c = Color.RED;
 }

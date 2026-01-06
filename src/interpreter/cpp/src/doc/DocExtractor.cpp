@@ -33,6 +33,20 @@ void DocExtractor::ensureDefaultPackage() {
 }
 
 void DocExtractor::visit(PackageDecl& stmt) {
+    // Remove default "main" package if it exists and is empty
+    // This prevents generating an empty "main" package for files that have explicit package declarations
+    if (!documentation_->packages.empty()) {
+        DocPackage* first = documentation_->packages.front().get();
+        if (first->name == "main" && 
+            first->functions.empty() && 
+            first->classes.empty() && 
+            first->variables.empty() &&
+            first->dependencies.empty()) {
+            
+            documentation_->packages.clear();
+        }
+    }
+
     auto pkg = std::make_unique<DocPackage>();
     pkg->name = stmt.name.lexeme;
     pkg->sourceFile = sourceFile_;

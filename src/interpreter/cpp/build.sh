@@ -4,7 +4,18 @@
 
 echo "Building Stratos interpreter..."
 
-g++ -std=c++20 -I include \
+# Compile SQLite as C first
+echo "Compiling SQLite..."
+gcc -c libs/sqlite/sqlite3.c -o build/sqlite3.o
+
+if [ $? -ne 0 ]; then
+    echo "[FAILED] SQLite compilation failed"
+    exit 1
+fi
+
+# Compile Stratos C++ code and link with SQLite
+echo "Compiling Stratos..."
+g++ -std=c++20 -I include -I libs/sqlite \
   src/main.cpp \
   src/lexer/Lexer.cpp \
   src/parser/Parser.cpp \
@@ -28,12 +39,13 @@ g++ -std=c++20 -I include \
   src/doc/HTMLDocGenerator.cpp \
   src/doc/MarkdownDocGenerator.cpp \
   src/doc/JSONDocGenerator.cpp \
+  build/sqlite3.o \
   -o build/stratos -lpthread -ldl -lssl -lcrypto
 
 if [ $? -eq 0 ]; then
-    echo "✓ Build successful! Binary: build/stratos"
+    echo "[SUCCESS] Build successful! Binary: build/stratos"
     ls -lh build/stratos
 else
-    echo "✗ Build failed"
+    echo "[FAILED] Build failed"
     exit 1
 fi

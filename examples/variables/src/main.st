@@ -34,7 +34,10 @@ fn main() {
         println("Flag is true");
     }
 
-    // 4. Variable logic
+    // 4. Variable logic and Arithmetic
     var total = number + 8;
     println("Total (42 + 8): " + total);
+
+    var product = number * 2;
+    println("Product (42 * 2): " + product);
 }

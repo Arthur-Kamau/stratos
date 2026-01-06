@@ -589,6 +589,10 @@ void Interpreter::visit(CallExpr& expr) {
                             for (const auto& member : cls.methods->get()) {
                                 if (auto* funcDecl = dynamic_cast<FunctionDecl*>(member.get())) {
                                     if (funcDecl->name.lexeme == methodName) {
+                                        // Save and set executing module context
+                                        std::string previousModule = currentExecutingModule;
+                                        currentExecutingModule = cls.moduleName;
+
                                         // Call the method with 'this' bound to the instance
                                         enterScope();
 
@@ -617,6 +621,10 @@ void Interpreter::visit(CallExpr& expr) {
                                         }
 
                                         exitScope();
+
+                                        // Restore previous executing module context
+                                        currentExecutingModule = previousModule;
+
                                         lastValue = result;
                                         return;
                                     }
@@ -688,6 +696,12 @@ void Interpreter::visit(CallExpr& expr) {
             moduleFunctions.at(currentExecutingModule).count(functionName)) {
             FunctionDecl& funcDeclRef = moduleFunctions.at(currentExecutingModule).at(functionName).get();
             lastValue = callModuleFunction(currentExecutingModule, functionName, args, &funcDeclRef);
+            return;
+        }
+
+        // Check if this is a native function in the current executing module
+        if (!currentExecutingModule.empty() && registry.isNative(currentExecutingModule, functionName)) {
+            lastValue = evaluateNativeCall(currentExecutingModule, functionName, args);
             return;
         }
 
@@ -823,6 +837,7 @@ void Interpreter::visit(ClassDecl& stmt) {
     // Store class definition for later instantiation
     Class cls;
     cls.name = stmt.name.lexeme;
+    cls.moduleName = currentModuleName;  // Track which module this class belongs to
     cls.methods = std::ref(stmt.methods);  // Safe reference instead of raw pointer
     classes[stmt.name.lexeme] = cls;
 }
