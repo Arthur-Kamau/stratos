@@ -38,6 +38,7 @@ std::unique_ptr<Stmt> Parser::declaration() {
         if (match({TokenType::VAR, TokenType::VAL})) return varDeclaration();
         if (match({TokenType::FN})) return fnDeclaration("function");
         if (match({TokenType::CLASS, TokenType::STRUCT, TokenType::INTERFACE})) return classDeclaration();
+        if (match({TokenType::ENUM})) return enumDeclaration();
         if (match({TokenType::PACKAGE})) return packageDeclaration();
         if (match({TokenType::USE})) return useStatement();
 
@@ -203,6 +204,35 @@ std::unique_ptr<Stmt> Parser::classDeclaration() {
     auto cls = std::make_unique<ClassDecl>(name, std::move(superclass), std::move(methods));
     cls->documentation = takePendingDoc();
     return cls;
+}
+
+std::unique_ptr<Stmt> Parser::enumDeclaration() {
+    Token name = consume(TokenType::IDENTIFIER, "Expect enum name.");
+
+    consume(TokenType::LEFT_BRACE, "Expect '{' before enum body.");
+
+    std::vector<Token> values;
+    while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
+        Token valueName = consume(TokenType::IDENTIFIER, "Expect enum value name.");
+        values.push_back(valueName);
+
+        // Allow optional comma after each value
+        if (!check(TokenType::RIGHT_BRACE)) {
+            if (!match({TokenType::COMMA})) {
+                // Comma is optional before closing brace or between values
+                // If next token is not }, it's an error
+                if (!check(TokenType::RIGHT_BRACE)) {
+                    throw ParseError("Expect ',' or '}' after enum value.", peek().line, peek().column);
+                }
+            }
+        }
+    }
+
+    consume(TokenType::RIGHT_BRACE, "Expect '}' after enum body.");
+
+    auto enumDecl = std::make_unique<EnumDecl>(name, std::move(values));
+    enumDecl->documentation = takePendingDoc();
+    return enumDecl;
 }
 
 std::unique_ptr<Stmt> Parser::packageDeclaration() {
@@ -722,14 +752,18 @@ std::unique_ptr<DocComment> Parser::parseDocComment(const std::string& rawText) 
     std::string line;
     std::string currentSection;
     bool inDescription = true;
+    std::string currentTag;
+    std::string currentTagContent;
 
     while (std::getline(stream, line)) {
         // Trim whitespace
         size_t start = line.find_first_not_of(" \t");
         if (start == std::string::npos) {
-            // Empty line - paragraph break
+            // Empty line
             if (inDescription && !currentSection.empty()) {
                 currentSection += "\n\n";
+            } else if (!currentTag.empty()) {
+                currentTagContent += "\n";
             }
             continue;
         }
@@ -738,6 +772,13 @@ std::unique_ptr<DocComment> Parser::parseDocComment(const std::string& rawText) 
 
         // Check for tags
         if (line[0] == '@') {
+            // Save previous tag if any
+            if (!currentTag.empty()) {
+                saveTag(doc, currentTag, currentTagContent);
+                currentTag = "";
+                currentTagContent = "";
+            }
+
             inDescription = false;
 
             // Parse tag
@@ -749,38 +790,25 @@ std::unique_ptr<DocComment> Parser::parseDocComment(const std::string& rawText) 
                 ? line.substr(spacePos + 1)
                 : "";
 
-            if (tagName == "param") {
-                // Format: @param name description
-                ParamDoc param;
-                std::istringstream paramStream(tagContent);
-                paramStream >> param.name;
-
-                // Rest is description
-                std::getline(paramStream, param.description);
-                if (!param.description.empty() && param.description[0] == ' ') {
-                    param.description = param.description.substr(1);
-                }
-
-                doc->params.push_back(param);
-            } else if (tagName == "return") {
-                doc->returnDoc = tagContent;
-            } else if (tagName == "throws") {
-                doc->throws.push_back(tagContent);
-            } else if (tagName == "example") {
-                doc->examples.push_back(tagContent);
-            } else if (tagName == "since") {
-                doc->since = tagContent;
-            } else if (tagName == "deprecated") {
-                doc->deprecated = tagContent;
-            } else {
-                doc->customTags[tagName] = tagContent;
-            }
+            currentTag = tagName;
+            currentTagContent = tagContent;
         } else {
-            // Regular description text
+            // Regular text
             if (inDescription) {
                 currentSection += line + " ";
+            } else if (!currentTag.empty()) {
+                // Continuation of a tag (e.g., multi-line @example)
+                if (!currentTagContent.empty()) {
+                    currentTagContent += "\n";
+                }
+                currentTagContent += line;
             }
         }
+    }
+
+    // Save last tag if any
+    if (!currentTag.empty()) {
+        saveTag(doc, currentTag, currentTagContent);
     }
 
     // Finalize description
@@ -802,6 +830,35 @@ std::unique_ptr<DocComment> Parser::parseDocComment(const std::string& rawText) 
     }
 
     return doc;
+}
+
+void Parser::saveTag(std::unique_ptr<DocComment>& doc, const std::string& tagName, const std::string& tagContent) {
+    if (tagName == "param") {
+        // Format: @param name description
+        ParamDoc param;
+        std::istringstream paramStream(tagContent);
+        paramStream >> param.name;
+
+        // Rest is description
+        std::getline(paramStream, param.description);
+        if (!param.description.empty() && param.description[0] == ' ') {
+            param.description = param.description.substr(1);
+        }
+
+        doc->params.push_back(param);
+    } else if (tagName == "return") {
+        doc->returnDoc = tagContent;
+    } else if (tagName == "throws") {
+        doc->throws.push_back(tagContent);
+    } else if (tagName == "example") {
+        doc->examples.push_back(tagContent);
+    } else if (tagName == "since") {
+        doc->since = tagContent;
+    } else if (tagName == "deprecated") {
+        doc->deprecated = tagContent;
+    } else {
+        doc->customTags[tagName] = tagContent;
+    }
 }
 
 } // namespace stratos

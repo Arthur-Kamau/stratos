@@ -123,6 +123,11 @@ void DocExtractor::visit(ClassDecl& stmt) {
     }
 }
 
+void DocExtractor::visit(EnumDecl& stmt) {
+    // TODO: Extract enum documentation
+    // For now, just register that the enum exists
+}
+
 void DocExtractor::visit(VarDecl& stmt) {
     auto var = std::make_unique<DocVariable>();
     var->name = stmt.name.lexeme;

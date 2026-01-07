@@ -27,6 +27,7 @@ public:
     void visit(VarDecl& stmt) override;
     void visit(FunctionDecl& stmt) override;
     void visit(ClassDecl& stmt) override;
+    void visit(EnumDecl& stmt) override;
     void visit(PackageDecl& stmt) override;
     void visit(UseStmt& stmt) override;
     void visit(BlockStmt& stmt) override;

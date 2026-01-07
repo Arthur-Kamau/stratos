@@ -132,7 +132,7 @@ fn toCamelCase(s: string) string {
     val parts = split(s, " ");
     var result = "";
 
-    for i in 0..parts.length() {
+    for val i in 0..parts.length() {
         if i == 0 {
             result = toLower(parts[i]);
         } else {
@@ -160,7 +160,7 @@ fn toSnakeCase(s: string) string {
     val parts = split(s, " ");
     var result = "";
 
-    for i in 0..parts.length() {
+    for val  i in 0..parts.length() {
         if i == 0 {
             result = toLower(parts[i]);
         } else {
@@ -176,7 +176,7 @@ fn toKebabCase(s: string) string {
     val parts = split(s, " ");
     var result = "";
 
-    for i in 0..parts.length() {
+    for val i in 0..parts.length() {
         if i == 0 {
             result = toLower(parts[i]);
         } else {
@@ -224,7 +224,7 @@ fn indent(s: string, spaces: int) string {
     val lineArray = lines(s);
     var result = "";
 
-    for i in 0..lineArray.length() {
+    for val i in 0..lineArray.length() {
         if i > 0 {
             result = result + "\n";
         }
@@ -257,7 +257,7 @@ fn commonPrefix(strings: Array<string>) string {
     val first = strings[0];
     var prefix = "";
 
-    for i in 0..length(first) {
+    for val i in 0..length(first) {
         val char = charAt(first, i);
         var match = true;
 
@@ -276,4 +276,33 @@ fn commonPrefix(strings: Array<string>) string {
     }
 
     return prefix;
+}
+
+// sprintf - String formatting with placeholders
+// Replaces {} placeholders in format string with arguments
+// Example: sprintf("Hello {}, you are {} years old", ["Alice", "25"])
+fn sprintf(format: string, args: Array<any>) string {
+    var result = format;
+    var argIndex = 0;
+
+    // Replace each {} with the corresponding argument
+    for val arg in args {
+        // Convert arg to string
+        val argStr = "" + arg;
+
+        // Find the first occurrence of {}
+        val placeholder = "{}";
+        val index = indexOf(result, placeholder);
+
+        if index >= 0 {
+            // Replace the first {} with the argument
+            val before = substring(result, 0, index);
+            val after = substring(result, index + 2, length(result));
+            result = before + argStr + after;
+        }
+
+        argIndex = argIndex + 1;
+    }
+
+    return result;
 }

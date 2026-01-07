@@ -101,19 +101,21 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="editor">
-		<div class="flex-grow relative border border-gray-700 rounded overflow-hidden">
-			<!-- Key block forces editor re-creation when step ID changes to reset content properly -->
-			{#key step.id}
-				<MonacoEditor bind:value={code} />
-			{/key}
+		<div class="flex flex-col h-full">
+			<div class="flex-grow relative border border-gray-700 rounded overflow-hidden">
+				<!-- Key block forces editor re-creation when step ID changes to reset content properly -->
+				{#key step.id}
+					<MonacoEditor bind:value={code} />
+				{/key}
+			</div>
+			<button
+				class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white font-semibold disabled:opacity-50"
+				onclick={runCode}
+				disabled={isLoading}
+			>
+				{isLoading ? 'Running...' : 'Run Code'}
+			</button>
 		</div>
-		<button
-			class="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-white font-semibold disabled:opacity-50"
-			onclick={runCode}
-			disabled={isLoading}
-		>
-			{isLoading ? 'Running...' : 'Run Code'}
-		</button>
 	</svelte:fragment>
 
 	<svelte:fragment slot="preview">

@@ -22,6 +22,7 @@ class GroupingExpr;
 class VarDecl;
 class FunctionDecl;
 class ClassDecl;
+class EnumDecl;
 class BlockStmt;
 class ExpressionStmt;
 class PrintStmt;
@@ -46,6 +47,7 @@ public:
     virtual void visit(VarDecl& stmt) = 0;
     virtual void visit(FunctionDecl& stmt) = 0;
     virtual void visit(ClassDecl& stmt) = 0;
+    virtual void visit(EnumDecl& stmt) = 0;
     virtual void visit(PackageDecl& stmt) = 0;
     virtual void visit(UseStmt& stmt) = 0;
     virtual void visit(BlockStmt& stmt) = 0;
@@ -186,6 +188,18 @@ public:
 
     ClassDecl(Token name, std::unique_ptr<VariableExpr> superclass, std::vector<std::unique_ptr<Stmt>> methods)
         : name(name), superclass(std::move(superclass)), methods(std::move(methods)), documentation(nullptr) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class EnumDecl : public Stmt {
+public:
+    Token name;
+    std::vector<Token> values; // Enum member names (e.g., RED, GREEN, BLUE)
+    std::unique_ptr<DocComment> documentation;
+
+    EnumDecl(Token name, std::vector<Token> values)
+        : name(name), values(std::move(values)), documentation(nullptr) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };

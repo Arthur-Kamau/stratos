@@ -89,7 +89,7 @@ fn fileSize(path: string) Result<int, Error>;
 fn stat(path: string) Result<FileInfo, Error>;
 
 // Path operations
-fn join(parts: Array<string>) string;
+fn pathJoin(parts: Array<string>) string;  // Renamed from join to avoid conflict with strings.join
 fn basename(path: string) string;
 fn dirname(path: string) string;
 fn extension(path: string) string;
@@ -210,7 +210,7 @@ fn walk(root: string, visitor: Function<string, FileInfo, void>) Result<void, Er
     val files = filesResult.unwrap();
 
     for val file in files {
-        val fullPath = join([root, file.name]);
+        val fullPath = pathJoin([root, file.name]);
         visitor(fullPath, file);
 
         if file.isDirectory {

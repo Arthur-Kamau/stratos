@@ -15,9 +15,14 @@ fn main() {
     log.info("File written successfully");
 
     // Read from file
-    val fileContent = io.readFile("test.txt");
-    log.info("File content:");
-    log.info(fileContent);
+    val fileContentResult = io.readFile("test.txt");
+    if fileContentResult.ok() {
+        log.info("File content:");
+        log.info(fileContentResult.unwrap());
+    } else {
+        log.error("Failed to read file: " + fileContentResult.err().message);
+        return;
+    }
 
     // Check if file exists
     if io.exists("test.txt") {

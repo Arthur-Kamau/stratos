@@ -24,6 +24,7 @@ private:
     std::unique_ptr<Stmt> varDeclaration();
     std::unique_ptr<Stmt> fnDeclaration(const std::string& kind);
     std::unique_ptr<Stmt> classDeclaration();
+    std::unique_ptr<Stmt> enumDeclaration();
     std::unique_ptr<Stmt> packageDeclaration();
     std::unique_ptr<Stmt> useStatement();
 
@@ -68,6 +69,7 @@ private:
     void consumeDocComment();
     std::unique_ptr<DocComment> parseDocComment(const std::string& rawText);
     std::unique_ptr<DocComment> takePendingDoc();
+    void saveTag(std::unique_ptr<DocComment>& doc, const std::string& tagName, const std::string& tagContent);
 
     void synchronize();
 };

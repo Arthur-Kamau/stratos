@@ -207,6 +207,30 @@ void Formatter::visit(ClassDecl& stmt) {
     newline();
 }
 
+void Formatter::visit(EnumDecl& stmt) {
+    write("enum");
+    space();
+    write(stmt.name.lexeme);
+    space();
+    write("{");
+    newline();
+
+    indentLevel_++;
+    for (size_t i = 0; i < stmt.values.size(); i++) {
+        indent();
+        write(stmt.values[i].lexeme);
+        if (i < stmt.values.size() - 1) {
+            write(",");
+        }
+        newline();
+    }
+    indentLevel_--;
+
+    indent();
+    write("}");
+    newline();
+}
+
 void Formatter::visit(PackageDecl& stmt) {
     write("package");
     space();

@@ -660,6 +660,11 @@ void IRGenerator::visit(ClassDecl& stmt) {
     currentClass = "";
 }
 
+void IRGenerator::visit(EnumDecl& stmt) {
+    // Enums are handled at compile time, no IR code needed
+    // Enum values are simply constants resolved by the semantic analyzer
+}
+
 void IRGenerator::visit(PackageDecl& stmt) {
     for (const auto& s : stmt.declarations) {
         if (s) s->accept(*this);

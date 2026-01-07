@@ -1,9 +1,14 @@
 package main;
 
 fn main() {
-    // This is a comment
-    val x = 10;
-    val y = 20;
+    val integer: int = 42;
+    val pi: double = 3.14159;
+    val text: string = "Stratos";
+    val isAwesome: bool = true;
 
-    println("Sum: " + (x + y));
+    // Type casting
+   // val rounded = pi as int;
+
+    println(text + " is awesome: " + isAwesome);
+   // println("Rounded PI: " + rounded);
 }

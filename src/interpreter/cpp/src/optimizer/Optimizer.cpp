@@ -124,6 +124,7 @@ void Optimizer::visit(ReturnStmt& stmt) {
 }
 
 void Optimizer::visit(ClassDecl& stmt) {} // No-op
+void Optimizer::visit(EnumDecl& stmt) {} // No-op
 void Optimizer::visit(PackageDecl& stmt) {} // No-op
 void Optimizer::visit(UseStmt& stmt) {} // No-op
 void Optimizer::visit(ExpressionStmt& stmt) {

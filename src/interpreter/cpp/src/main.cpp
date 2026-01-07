@@ -940,19 +940,21 @@ int handleNew(int argc, char* argv[]) {
 
         // Create stratos.conf
         std::ofstream confFile(projectName + "/stratos.conf");
-        confFile << "[project]\n";
-        confFile << "name = " << projectName << "\n";
-        confFile << "version = 1.0.0\n";
-        confFile << "author = Your Name\n";
-        confFile << "license = MIT\n\n";
-        confFile << "[build]\n";
-        confFile << "entry = src/main.st\n";
-        confFile << "output = build/" << projectName << "\n\n";
-        confFile << "[compile]\n";
-        confFile << "sources = src/main.st\n\n";
-        confFile << "[dependencies]\n";
-        confFile << "# Add dependencies here\n";
-        confFile << "# example = \"libs/example\"\n";
+        confFile << "project {\n";
+        confFile << "  name = " << projectName << "\n";
+        confFile << "  version = \"1.0.0\"\n";
+        confFile << "  description = \"A new Stratos project\"\n";
+        confFile << "  author = \"Your Name\"\n";
+        confFile << "  license = \"MIT\"\n";
+        confFile << "}\n\n";
+        confFile << "build {\n";
+        confFile << "  entry = src/main.st\n";
+        confFile << "  output = build/" << projectName << "\n";
+        confFile << "}\n\n";
+        confFile << "dependencies {\n";
+        confFile << "  # Add dependencies here\n";
+        confFile << "  # example = \"libs/example\"\n";
+        confFile << "}\n";
         confFile.close();
 
         // Create main.st

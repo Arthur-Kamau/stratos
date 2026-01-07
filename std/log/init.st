@@ -3,6 +3,9 @@
 
 package log;
 
+use time;
+use strings;
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -94,8 +97,8 @@ fn withContext(fields: Map<string, any>) Logger {
     return defaultLogger.with(fields);
 }
 
-// Timer for performance logging
-class Timer {
+// LogTimer for performance logging (renamed from Timer to avoid conflict with time.Timer)
+class LogTimer {
     var name: string;
     var startTime: int;
 
@@ -110,15 +113,15 @@ class Timer {
 
     fn log() void {
         val elapsed = this.elapsed();
-        infoWith("Timer completed", {
+        infoWith("LogTimer completed", {
             name: this.name,
             elapsed_ms: elapsed
         });
     }
 }
 
-fn startTimer(name: string) Timer {
-    return Timer(name);
+fn startTimer(name: string) LogTimer {
+    return LogTimer(name);
 }
 
 // Log middleware for functions

@@ -28,12 +28,12 @@ class Time {
 }
 
 class Duration {
-    var milliseconds: int;
+    var value: int;  // Duration in milliseconds
 
-    fn hours() double;
-    fn minutes() double;
-    fn seconds() double;
-    fn milliseconds() int;
+    fn getHours() double;
+    fn getMinutes() double;
+    fn getSeconds() double;
+    fn getMilliseconds() int;
 
     fn add(other: Duration) Duration;
     fn sub(other: Duration) Duration;

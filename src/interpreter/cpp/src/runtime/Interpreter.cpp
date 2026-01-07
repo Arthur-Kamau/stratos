@@ -184,6 +184,25 @@ void Interpreter::visit(BinaryExpr& expr) {
 
     // Special handling for DOT operator - don't evaluate right side as a variable
     if (expr.op.type == TokenType::DOT) {
+        // Check for enum value access FIRST (e.g., Color.RED)
+        // Don't evaluate left side yet, as enum names aren't variables
+        if (auto* leftVar = dynamic_cast<VariableExpr*>(expr.left.get())) {
+            if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
+                std::string enumName = leftVar->name.lexeme;
+                std::string valueName = rightVar->name.lexeme;
+                std::string fullName = enumName + "." + valueName;
+
+                // Try to look up the enum value
+                try {
+                    lastValue = currentEnv->get(fullName);
+                    return;
+                } catch (...) {
+                    // Not an enum value, continue to evaluate normally
+                }
+            }
+        }
+
+        // Evaluate left side for other DOT access patterns
         expr.left->accept(*this);
         RuntimeValue left = lastValue;
 
@@ -840,6 +859,17 @@ void Interpreter::visit(ClassDecl& stmt) {
     cls.moduleName = currentModuleName;  // Track which module this class belongs to
     cls.methods = std::ref(stmt.methods);  // Safe reference instead of raw pointer
     classes[stmt.name.lexeme] = cls;
+}
+
+void Interpreter::visit(EnumDecl& stmt) {
+    // Store enum values in the environment
+    // Each enum value is stored as EnumName.VALUE = integer index
+    for (size_t i = 0; i < stmt.values.size(); ++i) {
+        std::string fullName = stmt.name.lexeme + "." + stmt.values[i].lexeme;
+        // Store the enum value as an integer (its index)
+        RuntimeValue value(std::any(static_cast<int>(i)), "int");
+        currentEnv->define(fullName, value);
+    }
 }
 
 void Interpreter::visit(PackageDecl& stmt) {

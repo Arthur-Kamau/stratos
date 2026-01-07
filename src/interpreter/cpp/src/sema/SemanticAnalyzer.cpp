@@ -31,7 +31,7 @@ void SemanticAnalyzer::defineNativeFunctions() {
 bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& statements) {
     hadError = false;
 
-    // First pass: Collect all function and class declarations
+    // First pass: Collect all function, class, and enum declarations
     for (size_t i = 0; i < statements.size(); ++i) {
         if (!statements[i]) continue;
 
@@ -44,6 +44,15 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
         } else if (auto* classDecl = dynamic_cast<ClassDecl*>(statements[i].get())) {
             if (!symbolTable.define(Symbol{classDecl->name.lexeme, SymbolKind::CLASS, classDecl->name.lexeme, false})) {
                 error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined.");
+            }
+        } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(statements[i].get())) {
+            if (!symbolTable.define(Symbol{enumDecl->name.lexeme, SymbolKind::CLASS, enumDecl->name.lexeme, false})) {
+                error(enumDecl->name, "Enum '" + enumDecl->name.lexeme + "' is already defined.");
+            }
+            // Also register enum values in first pass
+            for (const auto& value : enumDecl->values) {
+                std::string fullName = enumDecl->name.lexeme + "." + value.lexeme;
+                symbolTable.define(Symbol::Variable(fullName, enumDecl->name.lexeme, false));
             }
         }
     }
@@ -72,8 +81,25 @@ void SemanticAnalyzer::error(Token token, const std::string& message) {
 
 void SemanticAnalyzer::visit(BinaryExpr& expr) {
     if (expr.op.type == TokenType::DOT) {
+        // Handle member access (e.g., obj.field, Enum.VALUE)
+        // Check if this is an enum value access (e.g., Color.RED)
+        if (auto* leftVar = dynamic_cast<VariableExpr*>(expr.left.get())) {
+            if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
+                std::string enumName = leftVar->name.lexeme;
+                std::string valueName = rightVar->name.lexeme;
+                std::string fullName = enumName + "." + valueName;
+
+                // Check if this is a registered enum value
+                if (symbolTable.resolve(fullName)) {
+                    // Valid enum value access
+                    return;
+                }
+            }
+        }
+
+        // For other dot accesses (like module.function), just validate left side
         expr.left->accept(*this);
-        return; 
+        return;
     }
 
     expr.left->accept(*this);
@@ -259,6 +285,19 @@ void SemanticAnalyzer::visit(ClassDecl& stmt) {
 
     // Restore previous class context
     currentClassName = previousClassName;
+}
+
+void SemanticAnalyzer::visit(EnumDecl& stmt) {
+    // Register the enum type itself (may already be defined from first pass)
+    symbolTable.define(Symbol{stmt.name.lexeme, SymbolKind::CLASS, stmt.name.lexeme, false});
+
+    // Register each enum value as a constant (may already be defined from first pass)
+    // Enum values are accessed as EnumName.VALUE, so we store them with dotted names
+    for (const auto& value : stmt.values) {
+        std::string fullName = stmt.name.lexeme + "." + value.lexeme;
+        // Register as a variable (constant) of the enum type
+        symbolTable.define(Symbol::Variable(fullName, stmt.name.lexeme, false));
+    }
 }
 
 void SemanticAnalyzer::visit(PackageDecl& stmt) {
@@ -486,7 +525,34 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
             Parser parser(tokens);
             std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
 
-            // Process declarations in the module
+            // Two-pass processing like analyze() does:
+            // First pass: Collect all function, class, and enum declarations
+            for (size_t i = 0; i < statements.size(); ++i) {
+                if (!statements[i]) continue;
+
+                // Only process declarations, not their bodies
+                if (auto* funcDecl = dynamic_cast<FunctionDecl*>(statements[i].get())) {
+                    Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, funcDecl->paramTypes, funcDecl->returnType);
+                    if (!symbolTable.define(funcSymbol)) {
+                        error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined.");
+                    }
+                } else if (auto* classDecl = dynamic_cast<ClassDecl*>(statements[i].get())) {
+                    if (!symbolTable.define(Symbol{classDecl->name.lexeme, SymbolKind::CLASS, classDecl->name.lexeme, false})) {
+                        error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined.");
+                    }
+                } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(statements[i].get())) {
+                    if (!symbolTable.define(Symbol{enumDecl->name.lexeme, SymbolKind::CLASS, enumDecl->name.lexeme, false})) {
+                        error(enumDecl->name, "Enum '" + enumDecl->name.lexeme + "' is already defined.");
+                    }
+                    // Also register enum values in first pass
+                    for (const auto& value : enumDecl->values) {
+                        std::string fullName = enumDecl->name.lexeme + "." + value.lexeme;
+                        symbolTable.define(Symbol::Variable(fullName, enumDecl->name.lexeme, false));
+                    }
+                }
+            }
+
+            // Second pass: Process all statements including bodies
             for (const auto& stmt : statements) {
                 if (stmt) {
                     stmt->accept(*this);

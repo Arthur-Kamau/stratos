@@ -14,7 +14,10 @@ fn main() {
     // or Color.RED if scoped
     
     println("Enum defined successfully.");
+    println("Enum  values are  stored as int.");
     
     // Note: Printing enum values depends on runtime support
-    // val c = Color.RED;
+    val c = Color.RED;
+    println("Color value: ");
+    println(c);
 }
