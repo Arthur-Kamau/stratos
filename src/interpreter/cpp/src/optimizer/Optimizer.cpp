@@ -77,6 +77,10 @@ void Optimizer::visit(VariableExpr& expr) { lastConst.type = 0; }
 void Optimizer::visit(CallExpr& expr) { lastConst.type = 0; }
 void Optimizer::visit(IndexExpr& expr) { lastConst.type = 0; }
 void Optimizer::visit(GroupingExpr& expr) { expr.expression->accept(*this); }
+void Optimizer::visit(CastExpr& expr) { 
+    expr.expression->accept(*this); 
+    lastConst.type = 0; // Reset constant folding for now
+}
 
 // --- Statements ---
 

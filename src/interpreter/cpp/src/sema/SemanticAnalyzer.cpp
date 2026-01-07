@@ -206,6 +206,11 @@ void SemanticAnalyzer::visit(GroupingExpr& expr) {
     expr.expression->accept(*this);
 }
 
+void SemanticAnalyzer::visit(CastExpr& expr) {
+    expr.expression->accept(*this);
+    // Future: Verify if cast is valid (e.g. primitive to primitive)
+}
+
 // --- Statements ---
 
 void SemanticAnalyzer::visit(VarDecl& stmt) {

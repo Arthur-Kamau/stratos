@@ -301,12 +301,14 @@ void Interpreter::visit(BinaryExpr& expr) {
                 else if (left.type == "int") leftStr = std::to_string(left.asInt());
                 else if (left.type == "double") leftStr = std::to_string(left.asDouble());
                 else if (left.type == "bool") leftStr = left.asBool() ? "true" : "false";
+                else if (left.type == "char") leftStr = std::string(1, left.asChar());
 
                 std::string rightStr;
                 if (right.type == "string") rightStr = right.asString();
                 else if (right.type == "int") rightStr = std::to_string(right.asInt());
                 else if (right.type == "double") rightStr = std::to_string(right.asDouble());
                 else if (right.type == "bool") rightStr = right.asBool() ? "true" : "false";
+                else if (right.type == "char") rightStr = std::string(1, right.asChar());
 
                 lastValue = RuntimeValue(std::any(leftStr + rightStr), "string");
             }
@@ -796,6 +798,111 @@ void Interpreter::visit(IndexExpr& expr) {
 
 void Interpreter::visit(GroupingExpr& expr) {
     expr.expression->accept(*this);
+}
+
+void Interpreter::visit(CastExpr& expr) {
+    expr.expression->accept(*this); // Evaluate the expression to be cast
+    RuntimeValue sourceValue = lastValue; // The value we want to cast
+
+    TokenType targetType = expr.typeToken.type; // The type we want to cast to
+
+    switch (targetType) {
+        case TokenType::INT: {
+            if (sourceValue.type == "int") {
+                lastValue = sourceValue; // Already an int
+            } else if (sourceValue.type == "double") {
+                lastValue = RuntimeValue(static_cast<int>(sourceValue.asDouble())); // Truncation
+            } else if (sourceValue.type == "bool") {
+                lastValue = RuntimeValue(static_cast<int>(sourceValue.asBool())); // true -> 1, false -> 0
+            } else if (sourceValue.type == "string") {
+                try {
+                    lastValue = RuntimeValue(std::stoi(sourceValue.asString()));
+                } catch (...) {
+                    error("Cannot cast string '" + sourceValue.asString() + "' to int.");
+                }
+            } else if (sourceValue.type == "char") {
+                lastValue = RuntimeValue(static_cast<int>(sourceValue.asChar()));
+            }
+            else {
+                error("Cannot cast " + sourceValue.type + " to int.");
+            }
+            break;
+        }
+        case TokenType::DOUBLE: {
+            if (sourceValue.type == "double") {
+                lastValue = sourceValue; // Already a double
+            } else if (sourceValue.type == "int") {
+                lastValue = RuntimeValue(static_cast<double>(sourceValue.asInt())); // Promotion
+            } else if (sourceValue.type == "bool") {
+                lastValue = RuntimeValue(static_cast<double>(sourceValue.asBool())); // true -> 1.0, false -> 0.0
+            } else if (sourceValue.type == "string") {
+                try {
+                    lastValue = RuntimeValue(std::stod(sourceValue.asString()));
+                } catch (...) {
+                    error("Cannot cast string '" + sourceValue.asString() + "' to double.");
+                }
+            } else if (sourceValue.type == "char") {
+                 lastValue = RuntimeValue(static_cast<double>(sourceValue.asChar()));
+            }
+            else {
+                error("Cannot cast " + sourceValue.type + " to double.");
+            }
+            break;
+        }
+        case TokenType::STRING: {
+            if (sourceValue.type == "string") {
+                lastValue = sourceValue; // Already a string
+            } else if (sourceValue.type == "int") {
+                lastValue = RuntimeValue(std::to_string(sourceValue.asInt()));
+            } else if (sourceValue.type == "double") {
+                lastValue = RuntimeValue(std::to_string(sourceValue.asDouble()));
+            } else if (sourceValue.type == "bool") {
+                lastValue = RuntimeValue(sourceValue.asBool() ? "true" : "false");
+            } else if (sourceValue.type == "char") {
+                lastValue = RuntimeValue(std::string(1, sourceValue.asChar()));
+            }
+            else {
+                error("Cannot cast " + sourceValue.type + " to string.");
+            }
+            break;
+        }
+        case TokenType::BOOL: {
+            if (sourceValue.type == "bool") {
+                lastValue = sourceValue; // Already a bool
+            } else if (sourceValue.type == "int") {
+                lastValue = RuntimeValue(sourceValue.asInt() != 0);
+            } else if (sourceValue.type == "double") {
+                lastValue = RuntimeValue(sourceValue.asDouble() != 0.0);
+            } else if (sourceValue.type == "string") {
+                lastValue = RuntimeValue(!sourceValue.asString().empty()); // Non-empty string is true
+            }
+            else {
+                error("Cannot cast " + sourceValue.type + " to bool.");
+            }
+            break;
+        }
+        case TokenType::CHAR: {
+            if (sourceValue.type == "char") {
+                lastValue = sourceValue; // Already a char
+            } else if (sourceValue.type == "int") {
+                lastValue = RuntimeValue(static_cast<char>(sourceValue.asInt()));
+            } else if (sourceValue.type == "string") {
+                if (sourceValue.asString().length() == 1) {
+                    lastValue = RuntimeValue(sourceValue.asString()[0]);
+                } else {
+                    error("Cannot cast string of length != 1 to char.");
+                }
+            }
+            else {
+                error("Cannot cast " + sourceValue.type + " to char.");
+            }
+            break;
+        }
+        // Add other types as needed
+        default:
+            error("Unsupported target type for cast: " + expr.typeToken.lexeme);
+            break;
+    }
 }
 
 // --- Statement Visitors ---

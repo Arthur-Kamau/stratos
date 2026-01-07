@@ -29,7 +29,7 @@ enum class TokenType {
 
     // Keywords
     AND, OR, NOT,
-    CLASS, STRUCT, INTERFACE, ENUM, PACKAGE, USE,
+    CLASS, STRUCT, INTERFACE, ENUM, PACKAGE, USE, AS,
     ELSE, FALSE, FN, FOR, IF, NONE,
     RETURN, SUPER, THIS, TRUE, VAR, VAL,
     WHILE, WHEN,

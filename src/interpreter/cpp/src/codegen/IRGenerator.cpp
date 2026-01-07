@@ -627,6 +627,28 @@ void IRGenerator::visit(GroupingExpr& expr) {
     expr.expression->accept(*this);
 }
 
+void IRGenerator::visit(CastExpr& expr) {
+    expr.expression->accept(*this);
+    IRValue src = lastVal;
+    
+    std::string targetType = getLLVMType(expr.typeToken.lexeme);
+    
+    // Simple casts for now (e.g. sitofp, fptosi)
+    if (src.type == "i32" && targetType == "double") {
+        std::string res = nextReg();
+        emit(res + " = sitofp i32 " + src.reg + " to double");
+        lastVal = {res, "double"};
+    } else if (src.type == "double" && targetType == "i32") {
+        std::string res = nextReg();
+        emit(res + " = fptosi double " + src.reg + " to i32");
+        lastVal = {res, "i32"};
+    } else {
+        // Fallback for same type or unsupported casts
+        // TODO: Handle more cast types
+        lastVal = src; 
+    }
+}
+
 void IRGenerator::visit(ClassDecl& stmt) {
     // Generate constructors and methods for this class
     currentClass = stmt.name.lexeme;

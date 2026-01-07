@@ -52,6 +52,7 @@ private:
     std::unique_ptr<Expr> call(); // Updated
     std::unique_ptr<Expr> finishCall(std::unique_ptr<Expr> callee);
     std::unique_ptr<Expr> primary();
+    std::unique_ptr<Expr> cast(); // New: Parse cast expressions
 
     // Type Parsing
     std::string parseType();

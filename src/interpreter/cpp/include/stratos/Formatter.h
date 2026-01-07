@@ -39,6 +39,7 @@ public:
     void visit(CallExpr& expr) override;
     void visit(IndexExpr& expr) override;
     void visit(GroupingExpr& expr) override;
+    void visit(CastExpr& expr) override;
 
     // Statement visitors
     void visit(VarDecl& stmt) override;

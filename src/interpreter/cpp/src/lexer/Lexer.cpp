@@ -12,6 +12,7 @@ std::unordered_map<std::string, TokenType> Lexer::keywords = {
     {"enum", TokenType::ENUM},
     {"package", TokenType::PACKAGE},
     {"use", TokenType::USE},
+    {"as", TokenType::AS}, // Add AS keyword
     {"else", TokenType::ELSE},
     {"false", TokenType::FALSE},
     {"for", TokenType::FOR},

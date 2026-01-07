@@ -117,6 +117,14 @@ void Formatter::visit(GroupingExpr& expr) {
     write(")");
 }
 
+void Formatter::visit(CastExpr& expr) {
+    expr.expression->accept(*this);
+    space();
+    write("as");
+    space();
+    write(expr.typeToken.lexeme);
+}
+
 // Statement visitors
 void Formatter::visit(VarDecl& stmt) {
     write(stmt.isMutable ? "var" : "val");

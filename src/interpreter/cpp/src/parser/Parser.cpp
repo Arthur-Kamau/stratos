@@ -470,10 +470,10 @@ std::unique_ptr<Expr> Parser::term() {
 }
 
 std::unique_ptr<Expr> Parser::factor() {
-    std::unique_ptr<Expr> expr = unary();
+    std::unique_ptr<Expr> expr = cast();
     while (match({TokenType::SLASH, TokenType::STAR, TokenType::PERCENT})) {
         Token op = previous();
-        std::unique_ptr<Expr> right = unary();
+        std::unique_ptr<Expr> right = cast();
         expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
     }
     return expr;
@@ -635,6 +635,33 @@ std::unique_ptr<Expr> Parser::primary() {
     }
 
     throw ParseError("Expect expression. Found: " + peek().lexeme, peek().line, peek().column);
+}
+
+// New cast() function
+std::unique_ptr<Expr> Parser::cast() {
+    std::unique_ptr<Expr> expr = unary(); // Start with a unary expression
+    if (match({TokenType::AS})) {
+        Token asToken = previous(); // The 'as' keyword
+        std::string typeName = parseType(); // Parse the target type (e.g., int, double)
+        
+        // Convert typeName string back to TokenType for CastExpr
+        TokenType targetTypeToken = TokenType::IDENTIFIER; // Default to IDENTIFIER
+        if (typeName == "int") targetTypeToken = TokenType::INT;
+        else if (typeName == "double") targetTypeToken = TokenType::DOUBLE;
+        else if (typeName == "string") targetTypeToken = TokenType::STRING;
+        else if (typeName == "bool") targetTypeToken = TokenType::BOOL;
+        else if (typeName == "char") targetTypeToken = TokenType::CHAR;
+        else if (typeName == "void") targetTypeToken = TokenType::VOID;
+        else if (typeName == "unit") targetTypeToken = TokenType::UNIT;
+        else if (typeName.rfind("Optional<", 0) == 0) targetTypeToken = TokenType::OPTIONAL; // Handle Optional<T>
+        else {
+            // For custom types, IDENTIFIER is fine for now
+        }
+        
+        // Create a CastExpr node
+        return std::make_unique<CastExpr>(std::move(expr), Token{targetTypeToken, typeName, asToken.line, asToken.column});
+    }
+    return expr;
 }
 
 // --- Helpers ---

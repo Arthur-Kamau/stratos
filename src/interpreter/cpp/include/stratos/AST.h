@@ -19,6 +19,7 @@ class VariableExpr;
 class CallExpr;
 class IndexExpr;
 class GroupingExpr;
+class CastExpr; // Forward declaration
 class VarDecl;
 class FunctionDecl;
 class ClassDecl;
@@ -43,6 +44,7 @@ public:
     virtual void visit(CallExpr& expr) = 0;
     virtual void visit(IndexExpr& expr) = 0;
     virtual void visit(GroupingExpr& expr) = 0;
+    virtual void visit(CastExpr& expr) = 0; // Visit method for CastExpr
 
     virtual void visit(VarDecl& stmt) = 0;
     virtual void visit(FunctionDecl& stmt) = 0;
@@ -142,6 +144,17 @@ public:
 
     GroupingExpr(std::unique_ptr<Expr> expression)
         : expression(std::move(expression)) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class CastExpr : public Expr {
+public:
+    std::unique_ptr<Expr> expression;
+    Token typeToken; // The token representing the target type (e.g., INT, DOUBLE)
+
+    CastExpr(std::unique_ptr<Expr> expression, Token typeToken)
+        : expression(std::move(expression)), typeToken(typeToken) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };
