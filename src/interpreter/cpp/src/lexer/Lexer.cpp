@@ -135,6 +135,7 @@ void Lexer::scanToken() {
         case '?':
              if (match('.')) addToken(TokenType::QUESTION_DOT);
              else if (match(':')) addToken(TokenType::ELVIS);
+             else addToken(TokenType::QUESTION);
              break;
         case '/':
             if (match('/')) {

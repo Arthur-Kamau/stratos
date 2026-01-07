@@ -45,7 +45,7 @@ fn main() {
     },
     {
         id: 3,
-        title: "Data Types",
+        title: "Data Types & Casting",
         content: `
             <h3 class="text-lg font-semibold mb-2">Primitive Types</h3>
             <p class="mb-4">Stratos has standard primitive types:</p>
@@ -55,21 +55,28 @@ fn main() {
                 <li><code>string</code>: Text (e.g., "Hello")</li>
                 <li><code>bool</code>: Boolean (true/false)</li>
             </ul>
-            <p class="mb-4">You can cast types using the <code>as</code> keyword.</p>
+            <h3 class="text-lg font-semibold mb-2">Type Casting</h3>
+            <ul class="list-disc list-inside ml-2 mb-4">
+                <li><strong>Forced Cast (<code>as</code>):</strong> Use when you are sure. Throws error if invalid.</li>
+                <li><strong>Safe Cast (<code>as?</code>):</strong> Use when it might fail. Returns <code>void</code> (empty) on failure.</li>
+            </ul>
         `,
         initialCode: `package main;
 
 fn main() {
-    val integer: int = 42;
     val pi: double = 3.14159;
-    val text: string = "Stratos";
-    val isAwesome: bool = true;
-
-    // Type casting
+    
+    // Forced cast (truncates)
     val rounded = pi as int;
+    println("Rounded: " + rounded);
 
-    println(text + " is awesome: " + isAwesome);
-    println("Rounded PI: " + rounded);
+    // Safe cast (success)
+    val num = "123" as? int;
+    println("Parsed: " + num);
+
+    // Safe cast (failure)
+    val invalid = "abc" as? int;
+    println("Invalid result: '" + invalid + "' (should be empty)");
 }`
     },
     {

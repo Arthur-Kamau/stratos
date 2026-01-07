@@ -1,14 +1,14 @@
 package main;
 
 fn main() {
-    for (i in 1..=20) {
-        val output = when {
-            i % 15 == 0 -> "FizzBuzz"
-            i % 3 == 0 -> "Fizz"
-            i % 5 == 0 -> "Buzz"
-            else -> i.toString() // Convert int to string
-        };
-        
-        println(output);
-    }
+    val integer: int = 42;
+    val pi: double = 3.14159;
+    val text: string = "Stratos";
+    val isAwesome: bool = true;
+
+    // Type casting
+    val rounded = pi as int;
+
+    println(text + " is awesome: " + isAwesome);
+    println("Rounded PI: " + rounded);
 }

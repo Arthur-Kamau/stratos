@@ -152,9 +152,10 @@ class CastExpr : public Expr {
 public:
     std::unique_ptr<Expr> expression;
     Token typeToken; // The token representing the target type (e.g., INT, DOUBLE)
+    bool isSafe;
 
-    CastExpr(std::unique_ptr<Expr> expression, Token typeToken)
-        : expression(std::move(expression)), typeToken(typeToken) {}
+    CastExpr(std::unique_ptr<Expr> expression, Token typeToken, bool isSafe = false)
+        : expression(std::move(expression)), typeToken(typeToken), isSafe(isSafe) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };

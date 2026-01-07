@@ -21,6 +21,7 @@ enum class TokenType {
     PIPE, // |>
     PLUS_EQUAL, MINUS_EQUAL, STAR_EQUAL, SLASH_EQUAL,
     ARROW, // ->
+    QUESTION, // ?
     QUESTION_DOT, // ?.
     ELVIS, // ?:
 

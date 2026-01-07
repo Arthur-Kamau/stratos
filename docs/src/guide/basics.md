@@ -207,18 +207,60 @@ val result2 = true or expensiveCheck();   // expensiveCheck() not called
 
 ## Type Conversion
 
+Stratos provides two operators for converting between types: `as` (forced cast) and `as?` (safe cast).
+
+### Forced Cast (`as`)
+
+Use `as` when you are sure the conversion will succeed. If the cast is invalid at runtime, the program will terminate with an error.
+
+```stratos
+// Numeric conversions
+val pi = 3.14;
+val integerPi = pi as int;       // 3 (truncates)
+
+val count = 10;
+val doubleCount = count as double; // 10.0
+
+// String conversions
+val strNum = "123";
+val num = strNum as int;         // 123
+
+// Boolean conversions
+val boolVal = true;
+val intVal = boolVal as int;     // 1
+```
+
+### Safe Cast (`as?`)
+
+Use `as?` when the conversion might fail (e.g., parsing user input). If the cast fails, it returns `void` (similar to `null` or `None`) instead of crashing.
+
+```stratos
+val valid = "123" as? int;       // Returns 123
+val invalid = "abc" as? int;     // Returns void
+
+// Using result (checks for void not implemented yet in this example context, usually checked via null safety features)
+print(valid);   // "123"
+print(invalid); // (prints nothing/empty)
+```
+
+### Supported Conversions
+
+| Source | Target | Behavior |
+|--------|--------|----------|
+| `int` | `double` | Promotion (1 -> 1.0) |
+| `double` | `int` | Truncation (3.14 -> 3) |
+| `string` | `int` | Parses integer, throws/returns void on failure |
+| `string` | `double` | Parses float, throws/returns void on failure |
+| `bool` | `int` | true -> 1, false -> 0 |
+| `int` | `bool` | 0 -> false, non-zero -> true |
+| `any` | `string` | String representation |
+
 ```stratos
 // Implicit conversion (where safe)
+// Currently Stratos prefers explicit casting for most operations
 val intValue = 42;
-val doubleValue: double = intValue;  // int to double
-
-// Explicit conversion
-val pi = 3.14159;
-val rounded: int = pi as int;        // 3
-
-// String conversion
-val number = 42;
-val text = number.toString();        // "42"
+// val doubleValue: double = intValue;  // Error: Type mismatch
+val doubleValue = intValue as double;   // OK
 ```
 
 ## Arrays

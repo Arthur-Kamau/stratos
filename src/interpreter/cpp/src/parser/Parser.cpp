@@ -642,6 +642,13 @@ std::unique_ptr<Expr> Parser::cast() {
     std::unique_ptr<Expr> expr = unary(); // Start with a unary expression
     if (match({TokenType::AS})) {
         Token asToken = previous(); // The 'as' keyword
+        
+        // Check for optional '?' for safe cast
+        bool isSafe = false;
+        if (match({TokenType::QUESTION})) {
+            isSafe = true;
+        }
+
         std::string typeName = parseType(); // Parse the target type (e.g., int, double)
         
         // Convert typeName string back to TokenType for CastExpr
@@ -659,7 +666,7 @@ std::unique_ptr<Expr> Parser::cast() {
         }
         
         // Create a CastExpr node
-        return std::make_unique<CastExpr>(std::move(expr), Token{targetTypeToken, typeName, asToken.line, asToken.column});
+        return std::make_unique<CastExpr>(std::move(expr), Token{targetTypeToken, typeName, asToken.line, asToken.column}, isSafe);
     }
     return expr;
 }

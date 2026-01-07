@@ -61,5 +61,21 @@ fn main() {
     val strToC = "Z" as char;
     println("\"Z\" as char: '" + strToC + "'" ); // Expected: 'Z'
     
-    println("\n--- Casting Tests Complete ---");
-}
+
+    
+    // --- Safe Cast (as?) ---
+        println("\n--- Safe Cast Examples ---");
+        
+        val unsafeStr = "hello";
+        val safeInt = unsafeStr as? int;
+        
+        // Check if result is void/null (simplified check for now)
+        // In Stratos, void prints as nothing or we can check type if we had type inspection
+        // For now, let's just print it. If it didn't crash, it worked.
+        println("Safe cast 'hello' as? int result: '" + safeInt + "' (should be empty/void)");
+    
+        val safeValid = "123" as? int;
+        println("Safe cast '123' as? int result: " + safeValid); // Expected: 123
+    
+        println("\n--- Casting Tests Complete ---");
+    }

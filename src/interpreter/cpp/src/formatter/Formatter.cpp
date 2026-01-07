@@ -121,6 +121,9 @@ void Formatter::visit(CastExpr& expr) {
     expr.expression->accept(*this);
     space();
     write("as");
+    if (expr.isSafe) {
+        write("?");
+    }
     space();
     write(expr.typeToken.lexeme);
 }
