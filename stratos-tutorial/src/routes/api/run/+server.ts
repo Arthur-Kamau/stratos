@@ -14,14 +14,12 @@ const TEMP_PROJECTS_DIR = resolve(process.cwd(), 'temp_projects');
 
 export const POST: RequestHandler = async ({ request }) => {
     try {
-        const { code } = await request.json();
+        const { code, projectId } = await request.json();
 
-        if (typeof code !== 'string') {
-            return json({ error: 'Invalid request body: code must be a string' }, { status: 400 });
+        if (typeof code !== 'string' || typeof projectId !== 'string') {
+            return json({ error: 'Invalid request body: code and projectId must be strings' }, { status: 400 });
         }
 
-        // Generate a random project name
-        const projectId = `project_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
         const projectPath = join(TEMP_PROJECTS_DIR, projectId);
 
         let stdout = '';
@@ -29,22 +27,16 @@ export const POST: RequestHandler = async ({ request }) => {
         let exitCode = 0;
 
         try {
-            // 1. Create the new project using 'stratos new'
-            // We run this command inside the TEMP_PROJECTS_DIR so the project folder is created there
-            await execAsync(`"${STRATOS_EXECUTABLE_PATH}" new "${projectId}"`, {
-                cwd: TEMP_PROJECTS_DIR
-            });
+            // 1. The project should already exist, created by +page.server.ts
 
             // 2. Overwrite src/main.st with the user's code
             const mainFilePath = join(projectPath, 'src', 'main.st');
             await writeFile(mainFilePath, code);
 
-            // 3. Run the project using 'stratos run' (implicitly uses stratos.conf)
-            // We run this inside the specific project directory
-            // Adding -v flag as requested previously, though strictly 'stratos run' should suffice
+            // 3. Run the project using 'stratos run [project_id]' from TEMP_PROJECTS_DIR
             const { stdout: execStdout, stderr: execStderr } = await execAsync(
-                `"${STRATOS_EXECUTABLE_PATH}" run`, 
-                { cwd: projectPath }
+                `"${STRATOS_EXECUTABLE_PATH}" run "${projectId}"`, 
+                { cwd: TEMP_PROJECTS_DIR }
             );
             
             stdout = execStdout;
@@ -56,13 +48,9 @@ export const POST: RequestHandler = async ({ request }) => {
             stderr = error.stderr || error.message;
             exitCode = error.code || 1;
         } finally {
-            // 4. Clean up: Delete the project directory
-            // Use recursive force removal
-            try {
-                await rm(projectPath, { recursive: true, force: true });
-            } catch (cleanupError) {
-                console.error('Failed to clean up project directory:', cleanupError);
-            }
+            // 4. Do not clean up the project directory immediately
+            // The project directory should persist for the user session
+            // Cleanup will be handled by a separate mechanism or on session end.
         }
 
         return json({ stdout, stderr, exitCode });

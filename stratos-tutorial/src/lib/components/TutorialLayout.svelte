@@ -4,9 +4,14 @@
 
 <div class="flex h-screen bg-gray-900 text-white">
 	<!-- Guide Panel -->
-	<div class="w-1/3 p-4 border-r border-gray-700 overflow-y-auto">
+	<div class="w-1/3 p-4 border-r border-gray-700 flex flex-col">
 		<h2 class="text-xl font-bold mb-4">Tutorial Guide</h2>
-		<slot name="guide" />
+		<div class="flex-grow overflow-y-auto pr-2"> <!-- pr-2 to prevent scrollbar from hiding content -->
+			<slot name="guide-content" />
+		</div>
+		<div class="mt-4 pt-4 border-t border-gray-700">
+			<slot name="guide-navigation" />
+		</div>
 	</div>
 
 	<!-- Editor Panel -->
