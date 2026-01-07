@@ -181,10 +181,12 @@ fn main() {
 
 ## Higher-Order Functions
 
-Functions can accept other functions as parameters:
+Functions can accept other functions as parameters and return functions as results.
+
+### Functions as Parameters
 
 ```stratos
-fn apply(x: int, operation: fn(int) int) int {
+fn apply(x: int, operation: Function) int {
     return operation(x);
 }
 
@@ -192,11 +194,73 @@ fn double(x: int) int = x * 2;
 fn square(x: int) int = x * x;
 
 fn main() {
+    // Pass named functions
     val doubled = apply(5, double);
     print(doubled);  // 10
 
     val squared = apply(5, square);
     print(squared);  // 25
+
+    // Pass lambda expressions
+    val tripled = apply(5, (x) => x * 3);
+    print(tripled);  // 15
+}
+```
+
+### Functions Returning Functions
+
+```stratos
+fn makeOperation(operation: string) Function {
+    if (operation == "double") {
+        return (x) => x * 2;
+    } else if (operation == "square") {
+        return (x) => x * x;
+    } else {
+        return (x) => x;  // identity
+    }
+}
+
+fn main() {
+    val doubler = makeOperation("double");
+    val squarer = makeOperation("square");
+
+    print(doubler(10));  // 20
+    print(squarer(5));   // 25
+}
+```
+
+### Practical Example: Array Operations
+
+```stratos
+fn forEach(arr: Array<int>, action: Function) void {
+    for val i in 0..arr.length() {
+        action(arr[i]);
+    }
+}
+
+fn filter(arr: Array<int>, predicate: Function) Array<int> {
+    val result = [];
+    for val i in 0..arr.length() {
+        if (predicate(arr[i])) {
+            result.push(arr[i]);
+        }
+    }
+    return result;
+}
+
+fn main() {
+    val numbers = [1, 2, 3, 4, 5, 6];
+
+    // Print each number
+    forEach(numbers, (n) => println(n));
+
+    // Filter even numbers
+    val evens = filter(numbers, (n) => n % 2 == 0);
+    println(evens);  // [2, 4, 6]
+
+    // Filter numbers > 3
+    val large = filter(numbers, (n) => n > 3);
+    println(large);  // [4, 5, 6]
 }
 ```
 
@@ -379,7 +443,10 @@ Stratos supports concise anonymous functions using arrow syntax `=>`.
 ### Basic Syntax
 
 ```stratos
-// Single expression lambda (implicit return)
+// Single parameter (no parentheses needed)
+val double = (x) => x * 2;
+
+// Multiple parameters
 val add = (a, b) => a + b;
 
 // Block body lambda (explicit return)
@@ -389,6 +456,7 @@ val multiply = (a, b) => {
 };
 
 fn main() {
+    print(double(5));      // 10
     print(add(5, 3));      // 8
     print(multiply(4, 5)); // 20
 }
@@ -399,34 +467,120 @@ fn main() {
 Lambdas are commonly used as callbacks or with higher-order functions.
 
 ```stratos
-fn process(value: int, callback: Function) {
-    val result = callback(value);
-    print("Result: " + result);
+fn process(value: int, callback: Function) int {
+    return callback(value);
 }
 
 fn main() {
     // Pass lambda directly
-    process(10, (x) => x * 2);  // Result: 20
-    
-    process(5, (x) => {
+    val result1 = process(10, (x) => x * 2);
+    print(result1);  // 20
+
+    val result2 = process(5, (x) => {
         val y = x + 1;
         return y * y;
-    }); // Result: 36
+    });
+    print(result2);  // 36
 }
 ```
 
 ### Capturing Variables (Closures)
 
-Lambdas capture variables from their surrounding scope.
+Lambdas capture variables from their surrounding scope, creating closures.
 
 ```stratos
 fn makeAdder(n: int) Function {
-    return (x) => x + n;
+    return (x) => x + n;  // 'n' is captured from outer scope
+}
+
+fn makeMultiplier(factor: int) Function {
+    return (x) => x * factor;
 }
 
 fn main() {
     val add10 = makeAdder(10);
-    print(add10(5)); // 15
+    val add5 = makeAdder(5);
+
+    print(add10(5));  // 15
+    print(add5(5));   // 10
+
+    val triple = makeMultiplier(3);
+    print(triple(7)); // 21
+}
+```
+
+### Nested Functions with Callbacks
+
+Functions can be defined inside other functions and use callbacks:
+
+```stratos
+fn main() {
+    // Define a helper function inside main
+    fn apply(value: int, op: Function) int {
+        return op(value);
+    }
+
+    // Use with inline lambdas
+    val res1 = apply(10, (x) => x * 2);
+    print("10 * 2 = " + res1);  // 10 * 2 = 20
+
+    // Closures capture environment
+    val factor = 5;
+    val res2 = apply(3, (x) => x * factor);
+    print("3 * 5 = " + res2);   // 3 * 5 = 15
+}
+```
+
+::: tip Lambda Syntax
+Use `=>` (fat arrow) for lambda expressions. The old `->` syntax is not supported for lambdas.
+:::
+
+::: warning Keyword Conflicts
+Avoid using keywords like `val`, `var`, `fn`, `if`, etc. as parameter names. Use descriptive names like `value`, `item`, `element` instead.
+:::
+
+### Complete Callback Example
+
+```stratos
+package main;
+
+fn main() {
+    println("--- Callback Showcase ---");
+
+    // 1. Simple callback
+    fn apply(value: int, op: Function) int {
+        return op(value);
+    }
+
+    val res1 = apply(10, (x) => x * 2);
+    println("10 * 2 = " + res1);
+
+    // 2. Closure capturing environment
+    val factor = 5;
+    val res2 = apply(3, (x) => x * factor);
+    println("3 * 5 = " + res2);
+
+    // 3. Returning a function (Higher-Order Function)
+    fn makeAdder(n: int) Function {
+        return (x) => x + n;
+    }
+
+    val add10 = makeAdder(10);
+    println("5 + 10 = " + add10(5));
+
+    // 4. Map implementation using callbacks
+    fn map(arr: Array<int>, transform: Function) Array<int> {
+        val result = [];
+
+        for val i in 0..arr.length() {
+            val item = arr[i];
+            val transformed = transform(item);
+            result.push(transformed);
+        }
+        return result;
+    }
+
+    println("--- Done ---");
 }
 ```
 
@@ -461,7 +615,10 @@ fn main() {
 | With return type | `fn name() Type` | `fn double(x: int) int` |
 | Single expression | `fn name() Type = expr` | `fn square(x: int) int = x * x` |
 | Pipe operator | `value \|> func()` | `5 \|> double() \|> square()` |
-| Lambda | `fn(params) Type { ... }` | `fn(x: int) int { x * 2 }` |
+| Lambda (single expr) | `(params) => expr` | `(x) => x * 2` |
+| Lambda (block) | `(params) => { ... }` | `(x) => { return x * 2; }` |
+| Higher-order function | `fn name(f: Function) Type` | `fn apply(x: int, f: Function) int` |
+| Closure | `return (params) => expr` | `return (x) => x + n` |
 
 ## Next Steps
 
