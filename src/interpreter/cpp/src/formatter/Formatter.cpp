@@ -128,6 +128,51 @@ void Formatter::visit(CastExpr& expr) {
     write(expr.typeToken.lexeme);
 }
 
+void Formatter::visit(MapLiteralExpr& expr) {
+    write("{");
+    if (!expr.entries.empty()) {
+        indent();
+        newline();
+        indentLevel_++;
+        for (size_t i = 0; i < expr.entries.size(); ++i) {
+            indent();
+            write(expr.entries[i].first);
+            write(":");
+            space();
+            expr.entries[i].second->accept(*this);
+            if (i < expr.entries.size() - 1) {
+                write(",");
+            }
+            newline();
+        }
+        indentLevel_--;
+        indent();
+    }
+    write("}");
+}
+
+void Formatter::visit(LambdaExpr& expr) {
+    write("(");
+    for (size_t i = 0; i < expr.params.size(); ++i) {
+        write(expr.params[i].lexeme);
+        if (i < expr.params.size() - 1) {
+            write(",");
+            space();
+        }
+    }
+    write(")");
+    space();
+    write("=>");
+    space();
+    
+    // Check if body is a BlockStmt to format nicely
+    if (auto block = dynamic_cast<BlockStmt*>(expr.body.get())) {
+        formatBlock(block->statements);
+    } else {
+        expr.body->accept(*this);
+    }
+}
+
 // Statement visitors
 void Formatter::visit(VarDecl& stmt) {
     write(stmt.isMutable ? "var" : "val");

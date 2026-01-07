@@ -20,6 +20,8 @@ class CallExpr;
 class IndexExpr;
 class GroupingExpr;
 class CastExpr; // Forward declaration
+class MapLiteralExpr; // Forward declaration
+class LambdaExpr; // Forward declaration
 class VarDecl;
 class FunctionDecl;
 class ClassDecl;
@@ -45,6 +47,8 @@ public:
     virtual void visit(IndexExpr& expr) = 0;
     virtual void visit(GroupingExpr& expr) = 0;
     virtual void visit(CastExpr& expr) = 0; // Visit method for CastExpr
+    virtual void visit(MapLiteralExpr& expr) = 0; // Visit method for MapLiteralExpr
+    virtual void visit(LambdaExpr& expr) = 0; // Visit method for LambdaExpr
 
     virtual void visit(VarDecl& stmt) = 0;
     virtual void visit(FunctionDecl& stmt) = 0;
@@ -156,6 +160,27 @@ public:
 
     CastExpr(std::unique_ptr<Expr> expression, Token typeToken, bool isSafe = false)
         : expression(std::move(expression)), typeToken(typeToken), isSafe(isSafe) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class MapLiteralExpr : public Expr {
+public:
+    std::vector<std::pair<std::string, std::unique_ptr<Expr>>> entries;
+
+    MapLiteralExpr(std::vector<std::pair<std::string, std::unique_ptr<Expr>>> entries)
+        : entries(std::move(entries)) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class LambdaExpr : public Expr {
+public:
+    std::vector<Token> params;
+    std::unique_ptr<Stmt> body; // Usually BlockStmt
+
+    LambdaExpr(std::vector<Token> params, std::unique_ptr<Stmt> body)
+        : params(std::move(params)), body(std::move(body)) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };

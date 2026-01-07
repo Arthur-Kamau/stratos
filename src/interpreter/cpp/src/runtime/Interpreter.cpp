@@ -416,6 +416,25 @@ void Interpreter::visit(BinaryExpr& expr) {
             }
             break;
 
+        case TokenType::DOT_DOT:
+            if (left.type == "int" && right.type == "int") {
+                int start = left.asInt();
+                int end = right.asInt();
+                std::vector<int> range;
+                // Generate range [start, end)
+                if (start <= end) {
+                    // Reserve to avoid reallocations
+                    range.reserve(end - start);
+                    for (int i = start; i < end; ++i) {
+                        range.push_back(i);
+                    }
+                }
+                lastValue = RuntimeValue(std::any(range), "array<int>");
+            } else {
+                error("Range operator requires integer operands");
+            }
+            break;
+
         default:
             error("Unsupported binary operator");
     }
@@ -580,9 +599,79 @@ void Interpreter::visit(CallExpr& expr) {
                                     }
                                     lastValue = RuntimeValue(result);
                                     return;
+                                } else if (methodName == "push" || methodName == "add") {
+                                    if (!args.empty()) {
+                                        vec.push_back(args[0].asString());
+                                        lastValue = RuntimeValue(std::any(), "void");
+                                    } else {
+                                        error(methodName + "() requires a value argument");
+                                    }
+                                    return;
                                 }
                             } catch (const std::bad_any_cast&) {
                                 error("Internal error: Failed to cast array value");
+                            }
+                        } else if (leftValue.type == "array<int>") {
+                            try {
+                                auto& vec = std::any_cast<std::vector<int>&>(*anyPtr);
+
+                                if (methodName == "length") {
+                                    lastValue = RuntimeValue(static_cast<int>(vec.size()));
+                                    return;
+                                } else if (methodName == "isEmpty") {
+                                    lastValue = RuntimeValue(vec.empty());
+                                    return;
+                                } else if (methodName == "first") {
+                                    if (!vec.empty()) {
+                                        lastValue = RuntimeValue(vec.front());
+                                    } else {
+                                        lastValue = RuntimeValue(0); // or null/error?
+                                    }
+                                    return;
+                                } else if (methodName == "last") {
+                                    if (!vec.empty()) {
+                                        lastValue = RuntimeValue(vec.back());
+                                    } else {
+                                        lastValue = RuntimeValue(0);
+                                    }
+                                    return;
+                                } else if (methodName == "push" || methodName == "add") {
+                                    if (!args.empty()) {
+                                        vec.push_back(args[0].asInt());
+                                        lastValue = RuntimeValue(std::any(), "void");
+                                    } else {
+                                        error(methodName + "() requires a value argument");
+                                    }
+                                    return;
+                                } else if (methodName == "contains") {
+                                    if (!args.empty()) {
+                                        int searchValue = args[0].asInt();
+                                        bool found = std::find(vec.begin(), vec.end(), searchValue) != vec.end();
+                                        lastValue = RuntimeValue(found);
+                                    } else {
+                                        error("contains() requires a value argument");
+                                    }
+                                    return;
+                                } else if (methodName == "indexOf") {
+                                    if (!args.empty()) {
+                                        int searchValue = args[0].asInt();
+                                        auto it = std::find(vec.begin(), vec.end(), searchValue);
+                                        if (it != vec.end()) {
+                                            lastValue = RuntimeValue(static_cast<int>(std::distance(vec.begin(), it)));
+                                        } else {
+                                            lastValue = RuntimeValue(-1);
+                                        }
+                                    } else {
+                                        error("indexOf() requires a value argument");
+                                    }
+                                    return;
+                                } else if (methodName == "reverse") {
+                                    std::vector<int> reversed(vec.rbegin(), vec.rend());
+                                    lastValue = RuntimeValue(std::any(reversed), "array<int>");
+                                    return;
+                                }
+                            } catch (const std::bad_any_cast&) {
+                                error("Internal error: Failed to cast int array value");
                             }
                         }
                         // Add more array types here as needed
@@ -687,6 +776,76 @@ void Interpreter::visit(CallExpr& expr) {
         }
     }
 
+    // Check for closure/first-class function call
+    bool isClosure = false;
+    RuntimeValue closureValue;
+    
+    // Try to evaluate callee to see if it's a function variable
+    try {
+        // We only try this if it's NOT a dot expression (which is handled above)
+        if (!dynamic_cast<BinaryExpr*>(expr.callee.get())) {
+            expr.callee->accept(*this);
+            closureValue = lastValue;
+            if (closureValue.type == "function") {
+                isClosure = true;
+            }
+        }
+    } catch (...) {
+        // Ignore error, might be a direct function call to a global/native function
+    }
+
+    if (isClosure) {
+        // Evaluate arguments
+        std::vector<RuntimeValue> args;
+        for (const auto& arg : expr.arguments) {
+            arg->accept(*this);
+            args.push_back(lastValue);
+        }
+
+        // Extract the std::any from the variant, then cast to Closure
+        auto* anyPtr = std::get_if<std::any>(&closureValue.value);
+        if (!anyPtr) {
+            error("Internal error: Function value is not stored as std::any");
+            return;
+        }
+        auto closure = std::any_cast<std::shared_ptr<Closure>>(*anyPtr);
+        
+        // Save current environment
+        Environment* previousEnv = currentEnv;
+        
+        // Switch to closure's captured environment
+        // This ensures the closure has access to variables from where it was defined
+        currentEnv = closure->env;
+        
+        // Enter new scope for parameters
+        enterScope();
+        
+        // Bind parameters
+        for (size_t i = 0; i < closure->params.size() && i < args.size(); ++i) {
+            currentEnv->define(closure->params[i].lexeme, args[i]);
+        }
+        
+        // Execute body
+        RuntimeValue result;
+        try {
+            if (closure->body) {
+                closure->body->accept(*this);
+            }
+            result = RuntimeValue(std::any(), "void");
+        } catch (ReturnException& ret) {
+            result = ret.value;
+        }
+        
+        // Exit parameter scope
+        exitScope();
+        
+        // Restore original environment
+        currentEnv = previousEnv;
+        
+        lastValue = result;
+        return;
+    }
+
     // Regular function call
     if (auto* varExpr = dynamic_cast<VariableExpr*>(expr.callee.get())) {
         std::string functionName = varExpr->name.lexeme;
@@ -759,6 +918,18 @@ void Interpreter::visit(IndexExpr& expr) {
                     }
                 } catch (const std::bad_any_cast&) {
                     error("Internal error: Failed to cast array value");
+                }
+            } else if (arrayValue.type == "array<int>") {
+                try {
+                    auto& vec = std::any_cast<std::vector<int>&>(*anyPtr);
+                    if (idx >= 0 && idx < static_cast<int>(vec.size())) {
+                        lastValue = RuntimeValue(vec[idx]);
+                        return;
+                    } else {
+                        error("Array index out of bounds: " + std::to_string(idx));
+                    }
+                } catch (const std::bad_any_cast&) {
+                    error("Internal error: Failed to cast int array value");
                 }
             }
             // Add more array types here as needed
@@ -913,6 +1084,43 @@ void Interpreter::visit(CastExpr& expr) {
             throw;
         }
     }
+}
+
+void Interpreter::visit(MapLiteralExpr& expr) {
+    std::unordered_map<std::string, std::any> mapData;
+    for (const auto& pair : expr.entries) {
+        pair.second->accept(*this);
+        
+        // Unwrap RuntimeValue to std::any
+        std::any anyValue;
+        if (std::holds_alternative<int>(lastValue.value)) {
+            anyValue = std::get<int>(lastValue.value);
+        } else if (std::holds_alternative<double>(lastValue.value)) {
+            anyValue = std::get<double>(lastValue.value);
+        } else if (std::holds_alternative<std::string>(lastValue.value)) {
+            anyValue = std::get<std::string>(lastValue.value);
+        } else if (std::holds_alternative<char>(lastValue.value)) {
+            anyValue = std::get<char>(lastValue.value);
+        } else if (std::holds_alternative<bool>(lastValue.value)) {
+            anyValue = std::get<bool>(lastValue.value);
+        } else if (std::holds_alternative<std::shared_ptr<ClassInstance>>(lastValue.value)) {
+            anyValue = std::get<std::shared_ptr<ClassInstance>>(lastValue.value);
+        } else if (std::holds_alternative<std::any>(lastValue.value)) {
+            anyValue = std::get<std::any>(lastValue.value);
+        }
+        
+        mapData[pair.first] = anyValue;
+    }
+    lastValue = RuntimeValue(std::any(mapData), "map<string,any>");
+}
+
+void Interpreter::visit(LambdaExpr& expr) {
+    auto closure = std::make_shared<Closure>();
+    closure->params = expr.params;
+    closure->body = expr.body.get();
+    closure->env = currentEnv;
+    
+    lastValue = RuntimeValue(std::any(closure), "function");
 }
 
 // --- Statement Visitors ---
@@ -1181,7 +1389,30 @@ void Interpreter::visit(ForStmt& stmt) {
             } catch (const std::bad_any_cast&) {
                 error("Failed to iterate over array in for loop");
             }
-        } else {
+        } 
+        // Handle array<int> (ranges)
+        else if (iterableValue.type == "array<int>") {
+            try {
+                auto& vec = std::any_cast<std::vector<int>&>(anyValue);
+
+                // Iterate over each element
+                for (int element : vec) {
+                    // Create new scope for loop body
+                    enterScope();
+
+                    // Define loop variable with current element
+                    currentEnv->define(stmt.variable.lexeme, RuntimeValue(element));
+
+                    // Execute loop body
+                    stmt.body->accept(*this);
+
+                    exitScope();
+                }
+            } catch (const std::bad_any_cast&) {
+                error("Failed to iterate over int array in for loop");
+            }
+        }
+        else {
             error("Unsupported array type in for loop: " + iterableValue.type);
         }
     }

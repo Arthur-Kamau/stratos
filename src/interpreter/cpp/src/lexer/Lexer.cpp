@@ -13,6 +13,9 @@ std::unordered_map<std::string, TokenType> Lexer::keywords = {
     {"package", TokenType::PACKAGE},
     {"use", TokenType::USE},
     {"as", TokenType::AS}, // Add AS keyword
+    {"break", TokenType::BREAK},
+    {"class", TokenType::CLASS},
+    {"continue", TokenType::CONTINUE},
     {"else", TokenType::ELSE},
     {"false", TokenType::FALSE},
     {"for", TokenType::FOR},
@@ -94,7 +97,10 @@ void Lexer::scanToken() {
         case '[': addToken(TokenType::LEFT_BRACKET); break;
         case ']': addToken(TokenType::RIGHT_BRACKET); break;
         case ',': addToken(TokenType::COMMA); break;
-        case '.': addToken(TokenType::DOT); break;
+        case '.': 
+            if (match('.')) addToken(TokenType::DOT_DOT);
+            else addToken(TokenType::DOT); 
+            break;
         case '-': 
             if (match('=')) addToken(TokenType::MINUS_EQUAL);
             else if (match('>')) addToken(TokenType::ARROW);
@@ -115,7 +121,9 @@ void Lexer::scanToken() {
             addToken(match('=') ? TokenType::BANG_EQUAL : TokenType::BANG);
             break;
         case '=':
-            addToken(match('=') ? TokenType::EQUAL_EQUAL : TokenType::EQUAL);
+            if (match('=')) addToken(TokenType::EQUAL_EQUAL);
+            else if (match('>')) addToken(TokenType::ARROW);  // Support => for lambdas
+            else addToken(TokenType::EQUAL);
             break;
         case '<':
             addToken(match('=') ? TokenType::LESS_EQUAL : TokenType::LESS);

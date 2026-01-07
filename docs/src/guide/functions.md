@@ -372,19 +372,61 @@ fn main() {
 }
 ```
 
-## Lambda Functions (Anonymous Functions)
+## Lambda Expressions (Arrow Functions)
+
+Stratos supports concise anonymous functions using arrow syntax `=>`.
+
+### Basic Syntax
 
 ```stratos
+// Single expression lambda (implicit return)
+val add = (a, b) => a + b;
+
+// Block body lambda (explicit return)
+val multiply = (a, b) => {
+    val result = a * b;
+    return result;
+};
+
 fn main() {
-    // Lambda function
-    val add = fn(a: int, b: int) int { return a + b; };
+    print(add(5, 3));      // 8
+    print(multiply(4, 5)); // 20
+}
+```
 
-    print(add(5, 3));  // 8
+### Passing as Arguments
 
-    // Lambda with single expression
-    val multiply = fn(a: int, b: int) int = a * b;
+Lambdas are commonly used as callbacks or with higher-order functions.
 
-    print(multiply(4, 5));  // 20
+```stratos
+fn process(value: int, callback: Function) {
+    val result = callback(value);
+    print("Result: " + result);
+}
+
+fn main() {
+    // Pass lambda directly
+    process(10, (x) => x * 2);  // Result: 20
+    
+    process(5, (x) => {
+        val y = x + 1;
+        return y * y;
+    }); // Result: 36
+}
+```
+
+### Capturing Variables (Closures)
+
+Lambdas capture variables from their surrounding scope.
+
+```stratos
+fn makeAdder(n: int) Function {
+    return (x) => x + n;
+}
+
+fn main() {
+    val add10 = makeAdder(10);
+    print(add10(5)); // 15
 }
 ```
 

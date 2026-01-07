@@ -82,6 +82,18 @@ void Optimizer::visit(CastExpr& expr) {
     lastConst.type = 0; // Reset constant folding for now
 }
 
+void Optimizer::visit(MapLiteralExpr& expr) {
+    for (const auto& pair : expr.entries) {
+        pair.second->accept(*this);
+    }
+    lastConst.type = 0;
+}
+
+void Optimizer::visit(LambdaExpr& expr) {
+    if (expr.body) expr.body->accept(*this);
+    lastConst.type = 0;
+}
+
 // --- Statements ---
 
 void Optimizer::visit(VarDecl& stmt) {

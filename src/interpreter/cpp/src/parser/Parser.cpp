@@ -8,15 +8,9 @@ Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens) {}
 
 std::vector<std::unique_ptr<Stmt>> Parser::parse() {
     std::vector<std::unique_ptr<Stmt>> statements;
-    int count = 0;
     while (!isAtEnd()) {
         try {
             auto stmt = declaration();
-            // if (stmt) {
-            //     std::cout << "[Parser] Statement " << (++count) << ": valid" << std::endl;
-            // } else {
-            //     std::cout << "[Parser] Statement " << (++count) << ": nullptr" << std::endl;
-            // }
             statements.push_back(std::move(stmt));
         } catch (ParseError& error) {
             std::cerr << "[Error] " << error.line << ":" << error.column << ": " << error.what() << std::endl;
@@ -395,7 +389,7 @@ std::unique_ptr<Expr> Parser::expression() {
 }
 
 std::unique_ptr<Expr> Parser::assignment() {
-    std::unique_ptr<Expr> expr = pipe(); 
+    std::unique_ptr<Expr> expr = range(); 
 
     if (match({TokenType::EQUAL, TokenType::PLUS_EQUAL, TokenType::MINUS_EQUAL})) {
         Token equals = previous();
@@ -405,6 +399,16 @@ std::unique_ptr<Expr> Parser::assignment() {
         // For AST generation, we can just return a BinaryExpr or specialized AssignExpr
         // For now, treat as BinaryExpr to keep it simple, or cast.
         return std::make_unique<BinaryExpr>(std::move(expr), equals, std::move(value));
+    }
+    return expr;
+}
+
+std::unique_ptr<Expr> Parser::range() {
+    std::unique_ptr<Expr> expr = pipe();
+    if (match({TokenType::DOT_DOT})) {
+        Token op = previous();
+        std::unique_ptr<Expr> right = pipe();
+        expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
     }
     return expr;
 }
@@ -612,8 +616,56 @@ std::unique_ptr<Expr> Parser::primary() {
     }
 
     if (match({TokenType::LEFT_PAREN})) {
+        // 1. Check for empty lambda: () =>
+        if (check(TokenType::RIGHT_PAREN)) {
+            // Need to peek next token to see if it is ARROW
+            if (current + 1 < tokens.size() && tokens[current + 1].type == TokenType::ARROW) {
+                advance(); // consume )
+                advance(); // consume =>
+                std::unique_ptr<Stmt> body = parseLambdaBody();
+                return std::make_unique<LambdaExpr>(std::vector<Token>{}, std::move(body));
+            }
+        }
+
         std::unique_ptr<Expr> expr = expression();
+
+        // 2. Check for multi-param lambda: (a, b) =>
+        if (match({TokenType::COMMA})) {
+            std::vector<Token> params;
+            
+            // First param
+            if (auto* v = dynamic_cast<VariableExpr*>(expr.get())) {
+                params.push_back(v->name);
+            } else {
+                throw ParseError("Expect parameter name.", peek().line, peek().column);
+            }
+
+            // Remaining params
+            do {
+                Token param = consume(TokenType::IDENTIFIER, "Expect parameter name.");
+                params.push_back(param);
+            } while (match({TokenType::COMMA}));
+
+            consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
+            consume(TokenType::ARROW, "Expect '=>' after lambda parameters.");
+            std::unique_ptr<Stmt> body = parseLambdaBody();
+            return std::make_unique<LambdaExpr>(std::move(params), std::move(body));
+        }
+
         consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.");
+
+        // 3. Check for single-param lambda: (a) =>
+        if (match({TokenType::ARROW})) {
+            std::vector<Token> params;
+            if (auto* v = dynamic_cast<VariableExpr*>(expr.get())) {
+                params.push_back(v->name);
+            } else {
+                throw ParseError("Expect parameter name.", peek().line, peek().column);
+            }
+            std::unique_ptr<Stmt> body = parseLambdaBody();
+            return std::make_unique<LambdaExpr>(std::move(params), std::move(body));
+        }
+
         return std::make_unique<GroupingExpr>(std::move(expr));
     }
 
@@ -632,6 +684,21 @@ std::unique_ptr<Expr> Parser::primary() {
             bracket,
             std::move(elements)
         );
+    }
+
+    // Handle map/object literals: { key: value, ... }
+    if (match({TokenType::LEFT_BRACE})) {
+        std::vector<std::pair<std::string, std::unique_ptr<Expr>>> entries;
+        if (!check(TokenType::RIGHT_BRACE)) {
+            do {
+                Token key = consume(TokenType::IDENTIFIER, "Expect key in map literal.");
+                consume(TokenType::COLON, "Expect ':' after key in map literal.");
+                std::unique_ptr<Expr> value = expression();
+                entries.push_back({key.lexeme, std::move(value)});
+            } while (match({TokenType::COMMA}));
+        }
+        consume(TokenType::RIGHT_BRACE, "Expect '}' after map literal.");
+        return std::make_unique<MapLiteralExpr>(std::move(entries));
     }
 
     throw ParseError("Expect expression. Found: " + peek().lexeme, peek().line, peek().column);
@@ -740,6 +807,21 @@ Token Parser::consume(TokenType type, std::string message) {
     if (check(type)) return advance();
     Token t = peek();
     throw ParseError(message + " Found: " + t.lexeme, t.line, t.column);
+}
+
+std::unique_ptr<Stmt> Parser::parseLambdaBody() {
+    if (match({TokenType::LEFT_BRACE})) {
+        return block();
+    } else {
+        std::unique_ptr<Expr> expr = expression();
+        // Wrap expression in a ReturnStmt for implicit return
+        // We wrap that in a BlockStmt to match LambdaExpr signature expectation if needed? 
+        // LambdaExpr takes Stmt, so ReturnStmt is fine. But execution of Lambda usually expects a Block.
+        // Let's return a Block containing the ReturnStmt.
+        std::vector<std::unique_ptr<Stmt>> stmts;
+        stmts.push_back(std::make_unique<ReturnStmt>(Token{TokenType::RETURN, "return", 0, 0}, std::move(expr)));
+        return std::make_unique<BlockStmt>(std::move(stmts));
+    }
 }
 
 void Parser::synchronize() {

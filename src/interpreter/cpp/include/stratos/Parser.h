@@ -41,6 +41,7 @@ private:
     // Expressions
     std::unique_ptr<Expr> expression();
     std::unique_ptr<Expr> assignment();
+    std::unique_ptr<Expr> range(); // New: Range expression
     std::unique_ptr<Expr> pipe(); // New
     std::unique_ptr<Expr> logicOr();
     std::unique_ptr<Expr> logicAnd();
@@ -71,6 +72,9 @@ private:
     std::unique_ptr<DocComment> parseDocComment(const std::string& rawText);
     std::unique_ptr<DocComment> takePendingDoc();
     void saveTag(std::unique_ptr<DocComment>& doc, const std::string& tagName, const std::string& tagContent);
+
+    // Helpers
+    std::unique_ptr<Stmt> parseLambdaBody(); // New helper
 
     void synchronize();
 };

@@ -125,11 +125,11 @@ fn startTimer(name: string) LogTimer {
 }
 
 // Log middleware for functions
-fn logFunction(name: string, fn: Function) any {
+fn logFunction(name: string, callback: Function) any {
     return () => {
         info("Function called: " + name);
         val timer = startTimer(name);
-        val result = fn();
+        val result = callback();
         timer.log();
         return result;
     };

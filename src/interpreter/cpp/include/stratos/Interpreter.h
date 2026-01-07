@@ -61,6 +61,9 @@ struct RuntimeValue {
         } else if (t.starts_with("map")) {
             // For maps, store the std::any directly
             value = val;
+        } else if (t == "function") {
+            // For functions/closures, store the std::any directly
+            value = val;
         } else if (t == "any") {
             // For any type, store the std::any directly
             value = val;
@@ -157,6 +160,8 @@ public:
     void visit(IndexExpr& expr) override;
     void visit(GroupingExpr& expr) override;
     void visit(CastExpr& expr) override; // Visit method for CastExpr
+    void visit(MapLiteralExpr& expr) override; // Visit method for MapLiteralExpr
+    void visit(LambdaExpr& expr) override; // Visit method for LambdaExpr
 
     void visit(VarDecl& stmt) override;
     void visit(FunctionDecl& stmt) override;
@@ -173,6 +178,16 @@ public:
     void visit(ReturnStmt& stmt) override;
 
 private:
+    // Forward declaration
+    struct Environment;
+
+    // Closure for lambdas/first-class functions
+    struct Closure {
+        std::vector<Token> params;
+        Stmt* body; // Non-owning pointer to AST
+        Environment* env; // Captured environment
+    };
+
     // Runtime environment (variable storage)
     struct Environment {
         std::unordered_map<std::string, RuntimeValue> variables;

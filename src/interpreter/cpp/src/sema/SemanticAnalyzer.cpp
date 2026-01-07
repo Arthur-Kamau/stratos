@@ -211,6 +211,21 @@ void SemanticAnalyzer::visit(CastExpr& expr) {
     // Future: Verify if cast is valid (e.g. primitive to primitive)
 }
 
+void SemanticAnalyzer::visit(MapLiteralExpr& expr) {
+    for (const auto& pair : expr.entries) {
+        pair.second->accept(*this);
+    }
+}
+
+void SemanticAnalyzer::visit(LambdaExpr& expr) {
+    symbolTable.enterScope();
+    for (const auto& param : expr.params) {
+        symbolTable.define(Symbol::Variable(param.lexeme, "any", false));
+    }
+    if (expr.body) expr.body->accept(*this);
+    symbolTable.exitScope();
+}
+
 // --- Statements ---
 
 void SemanticAnalyzer::visit(VarDecl& stmt) {

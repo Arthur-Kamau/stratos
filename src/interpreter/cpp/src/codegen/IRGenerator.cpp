@@ -649,6 +649,16 @@ void IRGenerator::visit(CastExpr& expr) {
     }
 }
 
+void IRGenerator::visit(MapLiteralExpr& expr) {
+    // Maps not fully supported in IR gen yet
+    lastVal = {"null", "i8*"};
+}
+
+void IRGenerator::visit(LambdaExpr& expr) {
+    // TODO: IR Gen for lambdas
+    lastVal = {"null", "i8*"};
+}
+
 void IRGenerator::visit(ClassDecl& stmt) {
     // Generate constructors and methods for this class
     currentClass = stmt.name.lexeme;

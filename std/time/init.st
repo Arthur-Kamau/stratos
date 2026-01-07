@@ -218,19 +218,19 @@ fn humanizeDuration(d: Duration) string {
 }
 
 // Measure function execution time
-fn measure(fn: Function) Duration {
+fn measure(callback: Function) Duration {
     val start = now();
-    fn();
+    callback();
     val end = now();
     return end.sub(start);
 }
 
 // Retry with timeout
-fn retry(fn: Function<Result>, timeout: Duration, interval: Duration) Result {
+fn retry(callback: Function<Result>, timeout: Duration, interval: Duration) Result {
     val deadline = now().add(timeout);
 
     while now().before(deadline) {
-        val result = fn();
+        val result = callback();
         if result.ok() {
             return result;
         }

@@ -30,6 +30,8 @@ public:
     void visit(IndexExpr& expr) override;
     void visit(GroupingExpr& expr) override;
     void visit(CastExpr& expr) override;
+    void visit(MapLiteralExpr& expr) override;
+    void visit(LambdaExpr& expr) override;
 
     void visit(VarDecl& stmt) override;
     void visit(FunctionDecl& stmt) override;

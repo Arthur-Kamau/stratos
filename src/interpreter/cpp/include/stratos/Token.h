@@ -24,6 +24,7 @@ enum class TokenType {
     QUESTION, // ?
     QUESTION_DOT, // ?.
     ELVIS, // ?:
+    DOT_DOT, // ..
 
     // Literals
     IDENTIFIER, STRING, NUMBER, CHAR,
@@ -31,6 +32,7 @@ enum class TokenType {
     // Keywords
     AND, OR, NOT,
     CLASS, STRUCT, INTERFACE, ENUM, PACKAGE, USE, AS,
+    BREAK, CONTINUE,
     ELSE, FALSE, FN, FOR, IF, NONE,
     RETURN, SUPER, THIS, TRUE, VAR, VAL,
     WHILE, WHEN,
