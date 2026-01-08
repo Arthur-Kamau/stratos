@@ -734,53 +734,61 @@ connection.onCompletion(
 
         if (languageId === 'hocon') {
             let completions: CompletionItem[] = [];
-            // Removed currentPath: string[] = []; as it's not used in this approach
-
-            try {
-                // Determine the current path based on cursor position
-                let currentScopeKey = "__root__";
             
-                // Get text up to current position
-                const textUntilCursor = document.getText({
-                    start: { line: 0, character: 0 },
-                    end: textDocumentPosition.position
-                });
+            try {
+                // Determine the current scope key
+                let currentScopeKey = "__root__";
+                const currentPosition = textDocumentPosition.position;
+                const lines = text.split('\n');
+                let scopeStack: string[] = [];
 
-                // Find the last unmatched opening brace before the cursor
-                let braceBalance = 0;
-                let lastOpenBraceIndex = -1;
-                for (let i = textUntilCursor.length - 1; i >= 0; i--) {
-                    const char = textUntilCursor[i];
-                    if (char === '{') {
-                        braceBalance--;
-                        if (braceBalance === -1) { // Found the last unmatched opening brace
-                            lastOpenBraceIndex = i;
-                            break;
+                // Iterate through lines from the beginning up to the current line
+                for (let i = 0; i <= currentPosition.line; i++) {
+                    let line = lines[i];
+                    // For the current line, only consider text up to the cursor position
+                    if (i === currentPosition.line) {
+                        line = line.substring(0, currentPosition.character);
+                    }
+
+                    // Match keys followed by an opening brace (and handle multiple on one line)
+                    let openMatch;
+                    const openBraceRegex = /(\w+)\s*\{/g;
+                    while ((openMatch = openBraceRegex.exec(line)) !== null) {
+                        scopeStack.push(openMatch[1]);
+                    }
+
+                    // Match closing braces (and handle multiple on one line)
+                    let closeMatch;
+                    const closeBraceRegex = /\}/g;
+                    while ((closeMatch = closeBraceRegex.exec(line)) !== null) {
+                        if (scopeStack.length > 0) {
+                            scopeStack.pop();
                         }
-                    } else if (char === '}') {
-                        braceBalance++;
                     }
                 }
-
-                if (lastOpenBraceIndex !== -1) {
-                    // Find the key associated with this opening brace
-                    const textBeforeBrace = textUntilCursor.substring(0, lastOpenBraceIndex);
-                    const keyMatch = textBeforeBrace.match(/(\w+)\s*$/); // Find word before the brace
-                    if (keyMatch) {
-                        currentScopeKey = keyMatch[1];
-                    }
+                
+                // The top of the stack is the most immediate parent scope
+                if (scopeStack.length > 0) {
+                    currentScopeKey = scopeStack[scopeStack.length - 1];
                 }
                 
                 // Filter out existing keys in the current block for more relevant suggestions
                 const existingKeysInBlock = new Set<string>();
                 try {
-                    // Attempt to parse the HOCON up to the current point
-                    const partialHocon = hocon.parse(textUntilCursor);
+                    const parsedHocon = hocon.parse(text); // Parse full document
                     
-                    // Navigate to the current scope in the parsed object
-                    let currentParsedScope: any = partialHocon;
+                    let currentParsedScope: any = parsedHocon;
                     if (currentScopeKey !== "__root__") {
-                        currentParsedScope = partialHocon[currentScopeKey];
+                        // Traverse the parsed HOCON object to find the relevant scope
+                        const scopeKeys = currentScopeKey.split('.'); // Note: currentScopeKey will only be a single key here, not a path
+                        for (const keyPart of scopeKeys) { // This loop will only run once with currentScopeKey
+                            if (currentParsedScope && typeof currentParsedScope === 'object' && currentParsedScope[keyPart] !== undefined) {
+                                currentParsedScope = currentParsedScope[keyPart];
+                            } else {
+                                currentParsedScope = null; // Path not found
+                                break;
+                            }
+                        }
                     }
 
                     // Collect existing keys from the current scope
