@@ -236,7 +236,7 @@ function loadStandardLibraryCompletions() {
 			detail: `Standard library module`,
 			documentation: {
 				kind: MarkupKind.Markdown,
-				value: `Import with: \`use ${moduleName};\``
+				value: `Import with: 	use ${moduleName};	`
 			},
 			insertText: moduleName
 		});
@@ -270,7 +270,7 @@ function loadStandardLibraryCompletions() {
 				if (item.params) {
 					// Create snippet with parameter placeholders
 					const paramCount = params.length;
-					const placeholders = Array.from({ length: paramCount }, (_, i) => `\${${i + 1}}`).join(', ');
+					const placeholders = Array.from({ length: paramCount }, (_, i) => `	${i + 1}}`).join(', ');
 					insertText = `${item.name}(${placeholders})`;
 				} else {
 					insertText = `${item.name}()`;
@@ -304,9 +304,84 @@ documents.onDidChangeContent(change => {
 	indexFunctionDefinitions(change.document);
 });
 
+// Function to find duplicate keys in HOCON files
+function findHoconDuplicateKeys(textDocument: TextDocument): Diagnostic[] {
+    const diagnostics: Diagnostic[] = [];
+    const lines = textDocument.getText().split('\n');
+
+    interface Scope {
+        keys: Map<string, Range>;
+        braceLine: number; // Line number where this scope's opening brace was found
+    }
+
+    const scopeStack: Scope[] = [{ keys: new Map<string, Range>(), braceLine: -1 }]; // Root scope
+
+    lines.forEach((lineText, i) => {
+        const lineNumber = i;
+
+        // Detect scope opening
+        const openBraceMatch = lineText.match(/(\w+)\s*\{/);
+        if (openBraceMatch) {
+            // Push the new scope onto the stack
+            scopeStack.push({ keys: new Map<string, Range>(), braceLine: lineNumber });
+            // The key that opens the scope is handled by the regular key detection below
+        }
+
+        // Detect key declarations
+        // Matches: key = value, key: value, key { (object-like key)
+        const keyMatch = lineText.match(/^\s*([a-zA-Z_][a-zA-Z0-9_\\-\\.]*|\"[^\"]+\")\s*(?::|=|\{|$)/);
+        if (keyMatch) {
+            let key = keyMatch[1];
+            // Remove quotes if it's a quoted key
+            if (key.startsWith('"') && key.endsWith('"')) {
+                key = key.substring(1, key.length - 1);
+            }
+
+            const currentScope = scopeStack[scopeStack.length - 1];
+            if (currentScope.keys.has(key)) {
+                // Duplicate key found
+                const existingRange = currentScope.keys.get(key)!;
+                const duplicateRange: Range = {
+                    start: { line: lineNumber, character: lineText.indexOf(keyMatch[1]) },
+                    end: { line: lineNumber, character: lineText.indexOf(keyMatch[1]) + keyMatch[1].length }
+                };
+
+                diagnostics.push({
+                    severity: DiagnosticSeverity.Error,
+                    range: duplicateRange,
+                    message: `Duplicate key '${key}' in this scope. First declared on line ${existingRange.start.line + 1}.`,
+                    source: 'hocon-linter'
+                });
+            } else {
+                currentScope.keys.set(key, {
+                    start: { line: lineNumber, character: lineText.indexOf(keyMatch[1]) },
+                    end: { line: lineNumber, character: lineText.indexOf(keyMatch[1]) + keyMatch[1].length }
+                });
+            }
+        }
+
+        // Detect scope closing
+        const closeBraceMatch = lineText.match(/\}/);
+        if (closeBraceMatch) {
+            if (scopeStack.length > 1) { // Never pop the root scope
+                scopeStack.pop();
+            }
+        }
+    });
+
+    return diagnostics;
+}
+
+
 async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	const text = textDocument.getText();
-	const diagnostics: Diagnostic[] = [];
+	let diagnostics: Diagnostic[] = []; // Change to let for adding HOCON diagnostics
+
+	if (textDocument.languageId === 'hocon') {
+		diagnostics = findHoconDuplicateKeys(textDocument);
+		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+		return; // Exit early for HOCON files as no compiler validation is needed
+	}
 
 	// Get compiler path from settings or use default
 	const settings = await getDocumentSettings(textDocument.uri);
@@ -352,7 +427,7 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		const output = (stderr + stdout).toString();
 
 		// Pattern: [Error] Line:Col: Message
-		const errorRegex = /\[Error\]\s+(?:Line\s+)?(\d+):(\d+):\s+(.+)/gi;
+		const errorRegex = /\ \[Error\]\s+(?:Line\s+)?(\d+):(\d+):\s+(.+)/gi;
 		// Pattern: Error at line X, column Y: Message
 		const altErrorRegex = /Error\s+at\s+line\s+(\d+),\s+column\s+(\d+):\s+(.+)/gi;
 		// Pattern: Line X:Y - Error: Message
@@ -435,15 +510,15 @@ function detectRuntimeErrors(textDocument: TextDocument, diagnostics: Diagnostic
 					range: {
 						start: { line: lineIndex, character: match.index || 0 },
 						end: { line: lineIndex, character: (match.index || 0) + match[0].length }
-					},
-					message: 'Potential division by zero',
-					source: 'stratos-linter'
-				});
+				},
+				message: 'Potential division by zero',
+				source: 'stratos-linter'
+			});
 			}
 		}
 
 		// Null pointer access
-		if (/\?\s*\./.test(line)) {
+		if (/	\?\s*\./.test(line)) {
 			// This is safe navigation, so it's fine
 		} else if (/([a-zA-Z_][a-zA-Z0-9_]*)\s*\./.test(line) && line.includes('= null')) {
 			const match = line.match(/([a-zA-Z_][a-zA-Z0-9_]*)\s*\./);
@@ -453,15 +528,15 @@ function detectRuntimeErrors(textDocument: TextDocument, diagnostics: Diagnostic
 					range: {
 						start: { line: lineIndex, character: match.index || 0 },
 						end: { line: lineIndex, character: (match.index || 0) + match[0].length }
-					},
-					message: 'Potential null pointer access. Consider using safe navigation (?.) or null check',
-					source: 'stratos-linter'
-				});
+				},
+				message: 'Potential null pointer access. Consider using safe navigation (?.) or null check',
+				source: 'stratos-linter'
+			});
 			}
 		}
 
 		// Array out of bounds (simple heuristic)
-		const arrayAccessMatch = line.match(/\[(-?\d+)\]/);
+		const arrayAccessMatch = line.match(/\ \[(-?\d+)\]/);
 		if (arrayAccessMatch) {
 			const index = parseInt(arrayAccessMatch[1]);
 			if (index < 0) {
@@ -470,10 +545,10 @@ function detectRuntimeErrors(textDocument: TextDocument, diagnostics: Diagnostic
 					range: {
 						start: { line: lineIndex, character: arrayAccessMatch.index || 0 },
 						end: { line: lineIndex, character: (arrayAccessMatch.index || 0) + arrayAccessMatch[0].length }
-					},
-					message: 'Negative array index',
-					source: 'stratos-linter'
-				});
+				},
+				message: 'Negative array index',
+				source: 'stratos-linter'
+			});
 			}
 		}
 
@@ -500,8 +575,8 @@ function detectRuntimeErrors(textDocument: TextDocument, diagnostics: Diagnostic
 							start: { line: lineIndex, character: startChar },
 							end: { line: lineIndex, character: endChar }
 						},
-						message: `Function '${functionName}' does not exist in module '${moduleName}'`,
-						source: 'stratos-linter'
+					message: `Function '${functionName}' does not exist in module '${moduleName}'`,
+					source: 'stratos-linter'
 					});
 				} else {
 					// Check argument count
@@ -517,8 +592,8 @@ function detectRuntimeErrors(textDocument: TextDocument, diagnostics: Diagnostic
 								start: { line: lineIndex, character: startChar },
 								end: { line: lineIndex, character: endChar }
 							},
-							message: `Function '${fullName}' expects ${expectedArgCount} argument(s) but got ${providedArgs.length}`,
-							source: 'stratos-linter'
+						message: `Function '${fullName}' expects ${expectedArgCount} argument(s) but got ${providedArgs.length}`,
+						source: 'stratos-linter'
 						});
 					}
 				}
@@ -562,7 +637,7 @@ function detectRuntimeErrors(textDocument: TextDocument, diagnostics: Diagnostic
 						},
 						message: `Function '${functionName}' expects ${expectedParams.length} argument(s) but got ${providedArgs.length}`,
 						source: 'stratos-linter'
-					});
+						});
 					continue;
 				}
 
@@ -597,7 +672,7 @@ function detectRuntimeErrors(textDocument: TextDocument, diagnostics: Diagnostic
 							},
 							message: `Argument ${i + 1} of function '${functionName}' expects type '${expectedType}' but got '${inferredType}'`,
 							source: 'stratos-linter'
-						});
+							});
 					}
 				}
 			}
@@ -641,7 +716,7 @@ function indexFunctionDefinitions(textDocument: TextDocument) {
 				paramParts.forEach(part => {
 					const trimmed = part.trim();
 					// Match: paramName: paramType
-					const paramMatch = trimmed.match(/([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*([a-zA-Z_][a-zA-Z0-9_?<>,\s]*)/);
+					const paramMatch = trimmed.match(/([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*([a-zA-Z_][a-zA-Z0-9_?<>,	]*)/);
 					if (paramMatch) {
 						params.push({
 							name: paramMatch[1],
@@ -659,7 +734,7 @@ function indexFunctionDefinitions(textDocument: TextDocument) {
 			functionDefinitions.set(functionName, {
 				name: functionName,
 				uri: uri,
-				range: range,
+			range: range,
 				params: params,
 				returnType: returnType
 			});
@@ -713,8 +788,6 @@ documents.onDidClose(e => {
 });
 
 
-
-// ... (rest of imports)
 
 // Completion handler
 connection.onCompletion(
@@ -828,8 +901,7 @@ connection.onCompletion(
                 completions = hoconCompletionItems["__root__"];
             }
             return completions;
-        }
-
+        } else {
 		// Check if we're after "use "
 		if (/use\s+[a-zA-Z_]*$/.test(linePrefix)) {
 			// Return module names only
@@ -883,6 +955,7 @@ connection.onCompletion(
 		];
 
 		return [...keywordCompletions, ...stdlibCompletions];
+        }
 	}
 );
 
@@ -926,7 +999,7 @@ connection.onDefinition(
 		}
 
 		// Check if it's a stdlib function call (module.function)
-		const stdlibCallRegex = new RegExp(`([a-zA-Z_][a-zA-Z0-9_]*)\\.${targetWord}\\s*\\(`);
+		const stdlibCallRegex = new RegExp(`([a-zA-Z_][a-zA-Z0-9_]*)\.${targetWord}\s*\(`);
 		const stdlibMatch = lineText.match(stdlibCallRegex);
 
 		if (stdlibMatch) {
