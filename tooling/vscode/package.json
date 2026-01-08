@@ -84,7 +84,8 @@
     "scripts": {
         "vscode:prepublish": "npm run compile",
         "compile": "tsc -p .",
-        "watch": "tsc -w -p ."
+        "watch": "tsc -w -p .",
+        "update-stdlib": "node scripts/update-stdlib.js"
     },
     "devDependencies": {
         "@types/node": "^16.11.7",

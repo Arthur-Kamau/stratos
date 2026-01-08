@@ -94,6 +94,13 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
                     // Valid enum value access
                     return;
                 }
+
+                // If full name resolution failed, check if the base (left side) is a valid enum/class
+                if (symbolTable.resolve(enumName)) {
+                    // The enum exists, but the member does not
+                    error(rightVar->name, "Member '" + valueName + "' not found in enum '" + enumName + "'.");
+                    return;
+                }
             }
         }
 
