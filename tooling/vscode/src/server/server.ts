@@ -27,6 +27,7 @@ import { execFile } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
+import * as hocon from 'hocon-parser';
 
 // Create a connection for the server, using Node's IPC as a transport.
 const connection = createConnection(ProposedFeatures.all);
@@ -64,6 +65,38 @@ const functionDefinitions: Map<string, FunctionDefinition> = new Map();
 
 // Workspace symbols cache
 const workspaceSymbols: Map<string, CompletionItem[]> = new Map();
+
+// HOCON specific completion items
+const hoconCompletionItems: { [key: string]: CompletionItem[] } = {
+    // Top-level completions
+    "__root__": [
+        { label: "project", kind: CompletionItemKind.Module, detail: "Defines project metadata", insertText: "project {\n\t$0\n}", insertTextFormat: InsertTextFormat.Snippet },
+        { label: "build", kind: CompletionItemKind.Module, detail: "Defines build configuration", insertText: "build {\n\t$0\n}", insertTextFormat: InsertTextFormat.Snippet },
+        { label: "dependencies", kind: CompletionItemKind.Module, detail: "Defines project dependencies", insertText: "dependencies {\n\t$0\n}", insertTextFormat: InsertTextFormat.Snippet }
+    ],
+    // 'project' section completions
+    "project": [
+        { label: "name", kind: CompletionItemKind.Property, detail: "Project name", insertText: "name = \"${1:my-project}\"", insertTextFormat: InsertTextFormat.Snippet },
+        { label: "version", kind: CompletionItemKind.Property, detail: "Project version", insertText: "version = \"${1:1.0.0}\"", insertTextFormat: InsertTextFormat.Snippet },
+        { label: "description", kind: CompletionItemKind.Property, detail: "Project description", insertText: "description = \"${1:A new Stratos project}\"", insertTextFormat: InsertTextFormat.Snippet },
+        { label: "authors", kind: CompletionItemKind.Property, detail: "List of authors", insertText: "authors = [\"${1:Your Name}\"]", insertTextFormat: InsertTextFormat.Snippet },
+        { label: "keywords", kind: CompletionItemKind.Property, detail: "Keywords for dependency search", insertText: "keywords = [\"${1:keyword1}\", \"${2:keyword2}\"]", insertTextFormat: InsertTextFormat.Snippet },
+        { label: "categories", kind: CompletionItemKind.Property, detail: "Categories for crates.io", insertText: "categories = [\"${1:category1}\"]", insertTextFormat: InsertTextFormat.Snippet },
+        { label: "license", kind: CompletionItemKind.Property, detail: "Project license", insertText: "license = \"${1:MIT}\"", insertTextFormat: InsertTextFormat.Snippet },
+        { label: "repository", kind: CompletionItemKind.Property, detail: "Repository URL", insertText: "repository = \"${1:https://github.com/yourname/your-repo}\"", insertTextFormat: InsertTextFormat.Snippet },
+        { label: "documentation", kind: CompletionItemKind.Property, detail: "Documentation URL", insertText: "documentation = \"${1:https://github.com/yourname/your-repo}\"", insertTextFormat: InsertTextFormat.Snippet }
+    ],
+    // 'build' section completions
+    "build": [
+        { label: "entry", kind: CompletionItemKind.Property, detail: "Entry point file (e.g., src/main.st)", insertText: "entry = \"${1:src/main.st}\"", insertTextFormat: InsertTextFormat.Snippet },
+        { label: "output", kind: CompletionItemKind.Property, detail: "Output path for build artifact", insertText: "output = \"${1:build/my-project}\"", insertTextFormat: InsertTextFormat.Snippet }
+    ],
+    // 'dependencies' section completions - generic example
+    "dependencies": [
+        { label: "dependency-name", kind: CompletionItemKind.Property, detail: "Add a project dependency", insertText: "${1:dependency-name} = \"${2:github.com/user/repo}\"", insertTextFormat: InsertTextFormat.Snippet }
+    ]
+};
+
 
 connection.onInitialize((params: InitializeParams) => {
 	const capabilities = params.capabilities;
@@ -679,6 +712,10 @@ documents.onDidClose(e => {
 	documentSettings.delete(e.document.uri);
 });
 
+
+
+// ... (rest of imports)
+
 // Completion handler
 connection.onCompletion(
 	(textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
@@ -693,6 +730,97 @@ connection.onCompletion(
 			Math.max(0, offset - 100),
 			offset
 		);
+        const languageId = document.languageId;
+
+        if (languageId === 'hocon') {
+            let completions: CompletionItem[] = [];
+            // Removed currentPath: string[] = []; as it's not used in this approach
+
+            try {
+                // Determine the current path based on cursor position
+                let currentScopeKey = "__root__";
+            
+                // Get text up to current position
+                const textUntilCursor = document.getText({
+                    start: { line: 0, character: 0 },
+                    end: textDocumentPosition.position
+                });
+
+                // Find the last unmatched opening brace before the cursor
+                let braceBalance = 0;
+                let lastOpenBraceIndex = -1;
+                for (let i = textUntilCursor.length - 1; i >= 0; i--) {
+                    const char = textUntilCursor[i];
+                    if (char === '{') {
+                        braceBalance--;
+                        if (braceBalance === -1) { // Found the last unmatched opening brace
+                            lastOpenBraceIndex = i;
+                            break;
+                        }
+                    } else if (char === '}') {
+                        braceBalance++;
+                    }
+                }
+
+                if (lastOpenBraceIndex !== -1) {
+                    // Find the key associated with this opening brace
+                    const textBeforeBrace = textUntilCursor.substring(0, lastOpenBraceIndex);
+                    const keyMatch = textBeforeBrace.match(/(\w+)\s*$/); // Find word before the brace
+                    if (keyMatch) {
+                        currentScopeKey = keyMatch[1];
+                    }
+                }
+                
+                // Filter out existing keys in the current block for more relevant suggestions
+                const existingKeysInBlock = new Set<string>();
+                try {
+                    // Attempt to parse the HOCON up to the current point
+                    const partialHocon = hocon.parse(textUntilCursor);
+                    
+                    // Navigate to the current scope in the parsed object
+                    let currentParsedScope: any = partialHocon;
+                    if (currentScopeKey !== "__root__") {
+                        currentParsedScope = partialHocon[currentScopeKey];
+                    }
+
+                    // Collect existing keys from the current scope
+                    if (typeof currentParsedScope === 'object' && currentParsedScope !== null) {
+                        for (const key in currentParsedScope) {
+                            if (Object.prototype.hasOwnProperty.call(currentParsedScope, key)) {
+                                existingKeysInBlock.add(key);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // Ignore parse errors, we are just trying to get existing keys
+                    // connection.console.warn(`Partial HOCON parse error for existing keys: ${e instanceof Error ? e.message : e}`);
+                }
+                
+                // Get completions for the determined scope
+                let completionsForScope = hoconCompletionItems[currentScopeKey] || [];
+                
+                // Filter completions: do not suggest keys already present in the current block
+                completions = completionsForScope.filter(item => !existingKeysInBlock.has(item.label));
+
+                // Filter completions based on what's already typed on the current line
+                const lastWordMatch = linePrefix.match(/(\w+)$/);
+                if (lastWordMatch) {
+                    const lastWord = lastWordMatch[1];
+                    completions = completions.filter(item => item.label.startsWith(lastWord));
+                }
+                
+                return completions;
+            } catch (e) {
+                if (e instanceof Error) {
+                    connection.console.warn(`HOCON parse error: ${e.message}`);
+                } else {
+                    connection.console.warn(`HOCON parse error: ${e}`);
+                }
+                // Fallback to root completions on parse error
+                completions = hoconCompletionItems["__root__"];
+            }
+            return completions;
+        }
 
 		// Check if we're after "use "
 		if (/use\s+[a-zA-Z_]*$/.test(linePrefix)) {

@@ -2,7 +2,8 @@
     "name": "stratos-language",
     "displayName": "Stratos Language",
     "description": "Language support for Stratos",
-    "version": "0.1.1",
+    "publisher": "arthurKamau",
+    "version": "0.1.3",
     "engines": {
         "vscode": "^1.75.0"
     },
@@ -15,17 +16,42 @@
     ],
     "main": "./out/extension.js",
     "contributes": {
-        "languages": [{
-            "id": "stratos",
-            "aliases": ["Stratos", "stratos"],
-            "extensions": [".st"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "stratos",
-            "scopeName": "source.stratos",
-            "path": "./syntaxes/stratos.tmLanguage.json"
-        }],
+        "languages": [
+            {
+                "id": "stratos",
+                "aliases": [
+                    "Stratos",
+                    "stratos"
+                ],
+                "extensions": [
+                    ".st"
+                ],
+                "configuration": "./language-configuration.json"
+            },
+            {
+                "id": "hocon",
+                "aliases": [
+                    "HOCON",
+                    "hocon"
+                ],
+                "extensions": [
+                    ".conf"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "stratos",
+                "scopeName": "source.stratos",
+                "path": "./syntaxes/stratos.tmLanguage.json"
+            },
+            {
+                "language": "hocon",
+                "scopeName": "source.hocon",
+                "path": "./syntaxes/hocon.tmLanguage.json"
+            }
+        ],
         "snippets": [
             {
                 "language": "stratos",
@@ -61,11 +87,12 @@
         "watch": "tsc -w -p ."
     },
     "devDependencies": {
-        "@types/vscode": "^1.75.0",
         "@types/node": "^16.11.7",
+        "@types/vscode": "^1.75.0",
         "typescript": "^4.9.0"
     },
     "dependencies": {
+        "hocon-parser": "^1.0.1",
         "vscode-languageclient": "^8.1.0",
         "vscode-languageserver": "^8.1.0",
         "vscode-languageserver-textdocument": "^1.0.8"

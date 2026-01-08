@@ -225,6 +225,36 @@
 			"settings": {
 				"foreground": "#C586C0"
 			}
-		}
+		},
+		{
+            "name": "HOCON Keys",
+            "scope": [
+                "variable.other.key.hocon",
+                "variable.other.key.quoted.hocon"
+            ],
+            "settings": {
+                "foreground": "#569CD6"
+            }
+        },
+        {
+            "name": "HOCON Object Braces",
+            "scope": [
+                "punctuation.section.object.begin.hocon",
+                "punctuation.section.object.end.hocon"
+            ],
+            "settings": {
+                "foreground": "#C586C0"
+            }
+        },
+		{
+            "name": "HOCON Object Key (Purple)",
+            "scope": [
+                "entity.name.tag.hocon.object-key",
+                "entity.name.tag.hocon.object-key.quoted"
+            ],
+            "settings": {
+                "foreground": "#C586C0"
+            }
+        }
 	]
 }

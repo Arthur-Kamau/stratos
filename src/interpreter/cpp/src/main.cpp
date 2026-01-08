@@ -944,8 +944,12 @@ int handleNew(int argc, char* argv[]) {
         confFile << "  name = " << projectName << "\n";
         confFile << "  version = \"1.0.0\"\n";
         confFile << "  description = \"A new Stratos project\"\n";
-        confFile << "  author = \"Your Name\"\n";
+        confFile << "  authors = [\"Your Name\"]\n";
+        confFile << "  keywords = ["<< projectName <<"]\n # Keywords for dependancies search ";
+        confFile << "  categories = [""]\n # similar to crates.io  Categories";
         confFile << "  license = \"MIT\"\n";
+        confFile << "  repository = \"https://github.com/yourname/" << projectName << "\"\n";
+        confFile << "  documentation = \"https://github.com/yourname/" << projectName << "\"\n";
         confFile << "}\n\n";
         confFile << "build {\n";
         confFile << "  entry = src/main.st\n";

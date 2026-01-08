@@ -1,0 +1,165 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "HOCON",
+  "scopeName": "source.hocon",
+  "fileTypes": ["conf", "hocon"],
+  "patterns": [
+    {
+      "name": "entity.name.tag.hocon.object-key",
+      "match": "\\b([A-Za-z0-9_\\-\\.]+)(?=\\s*\\{)"
+    },
+    {
+      "name": "entity.name.tag.hocon.object-key.quoted",
+      "match": "(\"[^\"]+\")(?=\\s*\\{)"
+    },
+    { "include": "#comments" },
+    { "include": "#includes" },
+    { "include": "#assignments" },
+    { "include": "#objects" },
+    { "include": "#arrays" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#constants" },
+    { "include": "#substitutions" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.hocon",
+          "begin": "#",
+          "beginCaptures": { "0": { "name": "punctuation.definition.comment.hocon" } },
+          "end": "$"
+        },
+        {
+          "name": "comment.line.double-slash.hocon",
+          "begin": "//",
+          "beginCaptures": { "0": { "name": "punctuation.definition.comment.hocon" } },
+          "end": "$"
+        }
+      ]
+    },
+    "includes": {
+      "patterns": [
+        {
+          "name": "keyword.control.include.hocon",
+          "match": "\\binclude\\b"
+        },
+        {
+          "name": "meta.include.argument.hocon",
+          "match": "\\b(include)\\s+(file|url|classpath)?\\s*\\([^)]*\\)"
+        }
+      ]
+    },
+    "assignments": {
+      "patterns": [
+        {
+          "name": "meta.assignment.hocon",
+          "match": "^\\s*([A-Za-z0-9_\\-\\.]+)\\s*(=|:)\\s*",
+          "captures": {
+            "1": { "name": "variable.other.key.hocon" },
+            "2": { "name": "keyword.operator.assignment.hocon" }
+          }
+        },
+        {
+          "name": "meta.assignment.quoted-key.hocon",
+          "match": "^\\s*(\"[^\"]+\")\\s*(=|:)\\s*",
+          "captures": {
+            "1": { "name": "variable.other.key.quoted.hocon" },
+            "2": { "name": "keyword.operator.assignment.hocon" }
+          }
+        }
+      ]
+    },
+    "objects": {
+      "patterns": [
+        {
+          "name": "punctuation.section.object.begin.hocon",
+          "match": "\\{"
+        },
+        {
+          "name": "punctuation.section.object.end.hocon",
+          "match": "\\}"
+        }
+      ]
+    },
+    "arrays": {
+      "patterns": [
+        {
+          "name": "punctuation.section.array.begin.hocon",
+          "match": "\\["
+        },
+        {
+          "name": "punctuation.section.array.end.hocon",
+          "match": "\\]"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.hocon",
+          "begin": "\"",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.string.begin.hocon" }
+          },
+          "end": "\"",
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.string.end.hocon" }
+          },
+          "patterns": [
+            {
+              "name": "constant.character.escape.hocon",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.unquoted.hocon",
+          "match": "(?<![\\w\\-\\.])([A-Za-z0-9_\\-\\.\\/]+)"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.hocon",
+          "match": "\\b-?(0x[0-9a-fA-F]+|\\d+(\\.\\d+)?([eE][+-]?\\d+)?)\\b"
+        }
+      ]
+    },
+    "constants": {
+      "patterns": [
+        {
+          "name": "constant.language.boolean.hocon",
+          "match": "\\b(true|false|on|off|yes|no)\\b"
+        },
+        {
+          "name": "constant.language.null.hocon",
+          "match": "\\b(null)\\b"
+        }
+      ]
+    },
+    "substitutions": {
+      "patterns": [
+        {
+          "name": "variable.interpolation.hocon",
+          "begin": "\\$\\{",
+          "beginCaptures": {
+            "0": { "name": "punctuation.definition.interpolation.begin.hocon" }
+          },
+          "end": "\\}",
+          "endCaptures": {
+            "0": { "name": "punctuation.definition.interpolation.end.hocon" }
+          },
+          "patterns": [
+            {
+              "name": "variable.other.substitution.hocon",
+              "match": "[^}]+"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

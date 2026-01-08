@@ -4,6 +4,7 @@ use io;
 
 
 fn checkPathType(path: string) void {
+    
     if io.exists(path) {
         println("✓ " + path + " exists");
     } else {
