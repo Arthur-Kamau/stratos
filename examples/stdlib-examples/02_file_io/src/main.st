@@ -8,6 +8,7 @@ use log;
 use strings;
 
 fn main() {
+    log.info("STARTING MAIN");
     log.info("=== File I/O Example ===");
 
     // Write to file
@@ -17,8 +18,10 @@ fn main() {
     if writeResult.ok() {
         log.info("File written successfully");
     } else {
-        log.error("Failed to write file: " + writeResult.err().message);
+        log.error("Failed to write file: [" + writeResult.err().message + "]");
+        log.info("Returning now...");
         return;
+        log.info("THIS SHOULD NOT BE PRINTED");
     }
 
     // Read from file
@@ -44,9 +47,10 @@ fn main() {
         }
     }
 
+    //todo fix me
     // Append to file
-    io.appendLine("test.txt", "Appended line 4");
-    io.appendLine("test.txt", "Appended line 5");
+    // io.appendLine("test.txt", "Appended line 4");
+    // io.appendLine("test.txt", "Appended line 5");
 
     // File info
     if io.exists("test.txt") {
