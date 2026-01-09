@@ -27,14 +27,15 @@ Clean, readable syntax with modern features like:
 Never worry about null pointer exceptions again:
 
 ```stratos
-val name: string? = getUserName();
+val name: Option<string> = getUserName();
 
-if (name != null) {
-    print(name);  // Type-safe access
+match (name) {
+    Some(n) -> print(n)  // Type-safe access
+    None -> print("No name")
 }
 
-// Safe navigation
-val length = name?.length() ?? 0;
+// Safe navigation with Option
+val length = name.map((n) => n.length()).unwrapOr(0);
 ```
 
 ### Pattern Matching
@@ -42,12 +43,13 @@ val length = name?.length() ?? 0;
 Powerful pattern matching for handling complex control flow:
 
 ```stratos
-match value {
-    0 => print("Zero"),
-    1..10 => print("Small"),
-    11..100 => print("Medium"),
-    _ => print("Large")
-}
+val grade = when (score) {
+    90..=100 -> "A"
+    80..=89 -> "B"
+    70..=79 -> "C"
+    60..=69 -> "D"
+    else -> "F"
+};
 ```
 
 ### Object-Oriented Programming
@@ -67,7 +69,7 @@ class Circle : Shape {
     }
 
     fn area() double {
-        return math.PI * this.radius * this.radius;
+        return 3.14159 * this.radius * this.radius;
     }
 }
 ```
@@ -82,7 +84,7 @@ async fn fetchData(url: string) string {
     return await response.text();
 }
 
-fn main() async {
+async fn main() {
     val data = await fetchData("https://api.example.com");
     print(data);
 }
@@ -97,14 +99,128 @@ fn main() async {
 - **Easy Dependencies**: Simple and powerful package management
 - **Growing Community**: Active development with community input
 
+## Quick Start Example
+
+Here's a simple "Hello, World!" program to get you started:
+
+```stratos
+package main;
+
+fn main() {
+    print("Hello, Stratos!");
+}
+```
+
+## Running Code Examples
+
+All examples can be run directly with the Stratos interpreter:
+
+```bash
+# Save example to a file
+echo 'package main; fn main() { print("Hello!"); }' > example.st
+
+# Run it
+stratos run example.st
+```
+
+Or compile and run:
+
+```bash
+# Compile
+stratos compile example.st -o example
+
+# Execute
+./example
+```
+
+## Example Categories
+
+Learn Stratos through practical, runnable examples. Each section demonstrates key language features with complete, working code.
+
+### [Basics](/examples/basics)
+Variables, types, and basic operations
+- Variable declarations (`val` and `var`)
+- Primitive types (int, double, string, bool)
+- Arithmetic and logical operators
+- Type conversions and casting
+
+### [Control Flow](/examples/control-flow)
+If statements, loops, and pattern matching
+- If expressions and ternary operators
+- While and for loops
+- Pattern matching with `when`
+- Guards and multiple conditions
+
+### [Functions](/examples/functions)
+Function declarations, lambdas, and pipe operators
+- Basic function syntax
+- Lambda expressions with `=>`
+- Higher-order functions
+- Pipe operator for function composition
+
+### [Null Safety](/examples/null-safety)
+Optional types and safe navigation
+- `Option<T>` type with `Some` and `None`
+- Pattern matching with Option
+- Safe navigation and unwrapping
+
+### [Object-Oriented](/examples/oop)
+Classes, interfaces, and inheritance
+- Class definitions and constructors
+- Interfaces and implementation
+- Inheritance with `super`
+- Encapsulation with private members
+
+### [Packages](/examples/packages)
+Module system and imports
+- Package declarations
+- Importing and using modules
+- Dependency management
+- Multi-file projects
+
+### [Asynchronous Programming](/examples/async)
+Futures, async/await, and concurrent operations
+- Async functions and Futures
+- Using `await` keyword
+- Concurrent operations with `async.all()`
+- Error handling in async code
+
 ## Next Steps
 
 - [Getting Started](/guide/getting-started) - Install Stratos and create your first program
 - [Language Basics](/guide/basics) - Learn the fundamentals
-- [Examples](/examples/) - See practical code examples
+- [Functions](/guide/functions) - Master function declarations and lambdas
+- [Control Flow](/guide/control-flow) - Conditionals and loops
+- [Object-Oriented Programming](/guide/oop) - Classes and interfaces
+- [Asynchronous Programming](/guide/async) - Async/await and Futures
 - [CLI Reference](/reference/cli) - Master the command-line tools
 - [Standard Library](/reference/stdlib) - Explore built-in modules
 
-::: tip
-Stratos is under active development. Some features may change as we work towards version 1.0.
+::: tip Tested Examples
+All examples in this documentation are based on the test cases from the Stratos interpreter, so they represent real, tested code that works with the current version.
 :::
+
+::: tip Active Development
+Stratos is under active development. Some features may change as we work towards version 1.0. Check the changelog for the latest updates.
+:::
+
+## Learning Path
+
+Here's a recommended path for learning Stratos:
+
+1. **Start with Basics** - Understand variables, types, and basic operations
+2. **Learn Control Flow** - Master conditionals, loops, and pattern matching
+3. **Explore Functions** - Function definitions, lambdas, and composition
+4. **Dive into OOP** - Classes, interfaces, and inheritance
+5. **Master Async** - Asynchronous programming with Futures
+6. **Organize Code** - Packages and module system
+7. **Build Projects** - Apply your knowledge to real applications
+
+## Community and Support
+
+- **Documentation**: Comprehensive guides and API references
+- **Examples**: Practical code examples for every feature
+- **GitHub**: Report issues and contribute to development
+- **Discord**: Join the community for help and discussions
+
+Start your journey with Stratos today and experience modern, safe, and expressive programming!

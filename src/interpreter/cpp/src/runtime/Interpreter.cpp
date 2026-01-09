@@ -711,8 +711,24 @@ void Interpreter::visit(CallExpr& expr) {
                                         currentEnv->define("this", thisValue);
 
                                         // Bind method parameters
-                                        for (size_t i = 0; i < funcDecl->params.size() && i < args.size(); ++i) {
-                                            currentEnv->define(funcDecl->params[i].lexeme, args[i]);
+                                        for (size_t i = 0; i < funcDecl->parameters.size(); ++i) {
+                                            const auto& param = funcDecl->parameters[i];
+                                            
+                                            if (param.isVariadic) {
+                                                std::vector<RuntimeValue> varArgs;
+                                                for (size_t j = i; j < args.size(); ++j) {
+                                                    varArgs.push_back(args[j]);
+                                                }
+                                                currentEnv->define(param.name.lexeme, RuntimeValue(std::any(varArgs), "array<any>"));
+                                                break;
+                                            } else if (i < args.size()) {
+                                                currentEnv->define(param.name.lexeme, args[i]);
+                                            } else if (param.defaultValue) {
+                                                param.defaultValue->accept(*this);
+                                                currentEnv->define(param.name.lexeme, lastValue);
+                                            } else {
+                                                error("Missing argument for method parameter: " + param.name.lexeme);
+                                            }
                                         }
 
                                         // Execute method body
@@ -1168,8 +1184,9 @@ void Interpreter::visit(FunctionDecl& stmt) {
     } else {
         // Store function for later execution in global scope
         Function func;
-        func.params = stmt.params;
-        func.paramTypes = stmt.paramTypes;
+        for (const auto& param : stmt.parameters) {
+            func.parameters.push_back(&param);
+        }
         func.returnType = stmt.returnType;
         func.body = std::ref(stmt.body);  // Safe reference instead of raw pointer
 
@@ -1588,8 +1605,28 @@ RuntimeValue Interpreter::callFunction(const std::string& name,
     enterScope();
 
     // Bind parameters
-    for (size_t i = 0; i < func.params.size() && i < args.size(); ++i) {
-        currentEnv->define(func.params[i].lexeme, args[i]);
+    for (size_t i = 0; i < func.parameters.size(); ++i) {
+        const auto* param = func.parameters[i];
+        
+        if (param->isVariadic) {
+            // Collect all remaining arguments into an array
+            std::vector<RuntimeValue> varArgs;
+            for (size_t j = i; j < args.size(); ++j) {
+                varArgs.push_back(args[j]);
+            }
+            // Bind as array<any>
+            currentEnv->define(param->name.lexeme, RuntimeValue(std::any(varArgs), "array<any>"));
+            break; // Variadic is always last
+        } else if (i < args.size()) {
+            // Argument provided
+            currentEnv->define(param->name.lexeme, args[i]);
+        } else if (param->defaultValue) {
+            // Use default value
+            param->defaultValue->accept(*this);
+            currentEnv->define(param->name.lexeme, lastValue);
+        } else {
+            error("Missing argument for parameter: " + param->name.lexeme);
+        }
     }
 
     RuntimeValue result;
@@ -1620,8 +1657,28 @@ RuntimeValue Interpreter::callModuleFunction(const std::string& moduleName,
     enterScope();
 
     // Bind parameters
-    for (size_t i = 0; i < funcDecl->params.size() && i < args.size(); ++i) {
-        currentEnv->define(funcDecl->params[i].lexeme, args[i]);
+    for (size_t i = 0; i < funcDecl->parameters.size(); ++i) {
+        const auto& param = funcDecl->parameters[i];
+        
+        if (param.isVariadic) {
+            // Collect all remaining arguments into an array
+            std::vector<RuntimeValue> varArgs;
+            for (size_t j = i; j < args.size(); ++j) {
+                varArgs.push_back(args[j]);
+            }
+            // Bind as array<any>
+            currentEnv->define(param.name.lexeme, RuntimeValue(std::any(varArgs), "array<any>"));
+            break; // Variadic is always last
+        } else if (i < args.size()) {
+            // Argument provided
+            currentEnv->define(param.name.lexeme, args[i]);
+        } else if (param.defaultValue) {
+            // Use default value
+            param.defaultValue->accept(*this);
+            currentEnv->define(param.name.lexeme, lastValue);
+        } else {
+            error("Missing argument for parameter: " + param.name.lexeme);
+        }
     }
 
     // Execute function body
@@ -1702,8 +1759,24 @@ RuntimeValue Interpreter::instantiateClass(const std::string& className,
         currentEnv->define("this", thisValue);
 
         // Bind constructor parameters
-        for (size_t i = 0; i < constructor->params.size() && i < args.size(); ++i) {
-            currentEnv->define(constructor->params[i].lexeme, args[i]);
+        for (size_t i = 0; i < constructor->parameters.size(); ++i) {
+            const auto& param = constructor->parameters[i];
+            
+            if (param.isVariadic) {
+                std::vector<RuntimeValue> varArgs;
+                for (size_t j = i; j < args.size(); ++j) {
+                    varArgs.push_back(args[j]);
+                }
+                currentEnv->define(param.name.lexeme, RuntimeValue(std::any(varArgs), "array<any>"));
+                break;
+            } else if (i < args.size()) {
+                currentEnv->define(param.name.lexeme, args[i]);
+            } else if (param.defaultValue) {
+                param.defaultValue->accept(*this);
+                currentEnv->define(param.name.lexeme, lastValue);
+            } else {
+                error("Missing argument for constructor parameter: " + param.name.lexeme);
+            }
         }
 
         // Execute constructor body

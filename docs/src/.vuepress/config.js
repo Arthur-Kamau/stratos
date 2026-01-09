@@ -17,10 +17,7 @@ export default defineUserConfig({
         text: 'Guide',
         link: '/guide/',
       },
-      {
-        text: 'Examples',
-        link: '/examples/',
-      },
+    
       {
         text: 'Reference',
         children: [
@@ -42,10 +39,7 @@ export default defineUserConfig({
         text: 'Community',
         link: '/community/',
       },
-      {
-        text: 'GitHub',
-        link: 'https://github.com/stratos-lang/stratos',
-      },
+     
     ],
 
     sidebar: {

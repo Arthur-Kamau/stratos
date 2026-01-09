@@ -71,19 +71,28 @@ std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind) {
     Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
     consume(TokenType::LEFT_PAREN, "Expect '(' after " + kind + " name.");
 
-    std::vector<Token> params;
-    std::vector<std::string> paramTypes;
+    std::vector<Parameter> parameters;
 
     if (!check(TokenType::RIGHT_PAREN)) {
         do {
+            bool isVariadic = false;
+            if (match({TokenType::DOT_DOT_DOT})) {
+                isVariadic = true;
+            }
+
             Token paramName = consume(TokenType::IDENTIFIER, "Expect parameter name.");
-            params.push_back(paramName);
             
             std::string type = "any";
             if (match({TokenType::COLON})) {
                 type = parseType();
             }
-            paramTypes.push_back(type);
+
+            std::unique_ptr<Expr> defaultValue = nullptr;
+            if (match({TokenType::EQUAL})) {
+                defaultValue = expression();
+            }
+
+            parameters.push_back(Parameter(paramName, type, std::move(defaultValue), isVariadic));
         } while (match({TokenType::COMMA}));
     }
     consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
@@ -91,9 +100,6 @@ std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind) {
     std::string returnType = "void";
     if (check(TokenType::IDENTIFIER) || check(TokenType::INT) || check(TokenType::DOUBLE) || check(TokenType::STRING) || check(TokenType::BOOL) || check(TokenType::VOID)) {
         // Optional return type parsing without colon if it's just the type
-        // The grammar says `fn name() type {` or `fn name() {`
-        // We need to be careful not to mistake the start of the block for a type if it's an identifier (unlikely)
-        // But types are usually keywords or Capitalized.
         if (!check(TokenType::LEFT_BRACE) && !check(TokenType::SEMICOLON)) {
              returnType = parseType();
         }
@@ -103,7 +109,7 @@ std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind) {
     if (check(TokenType::SEMICOLON)) {
         consume(TokenType::SEMICOLON, "Expect ';' after interface method signature.");
         // Return function declaration with null body (interface method)
-        auto func = std::make_unique<FunctionDecl>(name, params, paramTypes, returnType, nullptr);
+        auto func = std::make_unique<FunctionDecl>(name, std::move(parameters), returnType, nullptr);
         func->documentation = takePendingDoc();
         return func;
     }
@@ -116,7 +122,7 @@ std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind) {
     consume(TokenType::RIGHT_BRACE, "Expect '}' after " + kind + " body.");
 
     auto bodyPtr = std::make_unique<std::vector<std::unique_ptr<Stmt>>>(std::move(body));
-    auto func = std::make_unique<FunctionDecl>(name, params, paramTypes, returnType, std::move(bodyPtr));
+    auto func = std::make_unique<FunctionDecl>(name, std::move(parameters), returnType, std::move(bodyPtr));
     func->documentation = takePendingDoc();
     return func;
 }

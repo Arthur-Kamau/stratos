@@ -37,7 +37,11 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
 
         // Only process declarations, not their bodies
         if (auto* funcDecl = dynamic_cast<FunctionDecl*>(statements[i].get())) {
-            Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, funcDecl->paramTypes, funcDecl->returnType);
+            std::vector<std::string> paramTypes;
+            for (const auto& param : funcDecl->parameters) {
+                paramTypes.push_back(param.type);
+            }
+            Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType);
             if (!symbolTable.define(funcSymbol)) {
                 error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined.");
             }
@@ -252,7 +256,12 @@ void SemanticAnalyzer::visit(VarDecl& stmt) {
 
 void SemanticAnalyzer::visit(FunctionDecl& stmt) {
     // Try to define function name in current scope (may already be defined from first pass for top-level functions)
-    Symbol funcSymbol = Symbol::Function(stmt.name.lexeme, stmt.paramTypes, stmt.returnType);
+    std::vector<std::string> paramTypes;
+    for (const auto& param : stmt.parameters) {
+        paramTypes.push_back(param.type);
+    }
+    
+    Symbol funcSymbol = Symbol::Function(stmt.name.lexeme, paramTypes, stmt.returnType);
     if (!symbolTable.define(funcSymbol)) {
         // Only error if we're in a class (class methods should be defined fresh)
         // Top-level functions are expected to fail here due to first pass registration
@@ -275,10 +284,14 @@ void SemanticAnalyzer::visit(FunctionDecl& stmt) {
     }
 
     // Define parameters as variables
-    for (size_t i = 0; i < stmt.params.size(); ++i) {
-        std::string pType = stmt.paramTypes[i];
-        Symbol paramSym = Symbol::Variable(stmt.params[i].lexeme, pType, false);
+    for (const auto& param : stmt.parameters) {
+        Symbol paramSym = Symbol::Variable(param.name.lexeme, param.type, false);
         symbolTable.define(paramSym);
+        
+        // Analyze default value if present
+        if (param.defaultValue) {
+            param.defaultValue->accept(*this);
+        }
     }
 
     // Analyze body

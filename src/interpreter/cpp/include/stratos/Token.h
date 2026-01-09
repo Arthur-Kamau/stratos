@@ -25,6 +25,7 @@ enum class TokenType {
     QUESTION_DOT, // ?.
     ELVIS, // ?:
     DOT_DOT, // ..
+    DOT_DOT_DOT, // ...
 
     // Literals
     IDENTIFIER, STRING, NUMBER, CHAR,

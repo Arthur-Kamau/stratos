@@ -98,7 +98,10 @@ void Lexer::scanToken() {
         case ']': addToken(TokenType::RIGHT_BRACKET); break;
         case ',': addToken(TokenType::COMMA); break;
         case '.': 
-            if (match('.')) addToken(TokenType::DOT_DOT);
+            if (match('.')) {
+                if (match('.')) addToken(TokenType::DOT_DOT_DOT);
+                else addToken(TokenType::DOT_DOT);
+            }
             else addToken(TokenType::DOT); 
             break;
         case '-': 

@@ -916,7 +916,7 @@ function loadStandardLibraryCompletions() {
 		'log': [
 			{ name: 'Logger', type: 'class', doc: 'Class Logger' },
 			{ name: 'debug', type: 'function', params: 'message: string, fields: Map<string, any>', returnType: 'void', doc: 'Function debug' },
-			{ name: 'info', type: 'function', params: 'message: string, fields: Map<string, any>', returnType: 'void', doc: 'Function info' },
+			{ name: 'info', type: 'function', params: 'message: string', returnType: 'void', doc: 'Function info' },
 			{ name: 'warn', type: 'function', params: 'message: string, fields: Map<string, any>', returnType: 'void', doc: 'Function warn' },
 			{ name: 'error', type: 'function', params: 'message: string, fields: Map<string, any>', returnType: 'void', doc: 'Function error' },
 			{ name: 'fatal', type: 'function', params: 'message: string, fields: Map<string, any>', returnType: 'void', doc: 'Function fatal' },

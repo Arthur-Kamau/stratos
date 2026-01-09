@@ -12,6 +12,8 @@ Stratos supports object-oriented programming with classes, interfaces, and inher
 ### Basic Class Definition
 
 ```stratos
+package main;
+
 class Person {
     var name: string;
     var age: int;
@@ -33,9 +35,17 @@ fn main() {
 }
 ```
 
+::: tip Class Basics
+- Classes combine data (fields) and behavior (methods) into a single unit
+- Use `this` to reference the current instance within methods
+- The `constructor` is called when creating new instances
+:::
+
 ### Class with Methods
 
 ```stratos
+package main;
+
 class Rectangle {
     var width: double;
     var height: double;
@@ -72,9 +82,11 @@ fn main() {
 
 ## Interfaces
 
-Interfaces define contracts that classes must implement:
+Interfaces define contracts that classes must implement. They specify what methods a class must have without defining how they work:
 
 ```stratos
+package main;
+
 interface Shape {
     fn area() double;
     fn perimeter() double;
@@ -131,11 +143,17 @@ fn main() {
 }
 ```
 
+::: info Interface Benefits
+Interfaces allow you to write code that works with any type implementing the interface, enabling polymorphism and flexible design.
+:::
+
 ## Inheritance
 
-Classes can inherit from other classes:
+Classes can inherit from other classes to reuse code and create hierarchies:
 
 ```stratos
+package main;
+
 class Animal {
     var name: string;
     var age: int;
@@ -206,11 +224,19 @@ fn main() {
 }
 ```
 
+::: tip Method Overriding
+Child classes can override parent methods to provide specialized behavior. Use `super()` to call the parent constructor.
+:::
+
 ## Encapsulation
+
+Encapsulation protects internal state by restricting access to class members:
 
 ### Public and Private Members
 
 ```stratos
+package main;
+
 class BankAccount {
     var owner: string;           // Public by default
     private var balance: double; // Private field
@@ -257,11 +283,19 @@ fn main() {
 }
 ```
 
+::: tip Encapsulation Benefits
+- Protects data from invalid modifications
+- Allows you to change internal implementation without affecting users
+- Makes code more maintainable and less prone to bugs
+:::
+
 ## Polymorphism
 
 Objects of different classes can be used interchangeably through interfaces:
 
 ```stratos
+package main;
+
 interface Drawable {
     fn draw();
 }
@@ -311,7 +345,7 @@ fn renderShapes(shapes: Array<Drawable>) {
 }
 
 fn main() {
-    val shapes = [
+    val shapes: Array<Drawable> = [
         Circle(5.0),
         Square(10.0),
         Triangle(8.0, 6.0),
@@ -322,8 +356,7 @@ fn main() {
 }
 ```
 
-### Output
-
+**Output:**
 ```
 Drawing circle with radius 5.0
 Drawing square with side 10.0
@@ -331,11 +364,17 @@ Drawing triangle: base=8.0, height=6.0
 Drawing circle with radius 3.0
 ```
 
+::: info Polymorphism
+Polymorphism allows you to write generic code that works with any type implementing an interface, making your code more flexible and reusable.
+:::
+
 ## Static Members
 
 Classes can have static members that belong to the class rather than instances:
 
 ```stratos
+package main;
+
 class MathUtils {
     static val PI: double = 3.14159;
 
@@ -355,9 +394,17 @@ fn main() {
 }
 ```
 
+::: tip Static Members
+Static members are accessed through the class name, not through instances. They're useful for utility functions and constants that don't depend on instance state.
+:::
+
 ## Properties (Getters and Setters)
 
+Use getter and setter methods to control access to private fields:
+
 ```stratos
+package main;
+
 class Temperature {
     private var celsius: double;
 
@@ -417,12 +464,12 @@ interface Borrowable {
 class LibraryItem : Borrowable {
     var title: string;
     var id: string;
-    private var borrowedBy: string?;
+    private var borrowedBy: Option<string>;
 
     constructor(title: string, id: string) {
         this.title = title;
         this.id = id;
-        this.borrowedBy = null;
+        this.borrowedBy = None;
     }
 
     fn borrow(borrower: string) bool {
@@ -446,11 +493,17 @@ class LibraryItem : Borrowable {
     }
 
     fn isAvailable() bool {
-        return this.borrowedBy == null;
+        match (this.borrowedBy) {
+            Some(_) -> return false
+            None -> return true
+        }
     }
 
     fn getStatus() string {
-        return this.borrowedBy ?? "Available";
+        match (this.borrowedBy) {
+            Some(borrower) -> return "Borrowed by " + borrower
+            None -> return "Available"
+        }
     }
 }
 
@@ -515,7 +568,7 @@ class Library {
         print("\nBorrowed items:");
         for (item in this.items) {
             if (!item.isAvailable()) {
-                print("  - " + item.title + " (borrowed by: " + item.getStatus() + ")");
+                print("  - " + item.title + " (" + item.getStatus() + ")");
             }
         }
     }
@@ -558,24 +611,28 @@ fn main() {
 
 ## Best Practices
 
-::: tip
-**Single Responsibility**: Each class should have one clear purpose. If a class is doing too much, split it into smaller classes.
+::: tip Single Responsibility
+Each class should have one clear purpose. If a class is doing too much, split it into smaller classes.
 :::
 
-::: tip
-**Favor composition over inheritance**: Use interfaces and composition when possible. Deep inheritance hierarchies can be hard to maintain.
+::: tip Favor Composition Over Inheritance
+Use interfaces and composition when possible. Deep inheritance hierarchies can be hard to maintain. Prefer "has-a" relationships over "is-a" when it makes sense.
 :::
 
-::: tip
-**Encapsulation**: Keep fields private and provide public methods to access them. This protects internal state and allows validation.
+::: tip Encapsulation
+Keep fields private and provide public methods to access them. This protects internal state and allows validation.
 :::
 
-::: info
-**Interface naming**: Interfaces often describe capabilities. Use adjectives ending in "-able" (Drawable, Comparable, Serializable).
+::: info Interface Naming
+Interfaces often describe capabilities. Use adjectives ending in "-able" (Drawable, Comparable, Serializable, Borrowable).
 :::
 
-::: warning
-**Avoid god objects**: Don't create massive classes that do everything. Keep classes focused and cohesive.
+::: warning Avoid God Objects
+Don't create massive classes that do everything. Keep classes focused and cohesive. If a class has too many responsibilities, it's time to refactor.
+:::
+
+::: tip Design for Extension
+Use interfaces to define contracts. This makes your code more testable and allows for easier extension without modification.
 :::
 
 ## OOP Quick Reference
@@ -595,4 +652,7 @@ fn main() {
 
 ## Next Steps
 
-
+- [Pattern Matching](/guide/pattern-matching) - Work with complex data types
+- [Error Handling](/guide/error-handling) - Handle errors with Result types
+- [Generics](/guide/generics) - Write reusable code with type parameters
+- [Standard Library](/reference/stdlib) - Explore built-in types and utilities

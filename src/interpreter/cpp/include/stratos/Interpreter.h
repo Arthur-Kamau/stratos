@@ -235,8 +235,7 @@ private:
 
     // Function storage
     struct Function {
-        std::vector<Token> params;
-        std::vector<std::string> paramTypes;
+        std::vector<const Parameter*> parameters;
         std::string returnType;
         // LIFETIME: Non-owning reference to FunctionDecl::body (stored in AST)
         // SAFETY: The AST in mainStatements/moduleStatements keeps the referenced body alive

@@ -203,17 +203,31 @@ public:
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };
 
+struct Parameter {
+    Token name;
+    std::string type;
+    std::unique_ptr<Expr> defaultValue;
+    bool isVariadic;
+
+    // Move constructor for Parameter
+    Parameter(Token name, std::string type, std::unique_ptr<Expr> defaultValue = nullptr, bool isVariadic = false)
+        : name(name), type(type), defaultValue(std::move(defaultValue)), isVariadic(isVariadic) {}
+        
+    // Default move operations
+    Parameter(Parameter&&) = default;
+    Parameter& operator=(Parameter&&) = default;
+};
+
 class FunctionDecl : public Stmt {
 public:
     Token name;
-    std::vector<Token> params; // Simplified: just names for now, or use a struct for param info
-    std::vector<std::string> paramTypes;
+    std::vector<Parameter> parameters;
     std::string returnType;
     std::unique_ptr<std::vector<std::unique_ptr<Stmt>>> body; // Can be null for interfaces
     std::unique_ptr<DocComment> documentation;
 
-    FunctionDecl(Token name, std::vector<Token> params, std::vector<std::string> paramTypes, std::string returnType, std::unique_ptr<std::vector<std::unique_ptr<Stmt>>> body)
-        : name(name), params(params), paramTypes(paramTypes), returnType(returnType), body(std::move(body)), documentation(nullptr) {}
+    FunctionDecl(Token name, std::vector<Parameter> parameters, std::string returnType, std::unique_ptr<std::vector<std::unique_ptr<Stmt>>> body)
+        : name(name), parameters(std::move(parameters)), returnType(returnType), body(std::move(body)), documentation(nullptr) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };

@@ -1,5 +1,5 @@
 ---
-title: Packages
+title: Packages and Modules
 description: Module system and code organization in Stratos
 ---
 
@@ -32,8 +32,8 @@ package com.example.utils;
 package myproject.models;
 ```
 
-::: info
-**Package convention**: Use lowercase names. For multi-level packages, use dot notation similar to Java or Go.
+::: info Package Convention
+Use lowercase names. For multi-level packages, use dot notation similar to Java or Go.
 :::
 
 ## Importing Packages
@@ -93,6 +93,8 @@ fn main() {
 ```stratos
 // File: geometry.st
 package geometry;
+
+use math;
 
 class Point {
     var x: double;
@@ -206,15 +208,15 @@ stratos get
 package main;
 
 use http;
-use json;
+use encoding;
 use log;
 
-fn main() async {
+async fn main() {
     // Fetch data from API
     val response = await http.get("https://api.github.com/users/octocat");
 
     if (response.status() == 200) {
-        val data = json.decode(response.text());
+        val data = encoding.json.decode(response.text());
 
         log.info("User: " + data.login);
         log.info("Name: " + data.name);
@@ -224,6 +226,10 @@ fn main() async {
     }
 }
 ```
+
+::: tip Dependency Management
+Run `stratos get` after adding dependencies to download them. Dependencies are stored in the `deps/` directory by default.
+:::
 
 ## Package Exports
 
@@ -258,6 +264,10 @@ class Calculator {
     }
 }
 ```
+
+::: info Visibility Rules
+By default, all top-level functions and classes are public (exported). Use the `private` keyword to make them internal to the package.
+:::
 
 ## Selective Imports (Future Feature)
 
@@ -330,6 +340,10 @@ fn createSampleData() Array<User> {
 }
 ```
 
+::: tip Use init.st
+Create an `init.st` file as the entry point for each package to control what gets exported and provide a clear API surface.
+:::
+
 ## Complete Example: Multi-Package Project
 
 ### Project Structure
@@ -362,21 +376,21 @@ fn multiply(a: double, b: double) double {
     return a * b;
 }
 
-fn divide(a: double, b: double) double {
+fn divide(a: double, b: double) Result<double, Error> {
     if (b == 0.0) {
-        throw Error("Division by zero");
+        return Err(Error("Division by zero"));
     }
-    return a / b;
+    return Ok(a / b);
 }
 
 class Calculator {
-    fn execute(a: double, b: double, op: string) double {
+    fn execute(a: double, b: double, op: string) Result<double, Error> {
         return when (op) {
-            "+" -> add(a, b)
-            "-" -> subtract(a, b)
-            "*" -> multiply(a, b)
+            "+" -> Ok(add(a, b))
+            "-" -> Ok(subtract(a, b))
+            "*" -> Ok(multiply(a, b))
             "/" -> divide(a, b)
-            else -> throw Error("Unknown operation: " + op)
+            else -> Err(Error("Unknown operation: " + op))
         };
     }
 }
@@ -408,13 +422,17 @@ use log;
 fn performCalculation(a: double, b: double, op: string) {
     val calc = operations.Calculator();
 
-    try {
-        val result = calc.execute(a, b, op);
-        val formatted = utils.formatResult(op, a, b, result);
-        log.info(formatted);
-    } catch (error) {
-        val errorMsg = utils.formatError(error.message);
-        log.error(errorMsg);
+    val result = calc.execute(a, b, op);
+
+    match (result) {
+        Ok(value) -> {
+            val formatted = utils.formatResult(op, a, b, value);
+            log.info(formatted);
+        }
+        Err(error) -> {
+            val errorMsg = utils.formatError(error.message);
+            log.error(errorMsg);
+        }
     }
 }
 
@@ -477,6 +495,8 @@ stratos build
 
 ### Local Dependency
 
+Reference packages from your local filesystem:
+
 ```hocon
 dependencies = [
   {
@@ -492,41 +512,60 @@ dependencies = [
 
 ### External Dependency (Git)
 
+Reference packages from Git repositories:
+
 ```hocon
 dependencies = [
   {
     name = http
     url = "https://github.com/stratos-lang/http"
-    tag = "v2.1.0"
+    tag = "v2.1.0"  # Specific version tag
   }
   {
     name = database
     url = "https://github.com/company/db-driver"
-    branch = main
+    branch = main  # Track a branch
+  }
+  {
+    name = experimental
+    url = "https://github.com/user/lib"
+    commit = "abc123def456"  # Specific commit
   }
 ]
 ```
 
+::: warning Version Pinning
+Always use specific tags or commits for production dependencies. Tracking branches like `main` can lead to unexpected changes.
+:::
+
 ## Best Practices
 
-::: tip
-**Organize by feature**: Group related code into packages by feature rather than by type (e.g., `user` package containing models, services, and handlers for users).
+::: tip Organize by Feature
+Group related code into packages by feature rather than by type (e.g., `user` package containing models, services, and handlers for users).
 :::
 
-::: tip
-**Use init.st**: Create an `init.st` file as the entry point for each package to control what gets exported.
+::: tip Use init.st
+Create an `init.st` file as the entry point for each package to control what gets exported and provide a clear package API.
 :::
 
-::: tip
-**Minimize dependencies**: Only import what you need. Excessive dependencies can slow down compilation and create maintenance issues.
+::: tip Minimize Dependencies
+Only import what you need. Excessive dependencies can slow down compilation and create maintenance issues.
 :::
 
-::: info
-**Package naming**: Use lowercase names without underscores. For nested packages, use dot notation (e.g., `com.example.utils`).
+::: info Package Naming
+Use lowercase names without underscores. For nested packages, use dot notation (e.g., `com.example.utils`).
 :::
 
-::: warning
-**Avoid circular dependencies**: Two packages should not depend on each other. Refactor shared code into a separate package.
+::: warning Avoid Circular Dependencies
+Two packages should not depend on each other. Refactor shared code into a separate package if needed.
+:::
+
+::: tip Keep Packages Focused
+Each package should have a single, clear responsibility. If a package is growing too large, consider splitting it.
+:::
+
+::: tip Document Your Packages
+Add comments at the package level explaining what the package provides and how to use it.
 :::
 
 ## Package System Quick Reference
@@ -537,10 +576,121 @@ dependencies = [
 | Import package | `use packagename;` | Import external package |
 | Use imported | `packagename.function()` | Call imported function |
 | Package path | `package com.example.utils;` | Multi-level package |
+| Private member | `private fn helper()` | Internal to package |
 | Local dependency | `url = "../path"` | Reference local package |
 | Git dependency | `url = "github.com/..."` | Reference remote package |
 | Fetch deps | `stratos get` | Download dependencies |
+| Build project | `stratos build` | Compile project |
+
+## Common Package Patterns
+
+### Utility Package
+
+```stratos
+package utils;
+
+// String utilities
+fn capitalize(s: string) string {
+    if (s.length() == 0) {
+        return s;
+    }
+    return s.charAt(0).toUpper() + s.substring(1);
+}
+
+// Math utilities
+fn clamp(value: double, min: double, max: double) double {
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
+}
+
+// Array utilities
+fn unique<T>(arr: Array<T>) Array<T> {
+    val seen = Set<T>();
+    val result = Array<T>();
+
+    for (item in arr) {
+        if (!seen.contains(item)) {
+            seen.add(item);
+            result.push(item);
+        }
+    }
+
+    return result;
+}
+```
+
+### Service Package
+
+```stratos
+package services;
+
+use models;
+use log;
+
+class UserService {
+    private var users: Array<models.User>;
+
+    constructor() {
+        this.users = [];
+    }
+
+    fn createUser(name: string, email: string) Result<models.User, Error> {
+        // Validate
+        if (name.length() == 0) {
+            return Err(Error("Name cannot be empty"));
+        }
+
+        // Create user
+        val id = this.users.length + 1;
+        val user = models.User(id, name, email);
+
+        this.users.push(user);
+        log.info("Created user: " + user.getDisplayName());
+
+        return Ok(user);
+    }
+
+    fn findById(id: int) Option<models.User> {
+        for (user in this.users) {
+            if (user.id == id) {
+                return Some(user);
+            }
+        }
+        return None;
+    }
+}
+```
+
+### Configuration Package
+
+```stratos
+package config;
+
+class AppConfig {
+    var port: int;
+    var host: string;
+    var debug: bool;
+
+    constructor(port: int, host: string, debug: bool) {
+        this.port = port;
+        this.host = host;
+        this.debug = debug;
+    }
+
+    static fn fromEnv() AppConfig {
+        val port = env.get("PORT").unwrapOr("8080").toInt();
+        val host = env.get("HOST").unwrapOr("localhost");
+        val debug = env.get("DEBUG").unwrapOr("false") == "true";
+
+        return AppConfig(port, host, debug);
+    }
+}
+```
 
 ## Next Steps
 
-
+- [Object-Oriented Programming](/guide/oop) - Learn about classes and interfaces
+- [Error Handling](/guide/error-handling) - Work with Result and Option types
+- [Testing](/guide/testing) - Write tests for your packages
+- [Build System](/guide/build) - Advanced build configuration

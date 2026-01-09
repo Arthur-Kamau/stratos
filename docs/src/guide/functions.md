@@ -1,17 +1,19 @@
 ---
 title: Functions
-description: Function declarations, parameters, and the pipe operator in Stratos
+description: Function declarations, parameters, lambdas, and the pipe operator in Stratos
 ---
 
 # Functions
 
-Learn how to define and use functions in Stratos, including the powerful pipe operator for function composition.
+Learn how to define and use functions in Stratos, including lambdas, higher-order functions, and the powerful pipe operator for function composition.
 
 ## Function Basics
 
 ### Simple Function Declaration
 
 ```stratos
+package main;
+
 fn greet() {
     print("Hello, Stratos!");
 }
@@ -25,6 +27,8 @@ fn main() {
 ### Functions with Parameters
 
 ```stratos
+package main;
+
 fn greet(name: string) {
     print("Hello, " + name + "!");
 }
@@ -38,6 +42,8 @@ fn main() {
 ### Functions with Return Values
 
 ```stratos
+package main;
+
 fn add(a: int, b: int) int {
     return a + b;
 }
@@ -47,7 +53,7 @@ fn multiply(x: double, y: double) double {
 }
 
 fn main() {
-    val sum = add(5, 3);          // 8
+    val sum = add(5, 3);               // 8
     val product = multiply(4.5, 2.0);  // 9.0
 
     print("Sum: " + sum);
@@ -60,6 +66,8 @@ fn main() {
 For simple functions, you can omit the braces and `return`:
 
 ```stratos
+package main;
+
 fn square(x: int) int = x * x;
 
 fn isEven(n: int) bool = n % 2 == 0;
@@ -73,9 +81,15 @@ fn main() {
 }
 ```
 
+::: tip Single-Expression Syntax
+Use `=` instead of braces for single-expression functions. This is more concise and common for simple utility functions.
+:::
+
 ## Multiple Parameters
 
 ```stratos
+package main;
+
 fn calculateArea(width: double, height: double) double {
     return width * height;
 }
@@ -100,6 +114,8 @@ The pipe operator allows you to chain function calls in a readable, left-to-righ
 ### Basic Pipe Usage
 
 ```stratos
+package main;
+
 fn double(x: int) int {
     return x * 2;
 }
@@ -124,6 +140,8 @@ fn main() {
 ### Pipe Operator Chains
 
 ```stratos
+package main;
+
 fn increment(x: int) int = x + 1;
 fn double(x: int) int = x * 2;
 fn square(x: int) int = x * x;
@@ -142,6 +160,8 @@ fn main() {
 ### Pipe with String Operations
 
 ```stratos
+package main;
+
 use strings;
 
 fn main() {
@@ -157,27 +177,92 @@ fn main() {
 }
 ```
 
-## Function Composition
+::: tip Pipe Operator Benefits
+The pipe operator makes data transformations more readable by showing the flow from left to right, avoiding deeply nested function calls.
+:::
 
-Combine functions to create more complex operations:
+## Lambda Expressions (Arrow Functions)
+
+Stratos supports concise anonymous functions using arrow syntax `=>`.
+
+### Basic Syntax
 
 ```stratos
-fn add(a: int, b: int) int = a + b;
-fn multiply(a: int, b: int) int = a * b;
-fn subtract(a: int, b: int) int = a - b;
+package main;
 
-fn calculate(x: int, y: int) int {
-    val sum = add(x, y);
-    val product = multiply(x, y);
-    return subtract(product, sum);
+fn main() {
+    // Single parameter
+    val double = (x) => x * 2;
+
+    // Multiple parameters
+    val add = (a, b) => a + b;
+
+    // Block body lambda (explicit return)
+    val multiply = (a, b) => {
+        val result = a * b;
+        return result;
+    };
+
+    print(double(5));      // 10
+    print(add(5, 3));      // 8
+    print(multiply(4, 5)); // 20
+}
+```
+
+### Passing Lambdas as Arguments
+
+Lambdas are commonly used as callbacks or with higher-order functions:
+
+```stratos
+package main;
+
+fn process(value: int, callback: Function) int {
+    return callback(value);
 }
 
 fn main() {
-    val result = calculate(5, 3);
-    // (5 * 3) - (5 + 3) = 15 - 8 = 7
-    print(result);  // 7
+    // Pass lambda directly
+    val result1 = process(10, (x) => x * 2);
+    print(result1);  // 20
+
+    val result2 = process(5, (x) => {
+        val y = x + 1;
+        return y * y;
+    });
+    print(result2);  // 36
 }
 ```
+
+### Capturing Variables (Closures)
+
+Lambdas capture variables from their surrounding scope, creating closures:
+
+```stratos
+package main;
+
+fn makeAdder(n: int) Function {
+    return (x) => x + n;  // 'n' is captured from outer scope
+}
+
+fn makeMultiplier(factor: int) Function {
+    return (x) => x * factor;
+}
+
+fn main() {
+    val add10 = makeAdder(10);
+    val add5 = makeAdder(5);
+
+    print(add10(5));  // 15
+    print(add5(5));   // 10
+
+    val triple = makeMultiplier(3);
+    print(triple(7)); // 21
+}
+```
+
+::: info Closures
+A closure is a function that captures variables from its surrounding scope. This allows you to create functions with "memory" of their environment.
+:::
 
 ## Higher-Order Functions
 
@@ -186,6 +271,8 @@ Functions can accept other functions as parameters and return functions as resul
 ### Functions as Parameters
 
 ```stratos
+package main;
+
 fn apply(x: int, operation: Function) int {
     return operation(x);
 }
@@ -210,6 +297,8 @@ fn main() {
 ### Functions Returning Functions
 
 ```stratos
+package main;
+
 fn makeOperation(operation: string) Function {
     if (operation == "double") {
         return (x) => x * 2;
@@ -232,18 +321,30 @@ fn main() {
 ### Practical Example: Array Operations
 
 ```stratos
-fn forEach(arr: Array<int>, action: Function) void {
-    for val i in 0..arr.length() {
+package main;
+
+fn forEach(arr: Array<int>, action: Function) {
+    for (i in 0..arr.length()) {
         action(arr[i]);
     }
 }
 
 fn filter(arr: Array<int>, predicate: Function) Array<int> {
     val result = [];
-    for val i in 0..arr.length() {
+    for (i in 0..arr.length()) {
         if (predicate(arr[i])) {
             result.push(arr[i]);
         }
+    }
+    return result;
+}
+
+fn map(arr: Array<int>, transform: Function) Array<int> {
+    val result = [];
+    for (i in 0..arr.length()) {
+        val item = arr[i];
+        val transformed = transform(item);
+        result.push(transformed);
     }
     return result;
 }
@@ -252,15 +353,47 @@ fn main() {
     val numbers = [1, 2, 3, 4, 5, 6];
 
     // Print each number
-    forEach(numbers, (n) => println(n));
+    forEach(numbers, (n) => print(n));
 
     // Filter even numbers
     val evens = filter(numbers, (n) => n % 2 == 0);
-    println(evens);  // [2, 4, 6]
+    print(evens);  // [2, 4, 6]
 
     // Filter numbers > 3
     val large = filter(numbers, (n) => n > 3);
-    println(large);  // [4, 5, 6]
+    print(large);  // [4, 5, 6]
+
+    // Map: double each number
+    val doubled = map(numbers, (n) => n * 2);
+    print(doubled);  // [2, 4, 6, 8, 10, 12]
+}
+```
+
+::: tip Higher-Order Functions
+Higher-order functions that take functions as parameters (like `map`, `filter`, `forEach`) enable powerful functional programming patterns.
+:::
+
+## Function Composition
+
+Combine functions to create more complex operations:
+
+```stratos
+package main;
+
+fn add(a: int, b: int) int = a + b;
+fn multiply(a: int, b: int) int = a * b;
+fn subtract(a: int, b: int) int = a - b;
+
+fn calculate(x: int, y: int) int {
+    val sum = add(x, y);
+    val product = multiply(x, y);
+    return subtract(product, sum);
+}
+
+fn main() {
+    val result = calculate(5, 3);
+    // (5 * 3) - (5 + 3) = 15 - 8 = 7
+    print(result);  // 7
 }
 ```
 
@@ -269,6 +402,8 @@ fn main() {
 Functions can call themselves:
 
 ```stratos
+package main;
+
 fn factorial(n: int) int {
     if (n <= 1) {
         return 1;
@@ -294,8 +429,7 @@ fn main() {
 }
 ```
 
-### Output
-
+**Output:**
 ```
 Factorials:
 1! = 1
@@ -318,9 +452,17 @@ fib(9) = 34
 fib(10) = 55
 ```
 
+::: warning Deep Recursion
+Recursive functions without tail-call optimization can cause stack overflow for large inputs. Consider iterative solutions for deep recursion.
+:::
+
 ## Default Parameters
 
+Functions can have default parameter values:
+
 ```stratos
+package main;
+
 fn greet(name: string, greeting: string = "Hello") {
     print(greeting + ", " + name + "!");
 }
@@ -334,7 +476,11 @@ fn main() {
 
 ## Variable Arguments (Variadic)
 
+Functions can accept a variable number of arguments:
+
 ```stratos
+package main;
+
 fn sum(...numbers: int) int {
     var total = 0;
     for (num in numbers) {
@@ -347,6 +493,30 @@ fn main() {
     print(sum(1, 2, 3));           // 6
     print(sum(10, 20, 30, 40));    // 100
     print(sum(5));                 // 5
+}
+```
+
+## Nested Functions with Callbacks
+
+Functions can be defined inside other functions:
+
+```stratos
+package main;
+
+fn main() {
+    // Define a helper function inside main
+    fn apply(value: int, op: Function) int {
+        return op(value);
+    }
+
+    // Use with inline lambdas
+    val res1 = apply(10, (x) => x * 2);
+    print("10 * 2 = " + res1);  // 10 * 2 = 20
+
+    // Closures capture environment
+    val factor = 5;
+    val res2 = apply(3, (x) => x * factor);
+    print("3 * 5 = " + res2);   // 3 * 5 = 15
 }
 ```
 
@@ -436,116 +606,13 @@ fn main() {
 }
 ```
 
-## Lambda Expressions (Arrow Functions)
-
-Stratos supports concise anonymous functions using arrow syntax `=>`.
-
-### Basic Syntax
-
-```stratos
-// Single parameter (no parentheses needed)
-val double = (x) => x * 2;
-
-// Multiple parameters
-val add = (a, b) => a + b;
-
-// Block body lambda (explicit return)
-val multiply = (a, b) => {
-    val result = a * b;
-    return result;
-};
-
-fn main() {
-    print(double(5));      // 10
-    print(add(5, 3));      // 8
-    print(multiply(4, 5)); // 20
-}
-```
-
-### Passing as Arguments
-
-Lambdas are commonly used as callbacks or with higher-order functions.
-
-```stratos
-fn process(value: int, callback: Function) int {
-    return callback(value);
-}
-
-fn main() {
-    // Pass lambda directly
-    val result1 = process(10, (x) => x * 2);
-    print(result1);  // 20
-
-    val result2 = process(5, (x) => {
-        val y = x + 1;
-        return y * y;
-    });
-    print(result2);  // 36
-}
-```
-
-### Capturing Variables (Closures)
-
-Lambdas capture variables from their surrounding scope, creating closures.
-
-```stratos
-fn makeAdder(n: int) Function {
-    return (x) => x + n;  // 'n' is captured from outer scope
-}
-
-fn makeMultiplier(factor: int) Function {
-    return (x) => x * factor;
-}
-
-fn main() {
-    val add10 = makeAdder(10);
-    val add5 = makeAdder(5);
-
-    print(add10(5));  // 15
-    print(add5(5));   // 10
-
-    val triple = makeMultiplier(3);
-    print(triple(7)); // 21
-}
-```
-
-### Nested Functions with Callbacks
-
-Functions can be defined inside other functions and use callbacks:
-
-```stratos
-fn main() {
-    // Define a helper function inside main
-    fn apply(value: int, op: Function) int {
-        return op(value);
-    }
-
-    // Use with inline lambdas
-    val res1 = apply(10, (x) => x * 2);
-    print("10 * 2 = " + res1);  // 10 * 2 = 20
-
-    // Closures capture environment
-    val factor = 5;
-    val res2 = apply(3, (x) => x * factor);
-    print("3 * 5 = " + res2);   // 3 * 5 = 15
-}
-```
-
-::: tip Lambda Syntax
-Use `=>` (fat arrow) for lambda expressions. The old `->` syntax is not supported for lambdas.
-:::
-
-::: warning Keyword Conflicts
-Avoid using keywords like `val`, `var`, `fn`, `if`, etc. as parameter names. Use descriptive names like `value`, `item`, `element` instead.
-:::
-
-### Complete Callback Example
+## Complete Callback Example
 
 ```stratos
 package main;
 
 fn main() {
-    println("--- Callback Showcase ---");
+    print("--- Callback Showcase ---");
 
     // 1. Simple callback
     fn apply(value: int, op: Function) int {
@@ -553,12 +620,12 @@ fn main() {
     }
 
     val res1 = apply(10, (x) => x * 2);
-    println("10 * 2 = " + res1);
+    print("10 * 2 = " + res1);
 
     // 2. Closure capturing environment
     val factor = 5;
     val res2 = apply(3, (x) => x * factor);
-    println("3 * 5 = " + res2);
+    print("3 * 5 = " + res2);
 
     // 3. Returning a function (Higher-Order Function)
     fn makeAdder(n: int) Function {
@@ -566,13 +633,13 @@ fn main() {
     }
 
     val add10 = makeAdder(10);
-    println("5 + 10 = " + add10(5));
+    print("5 + 10 = " + add10(5));
 
     // 4. Map implementation using callbacks
     fn map(arr: Array<int>, transform: Function) Array<int> {
         val result = [];
 
-        for val i in 0..arr.length() {
+        for (i in 0..arr.length()) {
             val item = arr[i];
             val transformed = transform(item);
             result.push(transformed);
@@ -580,30 +647,42 @@ fn main() {
         return result;
     }
 
-    println("--- Done ---");
+    val numbers = [1, 2, 3, 4, 5];
+    val doubled = map(numbers, (x) => x * 2);
+    print("Doubled: " + doubled);  // [2, 4, 6, 8, 10]
+
+    print("--- Done ---");
 }
 ```
 
 ## Best Practices
 
-::: tip
-**Use the pipe operator**: For function chains, the pipe operator improves readability by showing the data flow from left to right.
+::: tip Use the Pipe Operator
+For function chains, the pipe operator improves readability by showing the data flow from left to right.
 :::
 
-::: tip
-**Single Responsibility**: Each function should do one thing well. Break complex operations into smaller, composable functions.
+::: tip Single Responsibility
+Each function should do one thing well. Break complex operations into smaller, composable functions.
 :::
 
-::: tip
-**Meaningful names**: Function names should clearly describe what they do. Use verbs for actions (`calculate`, `process`, `validate`).
+::: tip Meaningful Names
+Function names should clearly describe what they do. Use verbs for actions (`calculate`, `process`, `validate`).
 :::
 
-::: warning
-**Avoid deep recursion**: Recursive functions without tail-call optimization can cause stack overflow for large inputs.
+::: tip Lambda Syntax
+Use `=>` (fat arrow) for lambda expressions. This is the modern, concise syntax for anonymous functions.
 :::
 
-::: info
-**Type annotations**: Always specify parameter and return types for clarity and type safety.
+::: info Type Annotations
+Always specify parameter and return types for clarity and type safety. This helps catch errors at compile time.
+:::
+
+::: warning Keyword Conflicts
+Avoid using keywords like `val`, `var`, `fn`, `if`, etc. as parameter names. Use descriptive names like `value`, `item`, `element` instead.
+:::
+
+::: warning Avoid Deep Recursion
+Recursive functions without tail-call optimization can cause stack overflow for large inputs. Consider iterative solutions when recursion depth is significant.
 :::
 
 ## Function Quick Reference
@@ -619,7 +698,12 @@ fn main() {
 | Lambda (block) | `(params) => { ... }` | `(x) => { return x * 2; }` |
 | Higher-order function | `fn name(f: Function) Type` | `fn apply(x: int, f: Function) int` |
 | Closure | `return (params) => expr` | `return (x) => x + n` |
+| Default parameter | `fn name(p: Type = val)` | `fn greet(name: string = "User")` |
+| Variadic | `fn name(...args: Type)` | `fn sum(...nums: int) int` |
 
 ## Next Steps
 
-
+- [Control Flow](/guide/control-flow) - Learn about conditionals and loops
+- [Object-Oriented Programming](/guide/oop) - Work with classes and methods
+- [Asynchronous Programming](/guide/async) - Async functions and Futures
+- [Error Handling](/guide/error-handling) - Handle errors with Result types
