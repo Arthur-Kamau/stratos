@@ -494,6 +494,11 @@ void NativeRegistry::initMath() {
         return std::log10(x);
     }, FunctionSignature{{"double"}, "double"});
 
+    registerFunction("math", "ln", [](const std::vector<std::any>& args) -> std::any {
+        double val = std::any_cast<double>(args[0]);
+        return std::log(val);
+    }, FunctionSignature{{"double"}, "double"});
+
     registerFunction("math", "log2", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return std::log2(x);
