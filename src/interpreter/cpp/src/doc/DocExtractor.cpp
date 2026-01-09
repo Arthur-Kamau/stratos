@@ -74,11 +74,9 @@ void DocExtractor::visit(FunctionDecl& stmt) {
     func->isNative = (stmt.body == nullptr);
 
     // Extract parameters
-    for (size_t i = 0; i < stmt.params.size(); i++) {
-        func->paramNames.push_back(stmt.params[i].lexeme);
-        if (i < stmt.paramTypes.size()) {
-            func->paramTypes.push_back(stmt.paramTypes[i]);
-        }
+    for (size_t i = 0; i < stmt.parameters.size(); i++) {
+        func->paramNames.push_back(stmt.parameters[i].name.lexeme);
+        func->paramTypes.push_back(stmt.parameters[i].type);
     }
 
     // Attach documentation

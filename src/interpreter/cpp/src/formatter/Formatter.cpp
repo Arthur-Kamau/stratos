@@ -202,15 +202,15 @@ void Formatter::visit(FunctionDecl& stmt) {
     write(stmt.name.lexeme);
     write("(");
 
-    // Format parameters (they're Token objects)
-    for (size_t i = 0; i < stmt.params.size(); i++) {
-        write(stmt.params[i].lexeme);
-        if (i < stmt.paramTypes.size() && !stmt.paramTypes[i].empty()) {
+    // Format parameters
+    for (size_t i = 0; i < stmt.parameters.size(); i++) {
+        write(stmt.parameters[i].name.lexeme);
+        if (!stmt.parameters[i].type.empty()) {
             write(":");
             space();
-            write(stmt.paramTypes[i]);
+            write(stmt.parameters[i].type);
         }
-        if (i < stmt.params.size() - 1) {
+        if (i < stmt.parameters.size() - 1) {
             write(",");
             space();
         }

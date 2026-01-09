@@ -44,7 +44,9 @@ void IRGenerator::generate(const std::vector<std::unique_ptr<Stmt>>& statements)
                 } else if (auto fnDecl = dynamic_cast<FunctionDecl*>(member.get())) {
                     MethodInfo method;
                     method.name = fnDecl->name.lexeme;
-                    method.paramTypes = fnDecl->paramTypes;
+                    for (const auto& param : fnDecl->parameters) {
+                        method.paramTypes.push_back(param.type);
+                    }
                     method.returnType = fnDecl->returnType;
                     method.hasBody = (fnDecl->body != nullptr);
                     info.methods.push_back(method);
@@ -172,10 +174,10 @@ void IRGenerator::visit(FunctionDecl& stmt) {
     
     // Params
     std::stringstream paramsSS;
-    for (size_t i = 0; i < stmt.params.size(); ++i) {
-        std::string type = getLLVMType(stmt.paramTypes[i]);
+    for (size_t i = 0; i < stmt.parameters.size(); ++i) {
+        std::string type = getLLVMType(stmt.parameters[i].type);
         paramsSS << type << " %arg" << i;
-        if (i < stmt.params.size() - 1) paramsSS << ", ";
+        if (i < stmt.parameters.size() - 1) paramsSS << ", ";
     }
 
     emitRaw("\ndefine " + retType + " " + name + "(" + paramsSS.str() + ") {");
@@ -183,9 +185,9 @@ void IRGenerator::visit(FunctionDecl& stmt) {
 
     // Allocate stack space for params and store them
     // This allows them to be mutable and addressed like local vars
-    for (size_t i = 0; i < stmt.params.size(); ++i) {
-        std::string paramName = stmt.params[i].lexeme;
-        std::string type = getLLVMType(stmt.paramTypes[i]);
+    for (size_t i = 0; i < stmt.parameters.size(); ++i) {
+        std::string paramName = stmt.parameters[i].name.lexeme;
+        std::string type = getLLVMType(stmt.parameters[i].type);
         std::string ptr = "%" + paramName + ".addr";
         
         emit(ptr + " = alloca " + type);
@@ -804,8 +806,11 @@ void IRGenerator::generateConstructor(const std::string& className, ClassDecl& c
     std::vector<std::string> paramTypes;
 
     if (ctorDecl) {
-        params = ctorDecl->params;
-        paramTypes = ctorDecl->paramTypes;
+        for (const auto& param : ctorDecl->parameters) {
+            params.push_back(param.name);
+            paramTypes.push_back(param.type);
+        }
+        
         for (size_t i = 0; i < params.size(); i++) {
             paramsSS << getLLVMType(paramTypes[i]) << " %arg" << i;
             if (i < params.size() - 1) paramsSS << ", ";
@@ -874,9 +879,9 @@ void IRGenerator::generateMethod(const std::string& className, FunctionDecl& met
     std::stringstream paramsSS;
     paramsSS << getStructType(className) << " %this_ptr";
 
-    for (size_t i = 0; i < method.params.size(); ++i) {
+    for (size_t i = 0; i < method.parameters.size(); ++i) {
         paramsSS << ", ";
-        std::string type = getLLVMType(method.paramTypes[i]);
+        std::string type = getLLVMType(method.parameters[i].type);
         paramsSS << type << " %arg" << i;
     }
 
@@ -892,9 +897,9 @@ void IRGenerator::generateMethod(const std::string& className, FunctionDecl& met
     scopes.back()["this"] = thisInfo;
 
     // Define parameters
-    for (size_t i = 0; i < method.params.size(); ++i) {
-        std::string paramName = method.params[i].lexeme;
-        std::string type = getLLVMType(method.paramTypes[i]);
+    for (size_t i = 0; i < method.parameters.size(); ++i) {
+        std::string paramName = method.parameters[i].name.lexeme;
+        std::string type = getLLVMType(method.parameters[i].type);
         std::string ptr = "%" + paramName + ".addr";
 
         emit(ptr + " = alloca " + type);

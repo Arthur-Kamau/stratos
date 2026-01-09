@@ -100,8 +100,11 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
                 }
 
                 // If full name resolution failed, check if the base (left side) is a valid enum/class
-                if (symbolTable.resolve(enumName)) {
-                    // The enum exists, but the member does not
+                // Only error if the base is actually a class/enum (static access attempt)
+                // If it's a variable (instance), we fall through to regular member access handling
+                auto resolvedBase = symbolTable.resolve(enumName);
+                if (resolvedBase && resolvedBase->kind == SymbolKind::CLASS) {
+                    // The enum/class exists, but the member does not
                     error(rightVar->name, "Member '" + valueName + "' not found in enum '" + enumName + "'.");
                     return;
                 }
@@ -572,7 +575,11 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
 
                 // Only process declarations, not their bodies
                 if (auto* funcDecl = dynamic_cast<FunctionDecl*>(statements[i].get())) {
-                    Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, funcDecl->paramTypes, funcDecl->returnType);
+                    std::vector<std::string> paramTypes;
+                    for (const auto& param : funcDecl->parameters) {
+                        paramTypes.push_back(param.type);
+                    }
+                    Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType);
                     if (!symbolTable.define(funcSymbol)) {
                         error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined.");
                     }

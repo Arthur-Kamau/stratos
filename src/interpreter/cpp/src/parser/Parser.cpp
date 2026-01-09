@@ -163,19 +163,18 @@ std::unique_ptr<Stmt> Parser::classDeclaration() {
             Token ctorName = previous(); // "constructor" keyword
             consume(TokenType::LEFT_PAREN, "Expect '(' after constructor.");
 
-            std::vector<Token> params;
-            std::vector<std::string> paramTypes;
+            std::vector<Parameter> parameters;
 
             if (!check(TokenType::RIGHT_PAREN)) {
                 do {
                     Token param = consume(TokenType::IDENTIFIER, "Expect parameter name.");
-                    params.push_back(param);
-
-                    std::string paramType = "";
+                    
+                    std::string paramType = "any";
                     if (match({TokenType::COLON})) {
                         paramType = parseType();
                     }
-                    paramTypes.push_back(paramType);
+                    
+                    parameters.push_back(Parameter(param, paramType, nullptr, false));
                 } while (match({TokenType::COMMA}));
             }
 
@@ -193,7 +192,7 @@ std::unique_ptr<Stmt> Parser::classDeclaration() {
             consume(TokenType::RIGHT_BRACE, "Expect '}' after constructor body.");
 
             // Create a FunctionDecl with name "constructor"
-            methods.push_back(std::make_unique<FunctionDecl>(ctorName, params, paramTypes, returnType, std::move(body)));
+            methods.push_back(std::make_unique<FunctionDecl>(ctorName, std::move(parameters), returnType, std::move(body)));
         } else {
              // Skip unknown things inside class for now to avoid infinite loops
              advance();
