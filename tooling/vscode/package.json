@@ -2,7 +2,7 @@
     "name": "stratos-language",
     "displayName": "Stratos Language",
     "description": "Language support for Stratos",
-    "version": "0.1.1",
+    "version": "0.1.3",
     "engines": {
         "vscode": "^1.75.0"
     },
@@ -13,19 +13,34 @@
     "activationEvents": [
         "onLanguage:stratos"
     ],
+    "publisher": "arthur-kamau",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Arthur-Kamau/stratos.git",
+        "branch": "master"
+    },
     "main": "./out/extension.js",
     "contributes": {
-        "languages": [{
-            "id": "stratos",
-            "aliases": ["Stratos", "stratos"],
-            "extensions": [".st"],
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "stratos",
-            "scopeName": "source.stratos",
-            "path": "./syntaxes/stratos.tmLanguage.json"
-        }],
+        "languages": [
+            {
+                "id": "stratos",
+                "aliases": [
+                    "Stratos",
+                    "stratos"
+                ],
+                "extensions": [
+                    ".st"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "stratos",
+                "scopeName": "source.stratos",
+                "path": "./syntaxes/stratos.tmLanguage.json"
+            }
+        ],
         "snippets": [
             {
                 "language": "stratos",

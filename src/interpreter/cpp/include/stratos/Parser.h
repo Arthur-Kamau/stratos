@@ -24,6 +24,7 @@ private:
     std::unique_ptr<Stmt> varDeclaration();
     std::unique_ptr<Stmt> fnDeclaration(const std::string& kind);
     std::unique_ptr<Stmt> classDeclaration();
+    std::unique_ptr<Stmt> structDeclaration(); // New
     std::unique_ptr<Stmt> enumDeclaration();
     std::unique_ptr<Stmt> packageDeclaration();
     std::unique_ptr<Stmt> useStatement();

@@ -1123,6 +1123,34 @@ void Interpreter::visit(LambdaExpr& expr) {
     lastValue = RuntimeValue(std::any(closure), "function");
 }
 
+void Interpreter::visit(StructInitExpr& expr) {
+    std::string structName = expr.name.lexeme;
+
+    // Check if struct is defined
+    if (!classes.count(structName)) {
+        error("Undefined struct: " + structName);
+        return;
+    }
+    
+    // Create new instance
+    auto instance = std::make_shared<ClassInstance>();
+    instance->className = structName;
+    
+    // Evaluate and assign fields
+    for (const auto& field : expr.fields) {
+        std::string fieldName = field.first;
+        
+        // Evaluate field value
+        field.second->accept(*this);
+        
+        // Assign to instance
+        instance->fields[fieldName] = lastValue;
+    }
+    
+    // Return the instance
+    lastValue = RuntimeValue(instance);
+}
+
 // --- Statement Visitors ---
 
 void Interpreter::visit(VarDecl& stmt) {

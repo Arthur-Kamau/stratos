@@ -28,7 +28,7 @@ fn tanh(x: double) double;
 
 // Exponential and logarithmic
 fn exp(x: double) double;
-fn log(x: double) double;
+// fn log(x: double) double;
 fn log10(x: double) double;
 fn log2(x: double) double;
 fn pow(x: double, y: double) double;

@@ -5,6 +5,7 @@ package log;
 
 use time;
 use strings;
+use io;
 
 // ============================================================================
 // Types
@@ -56,7 +57,13 @@ fn errorWith(message: string, fields: Map<string, any>) void;
 fn fatalWith(message: string, fields: Map<string, any>) void;
 
 // Logger creation
-fn newLogger(level: LogLevel, format: LogFormat) Logger;
+fn newLogger(level: LogLevel, format: LogFormat) Logger {
+    return Logger {
+        level: level,
+        format: format,
+        fields: {}
+    };
+}
 fn setLevel(level: LogLevel) void;
 fn setFormat(format: LogFormat) void;
 
@@ -111,7 +118,7 @@ class LogTimer {
         return time.now().unix() - this.startTime;
     }
 
-    fn log() void {
+    fn printLog() void {
         val elapsed = this.elapsed();
         infoWith("LogTimer completed", {
             name: this.name,
@@ -130,7 +137,7 @@ fn logFunction(name: string, callback: Function) any {
         info("Function called: " + name);
         val timer = startTimer(name);
         val result = callback();
-        timer.log();
+        timer.printLog();
         return result;
     };
 }

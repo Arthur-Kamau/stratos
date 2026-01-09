@@ -645,4 +645,19 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
     return "unknown";
 }
 
+void SemanticAnalyzer::visit(StructInitExpr& expr) {
+    // 1. Verify struct existence
+    // Since we don't have full type checking on structs yet, we just check if it's available in symbol table if possible
+    // But struct definitions are treated as ClassDecl which might be in classes map in Interpreter, 
+    // Here in SemanticAnalyzer we track symbols.
+    
+    // 2. Analyze fields
+    for (const auto& field : expr.fields) {
+        field.second->accept(*this);
+        // lastExprType is set by visit
+    }
+    
+    lastExprType = expr.name.lexeme; // Tentative type name
+}
+
 } // namespace stratos

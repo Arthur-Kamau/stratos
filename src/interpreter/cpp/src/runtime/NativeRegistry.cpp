@@ -141,29 +141,83 @@ void NativeRegistry::initPrelude() {
             return std::any();
         }
 
-        const auto& arg = args[0];
-
-        // Try different types
-        try {
-            if (arg.type() == typeid(int)) {
-                std::cout << std::any_cast<int>(arg) << std::endl;
-            } else if (arg.type() == typeid(double)) {
-                std::cout << std::any_cast<double>(arg) << std::endl;
-            } else if (arg.type() == typeid(std::string)) {
-                std::cout << std::any_cast<std::string>(arg) << std::endl;
-            } else if (arg.type() == typeid(bool)) {
-                std::cout << (std::any_cast<bool>(arg) ? "true" : "false") << std::endl;
-            } else if (arg.type() == typeid(char)) {
-                std::cout << std::any_cast<char>(arg) << std::endl;
-            } else {
-                std::cout << "[unknown type]" << std::endl;
+        bool useFormatting = false;
+        if (args.size() > 1 && args[0].type() == typeid(std::string)) {
+            std::string fmt = std::any_cast<std::string>(args[0]);
+            if (fmt.find("{}") != std::string::npos) {
+                useFormatting = true;
             }
-        } catch (...) {
-            std::cout << "[error printing value]" << std::endl;
         }
 
+        if (useFormatting) {
+            // Printf-style formatting
+            std::string result;
+            try {
+                result = std::any_cast<std::string>(args[0]);
+            } catch (...) {
+                result = ""; 
+            }
+
+            size_t argIndex = 1;
+            size_t pos = 0;
+            while ((pos = result.find("{}", pos)) != std::string::npos && argIndex < args.size()) {
+                std::string replacement;
+                const auto& arg = args[argIndex];
+
+                try {
+                    if (arg.type() == typeid(int)) {
+                        replacement = std::to_string(std::any_cast<int>(arg));
+                    } else if (arg.type() == typeid(double)) {
+                        replacement = std::to_string(std::any_cast<double>(arg));
+                    } else if (arg.type() == typeid(std::string)) {
+                        replacement = std::any_cast<std::string>(arg);
+                    } else if (arg.type() == typeid(bool)) {
+                        replacement = std::any_cast<bool>(arg) ? "true" : "false";
+                    } else if (arg.type() == typeid(char)) {
+                        replacement = std::string(1, std::any_cast<char>(arg));
+                    } else {
+                        replacement = "[unknown]";
+                    }
+                } catch (...) {
+                    replacement = "[error]";
+                }
+
+                result.replace(pos, 2, replacement);
+                pos += replacement.length();
+                argIndex++;
+            }
+            std::cout << result;
+        } else {
+            // Space-separated printing
+            for (size_t i = 0; i < args.size(); ++i) {
+                const auto& arg = args[i];
+                try {
+                    if (arg.type() == typeid(int)) {
+                        std::cout << std::any_cast<int>(arg);
+                    } else if (arg.type() == typeid(double)) {
+                        std::cout << std::any_cast<double>(arg);
+                    } else if (arg.type() == typeid(std::string)) {
+                        std::cout << std::any_cast<std::string>(arg);
+                    } else if (arg.type() == typeid(bool)) {
+                        std::cout << (std::any_cast<bool>(arg) ? "true" : "false");
+                    } else if (arg.type() == typeid(char)) {
+                        std::cout << std::any_cast<char>(arg);
+                    } else {
+                        std::cout << "[unknown type]";
+                    }
+                } catch (...) {
+                    std::cout << "[error printing value]";
+                }
+                
+                if (i < args.size() - 1) {
+                    std::cout << " ";
+                }
+            }
+        }
+
+        std::cout << std::endl;
         return std::any();
-    }, FunctionSignature{{"any"}, "void"});
+    }, FunctionSignature{{"any", "..."}, "void"});
 
     // printf - formatted printing with {} placeholders
     registerFunction("prelude", "printf", [](const std::vector<std::any>& args) -> std::any {

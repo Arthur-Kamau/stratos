@@ -162,6 +162,7 @@ public:
     void visit(CastExpr& expr) override; // Visit method for CastExpr
     void visit(MapLiteralExpr& expr) override; // Visit method for MapLiteralExpr
     void visit(LambdaExpr& expr) override; // Visit method for LambdaExpr
+    void visit(StructInitExpr& expr) override; // Visit method for StructInitExpr
 
     void visit(VarDecl& stmt) override;
     void visit(FunctionDecl& stmt) override;

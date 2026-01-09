@@ -173,6 +173,31 @@ void Formatter::visit(LambdaExpr& expr) {
     }
 }
 
+void Formatter::visit(StructInitExpr& expr) {
+    write(expr.name.lexeme);
+    space();
+    write("{");
+    if (!expr.fields.empty()) {
+        indent();
+        newline();
+        indentLevel_++;
+        for (size_t i = 0; i < expr.fields.size(); ++i) {
+            indent();
+            write(expr.fields[i].first);
+            write(":");
+            space();
+            expr.fields[i].second->accept(*this);
+            if (i < expr.fields.size() - 1) {
+                write(",");
+            }
+            newline();
+        }
+        indentLevel_--;
+        indent();
+    }
+    write("}");
+}
+
 // Statement visitors
 void Formatter::visit(VarDecl& stmt) {
     write(stmt.isMutable ? "var" : "val");

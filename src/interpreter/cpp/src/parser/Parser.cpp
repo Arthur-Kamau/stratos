@@ -200,6 +200,30 @@ std::unique_ptr<Stmt> Parser::classDeclaration() {
     return cls;
 }
 
+std::unique_ptr<Stmt> Parser::structDeclaration() {
+    Token name = consume(TokenType::IDENTIFIER, "Expect struct name.");
+    consume(TokenType::LEFT_BRACE, "Expect '{' before struct body.");
+
+    std::vector<std::unique_ptr<Stmt>> methods; // Structs fields are VarDecls
+
+    while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
+        Token fieldName = consume(TokenType::IDENTIFIER, "Expect field name.");
+        consume(TokenType::COLON, "Expect ':' after field name.");
+        std::string typeName = parseType();
+        consume(TokenType::SEMICOLON, "Expect ';' after field declaration.");
+
+        // Create a VarDecl for the field
+        // Fields in structs are mutable by default in this implementation context
+        auto varDecl = std::make_unique<VarDecl>(fieldName, typeName, nullptr, true); 
+        methods.push_back(std::move(varDecl));
+    }
+
+    consume(TokenType::RIGHT_BRACE, "Expect '}' after struct body.");
+
+    // Reuse ClassDecl for structs as they are handled similarly in runtime
+    return std::make_unique<ClassDecl>(name, nullptr, std::move(methods));
+}
+
 std::unique_ptr<Stmt> Parser::enumDeclaration() {
     Token name = consume(TokenType::IDENTIFIER, "Expect enum name.");
 
@@ -538,6 +562,55 @@ std::unique_ptr<Expr> Parser::call() {
         }
     }
 
+
+
+    // Check for Struct Initialization: Name { field: value, ... }
+    if (auto* varExpr = dynamic_cast<VariableExpr*>(expr.get())) {
+        if (check(TokenType::LEFT_BRACE)) {
+            // Check if it looks like a struct init (identifiers followed by colon)
+            // Or just a block? Block is statement, here we are in expression.
+            // Map literal starts with {.
+            // But Map literal is handled in primary().
+            
+            // We need to verify if this is a struct init.
+            // Lookahead: { identifier :
+            int savedCurrent = current;
+            advance(); // {
+            
+            bool isStructInit = false;
+            if (check(TokenType::IDENTIFIER)) {
+                 advance(); // identifier
+                 if (check(TokenType::COLON)) {
+                     isStructInit = true;
+                 }
+            } else if (check(TokenType::RIGHT_BRACE)) {
+                // Empty struct init? Name {}
+                isStructInit = true;
+            }
+            
+            // Restore
+            current = savedCurrent;
+            
+            if (isStructInit) {
+                consume(TokenType::LEFT_BRACE, "Expect '{' after struct name.");
+                std::vector<std::pair<std::string, std::unique_ptr<Expr>>> fields;
+                
+                if (!check(TokenType::RIGHT_BRACE)) {
+                    do {
+                        Token fieldName = consume(TokenType::IDENTIFIER, "Expect field name.");
+                        consume(TokenType::COLON, "Expect ':' after field name.");
+                        std::unique_ptr<Expr> value = expression();
+                        fields.push_back({fieldName.lexeme, std::move(value)});
+                    } while (match({TokenType::COMMA}));
+                }
+                
+                consume(TokenType::RIGHT_BRACE, "Expect '}' after struct initialization.");
+                
+                return std::make_unique<StructInitExpr>(varExpr->name, std::move(fields));
+            }
+        }
+    }
+
     while (true) {
         if (match({TokenType::LEFT_PAREN})) {
             expr = finishCall(std::move(expr));
@@ -559,6 +632,8 @@ std::unique_ptr<Expr> Parser::call() {
     }
     return expr;
 }
+
+
 
 std::unique_ptr<Expr> Parser::finishCall(std::unique_ptr<Expr> callee) {
     std::vector<std::unique_ptr<Expr>> arguments;
