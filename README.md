@@ -21,13 +21,10 @@ A fast, type-safe, compiled (currently Interpreted), and fun-to-write programmin
  <img src="./icons/work.jpeg" height="25">
 </p>
 
-The **Stratos C++ Compiler** now features Lexing, Parsing, Semantic Analysis, and LLVM IR Code Generation. The **Stratos Interpreter** provides direct AST execution for rapid development and testing. A VS Code extension provides basic language tooling.
+The **Stratos C++ Interpreter** is the primary implementation, featuring a handwritten recursive descent parser and AST-walking interpreter. It supports a growing Standard Library including File I/O, JSON, HTTP, and SQLite database support.
+The **Stratos Package Manager** is now integrated, allowing project creation (`new`), building (`build`), and dependency management.
+A VS Code extension provides syntax highlighting and basic language support.
 
-**Execution and Validation modes available**:
-- `stratos compile <file.st>` - Compile to LLVM IR for optimization and production builds
-- `stratos run <file.st>` - Direct interpretation for immediate execution and output
-- `stratos check <file.st>` - Fast syntax and semantic validation without code generation (5x faster than compile)
-- `stratos fmt <file.st> -w` - Format code according to the [Stratos Style Guide](STYLE_GUIDE.md)
 
 ## ⚠️ Important Disclaimer
 
