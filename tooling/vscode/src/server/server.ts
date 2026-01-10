@@ -228,6 +228,104 @@ documents.onDidChangeContent(change => {
 	indexFunctionDefinitions(change.document);
 });
 
+// Validate package declaration matches directory structure
+function validatePackageDeclaration(textDocument: TextDocument): Diagnostic | null {
+	const text = textDocument.getText();
+	const lines = text.split('\n');
+
+	// Find package declaration
+	let packageLine = -1;
+	let declaredPackage = '';
+
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i].trim();
+		// Skip comments and empty lines
+		if (line.startsWith('//') || line === '') {
+			continue;
+		}
+
+		// Match: package packagename;
+		const packageMatch = line.match(/^package\s+([a-zA-Z_][a-zA-Z0-9_\.]*)\s*;/);
+		if (packageMatch) {
+			packageLine = i;
+			declaredPackage = packageMatch[1];
+			break;
+		}
+
+		// If we encounter any non-comment, non-package statement, stop looking
+		if (!line.startsWith('package')) {
+			break;
+		}
+	}
+
+	if (packageLine === -1) {
+		// No package declaration found - this might be okay for some files
+		return null;
+	}
+
+	// Determine expected package from file path
+	// Convert URI to file path
+	const filePath = textDocument.uri.replace('file://', '');
+	const pathParts = filePath.split(path.sep);
+
+	let expectedPackage = '';
+
+	// Find the src directory index
+	let srcIndex = -1;
+	for (let i = pathParts.length - 1; i >= 0; i--) {
+		if (pathParts[i] === 'src') {
+			srcIndex = i;
+			break;
+		}
+	}
+
+	if (srcIndex !== -1) {
+		// File is under src directory
+		const fileIndex = pathParts.length - 1;
+
+		// Check if file is directly in src directory (e.g., src/main.st, src/test.st)
+		if (fileIndex === srcIndex + 1) {
+			// Files at root of src should be package main
+			expectedPackage = 'main';
+		} else {
+			// File is in a subdirectory of src (e.g., src/utils/helper.st)
+			// The package should be the immediate subdirectory name
+			expectedPackage = pathParts[srcIndex + 1];
+		}
+	} else {
+		// No src directory - check for init.st pattern in std library
+		// For std/crypto/init.st -> crypto
+		const initIndex = pathParts.indexOf('init.st');
+		if (initIndex > 0) {
+			expectedPackage = pathParts[initIndex - 1];
+		}
+	}
+
+	// If we couldn't determine expected package, don't validate
+	if (!expectedPackage) {
+		return null;
+	}
+
+	// Compare declared package with expected package
+	if (declaredPackage !== expectedPackage) {
+		const line = lines[packageLine];
+		const packageKeywordIndex = line.indexOf('package');
+		const packageNameStart = line.indexOf(declaredPackage, packageKeywordIndex);
+
+		return {
+			severity: DiagnosticSeverity.Error,
+			range: {
+				start: { line: packageLine, character: packageNameStart },
+				end: { line: packageLine, character: packageNameStart + declaredPackage.length }
+			},
+			message: `Package declaration '${declaredPackage}' does not match expected package '${expectedPackage}' based on file location`,
+			source: 'stratos-linter'
+		};
+	}
+
+	return null;
+}
+
 // Function to find duplicate keys in HOCON files
 function findHoconDuplicateKeys(textDocument: TextDocument): Diagnostic[] {
 	const diagnostics: Diagnostic[] = [];
@@ -305,6 +403,12 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		diagnostics = findHoconDuplicateKeys(textDocument);
 		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 		return; // Exit early for HOCON files as no compiler validation is needed
+	}
+
+	// Validate package declaration
+	const packageDiagnostic = validatePackageDeclaration(textDocument);
+	if (packageDiagnostic) {
+		diagnostics.push(packageDiagnostic);
 	}
 
 	// Get compiler path from settings or use default
@@ -590,8 +694,8 @@ function detectRuntimeErrors(textDocument: TextDocument, diagnostics: Diagnostic
 						inferredType = 'null';
 					}
 
-					// Check type mismatch
-					if (inferredType && inferredType !== expectedType && !expectedType.includes('?')) {
+					// Check type mismatch (case-insensitive comparison)
+					if (inferredType && inferredType.toLowerCase() !== expectedType.toLowerCase() && !expectedType.includes('?')) {
 						const startChar = standaloneMatch.index || 0;
 						const endChar = startChar + standaloneMatch[0].length;
 						diagnostics.push({

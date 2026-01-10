@@ -40,7 +40,7 @@ fn main() {
     printf("Boolean: {}\n", true);
     printf("Boolean: {}\n", false);
     printf("Character: {}\n", 'X');
-    printf("String: {}\n", "Hello, Stratos!");
+    printf("string: {}\n", "Hello, Stratos!");
     println("");
 
     // Progress bar example using print

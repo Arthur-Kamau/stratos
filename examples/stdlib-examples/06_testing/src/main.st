@@ -37,7 +37,7 @@ fn testMath() {
 
 // Test suite for string functions
 fn testStrings() {
-    testing.describe("String functions", () => {
+    testing.describe("string functions", () => {
         testing.beforeEach(() => {
             // Setup before each test
         });
@@ -153,7 +153,7 @@ fn benchmarkExample() {
         math.factorial(10);
     });
 
-    testing.benchmark("String concatenation", 1000, () => {
+    testing.benchmark("string concatenation", 1000, () => {
         var result = "";
         for i in 0..100 {
             result = result + "a";

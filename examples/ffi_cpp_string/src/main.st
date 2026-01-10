@@ -3,7 +3,7 @@ package main;
 use ffi;
 
 fn main() {
-    println("=== FFI C++ String Library Test ===");
+    println("=== FFI C++ string Library Test ===");
     println("");
 
     // Load the C++ library
@@ -42,7 +42,7 @@ fn main() {
     println("Is palindrome: 0 (false)");
     println("");
 
-    // Note: String return functions not fully working yet
+    // Note: string return functions not fully working yet
     // They would need special handling in FFI for C string returns
 
     // Unload the library

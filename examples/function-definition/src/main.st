@@ -10,7 +10,7 @@ fn nn() {
 }
 
 // function with string parameter
-fn printName(name: String) {
+fn printName(name: string) {
    println("hello");
    println(name);
 }
@@ -22,7 +22,7 @@ fn printNumber(num: int) {
 }
 
 // function with multiple parameters
-fn printNameAndIsMale(name: String, isMale: bool) {
+fn printNameAndIsMale(name: string, isMale: bool) {
    println("Hello");
    println(name);
    println("are you male");
@@ -30,17 +30,26 @@ fn printNameAndIsMale(name: String, isMale: bool) {
 }
 
 // function with return value
-fn returnAge(name: String) int {
+fn returnAge(name: string) int {
    return 26;
 }
 
 // function with parameters and return type
-fn printHelloNameAndReturnHeight(name: String) int {
+fn printHelloNameAndReturnHeight(name: string) int {
    println("hello");
    println(name);
    return 170;
 }
 
+use collections;
+
+fn jumbo(people: Map<string, int> = newMap<string, int>()) {
+   println("People:");
+   people.forEach((name, age) => {
+      println(name);
+      println(age);
+   });
+}
 fn main() {
    println("--- Function Examples ---");
 

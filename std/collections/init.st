@@ -7,6 +7,21 @@ package collections;
 // Types
 // ============================================================================
 
+class Set<T> {
+    var items: Array<T>;
+    var size: int;
+
+    pub fn add(item: T) bool;
+    pub fn remove(item: T) bool;
+    pub fn contains(item: T) bool;
+    pub fn clear() void;
+    pub fn isEmpty() bool;
+    pub fn length() int;
+    pub fn union(other: Set<T>) Set<T>;
+    pub fn intersection(other: Set<T>) Set<T>;
+    pub fn difference(other: Set<T>) Set<T>;
+}
+
 class List<T> {
     var items: Array<T>;
     var size: int;
@@ -20,14 +35,14 @@ class List<T> {
     pub fn length() int;
 
     // Higher-order functions
-    pub fn map(fn: Function<T, R>) List<R>;
-    pub fn filter(predicate: Function<T, bool>) List<T>;
-    pub fn reduce(initial: R, fn: Function<R, T, R>) R;
-    pub fn forEach(fn: Function<T, void>) void;
-    pub fn find(predicate: Function<T, bool>) T?;
-    pub fn any(predicate: Function<T, bool>) bool;
-    pub fn all(predicate: Function<T, bool>) bool;
-    pub fn sort(comparator: Function<T, T, int>) List<T>;
+    pub fn map<R>(fn: any) List<R>;
+    pub fn filter(predicate: any) List<T>;
+    pub fn reduce<R>(initial: R, fn: any) R;
+    pub fn forEach(fn: any) void;
+    pub fn find(predicate: any) T?;
+    pub fn any(predicate: any) bool;
+    pub fn all(predicate: any) bool;
+    pub fn sort(comparator: any) List<T>;
 }
 
 class Map<K, V> {
@@ -43,23 +58,9 @@ class Map<K, V> {
     pub fn isEmpty() bool;
     pub fn length() int;
     pub fn keys() List<K>;
-    pub fn values() List<V>;
     pub fn entries() List<Pair<K, V>>;
-}
-
-class Set<T> {
-    var items: Array<T>;
-    var size: int;
-
-    pub fn add(item: T) bool;
-    pub fn remove(item: T) bool;
-    pub fn contains(item: T) bool;
-    pub fn clear() void;
-    pub fn isEmpty() bool;
-    pub fn length() int;
-    pub fn union(other: Set<T>) Set<T>;
-    pub fn intersection(other: Set<T>) Set<T>;
-    pub fn difference(other: Set<T>) Set<T>;
+    pub fn forEach(fn: any) void;
+    pub fn map<R>(fn: any) Array<R>;
 }
 
 class Queue<T> {

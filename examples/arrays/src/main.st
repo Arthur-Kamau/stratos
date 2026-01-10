@@ -15,7 +15,7 @@ fn printSection(num: int, title: string) {
 
 fn main() {
     printHeader("Stratos Array Operations Demo");
-    printSection(1, "Creating Arrays from String Split");
+    printSection(1, "Creating Arrays from string Split");
     val text = "apple,banana,cherry,date,elderberry";
     val fruits = text . split(",");
     println("Original text: " + text);

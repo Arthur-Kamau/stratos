@@ -69,6 +69,21 @@ std::unique_ptr<Stmt> Parser::varDeclaration() {
 
 std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind, bool isPublic) {
     Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
+
+    // Skip generic type parameters if present (e.g., <T, E>)
+    if (match({TokenType::LESS})) {
+        int depth = 1;
+        while (depth > 0 && !isAtEnd()) {
+            if (match({TokenType::LESS})) {
+                depth++;
+            } else if (match({TokenType::GREATER})) {
+                depth--;
+            } else {
+                advance();
+            }
+        }
+    }
+
     consume(TokenType::LEFT_PAREN, "Expect '(' after " + kind + " name.");
 
     std::vector<Parameter> parameters;
@@ -847,6 +862,11 @@ std::string Parser::parseType() {
                     depth--;
                 }
             }
+        }
+
+        // Handle optional type suffix '?' (e.g., String?)
+        if (match({TokenType::QUESTION})) {
+             typeName += "?";
         }
 
         return typeName;

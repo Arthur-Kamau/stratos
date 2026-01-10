@@ -302,6 +302,8 @@ private:
 
     RuntimeValue instantiateClass(const std::string& className, const std::vector<RuntimeValue>& args);
 
+    RuntimeValue executeCallback(const RuntimeValue& closureValue, const std::vector<RuntimeValue>& args);
+
     bool isTruthy(const RuntimeValue& value);
 
     void error(const std::string& message);

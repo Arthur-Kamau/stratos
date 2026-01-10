@@ -1,9 +1,9 @@
 package model;
 
 data class UserModel{
-   val name : String;
+   val name : string;
    val age : int;
-   val location : String;
+   val location : string;
 }
 
 

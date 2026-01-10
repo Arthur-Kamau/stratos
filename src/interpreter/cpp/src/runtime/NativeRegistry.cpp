@@ -101,6 +101,46 @@ void NativeRegistry::initializeStdlib() {
     initTerminal();
     initRegex();
     initSQLite();    // SQLite database support
+    initCollections(); // Collections module
+}
+
+// ============================================================================
+// Collections Module Native Functions
+// ============================================================================
+
+void NativeRegistry::initCollections() {
+    // newMap<K, V>() - Implementation returns a native map
+    // We return a map<string, any> as a safe default for generic maps
+    // In a real implementation we might specialize based on inferred types if passed
+    registerFunction("collections", "newMap", [](const std::vector<std::any>& args) -> std::any {
+        // Return an empty map<string, any>
+        std::unordered_map<std::string, std::any> map;
+        return map;
+    }, FunctionSignature{{}, "Map<K, V>"});
+
+    // mapOf<K, V>(entries) - Create map from entries
+    registerFunction("collections", "mapOf", [](const std::vector<std::any>& args) -> std::any {
+        std::unordered_map<std::string, std::any> map;
+        // Logic to populate map from entries would go here
+        // For now return empty or simple implementation if args provided
+        // This is complex as entries is Array<Pair<K,V>> which is List<Object>...
+        return map;
+    }, FunctionSignature{{"Array<Pair<K, V>>"}, "Map<K, V>"});
+
+    // newList<T>() - Implementation returns a native array (vector)
+    registerFunction("collections", "newList", [](const std::vector<std::any>& args) -> std::any {
+        std::vector<std::any> list;
+        return list; // standard vector<any>
+    }, FunctionSignature{{}, "List<T>"});
+    
+    // newSet<T>() - Implementation returns a native set (if supported) or array
+    // Since native set support is limited in Interpreter right now, we can return a vector
+    // and let Stratos class wrap it, OR implementing Set is out of scope for this 'Array/Map' task.
+    // We register it to satisfy symbol resolution.
+    registerFunction("collections", "newSet", [](const std::vector<std::any>& args) -> std::any {
+        std::vector<std::any> set; // Placeholder using vector
+        return set;
+    }, FunctionSignature{{}, "Set<T>"});
 }
 
 // ============================================================================

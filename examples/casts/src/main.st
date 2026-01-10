@@ -39,13 +39,13 @@ fn main() {
     val doubleAny = -10.0 as bool;
     println("-10.0 as bool: " + doubleAny); // Expected: true
 
-    // --- String to Int/Double ---
+    // --- string to Int/Double ---
     val s1 = "123" as int;
     println("\"123\" as int: " + s1); // Expected: 123
     val s2 = "3.14" as double;
     println("\"3.14\" as double: " + s2); // Expected: 3.14
 
-    // --- Int/Double/Bool to String ---
+    // --- Int/Double/Bool to string ---
     val iToStr = 456 as string;
     println("456 as string: \"" + iToStr + "\""); // Expected: "456"
     val dToStr = 7.89 as string;

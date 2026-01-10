@@ -1,6 +1,7 @@
 package main;
 
 use io;
+use collections;
 
 fn printHeader(title: string) void {
     println("\n" + "=".repeat(50));
@@ -103,15 +104,15 @@ fn nestedForLoops() void {
 
 // For loop over map keys
 fn forLoopOverMap() void {
-    val config = maps.create();
-    val config2 = config.set("host", "localhost");
-    val config3 = config2.set("port", "8080");
-    val config4 = config3.set("database", "mydb");
-    val config5 = config4.set("timeout", "30");
+    val config = newMap<String, String>();
+    config.put("host", "localhost");
+    config.put("port", "8080");
+    config.put("database", "mydb");
+    config.put("timeout", "30");
 
     println("Configuration:");
-    for val key in config5 {
-        val value = config5[key];
+    for val key in config {
+        val value = config[key];
         println("  " + key + " = " + value);
     }
 }

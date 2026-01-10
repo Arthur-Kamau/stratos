@@ -38,7 +38,7 @@
        // Feature 2: Convert Module
        println("--- Type Conversions ---");
    
-       // String to number
+       // string to number
        val priceStr: string = "19.99";
        val price: double = convert.toDouble(priceStr);
        println("Price from string: $" + convert.toFixed(price, 2));

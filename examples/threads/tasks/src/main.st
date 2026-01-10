@@ -10,9 +10,9 @@ function main(){
    // mutable  and nullable 
    var name_first  = "kamau" ;
    //  mutable  and nullable  with explicit type
-   var name_second : String  = "kamau" ;
+   var name_second : string  = "kamau" ;
    // mutable  and nullable  with explicit type string literal 
-   var name_second : String  = """ 
+   var name_second : string  = """ 
        This
        is 
        a 

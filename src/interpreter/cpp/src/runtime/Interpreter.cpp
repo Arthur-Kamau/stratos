@@ -607,6 +607,48 @@ void Interpreter::visit(CallExpr& expr) {
                                         error(methodName + "() requires a value argument");
                                     }
                                     return;
+                                } else if (methodName == "forEach") {
+                                    if (args.empty()) error("forEach requires a callback");
+                                    auto callback = args[0];
+                                    for (const auto& item : vec) {
+                                        std::vector<RuntimeValue> cbArgs = {RuntimeValue(item)};
+                                        executeCallback(callback, cbArgs);
+                                    }
+                                    lastValue = RuntimeValue(std::any(), "void");
+                                    return;
+                                } else if (methodName == "map") {
+                                    if (args.empty()) error("map requires a callback");
+                                    auto callback = args[0];
+                                    
+                                    // We need to determine the result type based on the first element
+                                    // This is a simplification; ideally we'd know the target type
+                                    if (vec.empty()) {
+                                        // Empty input -> empty output (preserve type or default to any?)
+                                        // Defaulting to same type for empty
+                                        lastValue = RuntimeValue(std::any(std::vector<std::string>()), "array<string>");
+                                        return;
+                                    }
+                                    
+                                    std::vector<RuntimeValue> results;
+                                    for (const auto& item : vec) {
+                                        std::vector<RuntimeValue> cbArgs = {RuntimeValue(item)};
+                                        results.push_back(executeCallback(callback, cbArgs));
+                                    }
+                                    
+                                    // Check result type of first element
+                                    if (results[0].type == "int") {
+                                        std::vector<int> resVec;
+                                        for (const auto& r : results) resVec.push_back(r.asInt());
+                                        lastValue = RuntimeValue(std::any(resVec), "array<int>");
+                                    } else if (results[0].type == "string") {
+                                        std::vector<std::string> resVec;
+                                        for (const auto& r : results) resVec.push_back(r.asString());
+                                        lastValue = RuntimeValue(std::any(resVec), "array<string>");
+                                    } else {
+                                        // Fallback or error
+                                        error("Unsupported map result type: " + results[0].type);
+                                    }
+                                    return;
                                 }
                             } catch (const std::bad_any_cast&) {
                                 error("Internal error: Failed to cast array value");
@@ -641,6 +683,42 @@ void Interpreter::visit(CallExpr& expr) {
                                         lastValue = RuntimeValue(std::any(), "void");
                                     } else {
                                         error(methodName + "() requires a value argument");
+                                    }
+                                    return;
+                                } else if (methodName == "forEach") {
+                                    if (args.empty()) error("forEach requires a callback");
+                                    auto callback = args[0];
+                                    for (int item : vec) {
+                                        std::vector<RuntimeValue> cbArgs = {RuntimeValue(item)};
+                                        executeCallback(callback, cbArgs);
+                                    }
+                                    lastValue = RuntimeValue(std::any(), "void");
+                                    return;
+                                } else if (methodName == "map") {
+                                    if (args.empty()) error("map requires a callback");
+                                    auto callback = args[0];
+                                    
+                                    if (vec.empty()) {
+                                        lastValue = RuntimeValue(std::any(std::vector<int>()), "array<int>");
+                                        return;
+                                    }
+                                    
+                                    std::vector<RuntimeValue> results;
+                                    for (int item : vec) {
+                                        std::vector<RuntimeValue> cbArgs = {RuntimeValue(item)};
+                                        results.push_back(executeCallback(callback, cbArgs));
+                                    }
+                                    
+                                    if (results[0].type == "int") {
+                                        std::vector<int> resVec;
+                                        for (const auto& r : results) resVec.push_back(r.asInt());
+                                        lastValue = RuntimeValue(std::any(resVec), "array<int>");
+                                    } else if (results[0].type == "string") {
+                                        std::vector<std::string> resVec;
+                                        for (const auto& r : results) resVec.push_back(r.asString());
+                                        lastValue = RuntimeValue(std::any(resVec), "array<string>");
+                                    } else {
+                                        error("Unsupported map result type: " + results[0].type);
                                     }
                                     return;
                                 } else if (methodName == "contains") {
@@ -681,6 +759,134 @@ void Interpreter::visit(CallExpr& expr) {
 
                 // Handle map method calls (map.get(), map.set(), map.has(), etc.)
                 if (leftValue.type.starts_with("map")) {
+                    if (methodName == "forEach") {
+                         if (args.empty()) error("forEach requires a callback");
+                         auto callback = args[0];
+                         
+                         if (auto* anyPtr = std::get_if<std::any>(&leftValue.value)) {
+                             bool handled = false;
+                             try {
+                                 auto& map = std::any_cast<std::unordered_map<std::string, std::any>&>(*anyPtr);
+                                 for (const auto& pair : map) {
+                                     std::vector<RuntimeValue> cbArgs;
+                                     cbArgs.push_back(RuntimeValue(pair.first));
+                                     
+                                     // Handle std::any wrapping
+                                     if (pair.second.type() == typeid(int)) cbArgs.push_back(RuntimeValue(std::any_cast<int>(pair.second)));
+                                     else if (pair.second.type() == typeid(double)) cbArgs.push_back(RuntimeValue(std::any_cast<double>(pair.second)));
+                                     else if (pair.second.type() == typeid(std::string)) cbArgs.push_back(RuntimeValue(std::any_cast<std::string>(pair.second)));
+                                     else if (pair.second.type() == typeid(bool)) cbArgs.push_back(RuntimeValue(std::any_cast<bool>(pair.second)));
+                                     else cbArgs.push_back(RuntimeValue(pair.second, "any"));
+                                     
+                                     executeCallback(callback, cbArgs);
+                                 }
+                                 handled = true;
+                             } catch (...) {}
+
+                             if (!handled) {
+                                 try {
+                                     auto& map = std::any_cast<std::unordered_map<std::string, std::string>&>(*anyPtr);
+                                     for (const auto& pair : map) {
+                                         std::vector<RuntimeValue> cbArgs;
+                                         cbArgs.push_back(RuntimeValue(pair.first));
+                                         cbArgs.push_back(RuntimeValue(pair.second));
+                                         executeCallback(callback, cbArgs);
+                                     }
+                                     handled = true;
+                                 } catch (...) {}
+                             }
+                             
+                             if (!handled) {
+                                 try {
+                                     auto& map = std::any_cast<std::unordered_map<std::string, int>&>(*anyPtr);
+                                     for (const auto& pair : map) {
+                                         std::vector<RuntimeValue> cbArgs;
+                                         cbArgs.push_back(RuntimeValue(pair.first));
+                                         cbArgs.push_back(RuntimeValue(pair.second));
+                                         executeCallback(callback, cbArgs);
+                                     }
+                                     handled = true;
+                                 } catch (...) {}
+                             }
+                             
+                             if (handled) {
+                                 lastValue = RuntimeValue(std::any(), "void");
+                                 return;
+                             }
+                         }
+                    } else if (methodName == "map") {
+                        if (args.empty()) error("map requires a callback");
+                         auto callback = args[0];
+                         
+                         if (auto* anyPtr = std::get_if<std::any>(&leftValue.value)) {
+                             std::vector<RuntimeValue> results;
+                             bool handled = false;
+                             
+                             try {
+                                 auto& map = std::any_cast<std::unordered_map<std::string, std::any>&>(*anyPtr);
+                                 for (const auto& pair : map) {
+                                     std::vector<RuntimeValue> cbArgs;
+                                     cbArgs.push_back(RuntimeValue(pair.first));
+                                     // Handle std::any wrapping
+                                     if (pair.second.type() == typeid(int)) cbArgs.push_back(RuntimeValue(std::any_cast<int>(pair.second)));
+                                     else if (pair.second.type() == typeid(double)) cbArgs.push_back(RuntimeValue(std::any_cast<double>(pair.second)));
+                                     else if (pair.second.type() == typeid(std::string)) cbArgs.push_back(RuntimeValue(std::any_cast<std::string>(pair.second)));
+                                     else if (pair.second.type() == typeid(bool)) cbArgs.push_back(RuntimeValue(std::any_cast<bool>(pair.second)));
+                                     else cbArgs.push_back(RuntimeValue(pair.second, "any"));
+                                     
+                                     results.push_back(executeCallback(callback, cbArgs));
+                                 }
+                                 handled = true;
+                             } catch (...) {}
+
+                             if (!handled) {
+                                 try {
+                                     auto& map = std::any_cast<std::unordered_map<std::string, std::string>&>(*anyPtr);
+                                     for (const auto& pair : map) {
+                                         std::vector<RuntimeValue> cbArgs;
+                                         cbArgs.push_back(RuntimeValue(pair.first));
+                                         cbArgs.push_back(RuntimeValue(pair.second));
+                                         results.push_back(executeCallback(callback, cbArgs));
+                                     }
+                                     handled = true;
+                                 } catch (...) {}
+                             }
+                             
+                             if (!handled) {
+                                 try {
+                                     auto& map = std::any_cast<std::unordered_map<std::string, int>&>(*anyPtr);
+                                     for (const auto& pair : map) {
+                                         std::vector<RuntimeValue> cbArgs;
+                                         cbArgs.push_back(RuntimeValue(pair.first));
+                                         cbArgs.push_back(RuntimeValue(pair.second));
+                                         results.push_back(executeCallback(callback, cbArgs));
+                                     }
+                                     handled = true;
+                                 } catch (...) {}
+                             }
+                             
+                             if (handled) {
+                                 if (results.empty()) {
+                                     lastValue = RuntimeValue(std::any(std::vector<int>()), "array<int>"); // Default empty
+                                 } else if (results[0].type == "int") {
+                                      std::vector<int> resVec;
+                                      for (const auto& r : results) resVec.push_back(r.asInt());
+                                      lastValue = RuntimeValue(std::any(resVec), "array<int>");
+                                 } else if (results[0].type == "string") {
+                                      std::vector<std::string> resVec;
+                                      for (const auto& r : results) resVec.push_back(r.asString());
+                                      lastValue = RuntimeValue(std::any(resVec), "array<string>");
+                                 } else {
+                                     // Default to array<any> if mixed or unsupported
+                                     // But std::any stores vector<T>, not vector<any> usually for primitives.
+                                     // Support generic array<any> not fully implemented perhaps?
+                                      error("Unsupported map result type: " + results[0].type);
+                                 }
+                                 return;
+                             }
+                         }
+                    }
+
                     // Map methods forward to the maps module with map as first argument
                     args.insert(args.begin(), leftValue);
                     lastValue = evaluateNativeCall("maps", methodName, args);
@@ -818,47 +1024,7 @@ void Interpreter::visit(CallExpr& expr) {
             args.push_back(lastValue);
         }
 
-        // Extract the std::any from the variant, then cast to Closure
-        auto* anyPtr = std::get_if<std::any>(&closureValue.value);
-        if (!anyPtr) {
-            error("Internal error: Function value is not stored as std::any");
-            return;
-        }
-        auto closure = std::any_cast<std::shared_ptr<Closure>>(*anyPtr);
-        
-        // Save current environment
-        Environment* previousEnv = currentEnv;
-        
-        // Switch to closure's captured environment
-        // This ensures the closure has access to variables from where it was defined
-        currentEnv = closure->env;
-        
-        // Enter new scope for parameters
-        enterScope();
-        
-        // Bind parameters
-        for (size_t i = 0; i < closure->params.size() && i < args.size(); ++i) {
-            currentEnv->define(closure->params[i].lexeme, args[i]);
-        }
-        
-        // Execute body
-        RuntimeValue result;
-        try {
-            if (closure->body) {
-                closure->body->accept(*this);
-            }
-            result = RuntimeValue(std::any(), "void");
-        } catch (ReturnException& ret) {
-            result = ret.value;
-        }
-        
-        // Exit parameter scope
-        exitScope();
-        
-        // Restore original environment
-        currentEnv = previousEnv;
-        
-        lastValue = result;
+        lastValue = executeCallback(closureValue, args);
         return;
     }
 
@@ -1202,9 +1368,12 @@ void Interpreter::visit(VarDecl& stmt) {
 void Interpreter::visit(FunctionDecl& stmt) {
     // Only register functions that have bodies
     // Function declarations without bodies are meant to be native function declarations
+    // We register them anyway so they are found during lookup, and CallExpr handles the native dispatch
+    /*
     if (!stmt.body) {
         return;  // Skip registration - this is a native function declaration
     }
+    */
 
     // If we're loading a module, register function in module namespace
     if (!currentModuleName.empty()) {
@@ -1886,6 +2055,53 @@ void Interpreter::maybeCollectGarbage() {
     //     std::cerr << "[GC] Collected " << collected << " cyclic objects in "
     //               << pauseMs << "ms\n";
     // }
+}
+
+RuntimeValue Interpreter::executeCallback(const RuntimeValue& closureValue, const std::vector<RuntimeValue>& args) {
+    if (closureValue.type != "function") {
+        error("Attempt to call non-function type: " + closureValue.type);
+    }
+
+    // Extract the std::any from the variant, then cast to Closure
+    auto* anyPtr = std::get_if<std::any>(&closureValue.value);
+    if (!anyPtr) {
+        error("Internal error: Function value is not stored as std::any");
+        return RuntimeValue(); // Unreachable
+    }
+    
+    auto closure = std::any_cast<std::shared_ptr<Closure>>(*anyPtr);
+    
+    // Save current environment
+    Environment* previousEnv = currentEnv;
+    
+    // Switch to closure's captured environment
+    currentEnv = closure->env;
+    
+    // Enter new scope for parameters
+    enterScope();
+    
+    // Bind parameters
+    for (size_t i = 0; i < closure->params.size() && i < args.size(); ++i) {
+        currentEnv->define(closure->params[i].lexeme, args[i]);
+    }
+    
+    // Execute body
+    RuntimeValue result(std::any(), "void");
+    try {
+        if (closure->body) {
+            closure->body->accept(*this);
+        }
+    } catch (ReturnException& ret) {
+        result = ret.value;
+    }
+    
+    // Exit parameter scope
+    exitScope();
+    
+    // Restore original environment
+    currentEnv = previousEnv;
+    
+    return result;
 }
 
 } // namespace stratos

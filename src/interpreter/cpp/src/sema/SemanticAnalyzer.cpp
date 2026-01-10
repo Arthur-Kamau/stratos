@@ -62,6 +62,7 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
                         error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined.");
                     }
                     // Register members
+                    std::cout << "DEBUG: Registering class " << classDecl->name.lexeme << " with " << classDecl->methods.size() << " members" << std::endl;
                     for (const auto& member : classDecl->methods) {
                          if (auto* func = dynamic_cast<FunctionDecl*>(member.get())) {
                              std::vector<std::string> pTypes;
@@ -159,12 +160,20 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
     if (expr.op.type == TokenType::DOT) {
         // Handle member access (e.g., obj.field, Enum.VALUE, array.length())
         
+        // Helper to strip generics for member lookup: "List<T>" -> "List"
+        std::string baseType = leftType;
+        size_t paramStart = baseType.find('<');
+        if (paramStart != std::string::npos) {
+            baseType = baseType.substr(0, paramStart);
+        }
+
         // Check visibility for object member access
-        if (classMembers.find(leftType) != classMembers.end()) {
-             // std::cout << "DEBUG: Checking member access " << leftType << "." << rightVar->name.lexeme << std::endl;
+        if (classMembers.find(baseType) != classMembers.end()) {
+             std::cout << "DEBUG: Checking member access base=" << baseType << " method=" << std::endl; 
              if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
+                 std::cout << "DEBUG: Checking method " << rightVar->name.lexeme << std::endl;
                  std::string methodName = rightVar->name.lexeme;
-                 auto& members = classMembers[leftType];
+                 auto& members = classMembers[baseType];
                  if (members.find(methodName) != members.end()) {
                      Symbol methodSym = members[methodName];
                      
@@ -873,17 +882,28 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
                 if (auto* rightVar = dynamic_cast<VariableExpr*>(binExpr->right.get())) {
                     std::string methodName = rightVar->name.lexeme;
 
+                    // Strip generics
+                    std::string baseType = leftType;
+                    size_t paramStart = baseType.find('<');
+                    if (paramStart != std::string::npos) {
+                        baseType = baseType.substr(0, paramStart);
+                    }
+
                     // Check class members
-                    if (classMembers.find(leftType) != classMembers.end()) {
-                        auto& members = classMembers[leftType];
+                    if (classMembers.find(baseType) != classMembers.end()) {
+                        auto& members = classMembers[baseType];
                         if (members.find(methodName) != members.end()) {
-                            std::cout << "DEBUG: Inferred method type " << leftType << "." << methodName << " -> " << members[methodName].returnType << std::endl;
+                            // std::cout << "DEBUG: Inferred method type " << baseType << "." << methodName << " -> " << members[methodName].returnType << std::endl;
                             return members[methodName].returnType;
                         } else {
-                            std::cout << "DEBUG: Method " << methodName << " not found in class " << leftType << std::endl;
+                            std::cout << "DEBUG: Method " << methodName << " not found in class " << baseType << ". Available: ";
+                            for (const auto& kv : members) std::cout << kv.first << " ";
+                            std::cout << std::endl;
                         }
                     } else {
-                         std::cout << "DEBUG: Class " << leftType << " not found in classMembers during inference" << std::endl;
+                         std::cout << "DEBUG: Class " << baseType << " not found. Available: ";
+                         for (const auto& kv : classMembers) std::cout << kv.first << " ";
+                         std::cout << std::endl;
                     }
 
                     // Check generic symbols (e.g. module functions)
