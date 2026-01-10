@@ -113,6 +113,9 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
                         for (const auto& p : func->parameters) pTypes.push_back(p.type);
                         Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic);
                         classMembers[classDecl->name.lexeme][func->name.lexeme] = sym;
+                    } else if (auto* var = dynamic_cast<VarDecl*>(member.get())) {
+                        Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, false);
+                        classMembers[classDecl->name.lexeme][var->name.lexeme] = sym;
                     }
             }
         } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(statements[i].get())) {
@@ -158,6 +161,7 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
         
         // Check visibility for object member access
         if (classMembers.find(leftType) != classMembers.end()) {
+             // std::cout << "DEBUG: Checking member access " << leftType << "." << rightVar->name.lexeme << std::endl;
              if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
                  std::string methodName = rightVar->name.lexeme;
                  auto& members = classMembers[leftType];
@@ -169,6 +173,7 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
                      if (!isAccessible) {
                          error(rightVar->name, "Method '" + methodName + "' is private and cannot be accessed from outside class '" + leftType + "'.");
                      }
+                     return; // Resolved as class member
                  }
              }
         }
@@ -752,6 +757,11 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
                             for (const auto& p : func->parameters) pTypes.push_back(p.type);
                             Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic);
                             classMembers[classDecl->name.lexeme][func->name.lexeme] = sym;
+                            std::cout << "DEBUG: Registered method " << classDecl->name.lexeme << "." << func->name.lexeme << " return=" << func->returnType << std::endl;
+                        } else if (auto* var = dynamic_cast<VarDecl*>(member.get())) {
+                            Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, false);
+                            classMembers[classDecl->name.lexeme][var->name.lexeme] = sym;
+                            std::cout << "DEBUG: Registered field " << classDecl->name.lexeme << "." << var->name.lexeme << " type=" << var->typeName << std::endl;
                         }
                     }
                 } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(statements[i].get())) {
@@ -803,6 +813,17 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
         std::string leftType = inferType(binary->left.get());
         
         if (binary->op.type == TokenType::DOT) {
+            // Check lookup for fields
+             if (classMembers.find(leftType) != classMembers.end()) {
+                 if (auto* rightVar = dynamic_cast<VariableExpr*>(binary->right.get())) {
+                      std::string name = rightVar->name.lexeme;
+                      if (classMembers[leftType].count(name)) {
+                          // std::cout << "DEBUG: Inferred member " << leftType << "." << name << " -> " << classMembers[leftType][name].type << std::endl;
+                          return classMembers[leftType][name].type; // For fields and methods (return type)
+                      }
+                 }
+            }
+
             if (leftType.find("Array<") == 0 || leftType == "Array") {
                 if (auto* rightVar = dynamic_cast<VariableExpr*>(binary->right.get())) {
                     std::string memberName = rightVar->name.lexeme;
@@ -851,6 +872,27 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
                 std::string leftType = inferType(binExpr->left.get());
                 if (auto* rightVar = dynamic_cast<VariableExpr*>(binExpr->right.get())) {
                     std::string methodName = rightVar->name.lexeme;
+
+                    // Check class members
+                    if (classMembers.find(leftType) != classMembers.end()) {
+                        auto& members = classMembers[leftType];
+                        if (members.find(methodName) != members.end()) {
+                            std::cout << "DEBUG: Inferred method type " << leftType << "." << methodName << " -> " << members[methodName].returnType << std::endl;
+                            return members[methodName].returnType;
+                        } else {
+                            std::cout << "DEBUG: Method " << methodName << " not found in class " << leftType << std::endl;
+                        }
+                    } else {
+                         std::cout << "DEBUG: Class " << leftType << " not found in classMembers during inference" << std::endl;
+                    }
+
+                    // Check generic symbols (e.g. module functions)
+                    if (leftType == "module") {
+                         auto sym = symbolTable.resolve(methodName);
+                         if (sym && sym->kind == SymbolKind::FUNCTION) {
+                             return sym->returnType;
+                         }
+                    }
 
 
                      

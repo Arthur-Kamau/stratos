@@ -157,10 +157,10 @@ class Statement {
 
 // Transaction represents a database transaction
 class Transaction {
-    var db: any;
+    var db: Database;
     var committed: bool;
 
-    constructor(database: any) {
+    constructor(database: Database) {
         this.db = database;
         this.committed = false;
     }
