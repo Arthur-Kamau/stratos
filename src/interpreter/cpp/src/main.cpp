@@ -85,9 +85,9 @@ void printHelp() {
     std::string version = getVersion();
     std::cout << "Stratos Interpreter v" << version << "\n\n";
     std::cout << "Usage:\n";
-    std::cout << "  stratos <file.st>              Compile a single file\n";
-    std::cout << "  stratos compile <file.st>      Compile a single file\n";
-    std::cout << "  stratos compile <directory>    Compile all .st files in directory\n";
+    std::cout << "  stratos <file.st>              Compile a single file to binary\n";
+    std::cout << "  stratos compile <file.st>      Compile a single file to binary\n";
+    std::cout << "  stratos generate-ir <file.st>  Generate LLVM IR (.ll) file\n";
     std::cout << "  stratos run <file.st>          Execute a Stratos program directly\n";
     std::cout << "  stratos run                    Execute project (uses stratos.conf in current dir)\n";
     std::cout << "  stratos check <file.st>        Parse and analyze without code generation\n";
@@ -142,6 +142,7 @@ void printVersion() {
 struct CompileResult {
     bool success;
     std::string errorMessage;
+    std::string outputFilePath;
     double compilationTime;  // in milliseconds
 };
 
@@ -229,6 +230,7 @@ CompileResult compileFile(const std::string& path, const std::string& outputPath
             std::string irPath = outputPath.empty() ? (path + ".ll") : outputPath;
             IRGenerator generator(irPath);
             generator.generate(statements);
+            result.outputFilePath = irPath;
             if (verbose) std::cout << "  [CodeGen]   Generated " << irPath << std::endl;
         }
 
@@ -246,13 +248,13 @@ CompileResult compileFile(const std::string& path, const std::string& outputPath
     return result;
 }
 
-int handleCompile(int argc, char* argv[]) {
+int handleGenerateIR(int argc, char* argv[]) {
     // Parse arguments
     std::string inputPath;
     std::string outputPath;
     bool verbose = false;
 
-    int argStart = (std::string(argv[1]) == "compile") ? 2 : 1;
+    int argStart = (std::string(argv[1]) == "generate-ir") ? 2 : 1;
 
     if (argc <= argStart) {
         std::cerr << "Error: No input file specified\n\n";
@@ -320,6 +322,112 @@ int handleCompile(int argc, char* argv[]) {
             return 1;
         }
 
+    } else {
+        std::cerr << "Error: Input path not found: " << inputPath << std::endl;
+        return 1;
+    }
+}
+
+int handleCompile(int argc, char* argv[]) {
+    // Parse arguments
+    std::string inputPath;
+    std::string outputPath;
+    bool verbose = false;
+    bool runBinary = false;
+
+    std::string command = argv[1];
+    int argStart = (command == "compile") ? 2 : 1;
+    
+    // Auto-run if not explicitly "compile" command (e.g. stratos file.st)
+    if (command != "compile") {
+        runBinary = true;
+    }
+
+    if (argc <= argStart) {
+        std::cerr << "Error: No input file specified\n\n";
+        printHelp();
+        return 1;
+    }
+
+    inputPath = argv[argStart];
+
+    // Parse options
+    for (int i = argStart + 1; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "-o" || arg == "--output") {
+            if (i + 1 < argc) {
+                outputPath = argv[++i];
+            }
+        } else if (arg == "-v" || arg == "--verbose") {
+            verbose = true;
+        } else if (arg == "-r" || arg == "--run") {
+            runBinary = true;
+        }
+    }
+
+    // Default output path handling
+    std::string binaryOutputPath = outputPath;
+    if (binaryOutputPath.empty()) {
+        fs::path inputFsPath(inputPath);
+        std::string filename = inputFsPath.stem().string();
+        
+        // Ensure build directory exists
+        if (!fs::exists("build")) {
+            fs::create_directory("build");
+        }
+        
+        binaryOutputPath = (fs::path("build") / filename).string();
+#ifdef _WIN32
+        binaryOutputPath += ".exe";
+#endif
+    }
+
+    // Reuse handleGenerateIR logic (via compileFile) to generate the .ll file
+    // We force output to a temp location in build/ or just use the intermediate .ll
+    fs::path intermediateLL = fs::path(binaryOutputPath).parent_path() / (fs::path(binaryOutputPath).stem().string() + ".ll");
+    
+    // Check if input is a file
+    if (fs::is_regular_file(inputPath)) {
+        if (verbose) std::cout << "Compiling IR..." << std::endl;
+        
+        CompileResult result = compileFile(inputPath, intermediateLL.string(), verbose);
+
+        if (!result.success) {
+            std::cerr << "Compilation failed: " << result.errorMessage << std::endl;
+            return 1;
+        }
+
+        if (verbose) std::cout << "Generated IR: " << result.outputFilePath << std::endl;
+        if (verbose) std::cout << "Compiling to binary: " << binaryOutputPath << std::endl;
+
+        // Invoke Clang
+        std::string clangCmd = "clang \"" + result.outputFilePath + "\" -o \"" + binaryOutputPath + "\"";
+        if (verbose) std::cout << "Running: " << clangCmd << std::endl;
+        
+        int clangResult = std::system(clangCmd.c_str());
+        
+        if (clangResult != 0) {
+            std::cerr << "Error: Clang compilation failed. Ensure 'clang' is in your PATH." << std::endl;
+            return 1;
+        }
+        
+        if (!verbose && !runBinary) {
+             std::cout << "Successfully compiled " << inputPath << " to " << binaryOutputPath << std::endl;
+        }
+
+        if (runBinary) {
+            if (verbose) std::cout << "Executing binary: " << binaryOutputPath << std::endl;
+            // On Windows, we might need to quote the command if it has spaces
+            std::string runCmd = "\"" + binaryOutputPath + "\"";
+            int runResult = std::system(runCmd.c_str());
+            return runResult;
+        }
+
+        return 0;
+
+    } else if (fs::is_directory(inputPath)) {
+        std::cerr << "Directory compilation not fully supported in this mode yet. Use 'generate-ir' or 'build' for projects." << std::endl;
+        return 1;
     } else {
         std::cerr << "Error: Input path not found: " << inputPath << std::endl;
         return 1;
@@ -1687,6 +1795,10 @@ int main(int argc, char* argv[]) {
 
     if (command == "doc") {
         return handleDoc(argc, argv);
+    }
+
+    if (command == "generate-ir") {
+        return handleGenerateIR(argc, argv);
     }
 
     if (command == "compile" || command.ends_with(".st")) {
