@@ -1065,10 +1065,13 @@ int handleNew(int argc, char* argv[]) {
         confFile << "  entry = src/main.st\n";
         confFile << "  output = build/" << projectName << "\n";
         confFile << "}\n\n";
-        confFile << "dependencies {\n";
-        confFile << "  # Add dependencies here\n";
-        confFile << "  # example = \"libs/example\"\n";
-        confFile << "}\n";
+        confFile << "dependencies = [\n";
+        confFile << "  # {\n";
+        confFile << "  #   name = \"example\"\n";
+        confFile << "  #   url = \"https://github.com/example/lib\"\n";
+        confFile << "  #   tag = \"v1.0.0\"\n";
+        confFile << "  # }\n";
+        confFile << "]\n";
         confFile.close();
 
         // Create main.st
