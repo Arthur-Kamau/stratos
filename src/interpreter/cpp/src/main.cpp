@@ -579,8 +579,25 @@ int handleRun(int argc, char* argv[]) {
 
             // Move statements to combined list
             for (auto& stmt : statements) {
+                // Enforce "package main" for files at project root
+                if (auto* pkgDecl = dynamic_cast<PackageDecl*>(stmt.get())) {
+                    fs::path filePath = fs::absolute(file);
+                    fs::path rootPath = fs::absolute(projectRoot);
+                    
+                    // Check if file is directly in project root
+                    // We compare parent path. Note: projectRoot might not have trailing slash, so parent_path comparison is safe.
+                    if (filePath.parent_path() == rootPath) {
+                        if (pkgDecl->name.lexeme != "main") {
+                             compilationSuccess = false;
+                             compilationErrorMessage = "Error in " + file + ": Files at the project root must be in 'package main', found 'package " + pkgDecl->name.lexeme + "'. (See https://stratos-lang.org/docs/packages)";
+                             break;
+                        }
+                    }
+                }
+                
                 allStatements.push_back(std::move(stmt));
             }
+            if (!compilationSuccess) break;
         } catch (const std::exception& e) {
             compilationSuccess = false;
             compilationErrorMessage = "Error in " + file + ": " + e.what();

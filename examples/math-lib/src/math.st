@@ -15,7 +15,7 @@ fn square(x: double) double {
 }
 
 fn main() {
-    println("hellp");
+    println("hello");
     val y = add(5, 5);
     println(y);
 
