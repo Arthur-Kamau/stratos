@@ -378,35 +378,38 @@ Drawing circle with radius 3.0
 Polymorphism allows you to write generic code that works with any type implementing an interface, making your code more flexible and reusable.
 :::
 
-## Static Members
+## Package-Level Members
+> [!NOTE]
+> **Static Members:** Stratos does not support `static` members within classes. Instead, place functions and variables at the root of the package.
 
-Classes can have static members that belong to the class rather than instances:
+To create shared functionality or constants typically associated with static members in other languages, simply define them at the top level of your package file (e.g., `init.st`).
 
 ```stratos
-package main;
+// std/math/init.st
+package math;
 
-class MathUtils {
-    static val PI: double = 3.14159;
+// Package-level constant (simulating static constant)
+val PI: double = 3.14159;
 
-    static fn square(x: double) double {
-        return x * x;
-    }
-
-    static fn circleArea(radius: double) double {
-        return MathUtils.PI * radius * radius;
-    }
+// Package-level function (simulating static method)
+fn square(x: double) double {
+    return x * x;
 }
 
-fn main() {
-    print("PI = " + MathUtils.PI);
-    print("Square of 5 = " + MathUtils.square(5.0));
-    print("Circle area (r=3) = " + MathUtils.circleArea(3.0));
+fn circleArea(radius: double) double {
+    return PI * radius * radius;
 }
 ```
 
-::: tip Static Members
-Static members are accessed through the class name, not through instances. They're useful for utility functions and constants that don't depend on instance state.
-:::
+Usage:
+```stratos
+import math;
+
+fn main() {
+    print("PI = " + math.PI);
+    print("Square of 5 = " + math.square(5.0));
+}
+```
 
 ## Properties (Getters and Setters)
 
@@ -658,7 +661,6 @@ Use interfaces to define contracts. This makes your code more testable and allow
 | Super call | `super(args)` | Call parent constructor |
 | Private | `private var field` | Restrict access |
 | Public Method | `pub fn method()` | Export method |
-| Static | `static fn method()` | Class-level member |
 | This | `this.field` | Reference current instance |
 
 ## Next Steps

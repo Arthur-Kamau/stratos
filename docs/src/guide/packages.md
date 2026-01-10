@@ -266,7 +266,8 @@ class Calculator {
 ```
 
 ::: info Visibility Rules
-By default, all top-level functions and classes are public (exported). Use the `private` keyword to make them internal to the package.
+- **Top-Level Items:** Functions and classes declared at the top level of a file are **public by default**. They are exported and can be used by other files that import the package. You can use the `private` keyword to make them internal to the package.
+- **Class Members:** In contrast, methods and fields defined within a class are **private by default**. You must explicitly use the `pub` keyword to make them accessible from outside the class.
 :::
 
 ## Selective Imports (Future Feature)
@@ -677,14 +678,15 @@ class AppConfig {
         this.host = host;
         this.debug = debug;
     }
+}
 
-    static fn fromEnv() AppConfig {
-        val port = env.get("PORT").unwrapOr("8080").toInt();
-        val host = env.get("HOST").unwrapOr("localhost");
-        val debug = env.get("DEBUG").unwrapOr("false") == "true";
+// Package-level factory function (replaces static method)
+fn fromEnv() AppConfig {
+    val port = env.get("PORT").unwrapOr("8080").toInt();
+    val host = env.get("HOST").unwrapOr("localhost");
+    val debug = env.get("DEBUG").unwrapOr("false") == "true";
 
-        return AppConfig(port, host, debug);
-    }
+    return AppConfig(port, host, debug);
 }
 ```
 
