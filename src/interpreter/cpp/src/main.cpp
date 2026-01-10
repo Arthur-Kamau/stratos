@@ -591,7 +591,7 @@ int handleRun(int argc, char* argv[]) {
     if (compilationSuccess) {
         try {
             // Semantic Analysis on all statements
-            SemanticAnalyzer analyzer;
+            SemanticAnalyzer analyzer(projectRoot.string());
             if (!analyzer.analyze(allStatements)) {
                 compilationSuccess = false;
                 compilationErrorMessage = "Semantic analysis failed";
@@ -749,7 +749,7 @@ int handleTest(int argc, char* argv[]) {
 // PROJECT BUILD
 // ============================================================================
 
-CompileResult compileMultipleFiles(const std::vector<std::string>& files, const std::string& outputPath, bool verbose) {
+CompileResult compileMultipleFiles(const std::vector<std::string>& files, const std::string& outputPath, bool verbose, const std::string& projectRoot = ".") {
     CompileResult result;
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -790,7 +790,7 @@ CompileResult compileMultipleFiles(const std::vector<std::string>& files, const 
 
     try {
         // Semantic Analysis on all statements
-        SemanticAnalyzer analyzer;
+        SemanticAnalyzer analyzer(projectRoot);
         if (!analyzer.analyze(allStatements)) {
             result.success = false;
             result.errorMessage = "Semantic analysis failed";
@@ -964,7 +964,7 @@ int handleBuild(int argc, char* argv[]) {
 
     // Compile
     std::cout << "Compiling " << sourceFiles.size() << " file(s)...\n";
-    CompileResult result = compileMultipleFiles(sourceFiles, outputPath, verbose);
+    CompileResult result = compileMultipleFiles(sourceFiles, outputPath, verbose, projectRoot);
 
     if (result.success) {
         std::cout << "✓ Build successful in " << result.compilationTime << "ms\n";

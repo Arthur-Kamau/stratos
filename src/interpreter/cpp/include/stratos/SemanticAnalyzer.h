@@ -10,7 +10,7 @@ namespace stratos {
 
 class SemanticAnalyzer : public ASTVisitor {
 public:
-    SemanticAnalyzer();
+    SemanticAnalyzer(std::string projectRoot = ".");
     
     // Returns true if no errors were found
     bool analyze(const std::vector<std::unique_ptr<Stmt>>& statements);
@@ -48,6 +48,7 @@ private:
     std::vector<std::string> loadedModules; // Track already loaded modules
     std::string lastExprType; // Track the type of the last evaluated expression
     std::string currentClassName; // Track current class name for 'this' context
+    std::string projectRoot; 
 
     void error(const std::string& message); // Generic (no loc)
     void error(Token token, const std::string& message); // With loc

@@ -10,7 +10,7 @@
 
 namespace stratos {
 
-SemanticAnalyzer::SemanticAnalyzer() {
+SemanticAnalyzer::SemanticAnalyzer(std::string root) : projectRoot(root) {
     defineNativeFunctions();
 }
 
@@ -31,11 +31,50 @@ void SemanticAnalyzer::defineNativeFunctions() {
 bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& statements) {
     hadError = false;
 
-    // First pass: Collect all function, class, and enum declarations
+    // Zero-th pass: Register all packages present in the compilation unit as loaded
+    for (const auto& stmt : statements) {
+        if (auto* pkgDecl = dynamic_cast<PackageDecl*>(stmt.get())) {
+            // Check if already in loadedModules to avoid duplicates (e.g. multiple files in same package)
+            if (std::find(loadedModules.begin(), loadedModules.end(), pkgDecl->name.lexeme) == loadedModules.end()) {
+                loadedModules.push_back(pkgDecl->name.lexeme);
+            }
+        }
+    }
+
+    // First pass: Collect all function, class, and enum declarations (including inside packages)
     for (size_t i = 0; i < statements.size(); ++i) {
         if (!statements[i]) continue;
 
-        // Only process declarations, not their bodies
+        // Check for PackageDecl and process its contents
+        if (auto* pkgDecl = dynamic_cast<PackageDecl*>(statements[i].get())) {
+            for (const auto& decl : pkgDecl->declarations) {
+                if (auto* funcDecl = dynamic_cast<FunctionDecl*>(decl.get())) {
+                    std::vector<std::string> paramTypes;
+                    for (const auto& param : funcDecl->parameters) {
+                        paramTypes.push_back(param.type);
+                    }
+                    Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType);
+                    if (!symbolTable.define(funcSymbol)) {
+                        error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined.");
+                    }
+                } else if (auto* classDecl = dynamic_cast<ClassDecl*>(decl.get())) {
+                    if (!symbolTable.define(Symbol{classDecl->name.lexeme, SymbolKind::CLASS, classDecl->name.lexeme, false})) {
+                        error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined.");
+                    }
+                } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(decl.get())) {
+                    if (!symbolTable.define(Symbol{enumDecl->name.lexeme, SymbolKind::CLASS, enumDecl->name.lexeme, false})) {
+                        error(enumDecl->name, "Enum '" + enumDecl->name.lexeme + "' is already defined.");
+                    }
+                    for (const auto& value : enumDecl->values) {
+                        std::string fullName = enumDecl->name.lexeme + "." + value.lexeme;
+                        symbolTable.define(Symbol::Variable(fullName, enumDecl->name.lexeme, false));
+                    }
+                }
+            }
+            continue;
+        }
+
+        // Only process declarations, not their bodies (for top-level non-packaged code)
         if (auto* funcDecl = dynamic_cast<FunctionDecl*>(statements[i].get())) {
             std::vector<std::string> paramTypes;
             for (const auto& param : funcDecl->parameters) {
@@ -505,16 +544,16 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
     // Possible module file locations
     std::vector<std::string> searchPaths = {
         // Internal project packages (highest priority)
-        "src/" + moduleName + "/init.st",
-        "src/" + moduleName + "/" + moduleName + ".st",
+        projectRoot + "/src/" + moduleName + "/init.st",
+        projectRoot + "/src/" + moduleName + "/" + moduleName + ".st",
 
         // Dependencies directory
-        "deps/" + moduleName + "/src/init.st",
-        "deps/" + moduleName + "/src/" + moduleName + ".st",
-        "../deps/" + moduleName + "/src/init.st",
-        "../deps/" + moduleName + "/src/" + moduleName + ".st",
+        projectRoot + "/deps/" + moduleName + "/src/init.st",
+        projectRoot + "/deps/" + moduleName + "/src/" + moduleName + ".st",
+        projectRoot + "/../deps/" + moduleName + "/src/init.st",
+        projectRoot + "/../deps/" + moduleName + "/src/" + moduleName + ".st",
 
-        // Current directory
+        // Current directory (fallback)
         "std/" + moduleName + "/init.st",
         "std/encoding/" + moduleName + "/init.st",
 
@@ -555,7 +594,7 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
 
     // If no specific module file was found, check if module directory exists
     if (moduleFilePath.empty()) {
-        std::string moduleDir = "src/" + moduleName;
+        std::string moduleDir = projectRoot + "/src/" + moduleName;
         if (fs::exists(moduleDir) && fs::is_directory(moduleDir)) {
             moduleFilePath = moduleDir;
             isUserModule = true;

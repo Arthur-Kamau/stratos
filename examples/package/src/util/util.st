@@ -7,3 +7,8 @@ class Util{
          println("util hello");
      }
 }
+
+struct UtilStruct{
+   x: i32,
+   y: i32
+}

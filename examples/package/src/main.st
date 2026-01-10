@@ -3,19 +3,6 @@ package main;
 use util;
 use name;
 
-// Classes defined in the main package
-class Base{
-     fn hello(){
-         println("base hello");
-     }
-}
-
-class Core{
-     fn hello(){
-         println("core hello");
-     }
-}
-
 // files in src belong to main package
 fn main(){
 
@@ -31,4 +18,7 @@ fn main(){
     val n = Name();
     n.helloName();
 
+
+    // letx x = UtilStruct{ x: 10, y: 20 };
+    // println("UtilStruct x: " + x.x.toString() + ", y: "
 }
