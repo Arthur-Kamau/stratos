@@ -155,9 +155,24 @@ fn average(numbers: Array<double>) double {
     return sum(numbers) / numbers.length();
 }
 
+// Sort array of doubles (Bubble sort) - Modifies input array
+fn sortDoubleArrayInPlace(arr: Array<double>) void {
+    val n = arr.length();
+    for val i in 0..(n - 1) {
+        for val j in 0..(n - i - 1) {
+             if arr[j] > arr[j + 1] {
+                 val temp = arr[j];
+                 arr[j] = arr[j + 1];
+                 arr[j + 1] = temp;
+             }
+        }
+    }
+}
+
 // Median of array
 fn median(numbers: Array<double>) double {
-    val sorted = numbers.sort();
+    sortDoubleArrayInPlace(numbers);
+    val sorted = numbers;
     val len = sorted.length();
 
     if len == 0 {
