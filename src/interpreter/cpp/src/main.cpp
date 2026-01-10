@@ -592,6 +592,16 @@ int handleRun(int argc, char* argv[]) {
                              compilationErrorMessage = "Error in " + file + ": Files at the project root must be in 'package main', found 'package " + pkgDecl->name.lexeme + "'. (See https://stratos-lang.org/docs/packages)";
                              break;
                         }
+                    } else {
+                         // Non-root file: if package is not "main", it must match the directory name
+                         if (pkgDecl->name.lexeme != "main") {
+                             std::string dirName = filePath.parent_path().filename().string();
+                             if (pkgDecl->name.lexeme != dirName) {
+                                  compilationSuccess = false;
+                                  compilationErrorMessage = "Error in " + file + ": Package name '" + pkgDecl->name.lexeme + "' does not match directory name '" + dirName + "'.";
+                                  break;
+                             }
+                         }
                     }
                 }
                 

@@ -1,7 +1,8 @@
 package main;
 
 use util;
-use name;
+use animal;
+use animal.cat;
 
 // files in src belong to main package
 fn main(){
@@ -14,11 +15,13 @@ fn main(){
     val u = Util();
     u.hello();
 
-    // use class Name from name package
-    val n = Name();
-    n.helloName();
+    // use class Animolia from animal package
+    val n = Animolia();
+    n.helloAnimolia();
+
+    // use struct BirmanCat from cat package
+    val k = BirmanCat{name: "Lola", age: 10};
+    println("The Birman cat name: {} age: {}", k.name, k.age);
 
 
-    // letx x = UtilStruct{ x: 10, y: 20 };
-    // println("UtilStruct x: " + x.x.toString() + ", y: "
 }
