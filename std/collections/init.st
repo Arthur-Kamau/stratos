@@ -11,23 +11,23 @@ class List<T> {
     var items: Array<T>;
     var size: int;
 
-    fn add(item: T) void;
-    fn get(index: int) T;
-    fn set(index: int, item: T) void;
-    fn remove(index: int) T;
-    fn clear() void;
-    fn isEmpty() bool;
-    fn length() int;
+    pub fn add(item: T) void;
+    pub fn get(index: int) T;
+    pub fn set(index: int, item: T) void;
+    pub fn remove(index: int) T;
+    pub fn clear() void;
+    pub fn isEmpty() bool;
+    pub fn length() int;
 
     // Higher-order functions
-    fn map(fn: Function<T, R>) List<R>;
-    fn filter(predicate: Function<T, bool>) List<T>;
-    fn reduce(initial: R, fn: Function<R, T, R>) R;
-    fn forEach(fn: Function<T, void>) void;
-    fn find(predicate: Function<T, bool>) T?;
-    fn any(predicate: Function<T, bool>) bool;
-    fn all(predicate: Function<T, bool>) bool;
-    fn sort(comparator: Function<T, T, int>) List<T>;
+    pub fn map(fn: Function<T, R>) List<R>;
+    pub fn filter(predicate: Function<T, bool>) List<T>;
+    pub fn reduce(initial: R, fn: Function<R, T, R>) R;
+    pub fn forEach(fn: Function<T, void>) void;
+    pub fn find(predicate: Function<T, bool>) T?;
+    pub fn any(predicate: Function<T, bool>) bool;
+    pub fn all(predicate: Function<T, bool>) bool;
+    pub fn sort(comparator: Function<T, T, int>) List<T>;
 }
 
 class Map<K, V> {
@@ -35,31 +35,31 @@ class Map<K, V> {
     var values: Array<V>;
     var size: int;
 
-    fn put(key: K, value: V) void;
-    fn get(key: K) V?;
-    fn remove(key: K) V?;
-    fn containsKey(key: K) bool;
-    fn clear() void;
-    fn isEmpty() bool;
-    fn length() int;
-    fn keys() List<K>;
-    fn values() List<V>;
-    fn entries() List<Pair<K, V>>;
+    pub fn put(key: K, value: V) void;
+    pub fn get(key: K) V?;
+    pub fn remove(key: K) V?;
+    pub fn containsKey(key: K) bool;
+    pub fn clear() void;
+    pub fn isEmpty() bool;
+    pub fn length() int;
+    pub fn keys() List<K>;
+    pub fn values() List<V>;
+    pub fn entries() List<Pair<K, V>>;
 }
 
 class Set<T> {
     var items: Array<T>;
     var size: int;
 
-    fn add(item: T) bool;
-    fn remove(item: T) bool;
-    fn contains(item: T) bool;
-    fn clear() void;
-    fn isEmpty() bool;
-    fn length() int;
-    fn union(other: Set<T>) Set<T>;
-    fn intersection(other: Set<T>) Set<T>;
-    fn difference(other: Set<T>) Set<T>;
+    pub fn add(item: T) bool;
+    pub fn remove(item: T) bool;
+    pub fn contains(item: T) bool;
+    pub fn clear() void;
+    pub fn isEmpty() bool;
+    pub fn length() int;
+    pub fn union(other: Set<T>) Set<T>;
+    pub fn intersection(other: Set<T>) Set<T>;
+    pub fn difference(other: Set<T>) Set<T>;
 }
 
 class Queue<T> {
@@ -68,22 +68,22 @@ class Queue<T> {
     var rear: int;
     var size: int;
 
-    fn enqueue(item: T) void;
-    fn dequeue() T?;
-    fn peek() T?;
-    fn isEmpty() bool;
-    fn length() int;
+    pub fn enqueue(item: T) void;
+    pub fn dequeue() T?;
+    pub fn peek() T?;
+    pub fn isEmpty() bool;
+    pub fn length() int;
 }
 
 class Stack<T> {
     var items: Array<T>;
     var top: int;
 
-    fn push(item: T) void;
-    fn pop() T?;
-    fn peek() T?;
-    fn isEmpty() bool;
-    fn length() int;
+    pub fn push(item: T) void;
+    pub fn pop() T?;
+    pub fn peek() T?;
+    pub fn isEmpty() bool;
+    pub fn length() int;
 }
 
 class Pair<K, V> {

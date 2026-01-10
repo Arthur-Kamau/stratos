@@ -43,8 +43,8 @@ class TestRunner {
     var results: Array<TestResult>;
     var verbose: bool;
 
-    fn run() TestReport;
-    fn runSuite(suite: TestSuite) Array<TestResult>;
+    pub fn run() TestReport;
+    pub fn runSuite(suite: TestSuite) Array<TestResult>;
 }
 
 class TestReport {
@@ -55,23 +55,23 @@ class TestReport {
     var duration: time.Duration;
     var results: Array<TestResult>;
 
-    fn print() void;
-    fn toJSON() json.JsonValue;
+    pub fn print() void;
+    pub fn toJSON() json.JsonValue;
 }
 
 class Assertion {
     var context: string;
 
-    fn equals(actual: any, expected: any) void;
-    fn notEquals(actual: any, expected: any) void;
-    fn isTrue(value: bool) void;
-    fn isFalse(value: bool) void;
-    fn isNull(value: any?) void;
-    fn isNotNull(value: any?) void;
-    fn throws(fn: Function) void;
-    fn contains(haystack: string, needle: string) void;
-    fn startsWith(str: string, prefix: string) void;
-    fn endsWith(str: string, suffix: string) void;
+    pub fn equals(actual: any, expected: any) void;
+    pub fn notEquals(actual: any, expected: any) void;
+    pub fn isTrue(value: bool) void;
+    pub fn isFalse(value: bool) void;
+    pub fn isNull(value: any?) void;
+    pub fn isNotNull(value: any?) void;
+    pub fn throws(fn: Function) void;
+    pub fn contains(haystack: string, needle: string) void;
+    pub fn startsWith(str: string, prefix: string) void;
+    pub fn endsWith(str: string, suffix: string) void;
 }
 
 // ============================================================================
@@ -260,17 +260,17 @@ class Mock<T> {
         this.implementation = null;
     }
 
-    fn mockReturnValue(value: T) Mock<T> {
+    pub fn mockReturnValue(value: T) Mock<T> {
         this.returnValues.add(value);
         return this;
     }
 
-    fn mockImplementation(fn: Function) Mock<T> {
+    pub fn mockImplementation(fn: Function) Mock<T> {
         this.implementation = fn;
         return this;
     }
 
-    fn call(args: Array<any>) T {
+    pub fn call(args: Array<any>) T {
         this.calls.add(args);
 
         if this.implementation != null {
@@ -284,15 +284,15 @@ class Mock<T> {
         return null;
     }
 
-    fn getCalls() Array<Array<any>> {
+    pub fn getCalls() Array<Array<any>> {
         return this.calls;
     }
 
-    fn getCallCount() int {
+    pub fn getCallCount() int {
         return this.calls.length();
     }
 
-    fn wasCalledWith(args: Array<any>) bool {
+    pub fn wasCalledWith(args: Array<any>) bool {
         for val call in this.calls {
             var match = true;
             for i in 0..args.length() {
@@ -308,7 +308,7 @@ class Mock<T> {
         return false;
     }
 
-    fn reset() void {
+    pub fn reset() void {
         this.calls = Array<Array<any>>();
     }
 }
@@ -327,16 +327,16 @@ class Spy<T> {
         this.calls = Array<Array<any>>();
     }
 
-    fn call(args: Array<any>) T {
+    pub fn call(args: Array<any>) T {
         this.calls.add(args);
         return this.originalFn(args);
     }
 
-    fn getCalls() Array<Array<any>> {
+    pub fn getCalls() Array<Array<any>> {
         return this.calls;
     }
 
-    fn reset() void {
+    pub fn reset() void {
         this.calls = Array<Array<any>>();
     }
 }
@@ -357,7 +357,7 @@ class Benchmark {
         this.results = Array<time.Duration>();
     }
 
-    fn run(fn: Function) void {
+    pub fn run(fn: Function) void {
         for i in 0..this.iterations {
             val start = time.now();
             fn();
@@ -366,7 +366,7 @@ class Benchmark {
         }
     }
 
-    fn report() void {
+    pub fn report() void {
         val total = this.results.reduce(time.milliseconds(0), (acc, dur) => {
             return acc.add(dur);
         });
@@ -399,7 +399,7 @@ class Snapshot {
         this.load();
     }
 
-    fn load() void {
+    pub fn load() void {
         if io.exists(this.snapshotFile) {
             val content = io.readFile(this.snapshotFile);
             if content.ok() {
@@ -411,12 +411,12 @@ class Snapshot {
         }
     }
 
-    fn save() void {
+    pub fn save() void {
         val data = json.jsonObject(this.snapshots);
         io.writeFile(this.snapshotFile, json.pretty(data));
     }
 
-    fn match(key: string, value: string) bool {
+    pub fn match(key: string, value: string) bool {
         if !this.snapshots.containsKey(key) {
             // Create new snapshot
             this.snapshots.put(key, value);
@@ -436,8 +436,8 @@ fn snapshot(file: string) Snapshot {
 class Coverage {
     var files: Map<string, FileCoverage>;
 
-    fn add(file: string, line: int) void;
-    fn report() void;
+    pub fn add(file: string, line: int) void;
+    pub fn report() void;
 }
 
 class FileCoverage {
@@ -445,7 +445,7 @@ class FileCoverage {
     var lines: Set<int>;
     var totalLines: int;
 
-    fn percentage() double {
+    pub fn percentage() double {
         return (this.lines.length() * 100.0) / this.totalLines;
     }
 }

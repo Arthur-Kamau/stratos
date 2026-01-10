@@ -14,16 +14,16 @@ class Reader {
     var trimLeadingSpace: bool;
     var fieldsPerRecord: int;  // -1 for variable
 
-    fn read(input: string) Result<Array<Array<string>>, Error>;
-    fn readRecord(line: string) Result<Array<string>, Error>;
+    pub fn read(input: string) Result<Array<Array<string>>, Error>;
+    pub fn readRecord(line: string) Result<Array<string>, Error>;
 }
 
 class Writer {
     var delimiter: string;
     var useCRLF: bool;
 
-    fn write(records: Array<Array<string>>) string;
-    fn writeRecord(record: Array<string>) string;
+    pub fn write(records: Array<Array<string>>) string;
+    pub fn writeRecord(record: Array<string>) string;
 }
 
 // ============================================================================

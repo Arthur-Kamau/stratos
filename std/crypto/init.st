@@ -11,11 +11,11 @@ class Hash {
     var algorithm: string;
     var data: Array<byte>;
 
-    fn update(data: Array<byte>) Hash;
-    fn updateString(s: string) Hash;
-    fn digest() Array<byte>;
-    fn digestHex() string;
-    fn digestBase64() string;
+    pub fn update(data: Array<byte>) Hash;
+    pub fn updateString(s: string) Hash;
+    pub fn digest() Array<byte>;
+    pub fn digestHex() string;
+    pub fn digestBase64() string;
 }
 
 class Cipher {
@@ -23,19 +23,19 @@ class Cipher {
     var key: Array<byte>;
     var iv: Array<byte>;
 
-    fn encrypt(plaintext: Array<byte>) Array<byte>;
-    fn decrypt(ciphertext: Array<byte>) Array<byte>;
-    fn encryptString(plaintext: string) string;
-    fn decryptString(ciphertext: string) string;
+    pub fn encrypt(plaintext: Array<byte>) Array<byte>;
+    pub fn decrypt(ciphertext: Array<byte>) Array<byte>;
+    pub fn encryptString(plaintext: string) string;
+    pub fn decryptString(ciphertext: string) string;
 }
 
 class HMAC {
     var algorithm: string;
     var key: Array<byte>;
 
-    fn update(data: Array<byte>) HMAC;
-    fn digest() Array<byte>;
-    fn digestHex() string;
+    pub fn update(data: Array<byte>) HMAC;
+    pub fn digest() Array<byte>;
+    pub fn digestHex() string;
 }
 
 class KeyPair {
@@ -211,13 +211,13 @@ class AuthToken {
         this.algorithm = "sha256";
     }
 
-    fn sign(message: string) string {
+    pub fn sign(message: string) string {
         val hmac = newHMAC(this.algorithm, this.secret.bytes());
         hmac.update(message.bytes());
         return hmac.digestHex();
     }
 
-    fn verify(message: string, signature: string) bool {
+    pub fn verify(message: string, signature: string) bool {
         val expected = this.sign(message);
         return secureCompare(expected, signature);
     }
@@ -235,7 +235,7 @@ class JWTToken {
         this.secret = secretKey;
     }
 
-    fn encode(payload: json.JsonValue) string {
+    pub fn encode(payload: json.JsonValue) string {
         // Header
         val header = json.jsonObject({
             typ: json.jsonString("JWT"),
@@ -258,7 +258,7 @@ class JWTToken {
         return message + "." + signature;
     }
 
-    fn decode(token: string) Result<json.JsonValue, Error> {
+    pub fn decode(token: string) Result<json.JsonValue, Error> {
         val parts = strings.split(token, ".");
 
         if parts.length() != 3 {

@@ -12,48 +12,48 @@ use io;
 class Time {
     var timestamp: int;  // Unix timestamp in milliseconds
 
-    fn year() int;
-    fn month() int;
-    fn day() int;
-    fn hour() int;
-    fn minute() int;
-    fn second() int;
-    fn millisecond() int;
+    pub fn year() int;
+    pub fn month() int;
+    pub fn day() int;
+    pub fn hour() int;
+    pub fn minute() int;
+    pub fn second() int;
+    pub fn millisecond() int;
 
-    fn format(layout: string) string;
-    fn add(duration: Duration) Time;
-    fn sub(other: Time) Duration;
-    fn before(other: Time) bool;
-    fn after(other: Time) bool;
-    fn equals(other: Time) bool;
-    fn unix() int;
+    pub fn format(layout: string) string;
+    pub fn add(duration: Duration) Time;
+    pub fn sub(other: Time) Duration;
+    pub fn before(other: Time) bool;
+    pub fn after(other: Time) bool;
+    pub fn equals(other: Time) bool;
+    pub fn unix() int;
 }
 
 class Duration {
     var value: int;  // Duration in milliseconds
 
-    fn getHours() double;
-    fn getMinutes() double;
-    fn getSeconds() double;
-    fn getMilliseconds() int;
+    pub fn getHours() double;
+    pub fn getMinutes() double;
+    pub fn getSeconds() double;
+    pub fn getMilliseconds() int;
 
-    fn add(other: Duration) Duration;
-    fn sub(other: Duration) Duration;
+    pub fn add(other: Duration) Duration;
+    pub fn sub(other: Duration) Duration;
 }
 
 class Ticker {
     var channel: Channel<Time>;
     var interval: Duration;
 
-    fn stop() void;
+    pub fn stop() void;
 }
 
 class Timer {
     var channel: Channel<Time>;
     var duration: Duration;
 
-    fn stop() void;
-    fn reset(duration: Duration) void;
+    pub fn stop() void;
+    pub fn reset(duration: Duration) void;
 }
 
 // ============================================================================

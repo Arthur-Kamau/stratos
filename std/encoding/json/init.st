@@ -24,37 +24,37 @@ class JsonValue {
     var arrayValue: Array<JsonValue>;
     var objectValue: Map<string, JsonValue>;
 
-    fn isNull() bool;
-    fn isBool() bool;
-    fn isNumber() bool;
-    fn isString() bool;
-    fn isArray() bool;
-    fn isObject() bool;
+    pub fn isNull() bool;
+    pub fn isBool() bool;
+    pub fn isNumber() bool;
+    pub fn isString() bool;
+    pub fn isArray() bool;
+    pub fn isObject() bool;
 
-    fn asBool() bool;
-    fn asNumber() double;
-    fn asString() string;
-    fn asArray() Array<JsonValue>;
-    fn asObject() Map<string, JsonValue>;
+    pub fn asBool() bool;
+    pub fn asNumber() double;
+    pub fn asString() string;
+    pub fn asArray() Array<JsonValue>;
+    pub fn asObject() Map<string, JsonValue>;
 
-    fn get(key: string) JsonValue?;
-    fn getAt(index: int) JsonValue?;
+    pub fn get(key: string) JsonValue?;
+    pub fn getAt(index: int) JsonValue?;
 }
 
 class JsonEncoder {
     var indent: string;
     var sortKeys: bool;
 
-    fn encode(value: JsonValue) string;
-    fn encodeToFile(value: JsonValue, path: string) Result<void, Error>;
+    pub fn encode(value: JsonValue) string;
+    pub fn encodeToFile(value: JsonValue, path: string) Result<void, Error>;
 }
 
 class JsonDecoder {
     var allowComments: bool;
     var allowTrailingCommas: bool;
 
-    fn decode(json: string) Result<JsonValue, Error>;
-    fn decodeFromFile(path: string) Result<JsonValue, Error>;
+    pub fn decode(json: string) Result<JsonValue, Error>;
+    pub fn decodeFromFile(path: string) Result<JsonValue, Error>;
 }
 
 // ============================================================================

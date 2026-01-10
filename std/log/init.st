@@ -35,27 +35,27 @@ class Logger {
         this.fields = fields;
     }
 
-    fn debug(message: string, fields: Map<string, any>) void {
+    pub fn debug(message: string, fields: Map<string, any>) void {
         debugWith(message, fields);
     }
     
-    fn info(message: string, fields: Map<string, any>) void {
+    pub fn info(message: string, fields: Map<string, any>) void {
         infoWith(message, fields);
     }
     
-    fn warn(message: string, fields: Map<string, any>) void {
+    pub fn warn(message: string, fields: Map<string, any>) void {
         warnWith(message, fields);
     }
     
-    fn error(message: string, fields: Map<string, any>) void {
+    pub fn error(message: string, fields: Map<string, any>) void {
         errorWith(message, fields);
     }
     
-    fn fatal(message: string, fields: Map<string, any>) void {
+    pub fn fatal(message: string, fields: Map<string, any>) void {
         fatalWith(message, fields);
     }
 
-    fn with(fields: Map<string, any>) Logger {
+    pub fn with(fields: Map<string, any>) Logger {
         // TODO: Merge fields
         return Logger(this.level, this.format, fields);
     }
@@ -163,11 +163,11 @@ class LogTimer {
         this.startTime = time.now().unix();
     }
 
-    fn elapsed() int {
+    pub fn elapsed() int {
         return time.now().unix() - this.startTime;
     }
 
-    fn printLog() void {
+    pub fn printLog() void {
         val elapsed = this.elapsed();
         info("LogTimer completed: " + this.name + " elapsed_ms: " + elapsed);
     }

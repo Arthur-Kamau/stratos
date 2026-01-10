@@ -14,18 +14,18 @@ class File {
         this.handle = 0; // null
     }
 
-    fn open(mode: string) {
+    pub fn open(mode: string) {
         this.handle = fopen(this.path, mode);
     }
     
-    fn close() {
+    pub fn close() {
         if (this.handle != 0) {
             fclose(this.handle);
             this.handle = 0;
         }
     }
     
-    fn write(text: string) {
+    pub fn write(text: string) {
         if (this.handle != 0) {
             fputs(text, this.handle);
         }

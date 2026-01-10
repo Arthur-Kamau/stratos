@@ -12,46 +12,46 @@ class Channel<T> {
     var capacity: int;
     var closed: bool;
 
-    fn send(value: T) bool;
-    fn receive() T?;
-    fn tryReceive() Pair<T?, bool>;
-    fn close() void;
-    fn isClosed() bool;
+    pub fn send(value: T) bool;
+    pub fn receive() T?;
+    pub fn tryReceive() Pair<T?, bool>;
+    pub fn close() void;
+    pub fn isClosed() bool;
 }
 
 class Mutex {
     var locked: bool;
     var owner: int;
 
-    fn lock() void;
-    fn unlock() void;
-    fn tryLock() bool;
+    pub fn lock() void;
+    pub fn unlock() void;
+    pub fn tryLock() bool;
 }
 
 class RWMutex {
     var readers: int;
     var writer: bool;
 
-    fn rLock() void;
-    fn rUnlock() void;
-    fn lock() void;
-    fn unlock() void;
+    pub fn rLock() void;
+    pub fn rUnlock() void;
+    pub fn lock() void;
+    pub fn unlock() void;
 }
 
 class WaitGroup {
     var count: int;
     var mutex: Mutex;
 
-    fn add(delta: int) void;
-    fn done() void;
-    fn wait() void;
+    pub fn add(delta: int) void;
+    pub fn done() void;
+    pub fn wait() void;
 }
 
 class Once {
     var done: bool;
     var mutex: Mutex;
 
-    fn do(fn: Function) void;
+    pub fn do(fn: Function) void;
 }
 
 class Semaphore {
@@ -59,9 +59,9 @@ class Semaphore {
     var capacity: int;
     var mutex: Mutex;
 
-    fn acquire() void;
-    fn release() void;
-    fn tryAcquire() bool;
+    pub fn acquire() void;
+    pub fn release() void;
+    pub fn tryAcquire() bool;
 }
 
 class Future<T> {
@@ -70,10 +70,10 @@ class Future<T> {
     var done: bool;
     var channel: Channel<T>;
 
-    fn get() T;
-    fn getWithTimeout(timeout: Duration) Result<T, Error>;
-    fn isDone() bool;
-    fn cancel() void;
+    pub fn get() T;
+    pub fn getWithTimeout(timeout: Duration) Result<T, Error>;
+    pub fn isDone() bool;
+    pub fn cancel() void;
 }
 
 // ============================================================================
@@ -283,11 +283,11 @@ class WorkerPool<T, R> {
         }
     }
 
-    fn submit(job: T) void {
+    pub fn submit(job: T) void {
         this.jobs.send(job);
     }
 
-    fn close() void {
+    pub fn close() void {
         this.jobs.close();
         this.wg.wait();
         this.results.close();
@@ -316,11 +316,11 @@ class RateLimiter {
         });
     }
 
-    fn acquire() void {
+    pub fn acquire() void {
         this.tokens.acquire();
     }
 
-    fn tryAcquire() bool {
+    pub fn tryAcquire() bool {
         return this.tokens.tryAcquire();
     }
 }

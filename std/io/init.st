@@ -12,10 +12,10 @@ class File {
     var handle: int;  // File descriptor
     var mode: string;
 
-    fn readAll() string;
-    fn readLine() string;
-    fn write(data: string) Result<int, Error>;
-    fn close() void;
+    pub fn readAll() string;
+    pub fn readLine() string;
+    pub fn write(data: string) Result<int, Error>;
+    pub fn close() void;
 }
 
 class Result<T, E> {
@@ -23,15 +23,15 @@ class Result<T, E> {
     var error: E;
     var isOk: bool;
 
-    fn ok() bool {
+    pub fn ok() bool {
         return this.isOk;
     }
 
-    fn err() E {
+    pub fn err() E {
         return this.error;
     }
 
-    fn unwrap() T {
+    pub fn unwrap() T {
         if !this.isOk {
             panic("Called unwrap on Error result");
         }

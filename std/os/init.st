@@ -29,18 +29,18 @@ class Process {
     var command: string;
     var args: Array<string>;
 
-    fn kill(signal: int) Result<void, Error>;
-    fn wait() int;
+    pub fn kill(signal: int) Result<void, Error>;
+    pub fn wait() int;
 }
 
 class EnvVars {
     var vars: Map<string, string>;
 
-    fn get(key: string) string;
-    fn set(key: string, value: string) void;
-    fn unset(key: string) void;
-    fn has(key: string) bool;
-    fn all() Map<string, string>;
+    pub fn get(key: string) string;
+    pub fn set(key: string, value: string) void;
+    pub fn unset(key: string) void;
+    pub fn has(key: string) bool;
+    pub fn all() Map<string, string>;
 }
 
 // ============================================================================
@@ -232,31 +232,31 @@ class Environment {
         this.originalVars = environ();
     }
 
-    fn get(key: string) string {
+    pub fn get(key: string) string {
         if this.vars.containsKey(key) {
             return this.vars.get(key);
         }
         return "";
     }
 
-    fn set(key: string, value: string) void {
+    pub fn set(key: string, value: string) void {
         this.vars.put(key, value);
         setenv(key, value);
     }
 
-    fn unset(key: string) void {
+    pub fn unset(key: string) void {
         this.vars.remove(key);
         unsetenv(key);
     }
 
-    fn restore() void {
+    pub fn restore() void {
         // Restore all original environment variables
         this.originalVars.keys().forEach((key) => {
             setenv(key, this.originalVars.get(key));
         });
     }
 
-    fn snapshot() Map<string, string> {
+    pub fn snapshot() Map<string, string> {
         return this.vars;
     }
 }

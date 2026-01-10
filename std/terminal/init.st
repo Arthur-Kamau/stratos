@@ -518,7 +518,7 @@ class Spinner {
         this.running = false;
     }
 
-    fn next() string {
+    pub fn next() string {
         val frame = this.frames[this.currentFrame];
         val this.currentFrame = (this.currentFrame + 1) % this.frames.length();
         return frame;

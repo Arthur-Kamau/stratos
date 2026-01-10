@@ -27,10 +27,10 @@ class Request {
     var params: Map<string, string>;
     var remoteAddr: string;
 
-    fn header(name: string) string;
-    fn queryParam(name: string) string;
-    fn param(name: string) string;
-    fn json() Result<json.JsonValue, Error>;
+    pub fn header(name: string) string;
+    pub fn queryParam(name: string) string;
+    pub fn param(name: string) string;
+    pub fn json() Result<json.JsonValue, Error>;
 }
 
 class Response {
@@ -39,27 +39,27 @@ class Response {
     var body: string;
     var written: bool;
 
-    fn setHeader(name: string, value: string) void;
-    fn setStatus(code: int) void;
-    fn write(data: string) void;
-    fn json(value: json.JsonValue) void;
-    fn html(content: string) void;
-    fn send(content: string) void;
-    fn sendStatus(code: int) void;
-    fn redirect(url: string) void;
+    pub fn setHeader(name: string, value: string) void;
+    pub fn setStatus(code: int) void;
+    pub fn write(data: string) void;
+    pub fn json(value: json.JsonValue) void;
+    pub fn html(content: string) void;
+    pub fn send(content: string) void;
+    pub fn sendStatus(code: int) void;
+    pub fn redirect(url: string) void;
 }
 
 class Router {
     var routes: Array<Route>;
     var middleware: Array<Middleware>;
 
-    fn get(path: string, handler: Handler) void;
-    fn post(path: string, handler: Handler) void;
-    fn put(path: string, handler: Handler) void;
-    fn delete(path: string, handler: Handler) void;
-    fn patch(path: string, handler: Handler) void;
-    fn use(middleware: Middleware) void;
-    fn group(prefix: string) Router;
+    pub fn get(path: string, handler: Handler) void;
+    pub fn post(path: string, handler: Handler) void;
+    pub fn put(path: string, handler: Handler) void;
+    pub fn delete(path: string, handler: Handler) void;
+    pub fn patch(path: string, handler: Handler) void;
+    pub fn use(middleware: Middleware) void;
+    pub fn group(prefix: string) Router;
 }
 
 class Route {
@@ -78,20 +78,20 @@ class Server {
     var router: Router;
     var running: bool;
 
-    fn listen(port: int) void;
-    fn listenAndServe(addr: string, port: int) void;
-    fn close() void;
+    pub fn listen(port: int) void;
+    pub fn listenAndServe(addr: string, port: int) void;
+    pub fn close() void;
 }
 
 class Client {
     var timeout: int;
     var headers: Map<string, string>;
 
-    fn get(url: string) async.Promise<Response>;
-    fn post(url: string, body: string) async.Promise<Response>;
-    fn put(url: string, body: string) async.Promise<Response>;
-    fn delete(url: string) async.Promise<Response>;
-    fn request(method: HttpMethod, url: string, body: string) async.Promise<Response>;
+    pub fn get(url: string) async.Promise<Response>;
+    pub fn post(url: string, body: string) async.Promise<Response>;
+    pub fn put(url: string, body: string) async.Promise<Response>;
+    pub fn delete(url: string) async.Promise<Response>;
+    pub fn request(method: HttpMethod, url: string, body: string) async.Promise<Response>;
 }
 
 // ============================================================================
@@ -297,7 +297,7 @@ class RestAPI {
         this.basePath = base;
     }
 
-    fn resource(name: string, handlers: ResourceHandlers) void {
+    pub fn resource(name: string, handlers: ResourceHandlers) void {
         val path = this.basePath + "/" + name;
 
         // GET /resource - list
@@ -345,8 +345,8 @@ class WebSocket {
     var onMessage: Function<string, void>;
     var onClose: Function;
 
-    fn send(message: string) void;
-    fn close() void;
+    pub fn send(message: string) void;
+    pub fn close() void;
 }
 
 // Server-Sent Events
@@ -359,7 +359,7 @@ class SSE {
         this.mutex = concurrent.newMutex();
     }
 
-    fn handler() Handler {
+    pub fn handler() Handler {
         return (req, res) => {
             res.setHeader("Content-Type", "text/event-stream");
             res.setHeader("Cache-Control", "no-cache");
@@ -371,7 +371,7 @@ class SSE {
         };
     }
 
-    fn broadcast(event: string, data: string) void {
+    pub fn broadcast(event: string, data: string) void {
         this.mutex.lock();
 
         for val client in this.clients {

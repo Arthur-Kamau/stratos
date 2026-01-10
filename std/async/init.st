@@ -21,9 +21,9 @@ class Promise<T> {
     var catchCallbacks: Array<Function<Error, any>>;
     var finallyCallbacks: Array<Function>;
 
-    fn then(onFulfilled: Function<T, R>) Promise<R>;
-    fn catch(onRejected: Function<Error, T>) Promise<T>;
-    fn finally(onFinally: Function) Promise<T>;
+    pub fn then(onFulfilled: Function<T, R>) Promise<R>;
+    pub fn catch(onRejected: Function<Error, T>) Promise<T>;
+    pub fn finally(onFinally: Function) Promise<T>;
 }
 
 class Task<T> {
@@ -31,9 +31,9 @@ class Task<T> {
     var cancel: Function;
     var running: bool;
 
-    fn await() T;
-    fn cancel() void;
-    fn isRunning() bool;
+    pub fn await() T;
+    pub fn cancel() void;
+    pub fn isRunning() bool;
 }
 
 // ============================================================================
@@ -227,7 +227,7 @@ class AsyncThrottle<T, R> {
         this.mutex = concurrent.newMutex();
     }
 
-    fn execute(arg: T) Promise<R> {
+    pub fn execute(arg: T) Promise<R> {
         this.mutex.lock();
 
         if this.running < this.maxConcurrent {
@@ -257,7 +257,7 @@ class AsyncThrottle<T, R> {
         }
     }
 
-    fn processQueue() void {
+    pub fn processQueue() void {
         if this.queue.length() > 0 && this.running < this.maxConcurrent {
             val item = this.queue.removeAt(0);
             this.running = this.running + 1;
@@ -293,7 +293,7 @@ class AsyncDebounce<T, R> {
         this.lastPromise = null;
     }
 
-    fn execute(arg: T) Promise<R> {
+    pub fn execute(arg: T) Promise<R> {
         this.lastArgs = arg;
 
         if this.timer != null {

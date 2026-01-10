@@ -18,12 +18,12 @@ class Conn {
     var addr: string;
     var port: int;
 
-    fn read(buffer: Array<byte>) int;
-    fn write(data: Array<byte>) int;
-    fn readString(maxBytes: int) string;
-    fn writeString(data: string) int;
-    fn close() void;
-    fn setTimeout(ms: int) void;
+    pub fn read(buffer: Array<byte>) int;
+    pub fn write(data: Array<byte>) int;
+    pub fn readString(maxBytes: int) string;
+    pub fn writeString(data: string) int;
+    pub fn close() void;
+    pub fn setTimeout(ms: int) void;
 }
 
 class Listener {
@@ -31,8 +31,8 @@ class Listener {
     var addr: string;
     var port: int;
 
-    fn accept() Result<Conn, Error>;
-    fn close() void;
+    pub fn accept() Result<Conn, Error>;
+    pub fn close() void;
 }
 
 class UDPConn {
@@ -40,18 +40,18 @@ class UDPConn {
     var addr: string;
     var port: int;
 
-    fn readFrom(buffer: Array<byte>) Pair<int, string>;
-    fn writeTo(data: Array<byte>, addr: string, port: int) int;
-    fn close() void;
+    pub fn readFrom(buffer: Array<byte>) Pair<int, string>;
+    pub fn writeTo(data: Array<byte>, addr: string, port: int) int;
+    pub fn close() void;
 }
 
 class IPAddr {
     var ip: string;
     var port: int;
 
-    fn toString() string;
-    fn isIPv4() bool;
-    fn isIPv6() bool;
+    pub fn toString() string;
+    pub fn isIPv4() bool;
+    pub fn isIPv6() bool;
 }
 
 // ============================================================================
@@ -98,7 +98,7 @@ class TCPServer {
         this.running = false;
     }
 
-    fn start() void {
+    pub fn start() void {
         this.running = true;
 
         while this.running {
@@ -116,7 +116,7 @@ class TCPServer {
         }
     }
 
-    fn stop() void {
+    pub fn stop() void {
         this.running = false;
         this.listener.close();
     }
@@ -211,7 +211,7 @@ class UDPServer {
         this.running = false;
     }
 
-    fn start() void {
+    pub fn start() void {
         this.running = true;
         var buffer = Array<byte>(4096);
 
@@ -227,7 +227,7 @@ class UDPServer {
         }
     }
 
-    fn stop() void {
+    pub fn stop() void {
         this.running = false;
         this.conn.close();
     }

@@ -47,50 +47,50 @@ class Rows {
 
     // Move to the next row
     // Returns true if there is a row, false if no more rows
-    fn next() bool {
+    pub fn next() bool {
         this.hasRow = __sqlite_step(this.handle);
         return this.hasRow;
     }
 
     // Get an integer column by index (0-based)
-    fn getInt(index: int) int {
+    pub fn getInt(index: int) int {
         return __sqlite_column_int(this.handle, index);
     }
 
     // Get a double column by index
-    fn getDouble(index: int) double {
+    pub fn getDouble(index: int) double {
         return __sqlite_column_double(this.handle, index);
     }
 
     // Get a string column by index
-    fn getString(index: int) string {
+    pub fn getString(index: int) string {
         return __sqlite_column_string(this.handle, index);
     }
 
     // Get a column value by name
     // Returns the value as a string (convert as needed)
-    fn get(columnName: string) string {
+    pub fn get(columnName: string) string {
         val index = __sqlite_column_index(this.handle, columnName);
         return this.getString(index);
     }
 
     // Check if a column is NULL
-    fn isNull(index: int) bool {
+    pub fn isNull(index: int) bool {
         return __sqlite_column_is_null(this.handle, index);
     }
 
     // Get the number of columns in the result
-    fn columnCount() int {
+    pub fn columnCount() int {
         return __sqlite_column_count(this.handle);
     }
 
     // Get the name of a column by index
-    fn columnName(index: int) string {
+    pub fn columnName(index: int) string {
         return __sqlite_column_name(this.handle, index);
     }
 
     // Close the rows
-    fn close() {
+    pub fn close() {
         __sqlite_rows_close(this.handle);
     }
 }
@@ -109,48 +109,48 @@ class Statement {
     // Example:
     //   stmt.bind(1, "Alice");
     //   stmt.bind(2, 25);
-    fn bind(index: int, value: any) {
+    pub fn bind(index: int, value: any) {
         __sqlite_bind(this.handle, index, value);
     }
 
     // Bind an integer parameter
-    fn bindInt(index: int, value: int) {
+    pub fn bindInt(index: int, value: int) {
         __sqlite_bind_int(this.handle, index, value);
     }
 
     // Bind a double parameter
-    fn bindDouble(index: int, value: double) {
+    pub fn bindDouble(index: int, value: double) {
         __sqlite_bind_double(this.handle, index, value);
     }
 
     // Bind a string parameter
-    fn bindString(index: int, value: string) {
+    pub fn bindString(index: int, value: string) {
         __sqlite_bind_string(this.handle, index, value);
     }
 
     // Bind NULL parameter
-    fn bindNull(index: int) {
+    pub fn bindNull(index: int) {
         __sqlite_bind_null(this.handle, index);
     }
 
     // Execute the prepared statement (for INSERT, UPDATE, DELETE)
     // Returns the number of rows affected
-    fn execute() int {
+    pub fn execute() int {
         return __sqlite_stmt_exec(this.handle);
     }
 
     // Query executes the prepared statement and returns rows
-    fn query() Rows {
+    pub fn query() Rows {
         return Rows(this.handle);
     }
 
     // Reset the statement to be executed again
-    fn reset() {
+    pub fn reset() {
         __sqlite_stmt_reset(this.handle);
     }
 
     // Close the statement
-    fn close() {
+    pub fn close() {
         __sqlite_stmt_close(this.handle);
     }
 }
@@ -166,7 +166,7 @@ class Transaction {
     }
 
     // Commit the transaction
-    fn commit() {
+    pub fn commit() {
         if !this.committed {
             this.db.exec("COMMIT");
             this.committed = true;
@@ -174,7 +174,7 @@ class Transaction {
     }
 
     // Rollback the transaction
-    fn rollback() {
+    pub fn rollback() {
         if !this.committed {
             this.db.exec("ROLLBACK");
             this.committed = true;
@@ -196,7 +196,7 @@ class Database {
     // Example:
     //   db.exec("CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT)");
     //   val affected = db.exec("DELETE FROM users WHERE id = 5");
-    fn exec(sql: string) int {
+    pub fn exec(sql: string) int {
         return __sqlite_exec(this.handle, sql);
     }
 
@@ -208,7 +208,7 @@ class Database {
     //   while rows.next() {
     //       println(rows.getString("name"));
     //   }
-    fn query(sql: string) Rows {
+    pub fn query(sql: string) Rows {
         val stmtHandle = __sqlite_query(this.handle, sql);
         return Rows(stmtHandle);
     }
@@ -221,31 +221,31 @@ class Database {
     //   stmt.bind(1, "Alice");
     //   stmt.bind(2, 25);
     //   stmt.execute();
-    fn prepare(sql: string) Statement {
+    pub fn prepare(sql: string) Statement {
         val stmtHandle = __sqlite_prepare(this.handle, sql);
         return Statement(stmtHandle);
     }
 
     // Begin starts a transaction
     // Returns a Transaction object
-    fn begin() Transaction {
+    pub fn begin() Transaction {
         this.exec("BEGIN TRANSACTION");
         return Transaction(this);
     }
 
     // Close closes the database connection
     // Should always be called when done with the database
-    fn close() {
+    pub fn close() {
         __sqlite_close(this.handle);
     }
 
     // Get the last inserted row ID
-    fn lastInsertId() int {
+    pub fn lastInsertId() int {
         return __sqlite_last_insert_id(this.handle);
     }
 
     // Get the number of changes made by the last statement
-    fn changes() int {
+    pub fn changes() int {
         return __sqlite_changes(this.handle);
     }
 }
