@@ -94,6 +94,13 @@ void Optimizer::visit(LambdaExpr& expr) {
     lastConst.type = 0;
 }
 
+void Optimizer::visit(StructInitExpr& expr) {
+    for (auto& field : expr.fields) {
+        field.second->accept(*this);
+    }
+    lastConst.type = 0;
+}
+
 // --- Statements ---
 
 void Optimizer::visit(VarDecl& stmt) {

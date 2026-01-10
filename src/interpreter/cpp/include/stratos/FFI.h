@@ -15,6 +15,8 @@
     #undef DOUBLE
     #undef STRING
     #undef ERROR
+    #undef FALSE
+    #undef TRUE
 #else
     #include <dlfcn.h>
 #endif

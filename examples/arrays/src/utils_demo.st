@@ -1,25 +1,25 @@
-package main;
+package utils;
 
 use io;
 
-fn printHeader(title: string) void {
+fn printUtilsHeader(title: string) void {
     println("\n" + "=".repeat(50));
     println(title);
     println("=".repeat(50));
 }
 
-fn printSection(num: int, title: string) void {
+fn printUtilsSection(num: int, title: string) void {
     println("\n" + num + ". " + title);
     println("-".repeat(40));
 }
 
-fn main() {
-    printHeader("Array Utility Functions Demo");
+fn demoUtils() {
+    printUtilsHeader("Array Utility Functions Demo");
 
     // =================================================================
     // 1. isEmpty, first, last
     // =================================================================
-    printSection(1, "isEmpty(), first(), and last()");
+    printUtilsSection(1, "isEmpty(), first(), and last()");
 
     val fruits = "apple,banana,cherry,date,elderberry".split(",");
 
@@ -38,7 +38,7 @@ fn main() {
     // =================================================================
     // 2. contains and indexOf
     // =================================================================
-    printSection(2, "contains() and indexOf()");
+    printUtilsSection(2, "contains() and indexOf()");
 
     val colors = "red,green,blue,yellow,purple".split(",");
 
@@ -52,7 +52,7 @@ fn main() {
     // =================================================================
     // 3. reverse
     // =================================================================
-    printSection(3, "reverse()");
+    printUtilsSection(3, "reverse()");
 
     val numbers = "1,2,3,4,5".split(",");
     val reversed = numbers.reverse();
@@ -67,7 +67,7 @@ fn main() {
     // =================================================================
     // 4. join with different separators
     // =================================================================
-    printSection(4, "join() with custom separators");
+    printUtilsSection(4, "join() with custom separators");
 
     val items = "laptop,phone,tablet,mouse,keyboard".split(",");
 
@@ -80,7 +80,7 @@ fn main() {
     // =================================================================
     // 5. clear
     // =================================================================
-    printSection(5, "clear()");
+    printUtilsSection(5, "clear()");
 
     val data = "a,b,c,d,e".split(",");
     println("Before clear:");
@@ -95,7 +95,7 @@ fn main() {
     // =================================================================
     // 6. Chaining methods
     // =================================================================
-    printSection(6, "Method Chaining");
+    printUtilsSection(6, "Method Chaining");
 
     val text = "the,quick,brown,fox,jumps".split(",");
     val processed = text.reverse();
@@ -108,7 +108,7 @@ fn main() {
     // =================================================================
     // 7. Practical: Array utilities for data processing
     // =================================================================
-    printSection(7, "Practical Example: Log Processing");
+    printUtilsSection(7, "Practical Example: Log Processing");
 
     val logLines = "INFO,WARNING,ERROR,INFO,DEBUG,ERROR,INFO".split(",");
 
@@ -126,7 +126,7 @@ fn main() {
     // =================================================================
     // 8. Practical: File path manipulation
     // =================================================================
-    printSection(8, "Practical Example: Path Manipulation");
+    printUtilsSection(8, "Practical Example: Path Manipulation");
 
     val path = "/usr/local/bin/stratos".split("/");
 
@@ -141,7 +141,7 @@ fn main() {
     // =================================================================
     // Summary
     // =================================================================
-    printHeader("Array Utilities Summary");
+    printUtilsHeader("Array Utilities Summary");
 
     println("\n✓ isEmpty() - Check if array is empty");
     println("✓ first() - Get first element");

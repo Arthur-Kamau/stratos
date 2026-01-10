@@ -661,6 +661,11 @@ void IRGenerator::visit(LambdaExpr& expr) {
     lastVal = {"null", "i8*"};
 }
 
+void IRGenerator::visit(StructInitExpr& expr) {
+    // TODO: IR Gen for structs
+    lastVal = {"null", "i8*"};
+}
+
 void IRGenerator::visit(ClassDecl& stmt) {
     // Generate constructors and methods for this class
     currentClass = stmt.name.lexeme;

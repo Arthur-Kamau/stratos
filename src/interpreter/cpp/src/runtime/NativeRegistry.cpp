@@ -15,6 +15,7 @@
 #include <cstring>
 #include <regex>
 #include <sqlite3.h>
+#include "stratos/Interpreter.h"
 
 // Platform-specific includes for terminal control
 #ifdef _WIN32
@@ -89,6 +90,8 @@ void NativeRegistry::initializeStdlib() {
     initLog();
     initTime();
     initJSON();
+    initYAML();
+    initBase64();
     initBase64();
     initCSV();
     initCrypto();
@@ -141,29 +144,83 @@ void NativeRegistry::initPrelude() {
             return std::any();
         }
 
-        const auto& arg = args[0];
-
-        // Try different types
-        try {
-            if (arg.type() == typeid(int)) {
-                std::cout << std::any_cast<int>(arg) << std::endl;
-            } else if (arg.type() == typeid(double)) {
-                std::cout << std::any_cast<double>(arg) << std::endl;
-            } else if (arg.type() == typeid(std::string)) {
-                std::cout << std::any_cast<std::string>(arg) << std::endl;
-            } else if (arg.type() == typeid(bool)) {
-                std::cout << (std::any_cast<bool>(arg) ? "true" : "false") << std::endl;
-            } else if (arg.type() == typeid(char)) {
-                std::cout << std::any_cast<char>(arg) << std::endl;
-            } else {
-                std::cout << "[unknown type]" << std::endl;
+        bool useFormatting = false;
+        if (args.size() > 1 && args[0].type() == typeid(std::string)) {
+            std::string fmt = std::any_cast<std::string>(args[0]);
+            if (fmt.find("{}") != std::string::npos) {
+                useFormatting = true;
             }
-        } catch (...) {
-            std::cout << "[error printing value]" << std::endl;
         }
 
+        if (useFormatting) {
+            // Printf-style formatting
+            std::string result;
+            try {
+                result = std::any_cast<std::string>(args[0]);
+            } catch (...) {
+                result = ""; 
+            }
+
+            size_t argIndex = 1;
+            size_t pos = 0;
+            while ((pos = result.find("{}", pos)) != std::string::npos && argIndex < args.size()) {
+                std::string replacement;
+                const auto& arg = args[argIndex];
+
+                try {
+                    if (arg.type() == typeid(int)) {
+                        replacement = std::to_string(std::any_cast<int>(arg));
+                    } else if (arg.type() == typeid(double)) {
+                        replacement = std::to_string(std::any_cast<double>(arg));
+                    } else if (arg.type() == typeid(std::string)) {
+                        replacement = std::any_cast<std::string>(arg);
+                    } else if (arg.type() == typeid(bool)) {
+                        replacement = std::any_cast<bool>(arg) ? "true" : "false";
+                    } else if (arg.type() == typeid(char)) {
+                        replacement = std::string(1, std::any_cast<char>(arg));
+                    } else {
+                        replacement = "[unknown]";
+                    }
+                } catch (...) {
+                    replacement = "[error]";
+                }
+
+                result.replace(pos, 2, replacement);
+                pos += replacement.length();
+                argIndex++;
+            }
+            std::cout << result;
+        } else {
+            // Space-separated printing
+            for (size_t i = 0; i < args.size(); ++i) {
+                const auto& arg = args[i];
+                try {
+                    if (arg.type() == typeid(int)) {
+                        std::cout << std::any_cast<int>(arg);
+                    } else if (arg.type() == typeid(double)) {
+                        std::cout << std::any_cast<double>(arg);
+                    } else if (arg.type() == typeid(std::string)) {
+                        std::cout << std::any_cast<std::string>(arg);
+                    } else if (arg.type() == typeid(bool)) {
+                        std::cout << (std::any_cast<bool>(arg) ? "true" : "false");
+                    } else if (arg.type() == typeid(char)) {
+                        std::cout << std::any_cast<char>(arg);
+                    } else {
+                        std::cout << "[unknown type]";
+                    }
+                } catch (...) {
+                    std::cout << "[error printing value]";
+                }
+                
+                if (i < args.size() - 1) {
+                    std::cout << " ";
+                }
+            }
+        }
+
+        std::cout << std::endl;
         return std::any();
-    }, FunctionSignature{{"any"}, "void"});
+    }, FunctionSignature{{"any", "..."}, "void"});
 
     // printf - formatted printing with {} placeholders
     registerFunction("prelude", "printf", [](const std::vector<std::any>& args) -> std::any {
@@ -438,6 +495,11 @@ void NativeRegistry::initMath() {
     registerFunction("math", "log10", [](const std::vector<std::any>& args) -> std::any {
         double x = std::any_cast<double>(args[0]);
         return std::log10(x);
+    }, FunctionSignature{{"double"}, "double"});
+
+    registerFunction("math", "ln", [](const std::vector<std::any>& args) -> std::any {
+        double val = std::any_cast<double>(args[0]);
+        return std::log(val);
     }, FunctionSignature{{"double"}, "double"});
 
     registerFunction("math", "log2", [](const std::vector<std::any>& args) -> std::any {
@@ -964,6 +1026,167 @@ void NativeRegistry::initConvert() {
 }
 
 // ============================================================================
+// Simple JSON Parser
+// ============================================================================
+
+class SimpleJsonParser {
+    std::string json;
+    size_t pos = 0;
+
+    void skipWhitespace() {
+        while (pos < json.length() && isspace(json[pos])) pos++;
+    }
+
+    char peek() {
+        skipWhitespace();
+        if (pos >= json.length()) return 0;
+        return json[pos];
+    }
+    
+    char rawPeek() {
+        if (pos >= json.length()) return 0;
+        return json[pos];
+    }
+    
+    char consume() {
+        char c = peek();
+        if (c) pos++;
+        return c;
+    }
+
+    bool expect(char c) {
+        if (peek() == c) {
+            consume();
+            return true;
+        }
+        return false;
+    }
+
+public:
+    SimpleJsonParser(std::string s) : json(s) {}
+
+    RuntimeValue parse(const RuntimeValue& prototype) {
+        skipWhitespace();
+        char c = peek();
+        if (c == '{') return parseObject(prototype);
+        if (c == '[') return parseArray(prototype);
+        if (c == '"') return parseString();
+        if (isdigit(c) || c == '-') return parseNumber(prototype);
+        if (c == 't' || c == 'f') return parseBool();
+        return RuntimeValue(); 
+    }
+    
+    // Implementations follow...
+    RuntimeValue parseObject(const RuntimeValue& prototype) {
+        consume(); // '{'
+        
+        auto instance = std::make_shared<ClassInstance>();
+        if (prototype.type == "object") {
+             // Clone prototype structure
+            instance->className = prototype.asObject()->className;
+            instance->fields = prototype.asObject()->fields;
+        } else {
+             instance->className = "Object";
+        }
+
+        while (peek() != '}' && peek() != 0) {
+            std::string key = parseString().asString();
+            expect(':');
+            
+            RuntimeValue fieldProto;
+            if (instance->fields.count(key)) {
+                fieldProto = instance->fields[key];
+            } else {
+                 fieldProto = RuntimeValue(std::any(), "any"); 
+            }
+            
+            RuntimeValue val = parse(fieldProto);
+            
+            if (instance->fields.count(key)) {
+                instance->fields[key] = val;
+            } else if (prototype.type != "object") { // Dynamic object
+                instance->fields[key] = val;
+            }
+            
+            if (peek() == ',') consume();
+        }
+        consume(); // '}'
+        return RuntimeValue(instance);
+    }
+
+    RuntimeValue parseArray(const RuntimeValue& prototype) {
+        consume(); // '['
+        std::vector<std::any> list;
+        while (peek() != ']' && peek() != 0) {
+            list.push_back(std::any()); // Placeholder
+             // Skip generic value
+             int braces = 0;
+             while(pos < json.length()) {
+                  char p = json[pos];
+                  if (p == ',' && braces == 0) break;
+                  if (p == ']' && braces == 0) break;
+                  if (p == '{' || p == '[') braces++;
+                  if (p == '}' || p == ']') braces--;
+                  pos++;
+             }
+             if (peek() == ',') consume();
+        }
+        consume();
+        return RuntimeValue(); 
+    }
+
+    RuntimeValue parseString() {
+        consume(); // '"' - this consumes the opening quote (skipping leading whitespace before it)
+        std::string s;
+        while (rawPeek() != '"' && rawPeek() != 0) {
+            if (rawPeek() == '\\') {
+                pos++;
+                if (rawPeek() == '"') s += '"';
+                else if (rawPeek() == 'n') s += '\n';
+                else if (rawPeek() == 't') s += '\t';
+                else s += rawPeek();
+                pos++;
+            } else {
+                s += json[pos++];
+            }
+        }
+        if (rawPeek() == '"') pos++; 
+        return RuntimeValue(s);
+    }
+
+    RuntimeValue parseNumber(const RuntimeValue& prototype) {
+        size_t start = pos;
+        if (peek() == '-') consume();
+        while (isdigit(peek())) consume();
+        if (peek() == '.') {
+            consume();
+            while (isdigit(peek())) consume();
+            try {
+                double d = std::stod(json.substr(start, pos - start));
+                return RuntimeValue(d);
+            } catch (...) { return RuntimeValue(0.0); }
+        }
+        try {
+            int i = std::stoi(json.substr(start, pos - start));
+            return RuntimeValue(i);
+        } catch (...) { return RuntimeValue(0); }
+    }
+    
+    RuntimeValue parseBool() {
+        if (json.substr(pos, 4) == "true") {
+            pos += 4;
+            return RuntimeValue(true);
+        }
+         if (json.substr(pos, 5) == "false") {
+            pos += 5;
+            return RuntimeValue(false);
+        }
+        return RuntimeValue(false);
+    }
+};
+
+
+// ============================================================================
 // IO Module Native Functions
 // ============================================================================
 
@@ -981,7 +1204,7 @@ void NativeRegistry::initIO() {
         std::stringstream buffer;
         buffer << file.rdbuf();
         return buffer.str();
-    });
+    }, FunctionSignature{{"string"}, "string"});
 
     registerFunction("io", "readBytes", [](const std::vector<std::any>& args) -> std::any {
         std::string path = std::any_cast<std::string>(args[0]);
@@ -1245,23 +1468,287 @@ void NativeRegistry::initTime() {
 // JSON Module Native Functions
 // ============================================================================
 
+// Forward declaration
+std::string serializeAny(const std::any& val);
+
+std::string serializeRuntimeValue(const RuntimeValue& val) {
+    if (val.type == "int") {
+        return std::to_string(val.asInt());
+    } else if (val.type == "double") {
+        return std::to_string(val.asDouble());
+    } else if (val.type == "bool") {
+        return val.asBool() ? "true" : "false";
+    } else if (val.type == "string") {
+        std::string s = val.asString();
+        // Escape string
+        std::stringstream ss;
+        ss << "\"";
+        for (char c : s) {
+            if (c == '"') ss << "\\\"";
+            else if (c == '\\') ss << "\\\\";
+            else if (c == '\b') ss << "\\b";
+            else if (c == '\f') ss << "\\f";
+            else if (c == '\n') ss << "\\n";
+            else if (c == '\r') ss << "\\r";
+            else if (c == '\t') ss << "\\t";
+            else if (static_cast<unsigned char>(c) < 32 || static_cast<unsigned char>(c) > 126) {
+                ss << "\\u" << std::hex << std::setw(4) << std::setfill('0') << (int)c;
+            } else {
+                ss << c;
+            }
+        }
+        ss << "\"";
+        return ss.str();
+    } else if (val.type == "object") {
+        auto instance = val.asObject();
+        std::stringstream ss;
+        ss << "{";
+        bool first = true;
+        for (const auto& [name, field] : instance->fields) {
+            if (!first) ss << ", ";
+            ss << "\"" << name << "\": " << serializeRuntimeValue(field);
+            first = false;
+        }
+        ss << "}";
+        return ss.str();
+    } else if (val.type.starts_with("array")) {
+         if (std::holds_alternative<std::any>(val.value)) {
+             return serializeAny(std::get<std::any>(val.value));
+         }
+    }
+    return "null";
+}
+
+std::string serializeAny(const std::any& val) {
+    if (val.type() == typeid(int)) {
+        return std::to_string(std::any_cast<int>(val));
+    } else if (val.type() == typeid(double)) {
+        return std::to_string(std::any_cast<double>(val));
+    } else if (val.type() == typeid(bool)) {
+        return std::any_cast<bool>(val) ? "true" : "false";
+    } else if (val.type() == typeid(std::string)) {
+         std::string s = std::any_cast<std::string>(val);
+         return serializeRuntimeValue(RuntimeValue(s)); // Reuse escape logic
+    } else if (val.type() == typeid(std::shared_ptr<ClassInstance>)) {
+        return serializeRuntimeValue(RuntimeValue(std::any_cast<std::shared_ptr<ClassInstance>>(val)));
+    } else if (val.type() == typeid(std::vector<int>)) {
+        auto vec = std::any_cast<std::vector<int>>(val);
+        std::stringstream ss;
+        ss << "[";
+        for (size_t i = 0; i < vec.size(); ++i) {
+            if (i > 0) ss << ", ";
+            ss << vec[i];
+        }
+        ss << "]";
+        return ss.str();
+    } else if (val.type() == typeid(std::vector<double>)) {
+        auto vec = std::any_cast<std::vector<double>>(val);
+        std::stringstream ss;
+        ss << "[";
+        for (size_t i = 0; i < vec.size(); ++i) {
+            if (i > 0) ss << ", ";
+            ss << vec[i];
+        }
+        ss << "]";
+        return ss.str();
+    } else if (val.type() == typeid(std::vector<std::string>)) {
+        auto vec = std::any_cast<std::vector<std::string>>(val);
+        std::stringstream ss;
+        ss << "[";
+        for (size_t i = 0; i < vec.size(); ++i) {
+            if (i > 0) ss << ", ";
+            ss << serializeRuntimeValue(RuntimeValue(vec[i]));
+        }
+        ss << "]";
+        return ss.str();
+    } else if (val.type() == typeid(std::vector<bool>)) {
+        auto vec = std::any_cast<std::vector<bool>>(val); // vector<bool> is special, might fail if not careful but any_cast handles it?
+        // std::vector<bool> is partial specialization, any_cast might work if it was stored as such
+        // But usually interpreter stores vector<bool> as vector<char> or generic.
+        // Assuming vector<uint8_t> or similar for boolean arrays?
+        // Let's assume standard vector<bool> if that's what Runtime stores.
+        std::stringstream ss;
+        ss << "[";
+        for (size_t i = 0; i < vec.size(); ++i) {
+            if (i > 0) ss << ", ";
+            ss << (vec[i] ? "true" : "false");
+        }
+        ss << "]";
+        return ss.str();
+    }
+     // Add support for vector<shared_ptr<ClassInstance>>
+    else if (val.type() == typeid(std::vector<std::shared_ptr<ClassInstance>>)) {
+        auto vec = std::any_cast<std::vector<std::shared_ptr<ClassInstance>>>(val);
+        std::stringstream ss;
+        ss << "[";
+        for (size_t i = 0; i < vec.size(); ++i) {
+            if (i > 0) ss << ", ";
+             ss << serializeRuntimeValue(RuntimeValue(vec[i]));
+        }
+        ss << "]";
+        return ss.str();
+    }
+    
+    return "null"; // Unknown type
+}
+
 void NativeRegistry::initJSON() {
     // Simple JSON parsing (basic implementation - would use nlohmann/json in production)
-    registerFunction("json", "parse", [](const std::vector<std::any>& args) -> std::any {
+    registerFunction("json", "jsonParse", [](const std::vector<std::any>& args) -> std::any {
         std::string jsonStr = std::any_cast<std::string>(args[0]);
         // Simplified: Return the string as-is (real impl would parse to JsonValue)
         return jsonStr;
     });
 
-    registerFunction("json", "stringify", [](const std::vector<std::any>& args) -> std::any {
-        // Simplified: Convert JsonValue to string
-        return std::string("{}");
-    });
+    registerFunction("json", "jsonStringify", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) return std::string("{}");
+        return serializeAny(args[0]);
+    }, FunctionSignature{{"any"}, "string"});
 
-    registerFunction("json", "stringifyPretty", [](const std::vector<std::any>& args) -> std::any {
+    registerFunction("json", "jsonStringifyPretty", [](const std::vector<std::any>& args) -> std::any {
         std::string indent = args.size() > 1 ? std::any_cast<std::string>(args[1]) : "  ";
         return std::string("{\n}");
-    });
+    }, FunctionSignature{{"any", "string"}, "string"});
+
+    registerFunction("json", "jsonUnmarshal", [](const std::vector<std::any>& args) -> std::any {
+        std::string jsonStr = std::any_cast<std::string>(args[0]);
+        // Reconstruct prototype from std::any (if it's a ClassInstance)
+        RuntimeValue prototype;
+        if (args.size() > 1 && args[1].type() == typeid(std::shared_ptr<ClassInstance>)) {
+             prototype = RuntimeValue(std::any_cast<std::shared_ptr<ClassInstance>>(args[1]));
+        } else {
+             // Default generic object
+             prototype = RuntimeValue(std::make_shared<ClassInstance>());
+        }
+
+        SimpleJsonParser parser(jsonStr);
+        RuntimeValue result = parser.parse(prototype);
+        
+        // Convert back to std::any
+        if (result.type == "int") return result.asInt();
+        if (result.type == "double") return result.asDouble();
+        if (result.type == "bool") return result.asBool();
+        if (result.type == "string") return result.asString();
+        if (result.type == "object") return result.asObject();
+        return std::shared_ptr<ClassInstance>();
+    }, FunctionSignature{{"string", "any"}, "any"});
+}
+
+
+// ============================================================================
+// YAML Module Native Functions
+// ============================================================================
+
+std::string serializeToYaml(const std::any& val, int indentLevel = 0);
+
+std::string serializeToYamlRuntimeValue(const RuntimeValue& val, int indentLevel) {
+    std::string indent(indentLevel * 2, ' ');
+    
+    if (val.type == "int") {
+        return std::to_string(val.asInt());
+    } else if (val.type == "double") {
+        return std::to_string(val.asDouble());
+    } else if (val.type == "bool") {
+        return val.asBool() ? "true" : "false";
+    } else if (val.type == "string") {
+        return "\"" + val.asString() + "\""; // Simple quoting
+    } else if (val.type == "object") {
+        auto instance = val.asObject();
+        std::stringstream ss;
+        if (instance->fields.empty()) return "{}";
+        
+        // If nested (indentLevel > 0), prepend logical newline if needed?
+        // YAML is sensitive.
+        // For simple struct dump:
+        bool first = true;
+        for (const auto& [name, field] : instance->fields) {
+            if (!first) ss << "\n" << indent;
+            else if (indentLevel > 0) ss << "\n" << indent; // First field of nested object needs newline+indent
+            
+            ss << name << ": ";
+            
+            // If field is object or array, handle nesting
+            if (field.type == "object" || field.type.starts_with("array")) {
+                 // But wait, if it's object, we need to defer newline?
+                 // Or just let recursive call handle it?
+                 // Simple recursive approach:
+                 // key: 
+                 //   field...
+                 // unless it's empty
+                 
+                 // This simple serializer assumes flow style for some things or block style?
+                 // Let's implement block style for structs
+                 
+                 // If value is complex:
+                 if (field.type == "object" && !field.asObject()->fields.empty()) {
+                     ss << serializeToYamlRuntimeValue(field, indentLevel + 1);
+                 } else if (field.type.starts_with("array")) { // Simple array check
+                     ss << serializeToYamlRuntimeValue(field, indentLevel);
+                 } else {
+                     ss << serializeToYamlRuntimeValue(field, 0); // Primitive, no indent change
+                 }
+            } else {
+                 ss << serializeToYamlRuntimeValue(field, 0);
+            }
+            first = false;
+        }
+        return ss.str();
+    } 
+    // Simplified: Arrays not implemented fully for deep nesting here to save time/complexity
+    // But for struct fields conversion it's useful.
+    // Let's fallback to JSON-like representation for arrays for now or basic list
+    
+    return serializeAny(std::any()); // Fallback to JSON-like or null
+}
+
+std::string serializeToYamlAny(const std::any& val, int indentLevel) {
+     if (val.type() == typeid(int)) return std::to_string(std::any_cast<int>(val));
+     // ... primitives ...
+     // Delegate to serializedRuntimeValue if possible or duplicate logic
+     // Duplicating logic is easier for now
+     if (val.type() == typeid(std::shared_ptr<ClassInstance>)) {
+         auto instance = std::any_cast<std::shared_ptr<ClassInstance>>(val);
+         std::stringstream ss;
+         if (instance->fields.empty()) return "{}";
+         
+         std::string indent(indentLevel * 2, ' ');
+         bool first = true;
+         for (const auto& [name, field] : instance->fields) {
+             if (!first) ss << "\n" << indent;
+             else if (indentLevel > 0) {} // Start inline? No, usually block starts on new line 
+             
+             ss << name << ": ";
+             if (field.type == "object") {
+                  ss << "\n" << indent << "  " << serializeToYamlRuntimeValue(field, indentLevel + 1);
+             } else if (field.type.starts_with("array")) {
+                  ss << "\n" << indent << "  " << serializeToYamlRuntimeValue(field, indentLevel + 1);
+             } else {
+                  ss << serializeToYamlRuntimeValue(field, 0);
+             }
+             first = false;
+         }
+         return ss.str();
+     }
+     // Arrays
+     if (val.type() == typeid(std::vector<std::string>)) {
+         auto vec = std::any_cast<std::vector<std::string>>(val);
+         std::stringstream ss;
+         std::string indent(indentLevel * 2, ' ');
+         for(auto& s : vec) {
+             ss << "\n" << indent << "- \"" << s << "\"";
+         }
+         return ss.str();
+     }
+
+     return serializeAny(val); // Fallback to JSON
+}
+
+void NativeRegistry::initYAML() {
+    registerFunction("yaml", "yamlStringify", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) return std::string("");
+        // Use serializeToYamlAny logic (simplified implementation)
+        return serializeToYamlAny(args[0], 0);
+    }, FunctionSignature{{"any"}, "string"});
 }
 
 // ============================================================================

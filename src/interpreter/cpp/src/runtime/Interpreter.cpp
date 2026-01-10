@@ -1139,6 +1139,34 @@ void Interpreter::visit(LambdaExpr& expr) {
     lastValue = RuntimeValue(std::any(closure), "function");
 }
 
+void Interpreter::visit(StructInitExpr& expr) {
+    std::string structName = expr.name.lexeme;
+
+    // Check if struct is defined
+    if (!classes.count(structName)) {
+        error("Undefined struct: " + structName);
+        return;
+    }
+    
+    // Create new instance
+    auto instance = std::make_shared<ClassInstance>();
+    instance->className = structName;
+    
+    // Evaluate and assign fields
+    for (const auto& field : expr.fields) {
+        std::string fieldName = field.first;
+        
+        // Evaluate field value
+        field.second->accept(*this);
+        
+        // Assign to instance
+        instance->fields[fieldName] = lastValue;
+    }
+    
+    // Return the instance
+    lastValue = RuntimeValue(instance);
+}
+
 // --- Statement Visitors ---
 
 void Interpreter::visit(VarDecl& stmt) {
@@ -1357,7 +1385,7 @@ void Interpreter::visit(IfStmt& stmt) {
      //   std::cerr << "[DEBUG] IfStmt: executing else branch" << std::endl;
         stmt.elseBranch->accept(*this);
     } else {
-        std::cerr << "[DEBUG] IfStmt: no branch executed" << std::endl;
+       // std::cerr << "[DEBUG] IfStmt: no branch executed" << std::endl;
     }
 }
 
@@ -1497,13 +1525,16 @@ RuntimeValue Interpreter::evaluateNativeCall(const std::string& moduleName,
     // Convert RuntimeValue arguments to std::any for NativeRegistry
     // Extract actual values from variant before converting to std::any
     std::vector<std::any> nativeArgs;
+    // std::cout << "Calling native: " << moduleName << "::" << functionName << std::endl;
     for (const auto& arg : args) {
+        // std::cout << "  Arg type: " << arg.type << " index: " << arg.value.index() << std::endl;
         std::any anyValue;
         if (std::holds_alternative<int>(arg.value)) {
             anyValue = std::get<int>(arg.value);
         } else if (std::holds_alternative<double>(arg.value)) {
             anyValue = std::get<double>(arg.value);
         } else if (std::holds_alternative<std::string>(arg.value)) {
+            // std::cout << "  Arg string value: " << std::get<std::string>(arg.value) << std::endl;
             anyValue = std::get<std::string>(arg.value);
         } else if (std::holds_alternative<char>(arg.value)) {
             anyValue = std::get<char>(arg.value);

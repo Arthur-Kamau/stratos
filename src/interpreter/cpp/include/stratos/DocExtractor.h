@@ -36,6 +36,7 @@ public:
     void visit(CastExpr& expr) override {}
     void visit(MapLiteralExpr& expr) override {}
     void visit(LambdaExpr& expr) override {}
+    void visit(StructInitExpr& expr) override {}
 
     // Statement visitors
     void visit(VarDecl& stmt) override;

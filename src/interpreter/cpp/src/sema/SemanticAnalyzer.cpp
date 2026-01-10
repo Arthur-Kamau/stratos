@@ -89,8 +89,22 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
 
     if (expr.op.type == TokenType::DOT) {
         // Handle member access (e.g., obj.field, Enum.VALUE, array.length())
+        
+        // String methods
+        if (leftType == "string") {
+            if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
+                std::string memberName = rightVar->name.lexeme;
+                // Whitelist standard string methods
+                if (memberName == "split" || memberName == "repeat" || memberName == "length" || 
+                    memberName == "trim" || memberName == "toUpper" || memberName == "toLower" ||
+                    memberName == "startsWith" || memberName == "endsWith" || memberName == "replace") {
+                    return; // Resolved as valid string method
+                }
+            }
+        }
+
         // Check if this is an array method call
-        if (leftType.find("Array<") == 0 || leftType == "Array") { // Simple check for Array type
+        if (leftType.find("Array<") == 0 || leftType == "Array" || leftType == "array") { // Simple check for Array type
             if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
                 std::string memberName = rightVar->name.lexeme;
                 if (memberName == "length") { // Array has a .length() method
@@ -101,6 +115,13 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
                  if (memberName == "add") { // Array has an .add() method
                     // Define a dummy symbol for add for type checking purposes
                     symbolTable.define(Symbol::Function("Array::add", {"any"}, "void")); // Transient definition
+                    return; // Resolved
+                }
+                
+                // Other array methods
+                if (memberName == "isEmpty" || memberName == "first" || memberName == "last" || 
+                    memberName == "join" || memberName == "contains" || memberName == "indexOf" || 
+                    memberName == "reverse" || memberName == "clear") {
                     return; // Resolved
                 }
             }
@@ -129,6 +150,14 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
                     return;
                 }
             }
+        }
+        
+        // Check for class field access (e.g. file.name)
+        // If the left side type is a known class, we assume the field exists for now
+        // (Full field validation would require storing class structure in SymbolTable)
+        auto classSymbol = symbolTable.resolve(leftType);
+        if (classSymbol && classSymbol->kind == SymbolKind::CLASS) {
+            return; // Valid member access on object
         }
 
         // For other dot accesses (like module.function), just validate right side
@@ -271,7 +300,14 @@ void SemanticAnalyzer::visit(VarDecl& stmt) {
     }
 
     // 2. Define variable in current scope
-    std::string type = stmt.typeName.empty() ? "inferred" : stmt.typeName;
+    std::string type = stmt.typeName;
+    if (type.empty()) {
+        if (stmt.initializer) {
+            type = inferType(stmt.initializer.get());
+        } else {
+            type = "any";
+        }
+    }
     Symbol symbol = Symbol::Variable(stmt.name.lexeme, type, stmt.isMutable);
 
     if (!symbolTable.define(symbol)) {
@@ -432,7 +468,18 @@ void SemanticAnalyzer::visit(ForStmt& stmt) {
 
     // Define the loop variable in this scope
     // For now, use the provided type or infer from iterable if possible
-    std::string loopVarType = stmt.varType.empty() ? "any" : stmt.varType;
+    std::string loopVarType = stmt.varType;
+    if (loopVarType.empty()) {
+        std::string iterableType = inferType(stmt.iterable.get());
+        if (iterableType.find("Array<") == 0 && iterableType.back() == '>') {
+             loopVarType = iterableType.substr(6, iterableType.length() - 7);
+        } else if (iterableType == "string") {
+             loopVarType = "char";
+        } else {
+             loopVarType = "any";
+        }
+    }
+    
     Symbol loopVar = Symbol::Variable(stmt.variable.lexeme, loopVarType, stmt.isMutable);
     if (!symbolTable.define(loopVar)) {
         error(stmt.variable, "Loop variable '" + stmt.variable.lexeme + "' is already defined in this scope.");
@@ -683,9 +730,57 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
             return "string";
         }
     } else if (auto* callExpr = dynamic_cast<CallExpr*>(expr)) {
+        // Check for Array constructor
+        if (auto* varExpr = dynamic_cast<VariableExpr*>(callExpr->callee.get())) {
+            if (varExpr->name.lexeme == "Array") {
+                 return "Array";
+            }
+            
+            // Handle simple function call (local or prelude)
+            auto symbolOpt = symbolTable.resolve(varExpr->name.lexeme);
+            if (symbolOpt) {
+                if (symbolOpt->kind == SymbolKind::FUNCTION) {
+                    return symbolOpt->returnType;
+                }
+                return symbolOpt->type;
+            }
+        }
+
         // Try to infer return type from function signature
         if (auto* binExpr = dynamic_cast<BinaryExpr*>(callExpr->callee.get())) {
             if (binExpr->op.type == TokenType::DOT) {
+                // Check if it's a method call on an object
+                std::string leftType = inferType(binExpr->left.get());
+                if (auto* rightVar = dynamic_cast<VariableExpr*>(binExpr->right.get())) {
+                     std::string methodName = rightVar->name.lexeme;
+                     
+                     if (leftType == "string") {
+                         if (methodName == "split") return "Array<string>";
+                         if (methodName == "length") return "int";
+                         if (methodName == "repeat") return "string";
+                         if (methodName == "trim" || methodName == "trimLeft" || methodName == "trimRight" || 
+                             methodName == "trimPrefix" || methodName == "trimSuffix") return "string";
+                         if (methodName == "toUpper" || methodName == "toLower" || methodName == "toTitle") return "string";
+                         if (methodName == "startsWith" || methodName == "endsWith") return "bool";
+                     }
+                     if (leftType.find("Array") == 0 || leftType == "array") {
+                         if (methodName == "length") return "int";
+                         if (methodName == "join") return "string";
+                         if (methodName == "isEmpty") return "bool";
+                         if (methodName == "contains") return "bool";
+                         if (methodName == "indexOf") return "int";
+                         // For first/last/get, we should return the element type, but we don't track generics well yet.
+                         // For Array<string>, element is string.
+                         if (methodName == "first" || methodName == "last" || methodName == "get") {
+                             if (leftType.find("Array<") == 0 && leftType.back() == '>') {
+                                 return leftType.substr(6, leftType.length() - 7);
+                             }
+                             return "any";
+                         }
+                         if (methodName == "reverse" || methodName == "clear") return leftType;
+                     }
+                }
+
                 if (auto* leftVar = dynamic_cast<VariableExpr*>(binExpr->left.get())) {
                     if (auto* rightVar = dynamic_cast<VariableExpr*>(binExpr->right.get())) {
                         std::string moduleName = leftVar->name.lexeme;
@@ -703,6 +798,21 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
     }
 
     return "unknown";
+}
+
+void SemanticAnalyzer::visit(StructInitExpr& expr) {
+    // 1. Verify struct existence
+    // Since we don't have full type checking on structs yet, we just check if it's available in symbol table if possible
+    // But struct definitions are treated as ClassDecl which might be in classes map in Interpreter, 
+    // Here in SemanticAnalyzer we track symbols.
+    
+    // 2. Analyze fields
+    for (const auto& field : expr.fields) {
+        field.second->accept(*this);
+        // lastExprType is set by visit
+    }
+    
+    lastExprType = expr.name.lexeme; // Tentative type name
 }
 
 } // namespace stratos

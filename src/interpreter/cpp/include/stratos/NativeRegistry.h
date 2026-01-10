@@ -84,6 +84,7 @@ private:
     void initWebSocket();
     void initTerminal();
     void initRegex();
+    void initYAML();
     void initSQLite();
 };
 

@@ -59,34 +59,34 @@ class FileInfo {
 // ============================================================================
 
 // File reading
-fn readFile(path: string) Result<string, Error>;
-fn readBytes(path: string) Result<Array<byte>, Error>;
+fn readFile(path: string) string;
+fn readBytes(path: string) Array<byte>;
 
 // File writing
-fn writeFile(path: string, content: string) Result<void, Error>;
-fn appendFile(path: string, content: string) Result<void, Error>;
-fn writeBytes(path: string, data: Array<byte>) Result<void, Error>;
+fn writeFile(path: string, content: string) bool;
+fn appendFile(path: string, content: string) bool;
+fn writeBytes(path: string, data: Array<byte>) bool;
 
 // File operations
-fn open(path: string, mode: string) Result<File, Error>;
+fn open(path: string, mode: string) Result<File, Error>; // Keep Result for now or TODO
 fn create(path: string) Result<File, Error>;
-fn remove(path: string) Result<void, Error>;
-fn rename(oldPath: string, newPath: string) Result<void, Error>;
-fn copy(src: string, dst: string) Result<void, Error>;
+fn remove(path: string) bool;
+fn rename(oldPath: string, newPath: string) bool;
+fn copy(src: string, dst: string) bool;
 
 // Directory operations
-fn mkdir(path: string) Result<void, Error>;
-fn mkdirAll(path: string) Result<void, Error>;
-fn removeDir(path: string) Result<void, Error>;
-fn removeDirAll(path: string) Result<void, Error>;
-fn readDir(path: string) Result<Array<FileInfo>, Error>;
+fn mkdir(path: string) bool;
+fn mkdirAll(path: string) bool;
+fn removeDir(path: string) bool;
+fn removeDirAll(path: string) bool;
+fn readDir(path: string) Array<FileInfo>;
 
 // File info
 fn exists(path: string) bool;
 fn isFile(path: string) bool;
 fn isDirectory(path: string) bool;
-fn fileSize(path: string) Result<int, Error>;
-fn stat(path: string) Result<FileInfo, Error>;
+fn fileSize(path: string) int;
+fn stat(path: string) FileInfo;
 
 // Path operations
 fn pathJoin(parts: Array<string>) string;  // Renamed from join to avoid conflict with strings.join
@@ -104,34 +104,22 @@ fn tempDir(pattern: string) Result<string, Error>;
 // ============================================================================
 
 // Read lines from file
-fn readLines(path: string) Result<Array<string>, Error> {
+fn readLines(path: string) Array<string> {
     val content = readFile(path);
-
-    if !content.ok() {
-        return Result<Array<string>, Error> {
-            value: [],
-            error: content.err(),
-            isOk: false
-        };
+    if (content == "") { // Assuming empty string on error for now
+        return [];
     }
-
-    val lines = content.unwrap().split("\n");
-
-    return Result<Array<string>, Error> {
-        value: lines,
-        error: None,
-        isOk: true
-    };
+    return content.split("\n");
 }
 
 // Write lines to file
-fn writeLines(path: string, lines: Array<string>) Result<void, Error> {
+fn writeLines(path: string, lines: Array<string>) bool {
     val content = lines.join("\n");
     return writeFile(path, content);
 }
 
 // Append line to file
-fn appendLine(path: string, line: string) Result<void, Error> {
+fn appendLine(path: string, line: string) bool {
     return appendFile(path, line + "\n");
 }
 
@@ -141,18 +129,8 @@ fn hasExtension(path: string, ext: string) bool {
 }
 
 // List files in directory with filter
-fn listFiles(path: string, filter: Function<FileInfo, bool>) Result<Array<FileInfo>, Error> {
-    val filesResult = readDir(path);
-
-    if !filesResult.ok() {
-        return Result<Array<FileInfo>, Error> {
-            value: [],
-            error: filesResult.err(),
-            isOk: false
-        };
-    }
-
-    val files = filesResult.unwrap();
+fn listFiles(path: string, filter: Function<FileInfo, bool>) Array<FileInfo> {
+    val files = readDir(path);
     var filtered = Array<FileInfo>();
 
     for val file in files {
@@ -161,34 +139,26 @@ fn listFiles(path: string, filter: Function<FileInfo, bool>) Result<Array<FileIn
         }
     }
 
-    return Result<Array<FileInfo>, Error> {
-        value: filtered,
-        error: None,
-        isOk: true
-    };
+    return filtered;
 }
 
 // List only files (not directories)
-fn listFilesOnly(path: string) Result<Array<FileInfo>, Error> {
+fn listFilesOnly(path: string) Array<FileInfo> {
     return listFiles(path, (file) => !file.isDirectory);
 }
 
 // List only directories
-fn listDirectoriesOnly(path: string) Result<Array<FileInfo>, Error> {
+fn listDirectoriesOnly(path: string) Array<FileInfo> {
     return listFiles(path, (file) => file.isDirectory);
 }
 
 // Ensure directory exists (create if not)
-fn ensureDir(path: string) Result<void, Error> {
+fn ensureDir(path: string) bool {
     if exists(path) {
         if isDirectory(path) {
-            return Result<void, Error> { value: None, error: None, isOk: true };
+            return true;
         } else {
-            return Result<void, Error> {
-                value: None,
-                error: Error("Path exists but is not a directory"),
-                isOk: false
-            };
+            return false;
         }
     }
 
@@ -196,18 +166,8 @@ fn ensureDir(path: string) Result<void, Error> {
 }
 
 // Walk directory tree
-fn walk(root: string, visitor: Function<string, FileInfo, void>) Result<void, Error> {
-    val filesResult = readDir(root);
-
-    if !filesResult.ok() {
-        return Result<void, Error> {
-            value: None,
-            error: filesResult.err(),
-            isOk: false
-        };
-    }
-
-    val files = filesResult.unwrap();
+fn walk(root: string, visitor: Function<string, FileInfo, void>) bool {
+    val files = readDir(root);
 
     for val file in files {
         val fullPath = pathJoin([root, file.name]);
@@ -218,5 +178,5 @@ fn walk(root: string, visitor: Function<string, FileInfo, void>) Result<void, Er
         }
     }
 
-    return Result<void, Error> { value: None, error: None, isOk: true };
+    return true;
 }

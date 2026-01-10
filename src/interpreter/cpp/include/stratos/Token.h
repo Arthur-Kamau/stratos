@@ -6,6 +6,25 @@
 
 namespace stratos {
 
+#ifdef _WIN32
+// Undefine conflicting macros from windows.h
+#undef FALSE
+#undef TRUE
+#undef ERROR
+#undef VOID
+#undef INT
+#undef DOUBLE
+#undef BOOL
+#undef THIS
+#undef INTERFACE
+#undef IGNORE
+#undef CONST
+#undef STRICT
+#undef OPTIONAL
+// NONE is usually not defined, but good to be safe if it is.
+#undef NONE
+#endif
+
 enum class TokenType {
     // Single-character tokens
     LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
