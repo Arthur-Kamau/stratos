@@ -1508,13 +1508,16 @@ RuntimeValue Interpreter::evaluateNativeCall(const std::string& moduleName,
     // Convert RuntimeValue arguments to std::any for NativeRegistry
     // Extract actual values from variant before converting to std::any
     std::vector<std::any> nativeArgs;
+    // std::cout << "Calling native: " << moduleName << "::" << functionName << std::endl;
     for (const auto& arg : args) {
+        // std::cout << "  Arg type: " << arg.type << " index: " << arg.value.index() << std::endl;
         std::any anyValue;
         if (std::holds_alternative<int>(arg.value)) {
             anyValue = std::get<int>(arg.value);
         } else if (std::holds_alternative<double>(arg.value)) {
             anyValue = std::get<double>(arg.value);
         } else if (std::holds_alternative<std::string>(arg.value)) {
+            // std::cout << "  Arg string value: " << std::get<std::string>(arg.value) << std::endl;
             anyValue = std::get<std::string>(arg.value);
         } else if (std::holds_alternative<char>(arg.value)) {
             anyValue = std::get<char>(arg.value);
