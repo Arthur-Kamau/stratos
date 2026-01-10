@@ -93,7 +93,7 @@ void printHelp() {
     std::cout << "  stratos check <file.st>        Parse and analyze without code generation\n";
     std::cout << "  stratos check <directory>      Check all .st files in directory\n";
     std::cout << "  stratos fmt <file.st>          Format a Stratos source file\n";
-    std::cout << "  stratos fmt <directory> -w     Format all .st files in directory\n";
+    std::cout << "  stratos fmt <directory> --write Format all .st files in directory\n";
     std::cout << "  stratos build                  Build project (looks for stratos.conf)\n";
     std::cout << "  stratos build <project_dir>    Build project in specified directory\n";
     std::cout << "  stratos new <project-name>     Create a new Stratos project\n";

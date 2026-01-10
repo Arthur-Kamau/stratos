@@ -83,10 +83,26 @@ void Formatter::visit(UnaryExpr& expr) {
     expr.right->accept(*this);
 }
 
+// Helper to escape special characters in string literals
+std::string escapeString(const std::string& input) {
+    std::string output;
+    for (char c : input) {
+        switch (c) {
+            case '\n': output += "\\n"; break;
+            case '\r': output += "\\r"; break;
+            case '\t': output += "\\t"; break;
+            case '\"': output += "\\\""; break;
+            case '\\': output += "\\\\"; break;
+            default: output += c;
+        }
+    }
+    return output;
+}
+
 void Formatter::visit(LiteralExpr& expr) {
     if (expr.type == TokenType::STRING) {
         write("\"");
-        write(expr.value);
+        write(escapeString(expr.value));
         write("\"");
     } else {
         write(expr.value);
