@@ -5,12 +5,12 @@ use io;
 fn printHeader(title: string) void {
     println("\n" + "=".repeat(50));
     println(title);
-    println("=".repeat(50));
+                     println("=".repeat(50));
 }
 
 fn printSection(num: int, title: string) void {
     println("\n" + num + ". " + title);
-    println("-".repeat(40));
+println("-".repeat(40));
 }
 
 fn main() {
