@@ -194,7 +194,14 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
         // Check for class field access (e.g. file.name)
         // If the left side type is a known class, we assume the field exists for now
         // (Full field validation would require storing class structure in SymbolTable)
+        // std::cerr << "[DEBUG] BinaryExpr DOT: leftType=" << leftType << std::endl;
         auto classSymbol = symbolTable.resolve(leftType);
+        if (classSymbol) {
+             // std::cerr << "[DEBUG] Resolved leftType to symbol kind=" << static_cast<int>(classSymbol->kind) << std::endl;
+        } else {
+             // std::cerr << "[DEBUG] Failed to resolve leftType=" << leftType << std::endl;
+        }
+        
         if (classSymbol && classSymbol->kind == SymbolKind::CLASS) {
             return; // Valid member access on object
         }
@@ -834,6 +841,8 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
                 }
             }
         }
+    } else if (auto* structExpr = dynamic_cast<StructInitExpr*>(expr)) {
+        return structExpr->name.lexeme;
     }
 
     return "unknown";
