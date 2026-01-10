@@ -38,6 +38,7 @@ std::unordered_map<std::string, TokenType> Lexer::keywords = {
     {"unit", TokenType::UNIT},
     {"Optional", TokenType::OPTIONAL},
     {"constructor", TokenType::CONSTRUCTOR},
+    {"pub", TokenType::PUB},
     {"not", TokenType::NOT}
 };
 

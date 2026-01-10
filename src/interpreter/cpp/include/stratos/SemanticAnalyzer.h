@@ -48,7 +48,9 @@ private:
     std::vector<std::string> loadedModules; // Track already loaded modules
     std::string lastExprType; // Track the type of the last evaluated expression
     std::string currentClassName; // Track current class name for 'this' context
+
     std::string projectRoot; 
+    std::unordered_map<std::string, std::unordered_map<std::string, Symbol>> classMembers; // Store members of classes for access control 
 
     void error(const std::string& message); // Generic (no loc)
     void error(Token token, const std::string& message); // With loc

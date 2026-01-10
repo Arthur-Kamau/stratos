@@ -20,12 +20,12 @@ void SemanticAnalyzer::defineNativeFunctions() {
     // symbolTable.define(Symbol::Function("println", {"any"}, "void"));
 
     // Define standard types/constructors
-    symbolTable.define(Symbol::Variable("Some", "constructor", false)); // Mock for now
-    symbolTable.define(Symbol::Variable("None", "Optional", false));
-    symbolTable.define(Symbol::Function("Array", {}, "any")); // Generic array constructor
+    symbolTable.define(Symbol::Variable("Some", "constructor", false, true)); // Mock for now
+    symbolTable.define(Symbol::Variable("None", "Optional", false, true));
+    symbolTable.define(Symbol::Function("Array", {}, "any", true)); // Generic array constructor
 
     // Internal intrinsics
-    symbolTable.define(Symbol::Function("__if_expr", {"bool", "any", "any"}, "any"));
+    symbolTable.define(Symbol::Function("__if_expr", {"bool", "any", "any"}, "any", true));
 }
 
 bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& statements) {
@@ -53,13 +53,31 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
                     for (const auto& param : funcDecl->parameters) {
                         paramTypes.push_back(param.type);
                     }
-                    Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType);
+                    Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType, funcDecl->isPublic);
                     if (!symbolTable.define(funcSymbol)) {
                         error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined.");
                     }
                 } else if (auto* classDecl = dynamic_cast<ClassDecl*>(decl.get())) {
                     if (!symbolTable.define(Symbol{classDecl->name.lexeme, SymbolKind::CLASS, classDecl->name.lexeme, false})) {
                         error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined.");
+                    }
+                    // Register members
+                    for (const auto& member : classDecl->methods) {
+                         if (auto* func = dynamic_cast<FunctionDecl*>(member.get())) {
+                             std::vector<std::string> pTypes;
+                             for (const auto& p : func->parameters) pTypes.push_back(p.type);
+                             Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic);
+                             classMembers[classDecl->name.lexeme][func->name.lexeme] = sym;
+                         } else if (auto* var = dynamic_cast<VarDecl*>(member.get())) {
+                             Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, false); // Fields private by default?
+                             // TODO: Add pub for fields if needed. For now, assume fields are public or handle separately.
+                             // Documentation example showed: private var balance: double;
+                             // We haven't implemented 'private' token or 'pub' for fields nicely yet in Parser?
+                             // Parser handles 'private' via... wait, Parser doesn't handle 'private' keyword yet!
+                             // The user request said "functions in a class are not exported by default... unless they have pub".
+                             // So we focus on functions.
+                             classMembers[classDecl->name.lexeme][var->name.lexeme] = sym;
+                         }
                     }
                 } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(decl.get())) {
                     if (!symbolTable.define(Symbol{enumDecl->name.lexeme, SymbolKind::CLASS, enumDecl->name.lexeme, false})) {
@@ -80,13 +98,22 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
             for (const auto& param : funcDecl->parameters) {
                 paramTypes.push_back(param.type);
             }
-            Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType);
+            Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType, funcDecl->isPublic);
             if (!symbolTable.define(funcSymbol)) {
                 error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined.");
             }
         } else if (auto* classDecl = dynamic_cast<ClassDecl*>(statements[i].get())) {
             if (!symbolTable.define(Symbol{classDecl->name.lexeme, SymbolKind::CLASS, classDecl->name.lexeme, false})) {
                 error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined.");
+            }
+            // Register members
+            for (const auto& member : classDecl->methods) {
+                    if (auto* func = dynamic_cast<FunctionDecl*>(member.get())) {
+                        std::vector<std::string> pTypes;
+                        for (const auto& p : func->parameters) pTypes.push_back(p.type);
+                        Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic);
+                        classMembers[classDecl->name.lexeme][func->name.lexeme] = sym;
+                    }
             }
         } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(statements[i].get())) {
             if (!symbolTable.define(Symbol{enumDecl->name.lexeme, SymbolKind::CLASS, enumDecl->name.lexeme, false})) {
@@ -129,6 +156,22 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
     if (expr.op.type == TokenType::DOT) {
         // Handle member access (e.g., obj.field, Enum.VALUE, array.length())
         
+        // Check visibility for object member access
+        if (classMembers.find(leftType) != classMembers.end()) {
+             if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
+                 std::string methodName = rightVar->name.lexeme;
+                 auto& members = classMembers[leftType];
+                 if (members.find(methodName) != members.end()) {
+                     Symbol methodSym = members[methodName];
+                     
+                     bool isAccessible = methodSym.isPublic || (currentClassName == leftType);
+                     
+                     if (!isAccessible) {
+                         error(rightVar->name, "Method '" + methodName + "' is private and cannot be accessed from outside class '" + leftType + "'.");
+                     }
+                 }
+             }
+        }
         // String methods
         if (leftType == "string") {
             if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
@@ -368,7 +411,7 @@ void SemanticAnalyzer::visit(FunctionDecl& stmt) {
         paramTypes.push_back(param.type);
     }
     
-    Symbol funcSymbol = Symbol::Function(stmt.name.lexeme, paramTypes, stmt.returnType);
+    Symbol funcSymbol = Symbol::Function(stmt.name.lexeme, paramTypes, stmt.returnType, stmt.isPublic);
     if (!symbolTable.define(funcSymbol)) {
         // Only error if we're in a class (class methods should be defined fresh)
         // Top-level functions are expected to fail here due to first pass registration
@@ -694,13 +737,22 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
                     for (const auto& param : funcDecl->parameters) {
                         paramTypes.push_back(param.type);
                     }
-                    Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType);
+                    Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType, funcDecl->isPublic);
                     if (!symbolTable.define(funcSymbol)) {
                         error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined.");
                     }
                 } else if (auto* classDecl = dynamic_cast<ClassDecl*>(statements[i].get())) {
                     if (!symbolTable.define(Symbol{classDecl->name.lexeme, SymbolKind::CLASS, classDecl->name.lexeme, false})) {
                         error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined.");
+                    }
+                    // Register members
+                    for (const auto& member : classDecl->methods) {
+                        if (auto* func = dynamic_cast<FunctionDecl*>(member.get())) {
+                            std::vector<std::string> pTypes;
+                            for (const auto& p : func->parameters) pTypes.push_back(p.type);
+                            Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic);
+                            classMembers[classDecl->name.lexeme][func->name.lexeme] = sym;
+                        }
                     }
                 } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(statements[i].get())) {
                     if (!symbolTable.define(Symbol{enumDecl->name.lexeme, SymbolKind::CLASS, enumDecl->name.lexeme, false})) {
@@ -798,7 +850,9 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
                 // Check if it's a method call on an object
                 std::string leftType = inferType(binExpr->left.get());
                 if (auto* rightVar = dynamic_cast<VariableExpr*>(binExpr->right.get())) {
-                     std::string methodName = rightVar->name.lexeme;
+                    std::string methodName = rightVar->name.lexeme;
+
+
                      
                      if (leftType == "string") {
                          if (methodName == "split") return "Array<string>";
@@ -839,9 +893,12 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
                         }
                     }
                 }
+                }
             }
         }
-    } else if (auto* structExpr = dynamic_cast<StructInitExpr*>(expr)) {
+    } 
+    
+    if (auto* structExpr = dynamic_cast<StructInitExpr*>(expr)) {
         return structExpr->name.lexeme;
     }
 

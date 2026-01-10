@@ -238,9 +238,10 @@ public:
     std::string returnType;
     std::unique_ptr<std::vector<std::unique_ptr<Stmt>>> body; // Can be null for interfaces
     std::unique_ptr<DocComment> documentation;
+    bool isPublic;
 
-    FunctionDecl(Token name, std::vector<Parameter> parameters, std::string returnType, std::unique_ptr<std::vector<std::unique_ptr<Stmt>>> body)
-        : name(name), parameters(std::move(parameters)), returnType(returnType), body(std::move(body)), documentation(nullptr) {}
+    FunctionDecl(Token name, std::vector<Parameter> parameters, std::string returnType, std::unique_ptr<std::vector<std::unique_ptr<Stmt>>> body, bool isPublic = false)
+        : name(name), parameters(std::move(parameters)), returnType(returnType), body(std::move(body)), documentation(nullptr), isPublic(isPublic) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };

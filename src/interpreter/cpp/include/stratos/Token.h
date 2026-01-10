@@ -57,7 +57,7 @@ enum class TokenType {
     RETURN, SUPER, THIS, TRUE, VAR, VAL,
     WHILE, WHEN,
     INT, DOUBLE, BOOL, VOID, UNIT, OPTIONAL,
-    CONSTRUCTOR,
+    CONSTRUCTOR, PUB,
 
     // Documentation
     DOC_COMMENT,

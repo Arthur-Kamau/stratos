@@ -30,7 +30,7 @@ std::unique_ptr<Stmt> Parser::declaration() {
         // std::cout << "[Parser::declaration] Current token: " << peek().lexeme << " (type " << static_cast<int>(peek().type) << ")" << std::endl;
 
         if (match({TokenType::VAR, TokenType::VAL})) return varDeclaration();
-        if (match({TokenType::FN})) return fnDeclaration("function");
+        if (match({TokenType::FN})) return fnDeclaration("function", true); // Top level functions are public by default (exported)
         if (match({TokenType::CLASS, TokenType::STRUCT, TokenType::INTERFACE})) return classDeclaration();
         if (match({TokenType::ENUM})) return enumDeclaration();
         if (match({TokenType::PACKAGE})) return packageDeclaration();
@@ -67,7 +67,7 @@ std::unique_ptr<Stmt> Parser::varDeclaration() {
     return var;
 }
 
-std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind) {
+std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind, bool isPublic) {
     Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
     consume(TokenType::LEFT_PAREN, "Expect '(' after " + kind + " name.");
 
@@ -109,7 +109,7 @@ std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind) {
     if (check(TokenType::SEMICOLON)) {
         consume(TokenType::SEMICOLON, "Expect ';' after interface method signature.");
         // Return function declaration with null body (interface method)
-        auto func = std::make_unique<FunctionDecl>(name, std::move(parameters), returnType, nullptr);
+        auto func = std::make_unique<FunctionDecl>(name, std::move(parameters), returnType, nullptr, isPublic);
         func->documentation = takePendingDoc();
         return func;
     }
@@ -122,7 +122,7 @@ std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind) {
     consume(TokenType::RIGHT_BRACE, "Expect '}' after " + kind + " body.");
 
     auto bodyPtr = std::make_unique<std::vector<std::unique_ptr<Stmt>>>(std::move(body));
-    auto func = std::make_unique<FunctionDecl>(name, std::move(parameters), returnType, std::move(bodyPtr));
+    auto func = std::make_unique<FunctionDecl>(name, std::move(parameters), returnType, std::move(bodyPtr), isPublic);
     func->documentation = takePendingDoc();
     return func;
 }
@@ -156,8 +156,12 @@ std::unique_ptr<Stmt> Parser::classDeclaration() {
     while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
         if (match({TokenType::VAR, TokenType::VAL})) {
             methods.push_back(varDeclaration());
-        } else if (match({TokenType::FN})) {
-             methods.push_back(fnDeclaration("method"));
+        } else if (match({TokenType::FN, TokenType::PUB})) {
+             bool isPublic = (previous().type == TokenType::PUB);
+             if (isPublic) {
+                 consume(TokenType::FN, "Expect 'fn' after 'pub'.");
+             }
+             methods.push_back(fnDeclaration("method", isPublic));
         } else if (match({TokenType::CONSTRUCTOR})) {
             // Parse constructor as a special function named "constructor"
             Token ctorName = previous(); // "constructor" keyword
@@ -192,7 +196,7 @@ std::unique_ptr<Stmt> Parser::classDeclaration() {
             consume(TokenType::RIGHT_BRACE, "Expect '}' after constructor body.");
 
             // Create a FunctionDecl with name "constructor"
-            methods.push_back(std::make_unique<FunctionDecl>(ctorName, std::move(parameters), returnType, std::move(body)));
+            methods.push_back(std::make_unique<FunctionDecl>(ctorName, std::move(parameters), returnType, std::move(body), true));
         } else {
              // Skip unknown things inside class for now to avoid infinite loops
              advance();

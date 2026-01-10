@@ -22,7 +22,7 @@ private:
     // Declarations
     std::unique_ptr<Stmt> declaration();
     std::unique_ptr<Stmt> varDeclaration();
-    std::unique_ptr<Stmt> fnDeclaration(const std::string& kind);
+    std::unique_ptr<Stmt> fnDeclaration(const std::string& kind, bool isPublic = false);
     std::unique_ptr<Stmt> classDeclaration();
     std::unique_ptr<Stmt> structDeclaration(); // New
     std::unique_ptr<Stmt> enumDeclaration();
