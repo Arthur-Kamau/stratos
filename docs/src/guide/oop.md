@@ -1,5 +1,5 @@
 ---
-title: Object-Oriented Programming
+title: Object-Oriented Programming/ Class
 description: Classes, interfaces, and inheritance in Stratos
 ---
 
@@ -246,19 +246,19 @@ class BankAccount {
         this.balance = initialBalance;
     }
 
-    // Public methods to access private data
-    fn getBalance() double {
+    // Public methods require 'pub' keyword
+    pub fn getBalance() double {
         return this.balance;
     }
 
-    fn deposit(amount: double) {
+    pub fn deposit(amount: double) {
         if (amount > 0.0) {
             this.balance += amount;
             print("Deposited: $" + amount);
         }
     }
 
-    fn withdraw(amount: double) bool {
+    pub fn withdraw(amount: double) bool {
         if (amount > 0.0 && amount <= this.balance) {
             this.balance -= amount;
             print("Withdrawn: $" + amount);
@@ -287,6 +287,16 @@ fn main() {
 - Protects data from invalid modifications
 - Allows you to change internal implementation without affecting users
 - Makes code more maintainable and less prone to bugs
+:::
+
+::: warning Method Visibility
+Class methods are **private by default**. You must explicitly use the `pub` keyword to make a method accessible from outside the class.
+```stratos
+class Example {
+    fn privateMethod() { ... } // Only callable from within Example
+    pub fn publicMethod() { ... } // Callable from anywhere
+}
+```
 :::
 
 ## Polymorphism
@@ -647,6 +657,7 @@ Use interfaces to define contracts. This makes your code more testable and allow
 | Implementation | `class Type : Interface` | Implement an interface |
 | Super call | `super(args)` | Call parent constructor |
 | Private | `private var field` | Restrict access |
+| Public Method | `pub fn method()` | Export method |
 | Static | `static fn method()` | Class-level member |
 | This | `this.field` | Reference current instance |
 

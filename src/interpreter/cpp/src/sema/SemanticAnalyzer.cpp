@@ -893,7 +893,7 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
                         }
                     }
                 }
-                }
+
             }
         }
     } 
