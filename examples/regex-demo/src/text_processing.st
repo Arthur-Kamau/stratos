@@ -2,77 +2,54 @@ package main;
 
 use regex;
 
-fn main() {
-    println("Regex Text Processing Demo");
-    println("===========================");
-    println("");
+fn runTextProcessingDemo() {
+    printHeader("Regex Text Processing Demo");
+
+    // Example 0: Basic Replace (from replace_demo)
+    printSection("Basic Replace Operations");
+    val text1 = "I like apples";
+    println("Original: " + text1);
+    println("Replace:  " + regex.replace("apples", text1, "oranges"));
+
+    val text2 = "foo bar foo baz foo";
+    println("\nOriginal: " + text2);
+    println("ReplaceAll: " + regex.replaceAll("foo", text2, "BAR"));
 
     // Example 1: Clean up whitespace
-    println("Example 1: Clean Whitespace");
-    println("----------------------------");
-
+    printSection("Example 1: Clean Whitespace");
     val messyText = "Hello    world   with    lots  of   spaces";
     println("Original: " + messyText);
-
-    val cleanText = regex.replaceAll("  +", messyText, " ");
-    println("Cleaned:  " + cleanText);
-
-    println("");
+    println("Cleaned:  " + regex.replaceAll("  +", messyText, " "));
 
     // Example 2: Remove HTML tags
-    println("Example 2: Remove HTML Tags");
-    println("----------------------------");
-
+    printSection("Example 2: Remove HTML Tags");
     val htmlText = "<p>Hello <b>world</b>!</p>";
     println("Original: " + htmlText);
-
-    val plainText = regex.replaceAll("<[^>]+>", htmlText, "");
-    println("Plain:    " + plainText);
-
-    println("");
+    println("Plain:    " + regex.replaceAll("<[^>]+>", htmlText, ""));
 
     // Example 3: Censor words
-    println("Example 3: Censor Words");
-    println("------------------------");
-
+    printSection("Example 3: Censor Words");
     val badText = "This is a bad word example";
     println("Original: " + badText);
-
-    val censoredText = regex.replaceAll("bad", badText, "***");
-    println("Censored: " + censoredText);
-
-    println("");
+    println("Censored: " + regex.replaceAll("bad", badText, "***"));
 
     // Example 4: Extract data
-    println("Example 4: Extract Data");
-    println("-----------------------");
-
+    printSection("Example 4: Extract Data");
     val dataText = "Contact us at support@example.com or sales@company.org";
     println("Text: " + dataText);
 
-    val emailPattern = "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}";
-    val matches = regex.matchAll(emailPattern, dataText);
+    val matches = regex.matchAll(regex.EMAIL_PATTERN, dataText);
     print("Emails found: ");
     println(matches);
 
-    println("");
-
     // Example 5: Find and replace with pattern
-    println("Example 5: Phone Number Formatting");
-    println("-----------------------------------");
-
+    printSection("Example 5: Phone Number Formatting");
     val phoneText = "Call 5551234567 or 5559876543";
     println("Original: " + phoneText);
-
-    val formattedPhone = regex.replaceAll("([0-9]{3})([0-9]{3})([0-9]{4})", phoneText, "($1) $2-$3");
-    println("Formatted: " + formattedPhone);
-
-    println("");
+    println("Formatted: " + regex.replaceAll("([0-9]{3})([0-9]{3})([0-9]{4})", phoneText, "($1) $2-$3"));
 
     // Example 6: Extract numbers
-    println("Example 6: Extract Numbers");
-    println("--------------------------");
-
+    printSection("Example 6: Extract Numbers");
     val numberText = "The price is $25.99 and quantity is 42 units";
     println("Text: " + numberText);
 
@@ -80,6 +57,5 @@ fn main() {
     print("Numbers: ");
     println(numbers);
 
-    println("");
-    println("Text processing demos completed!");
+    println("\nText processing demos completed!");
 }

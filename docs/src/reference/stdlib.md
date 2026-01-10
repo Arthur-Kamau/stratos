@@ -260,7 +260,7 @@ use async;
 ### Async Functions
 
 ```stratos
-async fn fetchData(url: string) string {
+async fn fetchData(url: string) Future<string>{
     val response = await http.get(url);
     return await response.text();
 }

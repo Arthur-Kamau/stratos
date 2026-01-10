@@ -79,7 +79,7 @@ class Circle : Shape {
 Write asynchronous code that looks synchronous:
 
 ```stratos
-async fn fetchData(url: string) string {
+async fn fetchData(url: string) Future<string>{
     val response = await http.get(url);
     return await response.text();
 }

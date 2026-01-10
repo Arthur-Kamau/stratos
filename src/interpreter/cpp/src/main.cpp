@@ -490,29 +490,39 @@ int handleRun(int argc, char* argv[]) {
     }
 
     std::string resolvedPath = *resolvedPathOpt;
+    fs::path projectRoot;
+    fs::path resolvedPathFs = resolvedPath;
+
+    // Determine project root. If resolvedPath is in src/, project root is its grandparent.
+    // Otherwise, it's the parent.
+    if (resolvedPathFs.parent_path().filename() == "src") {
+        projectRoot = resolvedPathFs.parent_path().parent_path();
+    } else {
+        projectRoot = resolvedPathFs.parent_path();
+    }
 
     if (verbose) {
         std::cout << "Resolved entry point: " << resolvedPath << std::endl;
+        std::cout << "Inferred project root: " << projectRoot << std::endl;
     }
 
-    // If running a project directory, change to that directory for proper module resolution
-    fs::path currentDir = fs::current_path();
-    bool changedDir = false;
-
-    if (fs::is_directory(inputPath)) {
-        // Change to the project directory
-        fs::path projectDir = fs::absolute(inputPath);
-        fs::current_path(projectDir);
-        changedDir = true;
-
-        // Make resolvedPath relative to the new working directory
-        fs::path absResolved = fs::absolute(currentDir / resolvedPath);
-        resolvedPath = fs::relative(absResolved, projectDir).string();
-
-        if (verbose) {
-            std::cout << "Changed working directory to: " << projectDir << std::endl;
-            std::cout << "Running: " << resolvedPath << std::endl;
+    // Collect all .st files in the project's src directory
+    std::vector<std::string> sourceFiles;
+    fs::path srcDir = projectRoot / "src";
+    if (fs::exists(srcDir) && fs::is_directory(srcDir)) {
+        for (const auto& entry : fs::recursive_directory_iterator(srcDir)) {
+            if (entry.path().extension() == ".st") {
+                sourceFiles.push_back(entry.path().string());
+            }
         }
+    } else {
+        // If no src/ directory, just use the resolved entry point
+        sourceFiles.push_back(resolvedPath);
+    }
+
+    if (sourceFiles.empty()) {
+        std::cerr << "Error: No Stratos source files found in " << srcDir << std::endl;
+        return 1;
     }
 
     // Start DevTools server if requested
@@ -540,22 +550,95 @@ int handleRun(int argc, char* argv[]) {
         std::cout << "\n";
     }
 
-    // Execute the file
-    CompileResult result = compileFile(resolvedPath, "", verbose, true); // run=true
+    // --- Compile all files ---
+    std::vector<std::unique_ptr<Stmt>> allStatements;
+    bool compilationSuccess = true;
+    std::string compilationErrorMessage;
+    auto startCompile = std::chrono::high_resolution_clock::now();
+
+    for (const auto& file : sourceFiles) {
+        if (verbose) std::cout << "  Processing: " << file << std::endl;
+
+        std::ifstream inFile(file);
+        if (!inFile.is_open()) {
+            compilationSuccess = false;
+            compilationErrorMessage = "Could not open file: " + file;
+            break;
+        }
+
+        std::stringstream buffer;
+        buffer << inFile.rdbuf();
+        std::string source = buffer.str();
+
+        try {
+            Lexer lexer(source);
+            std::vector<Token> tokens = lexer.scanTokens();
+
+            Parser parser(tokens);
+            std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+
+            // Move statements to combined list
+            for (auto& stmt : statements) {
+                allStatements.push_back(std::move(stmt));
+            }
+        } catch (const std::exception& e) {
+            compilationSuccess = false;
+            compilationErrorMessage = "Error in " + file + ": " + e.what();
+            break;
+        }
+    }
+
+    if (compilationSuccess) {
+        try {
+            // Semantic Analysis on all statements
+            SemanticAnalyzer analyzer;
+            if (!analyzer.analyze(allStatements)) {
+                compilationSuccess = false;
+                compilationErrorMessage = "Semantic analysis failed";
+            }
+        } catch (const std::exception& e) {
+            compilationSuccess = false;
+            compilationErrorMessage = std::string(e.what());
+        }
+    }
+
+    auto endCompile = std::chrono::high_resolution_clock::now();
+    auto durationCompile = std::chrono::duration_cast<std::chrono::milliseconds>(endCompile - startCompile);
+
+    if (!compilationSuccess) {
+        std::cerr << "Compilation failed: " << compilationErrorMessage << std::endl;
+        if (devtoolsServer) devtoolsServer->stop();
+        return 1;
+    }
+    if (verbose) {
+        std::cout << "Compilation successful in " << durationCompile.count() << "ms\n";
+        std::cout << "  [Executing...]" << std::endl;
+    }
+
+    // --- Execute ---
+    try {
+        Interpreter interpreter;
+        interpreter.execute(std::move(allStatements)); // Interprets all declarations
+
+        // Call main function
+        std::vector<RuntimeValue> emptyArgs;
+        interpreter.callFunction("main", emptyArgs);
+        if (verbose) std::cout << "  [Execution] Complete" << std::endl;
+    } catch (const ReturnException& e) {
+        if (verbose) std::cout << "  [Execution] Complete" << std::endl;
+    } catch (const std::runtime_error& e) {
+        std::string err = e.what();
+        if (err.find("Undefined function: main") == std::string::npos) {
+            std::cerr << "Runtime error: " << err << std::endl;
+            if (devtoolsServer) devtoolsServer->stop();
+            return 1;
+        }
+        if (verbose) std::cout << "  [Execution] Complete (no main function)" << std::endl;
+    }
 
     // Stop DevTools server
     if (devtoolsServer) {
         devtoolsServer->stop();
-    }
-
-    // Restore original directory if changed
-    if (changedDir) {
-        fs::current_path(currentDir);
-    }
-
-    if (!result.success) {
-        std::cerr << "Execution failed: " << result.errorMessage << std::endl;
-        return 1;
     }
 
     return 0;

@@ -3,6 +3,8 @@
 
 package regex;
 
+use strings;
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -26,75 +28,11 @@ val MULTILINE = 2;         // ^ and $ match line boundaries
 val DOTALL = 4;            // . matches newlines
 val EXTENDED = 8;          // Ignore whitespace and allow comments
 
-// ============================================================================
-// Native function declarations - Core Functions
-// ============================================================================
-
-// Compile a regex pattern
-// Returns 1 if valid, 0 if invalid
-fn compile(pattern: string) int;
-
-// Compile with flags
-fn compileWithFlags(pattern: string, flags: int) int;
-
-// Test if entire string matches pattern
-fn matches(pattern: string, text: string) bool;
-
-// Test if pattern is found anywhere in string
-fn contains(pattern: string, text: string) bool;
-
-// Find first match in string
-// Returns match position or -1 if not found
-fn find(pattern: string, text: string) int;
-
-// Find all matches in string
-// Returns array of start positions
-fn findAll(pattern: string, text: string) Array<int>;
-
-// Replace first occurrence
-fn replace(pattern: string, text: string, replacement: string) string;
-
-// Replace all occurrences
-fn replaceAll(pattern: string, text: string, replacement: string) string;
-
-// Split string by regex pattern
-fn split(pattern: string, text: string) Array<string>;
-
-// Get capture groups from first match
-// Returns array where index 0 is full match, 1+ are groups
-fn groups(pattern: string, text: string) Array<string>;
-
-// Get all matches with capture groups
-fn matchAll(pattern: string, text: string) Array<Array<string>>;
-
-// Escape special regex characters
-fn escape(text: string) string;
-
-// ============================================================================
 // Pure Stratos implementations - Helper Functions
-// ============================================================================
-
-// Test if string starts with pattern
-fn startsWith(pattern: string, text: string) bool {
-    val anchoredPattern = "^" + pattern;
-    return contains(anchoredPattern, text);
-}
-
-// Test if string ends with pattern
-fn endsWith(pattern: string, text: string) bool {
-    val anchoredPattern = pattern + "$";
-    return contains(anchoredPattern, text);
-}
-
-// Count occurrences of pattern
-fn count(pattern: string, text: string) int {
-    val positions = findAll(pattern, text);
-    return positions.length();
-}
 
 // Extract all matches (without groups)
 fn extract(pattern: string, text: string) Array<string> {
-    val allMatches = matchAll(pattern, text);
+    val allMatches = regex.matchAll(pattern, text);
     var results = Array<string>();
 
     for val match in allMatches {
@@ -113,7 +51,7 @@ fn replaceFunc(pattern: string, text: string, replacer: Function<string, string>
 
     for val match in matches {
         val replacement = replacer(match);
-        result = replace(pattern, result, replacement);
+        result = regex.replace(pattern, result, replacement);
     }
 
     return result;
@@ -122,7 +60,7 @@ fn replaceFunc(pattern: string, text: string, replacer: Function<string, string>
 // Test multiple patterns (OR)
 fn matchesAny(patterns: Array<string>, text: string) bool {
     for val pattern in patterns {
-        if matches(pattern, text) {
+        if regex.matches(pattern, text) {
             return true;
         }
     }
@@ -132,7 +70,7 @@ fn matchesAny(patterns: Array<string>, text: string) bool {
 // Test all patterns (AND)
 fn matchesAll(patterns: Array<string>, text: string) bool {
     for val pattern in patterns {
-        if !matches(pattern, text) {
+        if !regex.matches(pattern, text) {
             return false;
         }
     }
@@ -183,35 +121,35 @@ val WORD = "\\b\\w+\\b";
 // ============================================================================
 
 fn isEmail(text: string) bool {
-    return matches(EMAIL_PATTERN, text);
+    return regex.matches(regex.EMAIL_PATTERN, text);
 }
 
 fn isURL(text: string) bool {
-    return matches(URL_PATTERN, text);
+    return regex.matches(regex.URL_PATTERN, text);
 }
 
 fn isIPv4(text: string) bool {
-    return matches(IPV4_PATTERN, text);
+    return regex.matches(regex.IPV4_PATTERN, text);
 }
 
 fn isPhoneNumber(text: string) bool {
-    return matches(PHONE_PATTERN, text);
+    return regex.matches(regex.PHONE_PATTERN, text);
 }
 
 fn isDateISO(text: string) bool {
-    return matches(DATE_ISO, text);
+    return regex.matches(regex.DATE_ISO, text);
 }
 
 fn isInteger(text: string) bool {
-    return matches("^" + INTEGER + "$", text);
+    return regex.matches("^" + regex.INTEGER + "$", text);
 }
 
 fn isDecimal(text: string) bool {
-    return matches("^" + DECIMAL + "$", text);
+    return regex.matches("^" + regex.DECIMAL + "$", text);
 }
 
 fn isHexColor(text: string) bool {
-    return matches("^" + HEX_COLOR + "$", text);
+    return regex.matches("^" + regex.HEX_COLOR + "$", text);
 }
 
 // ============================================================================
@@ -220,46 +158,46 @@ fn isHexColor(text: string) bool {
 
 // Extract all emails from text
 fn extractEmails(text: string) Array<string> {
-    return extract(EMAIL_PATTERN, text);
+    return extract(regex.EMAIL_PATTERN, text);
 }
 
 // Extract all URLs from text
 fn extractURLs(text: string) Array<string> {
-    return extract(URL_PATTERN, text);
+    return extract(regex.URL_PATTERN, text);
 }
 
 // Extract all numbers from text
 fn extractNumbers(text: string) Array<string> {
-    return extract(DECIMAL, text);
+    return extract(regex.DECIMAL, text);
 }
 
 // Extract all words from text
 fn extractWords(text: string) Array<string> {
-    return extract(WORD, text);
+    return extract(regex.WORD, text);
 }
 
 // Remove all whitespace
-fn removeWhitespace(text: string) string {
-    return replaceAll(WHITESPACE, text, "");
+fn regexRemoveExtraWhitespace(text: string) string {
+    return regex.replaceAll(regex.WHITESPACE, text, "");
 }
 
 // Normalize whitespace (collapse multiple spaces to one)
 fn normalizeWhitespace(text: string) string {
-    return replaceAll("\\s+", text, " ");
+    return regex.replaceAll("\\s+", text, " ");
 }
 
 // Remove HTML tags
 fn stripHTMLTags(text: string) string {
-    return replaceAll("<[^>]+>", text, "");
+    return regex.replaceAll("<[^>]+>", text, "");
 }
 
 // Extract text between delimiters
 fn extractBetween(text: string, start: string, end: string) Array<string> {
-    val pattern = escape(start) + "(.*?)" + escape(end);
-    val matches = matchAll(pattern, text);
+    val pattern = regex.escape(start) + "(.*?)" + regex.escape(end);
+    val allMatches = regex.matchAll(pattern, text);
     var results = Array<string>();
 
-    for val match in matches {
+    for val match in allMatches {
         if match.length() > 1 {
             results.add(match[1]);  // Add captured group
         }
@@ -270,18 +208,18 @@ fn extractBetween(text: string, start: string, end: string) Array<string> {
 
 // Mask sensitive data (like credit card numbers)
 fn maskSensitive(text: string, pattern: string, maskChar: string) string {
-    return replaceAll(pattern, text, maskChar);
+    return regex.replaceAll(pattern, text, maskChar);
 }
 
 // Convert camelCase to snake_case
 fn camelToSnake(text: string) string {
-    var result = replaceAll("([A-Z])", text, "_$1");
+    var result = regex.replaceAll("([A-Z])", text, "_$1");
     return strings.toLowerCase(result);
 }
 
 // Convert snake_case to camelCase
 fn snakeToCamel(text: string) string {
-    return replaceAll("_([a-z])", text, "\\U$1");
+    return regex.replaceAll("_([a-z])", text, "\\U$1");
 }
 
 // ============================================================================
@@ -295,11 +233,11 @@ fn findOverlapping(pattern: string, text: string) Array<string> {
 
     while i < strings.length(text) {
         val substring = strings.substring(text, i, strings.length(text));
-        val pos = find(pattern, substring);
+        val pos = regex.find(pattern, substring);
 
         if pos >= 0 {
             // Extract the match
-            val match = extract(pattern, substring);
+            val match = extract(pattern, substring); // extract is a pure Stratos helper
             if match.length() > 0 {
                 results.add(match[0]);
             }
@@ -314,7 +252,7 @@ fn findOverlapping(pattern: string, text: string) Array<string> {
 
 // Split with limit
 fn splitLimit(pattern: string, text: string, limit: int) Array<string> {
-    val parts = split(pattern, text);
+    val parts = regex.split(pattern, text);
 
     if parts.length() <= limit {
         return parts;
@@ -352,15 +290,15 @@ class MatchInfo {
 
 // Get detailed match information
 fn findWithInfo(pattern: string, text: string) MatchInfo? {
-    val pos = find(pattern, text);
+    val pos = regex.find(pattern, text);
 
     if pos < 0 {
-        return null;
+        return None;
     }
 
-    val matches = extract(pattern, text);
+    val matches = extract(pattern, text); // extract is a pure Stratos helper
     if matches.length() == 0 {
-        return null;
+        return None;
     }
 
     val matchText = matches[0];
@@ -379,12 +317,12 @@ fn findWithInfo(pattern: string, text: string) MatchInfo? {
 
 // Check if pattern is valid
 fn isValid(pattern: string) bool {
-    return compile(pattern) == 1;
+    return regex.compile(pattern) == 1;
 }
 
 // Quote/escape a string to be used as literal text in regex
 fn quote(text: string) string {
-    return escape(text);
+    return regex.escape(text);
 }
 
 // Create alternation pattern (a|b|c)
@@ -394,12 +332,12 @@ fn alternate(patterns: Array<string>) string {
 
 // Create character class [abc]
 fn charClass(chars: string) string {
-    return "[" + escape(chars) + "]";
+    return "[" + regex.escape(chars) + "]";
 }
 
 // Create negated character class [^abc]
 fn negatedCharClass(chars: string) string {
-    return "[^" + escape(chars) + "]";
+    return "[^" + regex.escape(chars) + "]";
 }
 
 // Make pattern optional (pattern)?

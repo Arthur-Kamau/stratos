@@ -324,14 +324,14 @@ fn main() {
 package main;
 
 fn forEach(arr: Array<int>, action: Function) {
-    for (i in 0..arr.length()) {
+    for val i in 0..arr.length() {
         action(arr[i]);
     }
 }
 
 fn filter(arr: Array<int>, predicate: Function) Array<int> {
     val result = [];
-    for (i in 0..arr.length()) {
+    for val i in 0..arr.length() {
         if (predicate(arr[i])) {
             result.push(arr[i]);
         }
@@ -341,7 +341,7 @@ fn filter(arr: Array<int>, predicate: Function) Array<int> {
 
 fn map(arr: Array<int>, transform: Function) Array<int> {
     val result = [];
-    for (i in 0..arr.length()) {
+    for val i in 0..arr.length() {
         val item = arr[i];
         val transformed = transform(item);
         result.push(transformed);
@@ -474,9 +474,11 @@ fn main() {
 }
 ```
 
-## Variable Arguments (Variadic)
+## Variadic Functions
 
-Functions can accept a variable number of arguments:
+Variadic functions accept a variable number of arguments of the same type, similar to Go's variadic parameters. The variadic parameter is declared with `...` before the parameter name and must be the last parameter.
+
+### Basic Variadic Functions
 
 ```stratos
 package main;
@@ -493,32 +495,125 @@ fn main() {
     print(sum(1, 2, 3));           // 6
     print(sum(10, 20, 30, 40));    // 100
     print(sum(5));                 // 5
+    print(sum());                  // 0 (empty)
 }
 ```
 
-## Nested Functions with Callbacks
+### Variadic Functions with Other Parameters
 
-Functions can be defined inside other functions:
+You can mix regular parameters with variadic parameters:
 
 ```stratos
 package main;
 
-fn main() {
-    // Define a helper function inside main
-    fn apply(value: int, op: Function) int {
-        return op(value);
+fn printWithPrefix(prefix: string, ...messages: string) {
+    for (msg in messages) {
+        print(prefix + ": " + msg);
     }
+}
 
-    // Use with inline lambdas
-    val res1 = apply(10, (x) => x * 2);
-    print("10 * 2 = " + res1);  // 10 * 2 = 20
+fn average(label: string, ...values: double) double {
+    if (values.length() == 0) {
+        return 0.0;
+    }
+    
+    var sum = 0.0;
+    for (val in values) {
+        sum += val;
+    }
+    return sum / values.length();
+}
 
-    // Closures capture environment
-    val factor = 5;
-    val res2 = apply(3, (x) => x * factor);
-    print("3 * 5 = " + res2);   // 3 * 5 = 15
+fn main() {
+    printWithPrefix("INFO", "Starting application", "Loading config", "Ready");
+    // Output:
+    // INFO: Starting application
+    // INFO: Loading config
+    // INFO: Ready
+
+    val avg = average("Scores", 85.5, 92.0, 78.5, 90.0);
+    print("Average: " + avg);  // Average: 86.5
 }
 ```
+
+### Practical Example: String Joining
+
+```stratos
+package main;
+
+fn join(separator: string, ...parts: string) string {
+    if (parts.length() == 0) {
+        return "";
+    }
+    
+    var result = parts[0];
+    for val i in 1..parts.length() {
+        result = result + separator + parts[i];
+    }
+    return result;
+}
+
+fn main() {
+    val path = join("/", "home", "user", "documents", "file.txt");
+    print(path);  // home/user/documents/file.txt
+
+    val csv = join(", ", "Alice", "Bob", "Charlie", "David");
+    print(csv);  // Alice, Bob, Charlie, David
+}
+```
+
+### Variadic with Type Constraints
+
+```stratos
+package main;
+
+fn max(...numbers: int) int {
+    if (numbers.length() == 0) {
+        return 0;
+    }
+    
+    var maximum = numbers[0];
+    for (num in numbers) {
+        if (num > maximum) {
+            maximum = num;
+        }
+    }
+    return maximum;
+}
+
+fn min(...numbers: int) int {
+    if (numbers.length() == 0) {
+        return 0;
+    }
+    
+    var minimum = numbers[0];
+    for (num in numbers) {
+        if (num < minimum) {
+            minimum = num;
+        }
+    }
+    return minimum;
+}
+
+fn main() {
+    print("Max: " + max(5, 2, 9, 1, 7));    // Max: 9
+    print("Min: " + min(5, 2, 9, 1, 7));    // Min: 1
+}
+```
+
+::: info Variadic Parameters
+- Variadic parameters are declared with `...` before the parameter name
+- Must be the last parameter in the function signature
+- Can be accessed like an array inside the function
+- Similar to Go's variadic parameters and Java's varargs
+:::
+
+::: tip When to Use Variadic Functions
+Use variadic functions when:
+- The number of arguments varies naturally (like `sum`, `max`, `join`)
+- You want a cleaner API than passing an array
+- The function conceptually operates on a group of similar items
+:::
 
 ## Complete Example: Math Utilities
 
@@ -612,7 +707,7 @@ fn main() {
 package main;
 
 fn main() {
-    print("--- Callback Showcase ---");
+    println("--- Callback Showcase ---");
 
     // 1. Simple callback
     fn apply(value: int, op: Function) int {
@@ -620,12 +715,12 @@ fn main() {
     }
 
     val res1 = apply(10, (x) => x * 2);
-    print("10 * 2 = " + res1);
+    println("10 * 2 = " + res1);
 
     // 2. Closure capturing environment
     val factor = 5;
     val res2 = apply(3, (x) => x * factor);
-    print("3 * 5 = " + res2);
+    println("3 * 5 = " + res2);
 
     // 3. Returning a function (Higher-Order Function)
     fn makeAdder(n: int) Function {
@@ -633,13 +728,13 @@ fn main() {
     }
 
     val add10 = makeAdder(10);
-    print("5 + 10 = " + add10(5));
+    println("5 + 10 = " + add10(5));
 
     // 4. Map implementation using callbacks
     fn map(arr: Array<int>, transform: Function) Array<int> {
         val result = [];
 
-        for (i in 0..arr.length()) {
+        for val i in 0..arr.length() {
             val item = arr[i];
             val transformed = transform(item);
             result.push(transformed);
@@ -649,9 +744,9 @@ fn main() {
 
     val numbers = [1, 2, 3, 4, 5];
     val doubled = map(numbers, (x) => x * 2);
-    print("Doubled: " + doubled);  // [2, 4, 6, 8, 10]
+    println("Doubled: " + doubled);  // [2, 4, 6, 8, 10]
 
-    print("--- Done ---");
+    println("--- Done ---");
 }
 ```
 

@@ -8,7 +8,7 @@ When you declare a function as `async`, it automatically returns a `Future` that
 
 ```stratos
 // This function signature means it returns Future<string>
-async fn fetchData(url: string) string {
+async fn fetchData(url: string) <string> {
     val response = await http.get(url);
     return await response.text();
 }

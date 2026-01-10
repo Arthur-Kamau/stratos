@@ -84,8 +84,28 @@ void SemanticAnalyzer::error(Token token, const std::string& message) {
 // --- Expressions ---
 
 void SemanticAnalyzer::visit(BinaryExpr& expr) {
+    expr.left->accept(*this);
+    std::string leftType = inferType(expr.left.get());
+
     if (expr.op.type == TokenType::DOT) {
-        // Handle member access (e.g., obj.field, Enum.VALUE)
+        // Handle member access (e.g., obj.field, Enum.VALUE, array.length())
+        // Check if this is an array method call
+        if (leftType.find("Array<") == 0 || leftType == "Array") { // Simple check for Array type
+            if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
+                std::string memberName = rightVar->name.lexeme;
+                if (memberName == "length") { // Array has a .length() method
+                    // Define a dummy symbol for length for type checking purposes
+                    symbolTable.define(Symbol::Function("Array::length", {}, "int")); // Transient definition
+                    return; // Resolved
+                }
+                 if (memberName == "add") { // Array has an .add() method
+                    // Define a dummy symbol for add for type checking purposes
+                    symbolTable.define(Symbol::Function("Array::add", {"any"}, "void")); // Transient definition
+                    return; // Resolved
+                }
+            }
+        }
+        
         // Check if this is an enum value access (e.g., Color.RED)
         if (auto* leftVar = dynamic_cast<VariableExpr*>(expr.left.get())) {
             if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
@@ -111,11 +131,13 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
             }
         }
 
-        // For other dot accesses (like module.function), just validate left side
-        expr.left->accept(*this);
+        // For other dot accesses (like module.function), just validate right side
+        // The left side (module name) was already analyzed above
+        expr.right->accept(*this);
         return;
     }
 
+    // Default processing for non-dot binary expressions
     expr.left->accept(*this);
     expr.right->accept(*this);
     // TODO: Type checking (e.g., ensure left/right are numbers for +)
@@ -633,8 +655,19 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
             return symbolOpt->type;
         }
     } else if (auto* binary = dynamic_cast<BinaryExpr*>(expr)) {
-        // Infer type from binary operation
         std::string leftType = inferType(binary->left.get());
+        
+        if (binary->op.type == TokenType::DOT) {
+            if (leftType.find("Array<") == 0 || leftType == "Array") {
+                if (auto* rightVar = dynamic_cast<VariableExpr*>(binary->right.get())) {
+                    std::string memberName = rightVar->name.lexeme;
+                    if (memberName == "length") return "int";
+                    if (memberName == "add") return "void"; // Add typically returns void or the element
+                }
+            }
+        }
+
+        // Infer type from binary operation
         std::string rightType = inferType(binary->right.get());
 
         // If either side is double, result is double

@@ -4,70 +4,18 @@
 package strings;
 
 // ============================================================================
-// Native function declarations (implemented in C++)
-// ============================================================================
-
-// Case conversion
-fn toUpper(s: string) string;
-fn toLower(s: string) string;
-fn toTitle(s: string) string;
-
-// Trimming
-fn trim(s: string) string;
-fn trimLeft(s: string) string;
-fn trimRight(s: string) string;
-fn trimPrefix(s: string, prefix: string) string;
-fn trimSuffix(s: string, suffix: string) string;
-
-// Splitting and joining
-fn split(s: string, separator: string) Array<string>;
-fn join(parts: Array<string>, separator: string) string;
-
-// Searching
-fn contains(s: string, substr: string) bool;
-fn indexOf(s: string, substr: string) int;
-fn lastIndexOf(s: string, substr: string) int;
-fn startsWith(s: string, prefix: string) bool;
-fn endsWith(s: string, suffix: string) bool;
-fn count(s: string, substr: string) int;
-
-// Replacement
-fn replace(s: string, old: string, new: string) string;
-fn replaceAll(s: string, old: string, new: string) string;
-
-// Extraction
-fn substring(s: string, start: int, end: int) string;
-fn charAt(s: string, index: int) string;
-
-// Repetition and padding
-fn repeat(s: string, count: int) string;
-fn padLeft(s: string, length: int, pad: string) string;
-fn padRight(s: string, length: int, pad: string) string;
-
-// Comparison
-fn compare(a: string, b: string) int;
-fn equals(a: string, b: string) bool;
-fn equalsIgnoreCase(a: string, b: string) bool;
-
-// Utility
-fn length(s: string) int;
-fn isEmpty(s: string) bool;
-fn isBlank(s: string) bool;
-fn reverse(s: string) string;
-
-// ============================================================================
 // Pure Stratos implementations
 // ============================================================================
 
 // Check if string contains only digits
 fn isDigit(s: string) bool {
-    if isEmpty(s) {
+    if strings.isEmpty(s) {
         return false;
     }
 
     val digits = "0123456789";
     for val char in s {
-        if !contains(digits, char) {
+        if !strings.contains(digits, char) {
             return false;
         }
     }
@@ -76,15 +24,15 @@ fn isDigit(s: string) bool {
 
 // Check if string contains only letters
 fn isAlpha(s: string) bool {
-    if isEmpty(s) {
+    if strings.isEmpty(s) {
         return false;
     }
 
-    val lower = toLower(s);
+    val lower = strings.toLower(s);
     val letters = "abcdefghijklmnopqrstuvwxyz";
 
     for val char in lower {
-        if !contains(letters, char) {
+        if !strings.contains(letters, char) {
             return false;
         }
     }
@@ -93,7 +41,7 @@ fn isAlpha(s: string) bool {
 
 // Check if string contains only alphanumeric characters
 fn isAlphaNumeric(s: string) bool {
-    if isEmpty(s) {
+    if strings.isEmpty(s) {
         return false;
     }
 
@@ -107,34 +55,34 @@ fn isAlphaNumeric(s: string) bool {
 
 // Capitalize first letter
 fn capitalize(s: string) string {
-    if isEmpty(s) {
+    if strings.isEmpty(s) {
         return s;
     }
 
-    val first = toUpper(substring(s, 0, 1));
-    val rest = substring(s, 1, length(s));
+    val first = strings.toUpper(strings.substring(s, 0, 1));
+    val rest = strings.substring(s, 1, strings.length(s));
     return first + rest;
 }
 
 // Uncapitalize first letter
 fn uncapitalize(s: string) string {
-    if isEmpty(s) {
+    if strings.isEmpty(s) {
         return s;
     }
 
-    val first = toLower(substring(s, 0, 1));
-    val rest = substring(s, 1, length(s));
+    val first = strings.toLower(strings.substring(s, 0, 1));
+    val rest = strings.substring(s, 1, strings.length(s));
     return first + rest;
 }
 
 // Convert to camelCase
 fn toCamelCase(s: string) string {
-    val parts = split(s, " ");
+    val parts = strings.split(s, " ");
     var result = "";
 
     for val i in 0..parts.length() {
         if i == 0 {
-            result = toLower(parts[i]);
+            result = strings.toLower(parts[i]);
         } else {
             result = result + capitalize(parts[i]);
         }
@@ -145,7 +93,7 @@ fn toCamelCase(s: string) string {
 
 // Convert to PascalCase
 fn toPascalCase(s: string) string {
-    val parts = split(s, " ");
+    val parts = strings.split(s, " ");
     var result = "";
 
     for val part in parts {
@@ -157,14 +105,14 @@ fn toPascalCase(s: string) string {
 
 // Convert to snake_case
 fn toSnakeCase(s: string) string {
-    val parts = split(s, " ");
+    val parts = strings.split(s, " ");
     var result = "";
 
     for val  i in 0..parts.length() {
         if i == 0 {
-            result = toLower(parts[i]);
+            result = strings.toLower(parts[i]);
         } else {
-            result = result + "_" + toLower(parts[i]);
+            result = result + "_" + strings.toLower(parts[i]);
         }
     }
 
@@ -173,14 +121,14 @@ fn toSnakeCase(s: string) string {
 
 // Convert to kebab-case
 fn toKebabCase(s: string) string {
-    val parts = split(s, " ");
+    val parts = strings.split(s, " ");
     var result = "";
 
     for val i in 0..parts.length() {
         if i == 0 {
-            result = toLower(parts[i]);
+            result = strings.toLower(parts[i]);
         } else {
-            result = result + "-" + toLower(parts[i]);
+            result = result + "-" + strings.toLower(parts[i]);
         }
     }
 
@@ -189,38 +137,38 @@ fn toKebabCase(s: string) string {
 
 // Truncate string to max length
 fn truncate(s: string, maxLength: int, suffix: string) string {
-    if length(s) <= maxLength {
+    if strings.length(s) <= maxLength {
         return s;
     }
 
-    val truncated = substring(s, 0, maxLength - length(suffix));
+    val truncated = strings.substring(s, 0, maxLength - strings.length(suffix));
     return truncated + suffix;
 }
 
 // Remove all whitespace
 fn removeWhitespace(s: string) string {
-    return replaceAll(replaceAll(replaceAll(s, " ", ""), "\t", ""), "\n", "");
+    return strings.replaceAll(strings.replaceAll(strings.replaceAll(s, " ", ""), "\t", ""), "\n", "");
 }
 
 // Word count
 fn wordCount(s: string) int {
-    val trimmed = trim(s);
-    if isEmpty(trimmed) {
+    val trimmed = strings.trim(s);
+    if strings.isEmpty(trimmed) {
         return 0;
     }
 
-    val words = split(trimmed, " ");
+    val words = strings.split(trimmed, " ");
     return words.length();
 }
 
 // Lines
 fn lines(s: string) Array<string> {
-    return split(s, "\n");
+    return strings.split(s, "\n");
 }
 
 // Indent each line
 fn indent(s: string, spaces: int) string {
-    val padding = repeat(" ", spaces);
+    val padding = strings.repeat(" ", spaces);
     val lineArray = lines(s);
     var result = "";
 
@@ -236,7 +184,7 @@ fn indent(s: string, spaces: int) string {
 
 // Center string within width
 fn center(s: string, width: int, fill: string) string {
-    val len = length(s);
+    val len = strings.length(s);
     if len >= width {
         return s;
     }
@@ -245,24 +193,24 @@ fn center(s: string, width: int, fill: string) string {
     val leftPad = padding / 2;
     val rightPad = padding - leftPad;
 
-    return repeat(fill, leftPad) + s + repeat(fill, rightPad);
+    return strings.repeat(fill, leftPad) + s + strings.repeat(fill, rightPad);
 }
 
 // Common prefix of strings
-fn commonPrefix(strings: Array<string>) string {
-    if strings.length() == 0 {
+fn commonPrefix(strings_array: Array<string>) string { // Renamed param to strings_array to avoid conflict
+    if strings_array.length() == 0 {
         return "";
     }
 
-    val first = strings[0];
+    val first = strings_array[0];
     var prefix = "";
 
-    for val i in 0..length(first) {
-        val char = charAt(first, i);
+    for val i in 0..strings.length(first) {
+        val char = strings.charAt(first, i);
         var match = true;
 
-        for val str in strings {
-            if !startsWith(str, prefix + char) {
+        for val str in strings_array {
+            if !strings.startsWith(str, prefix + char) {
                 match = false;
                 break;
             }
@@ -292,12 +240,12 @@ fn sprintf(format: string, args: Array<any>) string {
 
         // Find the first occurrence of {}
         val placeholder = "{}";
-        val index = indexOf(result, placeholder);
+        val index = strings.indexOf(result, placeholder);
 
         if index >= 0 {
             // Replace the first {} with the argument
-            val before = substring(result, 0, index);
-            val after = substring(result, index + 2, length(result));
+            val before = strings.substring(result, 0, index);
+            val after = strings.substring(result, index + 2, strings.length(result));
             result = before + argStr + after;
         }
 
