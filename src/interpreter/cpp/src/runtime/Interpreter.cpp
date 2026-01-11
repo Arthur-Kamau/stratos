@@ -893,6 +893,85 @@ void Interpreter::visit(CallExpr& expr) {
                     return;
                 }
 
+                // Handle List, Set, Queue, Stack method calls
+                if (leftValue.type.starts_with("List<") || leftValue.type.starts_with("Set<") ||
+                    leftValue.type.starts_with("Queue<") || leftValue.type.starts_with("Stack<")) {
+                    if (auto* anyPtr = std::get_if<std::any>(&leftValue.value)) {
+                        // All these collections are backed by std::vector<std::any>
+                        try {
+                            auto& vec = std::any_cast<std::vector<std::any>&>(*anyPtr);
+
+                            if (methodName == "forEach") {
+                                if (args.empty()) error("forEach requires a callback");
+                                auto callback = args[0];
+                                for (const auto& item : vec) {
+                                    std::vector<RuntimeValue> cbArgs;
+                                    // Convert std::any to RuntimeValue
+                                    if (item.type() == typeid(int)) {
+                                        cbArgs.push_back(RuntimeValue(std::any_cast<int>(item)));
+                                    } else if (item.type() == typeid(double)) {
+                                        cbArgs.push_back(RuntimeValue(std::any_cast<double>(item)));
+                                    } else if (item.type() == typeid(std::string)) {
+                                        cbArgs.push_back(RuntimeValue(std::any_cast<std::string>(item)));
+                                    } else if (item.type() == typeid(bool)) {
+                                        cbArgs.push_back(RuntimeValue(std::any_cast<bool>(item)));
+                                    } else {
+                                        cbArgs.push_back(RuntimeValue(item, "any"));
+                                    }
+                                    executeCallback(callback, cbArgs);
+                                }
+                                lastValue = RuntimeValue(std::any(), "void");
+                                return;
+                            } else if (methodName == "map") {
+                                if (args.empty()) error("map requires a callback");
+                                auto callback = args[0];
+
+                                if (vec.empty()) {
+                                    lastValue = RuntimeValue(std::any(std::vector<std::any>()), leftValue.type);
+                                    return;
+                                }
+
+                                std::vector<RuntimeValue> results;
+                                for (const auto& item : vec) {
+                                    std::vector<RuntimeValue> cbArgs;
+                                    if (item.type() == typeid(int)) {
+                                        cbArgs.push_back(RuntimeValue(std::any_cast<int>(item)));
+                                    } else if (item.type() == typeid(double)) {
+                                        cbArgs.push_back(RuntimeValue(std::any_cast<double>(item)));
+                                    } else if (item.type() == typeid(std::string)) {
+                                        cbArgs.push_back(RuntimeValue(std::any_cast<std::string>(item)));
+                                    } else if (item.type() == typeid(bool)) {
+                                        cbArgs.push_back(RuntimeValue(std::any_cast<bool>(item)));
+                                    } else {
+                                        cbArgs.push_back(RuntimeValue(item, "any"));
+                                    }
+                                    results.push_back(executeCallback(callback, cbArgs));
+                                }
+
+                                // Convert results to appropriate type
+                                if (results[0].type == "int") {
+                                    std::vector<int> resVec;
+                                    for (const auto& r : results) resVec.push_back(r.asInt());
+                                    lastValue = RuntimeValue(std::any(resVec), "array<int>");
+                                } else if (results[0].type == "string") {
+                                    std::vector<std::string> resVec;
+                                    for (const auto& r : results) resVec.push_back(r.asString());
+                                    lastValue = RuntimeValue(std::any(resVec), "array<string>");
+                                } else {
+                                    error("Unsupported map result type: " + results[0].type);
+                                }
+                                return;
+                            } else if (methodName == "length") {
+                                lastValue = RuntimeValue(static_cast<int>(vec.size()));
+                                return;
+                            }
+                        } catch (const std::bad_any_cast&) {
+                            error("Internal error: Failed to cast collection value");
+                        }
+                    }
+                    error("Unknown method '" + methodName + "' for collection type: " + leftValue.type);
+                }
+
                 // Handle object method calls
                 if (leftValue.type == "object") {
                     auto instance = leftValue.asObject();

@@ -20,6 +20,11 @@ class Set<T> {
     pub fn union(other: Set<T>) Set<T>;
     pub fn intersection(other: Set<T>) Set<T>;
     pub fn difference(other: Set<T>) Set<T>;
+
+    // Higher-order functions
+    pub fn forEach(fn: any) void;
+    pub fn map<R>(fn: any) Set<R>;
+    pub fn filter(predicate: any) Set<T>;
 }
 
 class List<T> {
@@ -74,6 +79,9 @@ class Queue<T> {
     pub fn peek() T?;
     pub fn isEmpty() bool;
     pub fn length() int;
+
+    // Higher-order functions
+    pub fn forEach(fn: any) void;
 }
 
 class Stack<T> {
@@ -85,6 +93,9 @@ class Stack<T> {
     pub fn peek() T?;
     pub fn isEmpty() bool;
     pub fn length() int;
+
+    // Higher-order functions
+    pub fn forEach(fn: any) void;
 }
 
 class Pair<K, V> {

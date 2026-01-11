@@ -13,15 +13,28 @@ void IRGenerator::generate(const std::vector<std::unique_ptr<Stmt>>& statements)
     // 1. Header
     emitRaw("; ModuleID = 'stratos_module'");
     emitRaw("source_filename = \"stratos_source\"");
+
+    // Platform-specific target triple and datalayout
+#ifdef _WIN32
     emitRaw("target datalayout = \"e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"");
     emitRaw("target triple = \"x86_64-pc-windows-msvc\"\n");
+#elif __APPLE__
+    emitRaw("target datalayout = \"e-m:o-i64:64-f80:128-n8:16:32:64-S128\"");
+    emitRaw("target triple = \"x86_64-apple-darwin\"\n");
+#else
+    // Linux and other Unix-like systems
+    emitRaw("target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"");
+    emitRaw("target triple = \"x86_64-pc-linux-gnu\"\n");
+#endif
 
     emitRaw("declare i32 @printf(i8*, ...)\n");
     emitRaw("declare i8* @malloc(i64)\n");
 
     // Define common format specifiers
     emitRaw("; Format specifiers for print");
-    emitRaw("@.str_specifier = private unnamed_addr constant [4 x i8] c\"%d\\0A\\00\"");
+    emitRaw("@.str_int = private unnamed_addr constant [4 x i8] c\"%d\\0A\\00\"");
+    emitRaw("@.str_float = private unnamed_addr constant [4 x i8] c\"%f\\0A\\00\"");
+    emitRaw("@.str_string = private unnamed_addr constant [4 x i8] c\"%s\\0A\\00\"");
 
     // 2. First pass: Collect class metadata
     for (const auto& stmt : statements) {
@@ -334,30 +347,25 @@ void IRGenerator::visit(CallExpr& expr) {
         lastVal = {resReg, thenVal.type};
         
     } else if (funcName == "print") {
-        // Handle printf special case
-        // Logic: Create format string based on arg type
+        // Handle printf special case with proper format specifiers
         if (args.empty()) return;
-        
+
         IRValue arg = args[0];
-        std::string fmt;
-        if (arg.type == "double") fmt = "%f\0A";
-        else if (arg.type == "i8*") fmt = "%s\0A";
-        else fmt = "%d\0A"; // int/bool
-        
-        std::string fmtPtr = getOrCreateStringLiteral(fmt);
-        // We need to bitcast the [N x i8]* to i8*
-        std::string fmtReg = nextReg();
-        // Assuming literal format string length for GEP
-        // For simplicity, just use standard getelementptr pattern
-        int len = fmt.length() - 2; // Approximate unescaped length, tricky without strict counting. 
-        // Safer: Declare specific global for int specifier and reuse.
-        
-        // REVERT to simple global specifier for this prototype
-        // Assuming @.str_specifier is "%d\n"
-        // TODO: Real implementation needs dynamic specifiers
-        
+
+        // Select the correct format specifier based on argument type
+        std::string formatGlobal;
+        if (arg.type == "double") {
+            formatGlobal = "@.str_float";
+        } else if (arg.type == "i8*") {
+            formatGlobal = "@.str_string";
+        } else {
+            // int, i32, i1 (bool), etc.
+            formatGlobal = "@.str_int";
+        }
+
+        // Generate printf call with the correct format specifier
         std::string callReg = nextReg();
-        emit(callReg + " = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str_specifier, i32 0, i32 0), " + arg.type + " " + arg.reg + ")");
+        emit(callReg + " = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* " + formatGlobal + ", i32 0, i32 0), " + arg.type + " " + arg.reg + ")");
         lastVal = {callReg, "i32"};
 
     } else if (isMethodCall) {
@@ -724,17 +732,21 @@ void IRGenerator::visit(PrintStmt& stmt) {
 
     // Generate print call based on the expression type
     IRValue arg = lastVal;
-    std::string fmt;
-    if (arg.type == "double") fmt = "%f\\0A";
-    else if (arg.type == "i8*") fmt = "%s\\0A";
-    else fmt = "%d\\0A"; // int/bool
 
-    std::string fmtPtr = getOrCreateStringLiteral(fmt);
+    // Select the correct format specifier based on argument type
+    std::string formatGlobal;
+    if (arg.type == "double") {
+        formatGlobal = "@.str_float";
+    } else if (arg.type == "i8*") {
+        formatGlobal = "@.str_string";
+    } else {
+        // int, i32, i1 (bool), etc.
+        formatGlobal = "@.str_int";
+    }
 
-    // Call printf with the appropriate format
+    // Call printf with the appropriate format specifier
     std::string callReg = nextReg();
-    int fmtLen = (arg.type == "double" || arg.type == "i8*") ? 4 : 4; // All are 4 with \n and \0
-    emit(callReg + " = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([" + std::to_string(fmtLen) + " x i8], [" + std::to_string(fmtLen) + " x i8]* " + fmtPtr + ", i32 0, i32 0), " + arg.type + " " + arg.reg + ")");
+    emit(callReg + " = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* " + formatGlobal + ", i32 0, i32 0), " + arg.type + " " + arg.reg + ")");
 }
 
 // ============================================================================

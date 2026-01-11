@@ -43,6 +43,7 @@
 #include "stratos/HTMLDocGenerator.h"
 #include "stratos/MarkdownDocGenerator.h"
 #include "stratos/JSONDocGenerator.h"
+#include "stratos/RuntimeLinkConfig.h"
 
 using namespace stratos;
 namespace fs = std::filesystem;
@@ -85,9 +86,11 @@ void printHelp() {
     std::string version = getVersion();
     std::cout << "Stratos Interpreter v" << version << "\n\n";
     std::cout << "Usage:\n";
-    std::cout << "  stratos <file.st>              Compile a single file to binary\n";
-    std::cout << "  stratos compile <file.st>      Compile a single file to binary\n";
-    std::cout << "  stratos generate-ir <file.st>  Generate LLVM IR (.ll) file\n";
+    std::cout << "  stratos <file.st>              Compile a single file to binary (output in build/)\n";
+    std::cout << "  stratos compile <file.st>      Compile a single file to binary (output in build/)\n";
+    std::cout << "  stratos compile <project_dir>  Compile project with stratos.conf (output in build/)\n";
+    std::cout << "  stratos generate-ir <file.st>  Generate LLVM IR (.ll) file (output in build/)\n";
+    std::cout << "  stratos generate-ir <proj_dir> Generate IR for project (output in build/)\n";
     std::cout << "  stratos run <file.st>          Execute a Stratos program directly\n";
     std::cout << "  stratos run                    Execute project (uses stratos.conf in current dir)\n";
     std::cout << "  stratos check <file.st>        Parse and analyze without code generation\n";
@@ -120,10 +123,20 @@ void printHelp() {
     std::cout << "  -o, --output <file>            Specify output file path\n";
     std::cout << "  -v, --verbose                  Enable verbose output\n";
     std::cout << "  -r, --run                      Execute program instead of compiling\n";
+    std::cout << "  -O0                            No optimization (fast compile, large binary)\n";
+    std::cout << "  -O1                            Basic optimization\n";
+    std::cout << "  -O2                            Recommended optimization (default)\n";
+    std::cout << "  -O3                            Aggressive optimization + native arch\n";
+    std::cout << "  -Os                            Optimize for binary size\n";
+    std::cout << "  -Oz                            Aggressively optimize for size\n";
+    std::cout << "  --opt <level>                  Optimization level: 0, 1, 2, 3, s, z\n";
     std::cout << "  --devtools                     Enable DevTools server for debugging (use with run)\n";
     std::cout << "                                 Opens server on http://localhost:9222\n";
     std::cout << "                                 UI available at http://localhost:8080\n\n";
     std::cout << "Examples:\n";
+    std::cout << "  stratos compile app.st -O3     Compile with aggressive optimization\n";
+    std::cout << "  stratos compile app.st -Os     Compile optimized for small binary\n";
+    std::cout << "  stratos compile app.st -v      Compile with verbose output\n";
     std::cout << "  stratos run --devtools app.st  Run with DevTools for real-time logging\n";
     std::cout << "  stratos run app.st             Run without DevTools\n";
 }
@@ -146,7 +159,11 @@ struct CompileResult {
     double compilationTime;  // in milliseconds
 };
 
-CompileResult compileFile(const std::string& path, const std::string& outputPath = "", bool verbose = false, bool run = false) {
+// Forward declarations
+CompileResult compileFile(const std::string& path, const std::string& outputPath = "", bool verbose = false, bool run = false);
+CompileResult compileMultipleFiles(const std::vector<std::string>& files, const std::string& outputPath, bool verbose, const std::string& projectRoot);
+
+CompileResult compileFile(const std::string& path, const std::string& outputPath, bool verbose, bool run) {
     CompileResult result;
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -278,15 +295,38 @@ int handleGenerateIR(int argc, char* argv[]) {
 
     // Check if input is a file or directory
     if (fs::is_directory(inputPath)) {
-        // Compile all .st files in directory
-        std::cout << "Compiling all .st files in: " << inputPath << "\n" << std::endl;
+        // Check if it's a project (has stratos.conf)
+        fs::path projectPath = fs::path(inputPath);
+        fs::path configPath = projectPath / "stratos.conf";
+        bool isProject = fs::exists(configPath);
+
+        // Create build folder in the project/directory
+        fs::path buildDir = projectPath / "build";
+        if (!fs::exists(buildDir)) {
+            fs::create_directories(buildDir);
+            if (verbose) std::cout << "Created build directory: " << buildDir << "\n";
+        }
+
+        if (isProject) {
+            std::cout << "Generating IR for project in: " << inputPath << "\n" << std::endl;
+        } else {
+            std::cout << "Generating IR for all .st files in: " << inputPath << "\n" << std::endl;
+        }
 
         int successCount = 0;
         int failCount = 0;
 
         for (const auto& entry : fs::directory_iterator(inputPath)) {
             if (entry.path().extension() == ".st") {
-                CompileResult result = compileFile(entry.path().string(), "", verbose);
+                // Place .ll files in build folder
+                std::string llOutputPath;
+                if (outputPath.empty()) {
+                    llOutputPath = (buildDir / entry.path().stem()).string() + ".ll";
+                } else {
+                    llOutputPath = outputPath;
+                }
+
+                CompileResult result = compileFile(entry.path().string(), llOutputPath, verbose);
 
                 if (result.success) {
                     successCount++;
@@ -301,24 +341,45 @@ int handleGenerateIR(int argc, char* argv[]) {
 
         if (!verbose) std::cout << "\n";
         std::cout << "\n==========================================\n";
-        std::cout << "Compilation Results: " << successCount << " succeeded, "
+        std::cout << "IR Generation Results: " << successCount << " succeeded, "
                   << failCount << " failed\n";
+        std::cout << "Output directory: " << buildDir << "\n";
         std::cout << "==========================================\n";
 
         return (failCount > 0) ? 1 : 0;
 
     } else if (fs::is_regular_file(inputPath)) {
         // Compile single file
-        CompileResult result = compileFile(inputPath, outputPath, verbose);
+        // Create build folder in the same directory as the file
+        fs::path filePath = fs::path(inputPath);
+        fs::path fileDir = filePath.parent_path();
+        if (fileDir.empty()) fileDir = fs::current_path();
+
+        fs::path buildDir = fileDir / "build";
+        if (!fs::exists(buildDir)) {
+            fs::create_directories(buildDir);
+            if (verbose) std::cout << "Created build directory: " << buildDir << "\n";
+        }
+
+        // Determine output path
+        std::string llOutputPath;
+        if (outputPath.empty()) {
+            llOutputPath = (buildDir / filePath.stem()).string() + ".ll";
+        } else {
+            llOutputPath = outputPath;
+        }
+
+        CompileResult result = compileFile(inputPath, llOutputPath, verbose);
 
         if (result.success) {
             if (!verbose) {
-                std::cout << "Successfully compiled " << inputPath << " in "
+                std::cout << "Successfully generated IR for " << inputPath << " in "
                           << result.compilationTime << "ms" << std::endl;
+                std::cout << "Output: " << llOutputPath << std::endl;
             }
             return 0;
         } else {
-            std::cerr << "Compilation failed: " << result.errorMessage << std::endl;
+            std::cerr << "IR generation failed: " << result.errorMessage << std::endl;
             return 1;
         }
 
@@ -334,10 +395,11 @@ int handleCompile(int argc, char* argv[]) {
     std::string outputPath;
     bool verbose = false;
     bool runBinary = false;
+    OptimizationLevel optLevel = OptimizationLevel::O2; // Default to -O2
 
     std::string command = argv[1];
     int argStart = (command == "compile") ? 2 : 1;
-    
+
     // Auto-run if not explicitly "compile" command (e.g. stratos file.st)
     if (command != "compile") {
         runBinary = true;
@@ -363,33 +425,215 @@ int handleCompile(int argc, char* argv[]) {
         } else if (arg == "-r" || arg == "--run") {
             runBinary = true;
         }
-    }
-
-    // Default output path handling
-    std::string binaryOutputPath = outputPath;
-    if (binaryOutputPath.empty()) {
-        fs::path inputFsPath(inputPath);
-        std::string filename = inputFsPath.stem().string();
-        
-        // Ensure build directory exists
-        if (!fs::exists("build")) {
-            fs::create_directory("build");
+        // Optimization flags
+        else if (arg == "-O0") {
+            optLevel = OptimizationLevel::O0;
+        } else if (arg == "-O1") {
+            optLevel = OptimizationLevel::O1;
+        } else if (arg == "-O2") {
+            optLevel = OptimizationLevel::O2;
+        } else if (arg == "-O3") {
+            optLevel = OptimizationLevel::O3;
+        } else if (arg == "-Os") {
+            optLevel = OptimizationLevel::Os;
+        } else if (arg == "-Oz") {
+            optLevel = OptimizationLevel::Oz;
+        } else if (arg == "--opt") {
+            if (i + 1 < argc) {
+                std::string level = argv[++i];
+                if (level == "0") optLevel = OptimizationLevel::O0;
+                else if (level == "1") optLevel = OptimizationLevel::O1;
+                else if (level == "2") optLevel = OptimizationLevel::O2;
+                else if (level == "3") optLevel = OptimizationLevel::O3;
+                else if (level == "s") optLevel = OptimizationLevel::Os;
+                else if (level == "z") optLevel = OptimizationLevel::Oz;
+                else {
+                    std::cerr << "Error: Invalid optimization level: " << level << std::endl;
+                    std::cerr << "Valid levels: 0, 1, 2, 3, s, z" << std::endl;
+                    return 1;
+                }
+            }
         }
-        
-        binaryOutputPath = (fs::path("build") / filename).string();
-#ifdef _WIN32
-        binaryOutputPath += ".exe";
-#endif
     }
 
-    // Reuse handleGenerateIR logic (via compileFile) to generate the .ll file
-    // We force output to a temp location in build/ or just use the intermediate .ll
-    fs::path intermediateLL = fs::path(binaryOutputPath).parent_path() / (fs::path(binaryOutputPath).stem().string() + ".ll");
-    
-    // Check if input is a file
-    if (fs::is_regular_file(inputPath)) {
+    // Check if input is a directory (project)
+    if (fs::is_directory(inputPath)) {
+        // Check if it's a project (has stratos.conf)
+        fs::path projectPath = fs::path(inputPath);
+        fs::path configPath = projectPath / "stratos.conf";
+        bool isProject = fs::exists(configPath);
+
+        if (!isProject) {
+            std::cerr << "Error: Directory provided but no stratos.conf found.\n";
+            std::cerr << "Use 'stratos compile <file.st>' for single files or ensure stratos.conf exists for project compilation.\n";
+            return 1;
+        }
+
+        // Create build folder in the project directory
+        fs::path buildDir = projectPath / "build";
+        if (!fs::exists(buildDir)) {
+            fs::create_directories(buildDir);
+            if (verbose) std::cout << "Created build directory: " << buildDir << "\n";
+        }
+
+        std::cout << "Compiling project in: " << inputPath << "\n";
+
+        // Parse project config to get entry point or sources
+        auto configOpt = ProjectConfigParser::parse(configPath.string());
+        if (!configOpt) {
+            std::cerr << "Error: Failed to parse stratos.conf\n";
+            return 1;
+        }
+
+        ProjectConfig config = *configOpt;
+        std::string projectRoot = ProjectConfigParser::getProjectRoot(configPath.string());
+
+        // Determine source files
+        std::vector<std::string> sourceFiles;
+        if (!config.sources.empty()) {
+            for (const auto& src : config.sources) {
+                std::string fullPath = projectRoot + "/" + src;
+                if (fs::exists(fullPath)) {
+                    sourceFiles.push_back(fullPath);
+                }
+            }
+        } else if (!config.entry.empty()) {
+            sourceFiles.push_back(projectRoot + "/" + config.entry);
+        } else {
+            std::cerr << "Error: No entry point or source files specified in stratos.conf\n";
+            return 1;
+        }
+
+        // Determine output binary name
+        std::string binaryName = config.name;
+#ifdef _WIN32
+        binaryName += ".exe";
+#endif
+        std::string binaryOutputPath = (buildDir / binaryName).string();
+        if (!outputPath.empty()) {
+            binaryOutputPath = outputPath;
+        }
+
+        // Generate IR for all source files
+        std::string intermediateLL = (buildDir / (config.name + ".ll")).string();
+
+        if (verbose) std::cout << "Compiling " << sourceFiles.size() << " file(s)...\n";
+        CompileResult result = compileMultipleFiles(sourceFiles, intermediateLL, verbose, projectRoot);
+
+        if (!result.success) {
+            std::cerr << "Compilation failed: " << result.errorMessage << std::endl;
+            return 1;
+        }
+
+        if (verbose) std::cout << "Generated IR: " << intermediateLL << std::endl;
+        if (verbose) std::cout << "Compiling to binary: " << binaryOutputPath << std::endl;
+
+        // Initialize runtime link configuration
+        RuntimeLinkConfig linkConfig;
+
+        if (verbose) {
+            std::cout << "\nCompilation configuration:" << std::endl;
+            std::cout << "  Platform: " << platformToString(linkConfig.getPlatform()) << std::endl;
+            std::cout << "  Optimization: " << optLevelToString(optLevel) << std::endl;
+            std::cout << "  Static linking: " << (linkConfig.isFullStaticSupported() ? "Full" : "Partial") << std::endl;
+            std::cout << "  Runtime library: " << linkConfig.getRuntimeLibraryPath() << std::endl;
+        }
+
+        // Get static linking flags
+        std::string staticFlags = linkConfig.getStaticLinkFlags(optLevel);
+
+        // Build clang command
+        std::stringstream clangCmdStream;
+        clangCmdStream << "clang \"" << intermediateLL << "\" ";
+        clangCmdStream << staticFlags;
+        clangCmdStream << "-o \"" << binaryOutputPath << "\"";
+        std::string clangCmd = clangCmdStream.str();
+
+        if (verbose) {
+            std::cout << "\nExecuting clang command:" << std::endl;
+            std::cout << clangCmd << std::endl;
+        }
+
+        int clangResult = std::system(clangCmd.c_str());
+
+        if (clangResult != 0) {
+            std::cerr << "\nError: Clang compilation failed." << std::endl;
+            std::cerr << "Ensure 'clang' is in your PATH and static libraries are available." << std::endl;
+
+            if (!linkConfig.isFullStaticSupported()) {
+                std::cerr << "\nNote: Your platform (" << platformToString(linkConfig.getPlatform())
+                          << ") has limited static linking support." << std::endl;
+                std::cerr << "The binary may still have some dynamic system dependencies." << std::endl;
+            }
+
+            std::cerr << "\nTroubleshooting:" << std::endl;
+            std::cerr << "  1. Verify runtime library exists: " << linkConfig.getRuntimeLibraryPath() << std::endl;
+            std::cerr << "  2. On Linux, install static libraries: sudo apt install libssl-dev" << std::endl;
+            std::cerr << "  3. Run with -v flag for detailed output" << std::endl;
+
+            return 1;
+        }
+
+        // Verify the binary
+        if (verbose) {
+            std::cout << "\n=== Binary Information ===" << std::endl;
+
+            // Show file type
+            std::string fileCmd = "file \"" + binaryOutputPath + "\"";
+            std::system(fileCmd.c_str());
+
+            // Show size
+            std::cout << "\nBinary size: ";
+            std::string sizeCmd = "ls -lh \"" + binaryOutputPath + "\" | awk '{print $5}'";
+            std::system(sizeCmd.c_str());
+
+            // Show dependencies (Linux only)
+            if (linkConfig.getPlatform() == Platform::Linux) {
+                std::cout << "\nDependency check:" << std::endl;
+                std::string lddCmd = "ldd \"" + binaryOutputPath + "\" 2>&1";
+                std::system(lddCmd.c_str());
+            }
+        }
+
+        std::cout << "✓ Successfully compiled project to " << binaryOutputPath << std::endl;
+
+        if (runBinary) {
+            if (verbose) std::cout << "Executing binary: " << binaryOutputPath << std::endl;
+            std::string runCmd = "\"" + binaryOutputPath + "\"";
+            int runResult = std::system(runCmd.c_str());
+            return runResult;
+        }
+
+        return 0;
+
+    } else if (fs::is_regular_file(inputPath)) {
+        // Single file compilation
+        // Create build folder in the same directory as the file
+        fs::path filePath = fs::path(inputPath);
+        fs::path fileDir = filePath.parent_path();
+        if (fileDir.empty()) fileDir = fs::current_path();
+
+        fs::path buildDir = fileDir / "build";
+        if (!fs::exists(buildDir)) {
+            fs::create_directories(buildDir);
+            if (verbose) std::cout << "Created build directory: " << buildDir << "\n";
+        }
+
+        // Default output path handling
+        std::string binaryOutputPath = outputPath;
+        if (binaryOutputPath.empty()) {
+            std::string filename = filePath.stem().string();
+            binaryOutputPath = (buildDir / filename).string();
+#ifdef _WIN32
+            binaryOutputPath += ".exe";
+#endif
+        }
+
+        // Generate intermediate .ll file
+        fs::path intermediateLL = buildDir / (filePath.stem().string() + ".ll");
+
         if (verbose) std::cout << "Compiling IR..." << std::endl;
-        
+
         CompileResult result = compileFile(inputPath, intermediateLL.string(), verbose);
 
         if (!result.success) {
@@ -400,17 +644,73 @@ int handleCompile(int argc, char* argv[]) {
         if (verbose) std::cout << "Generated IR: " << result.outputFilePath << std::endl;
         if (verbose) std::cout << "Compiling to binary: " << binaryOutputPath << std::endl;
 
-        // Invoke Clang
-        std::string clangCmd = "clang \"" + result.outputFilePath + "\" -o \"" + binaryOutputPath + "\"";
-        if (verbose) std::cout << "Running: " << clangCmd << std::endl;
-        
+        // Initialize runtime link configuration
+        RuntimeLinkConfig linkConfig;
+
+        if (verbose) {
+            std::cout << "\nCompilation configuration:" << std::endl;
+            std::cout << "  Platform: " << platformToString(linkConfig.getPlatform()) << std::endl;
+            std::cout << "  Optimization: " << optLevelToString(optLevel) << std::endl;
+            std::cout << "  Static linking: " << (linkConfig.isFullStaticSupported() ? "Full" : "Partial") << std::endl;
+            std::cout << "  Runtime library: " << linkConfig.getRuntimeLibraryPath() << std::endl;
+        }
+
+        // Get static linking flags
+        std::string staticFlags = linkConfig.getStaticLinkFlags(optLevel);
+
+        // Build clang command
+        std::stringstream clangCmdStream;
+        clangCmdStream << "clang \"" << result.outputFilePath << "\" ";
+        clangCmdStream << staticFlags;
+        clangCmdStream << "-o \"" + binaryOutputPath << "\"";
+        std::string clangCmd = clangCmdStream.str();
+
+        if (verbose) {
+            std::cout << "\nExecuting clang command:" << std::endl;
+            std::cout << clangCmd << std::endl;
+        }
+
         int clangResult = std::system(clangCmd.c_str());
-        
+
         if (clangResult != 0) {
-            std::cerr << "Error: Clang compilation failed. Ensure 'clang' is in your PATH." << std::endl;
+            std::cerr << "\nError: Clang compilation failed." << std::endl;
+            std::cerr << "Ensure 'clang' is in your PATH and static libraries are available." << std::endl;
+
+            if (!linkConfig.isFullStaticSupported()) {
+                std::cerr << "\nNote: Your platform (" << platformToString(linkConfig.getPlatform())
+                          << ") has limited static linking support." << std::endl;
+                std::cerr << "The binary may still have some dynamic system dependencies." << std::endl;
+            }
+
+            std::cerr << "\nTroubleshooting:" << std::endl;
+            std::cerr << "  1. Verify runtime library exists: " << linkConfig.getRuntimeLibraryPath() << std::endl;
+            std::cerr << "  2. On Linux, install static libraries: sudo apt install libssl-dev" << std::endl;
+            std::cerr << "  3. Run with -v flag for detailed output" << std::endl;
+
             return 1;
         }
-        
+
+        // Verify the binary
+        if (verbose) {
+            std::cout << "\n=== Binary Information ===" << std::endl;
+
+            // Show file type
+            std::string fileCmd = "file \"" + binaryOutputPath + "\"";
+            std::system(fileCmd.c_str());
+
+            // Show size
+            std::cout << "\nBinary size: ";
+            std::string sizeCmd = "ls -lh \"" + binaryOutputPath + "\" | awk '{print $5}'";
+            std::system(sizeCmd.c_str());
+
+            // Show dependencies (Linux only)
+            if (linkConfig.getPlatform() == Platform::Linux) {
+                std::cout << "\nDependency check:" << std::endl;
+                std::string lddCmd = "ldd \"" + binaryOutputPath + "\" 2>&1";
+                std::system(lddCmd.c_str());
+            }
+        }
+
         if (!verbose && !runBinary) {
              std::cout << "Successfully compiled " << inputPath << " to " << binaryOutputPath << std::endl;
         }
@@ -425,9 +725,6 @@ int handleCompile(int argc, char* argv[]) {
 
         return 0;
 
-    } else if (fs::is_directory(inputPath)) {
-        std::cerr << "Directory compilation not fully supported in this mode yet. Use 'generate-ir' or 'build' for projects." << std::endl;
-        return 1;
     } else {
         std::cerr << "Error: Input path not found: " << inputPath << std::endl;
         return 1;
