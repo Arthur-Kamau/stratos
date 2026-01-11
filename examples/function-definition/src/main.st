@@ -1,5 +1,7 @@
 package main;
 
+use collections;
+
 // function without parameters
 fn hello() {
    println("hello world");
@@ -41,7 +43,6 @@ fn printHelloNameAndReturnHeight(name: string) int {
    return 170;
 }
 
-use collections;
 
 fn jumbo(people: Map<string, int> = newMap<string, int>()) {
    println("People:");

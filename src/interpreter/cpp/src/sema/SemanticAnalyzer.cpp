@@ -131,6 +131,29 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
         }
     }
 
+    // Validate use statement order: use statements must come at the top (after package declaration)
+    bool seenNonUseStatement = false;
+    for (size_t i = 0; i < statements.size(); ++i) {
+        if (!statements[i]) {
+            continue;
+        }
+
+        // Skip package declarations
+        if (dynamic_cast<PackageDecl*>(statements[i].get())) {
+            continue;
+        }
+
+        // Check if this is a use statement
+        if (auto* useStmt = dynamic_cast<UseStmt*>(statements[i].get())) {
+            if (seenNonUseStatement) {
+                error(useStmt->moduleName, "'use' statements must appear at the top of the file, after the package declaration and before any other statements.");
+            }
+        } else {
+            // This is not a use statement, mark that we've seen non-use code
+            seenNonUseStatement = true;
+        }
+    }
+
     // Second pass: Analyze all statements including bodies
     for (size_t i = 0; i < statements.size(); ++i) {
         if (!statements[i]) {

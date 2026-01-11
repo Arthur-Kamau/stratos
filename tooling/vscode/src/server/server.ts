@@ -63,6 +63,25 @@ interface FunctionDefinition {
 
 const functionDefinitions: Map<string, FunctionDefinition> = new Map();
 
+// Class definitions cache for go-to-definition
+interface ClassDefinition {
+	name: string;
+	uri: string;
+	range: Range;
+}
+
+const classDefinitions: Map<string, ClassDefinition> = new Map();
+
+// Variable definitions cache for go-to-definition
+interface VariableDefinition {
+	name: string;
+	uri: string;
+	range: Range;
+	type: string;
+}
+
+const variableDefinitions: Map<string, VariableDefinition> = new Map();
+
 // Workspace symbols cache
 const workspaceSymbols: Map<string, CompletionItem[]> = new Map();
 
@@ -225,7 +244,7 @@ function loadStandardLibraryCompletions() {
 // Validate document on change
 documents.onDidChangeContent(change => {
 	validateTextDocument(change.document);
-	indexFunctionDefinitions(change.document);
+	indexDefinitions(change.document);
 });
 
 // Validate package declaration matches directory structure
@@ -326,6 +345,58 @@ function validatePackageDeclaration(textDocument: TextDocument): Diagnostic | nu
 	return null;
 }
 
+// Validate that use statements appear only at the top of the file (after package declaration)
+function validateUseStatementOrder(textDocument: TextDocument): Diagnostic[] {
+	const text = textDocument.getText();
+	const lines = text.split('\n');
+	const diagnostics: Diagnostic[] = [];
+
+	let seenNonUseStatement = false;
+	let lastUseStatementLine = -1;
+
+	for (let i = 0; i < lines.length; i++) {
+		const line = lines[i].trim();
+
+		// Skip empty lines and comments
+		if (line === '' || line.startsWith('//') || line.startsWith('/*')) {
+			continue;
+		}
+
+		// Skip package declaration
+		if (line.startsWith('package ')) {
+			continue;
+		}
+
+		// Check if this is a use statement
+		const useMatch = line.match(/^use\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*;/);
+		if (useMatch) {
+			lastUseStatementLine = i;
+
+			// If we've already seen a non-use statement, this is an error
+			if (seenNonUseStatement) {
+				const startChar = line.indexOf('use');
+				diagnostics.push({
+					severity: DiagnosticSeverity.Error,
+					range: {
+						start: { line: i, character: startChar },
+						end: { line: i, character: startChar + line.length }
+					},
+					message: `'use' statements must appear at the top of the file, after the package declaration and before any other statements`,
+					source: 'stratos-linter'
+				});
+			}
+		} else {
+			// This is not a use statement (and not empty/comment/package)
+			// If it's actual code, mark that we've seen a non-use statement
+			if (line.length > 0) {
+				seenNonUseStatement = true;
+			}
+		}
+	}
+
+	return diagnostics;
+}
+
 // Function to find duplicate keys in HOCON files
 function findHoconDuplicateKeys(textDocument: TextDocument): Diagnostic[] {
 	const diagnostics: Diagnostic[] = [];
@@ -410,6 +481,10 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	if (packageDiagnostic) {
 		diagnostics.push(packageDiagnostic);
 	}
+
+	// Validate use statements are at the top
+	const useStatementDiagnostics = validateUseStatementOrder(textDocument);
+	diagnostics.push(...useStatementDiagnostics);
 
 	// Get compiler path from settings or use default
 	const settings = await getDocumentSettings(textDocument.uri);
@@ -714,29 +789,52 @@ function detectRuntimeErrors(textDocument: TextDocument, diagnostics: Diagnostic
 	});
 }
 
-// Index function definitions in a document
-function indexFunctionDefinitions(textDocument: TextDocument) {
+// Index function, class, and variable definitions in a document
+function indexDefinitions(textDocument: TextDocument) {
 	const text = textDocument.getText();
 	const lines = text.split('\n');
 	const uri = textDocument.uri;
 
 	// Remove old definitions from this document
-	const keysToDelete: string[] = [];
+	const funcKeysToDelete: string[] = [];
 	functionDefinitions.forEach((def, key) => {
 		if (def.uri === uri) {
-			keysToDelete.push(key);
+			funcKeysToDelete.push(key);
 		}
 	});
-	keysToDelete.forEach(key => functionDefinitions.delete(key));
+	funcKeysToDelete.forEach(key => functionDefinitions.delete(key));
+
+	const classKeysToDelete: string[] = [];
+	classDefinitions.forEach((def, key) => {
+		if (def.uri === uri) {
+			classKeysToDelete.push(key);
+		}
+	});
+	classKeysToDelete.forEach(key => classDefinitions.delete(key));
+
+	const varKeysToDelete: string[] = [];
+	variableDefinitions.forEach((def, key) => {
+		if (def.uri === uri) {
+			varKeysToDelete.push(key);
+		}
+	});
+	varKeysToDelete.forEach(key => variableDefinitions.delete(key));
 
 	// Parse function definitions: fn functionName(params) returnType {
 	// Pattern: fn name(param1: type1, param2: type2) returnType {
 	const functionRegex = /fn\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(([^)]*)\)\s*([a-zA-Z_][a-zA-Z0-9_?]*)/g;
 
+	// Parse class definitions: class ClassName {
+	const classRegex = /class\s+([a-zA-Z_][a-zA-Z0-9_]*)/g;
+
+	// Parse variable definitions: val/var name: type = value or val/var name = value
+	const varRegex = /(?:val|var)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*(?::\s*([a-zA-Z_][a-zA-Z0-9_?<>,\[\]	]+))?\s*=/g;
+
 	lines.forEach((line, lineIndex) => {
+		// Index functions
 		let match;
-		const regex = new RegExp(functionRegex);
-		while ((match = regex.exec(line)) !== null) {
+		const funcReg = new RegExp(functionRegex);
+		while ((match = funcReg.exec(line)) !== null) {
 			const functionName = match[1];
 			const paramsString = match[2].trim();
 			const returnType = match[3].trim() || 'void';
@@ -771,6 +869,46 @@ function indexFunctionDefinitions(textDocument: TextDocument) {
 				range: range,
 				params: params,
 				returnType: returnType
+			});
+		}
+
+		// Index classes
+		const classReg = new RegExp(classRegex);
+		while ((match = classReg.exec(line)) !== null) {
+			const className = match[1];
+			const startChar = match.index;
+			const endChar = startChar + match[0].length;
+
+			const range: Range = {
+				start: { line: lineIndex, character: startChar },
+				end: { line: lineIndex, character: endChar }
+			};
+
+			classDefinitions.set(className, {
+				name: className,
+				uri: uri,
+				range: range
+			});
+		}
+
+		// Index variables
+		const varReg = new RegExp(varRegex);
+		while ((match = varReg.exec(line)) !== null) {
+			const varName = match[1];
+			const varType = match[2] ? match[2].trim() : 'auto';
+			const startChar = match.index;
+			const endChar = startChar + match[0].length;
+
+			const range: Range = {
+				start: { line: lineIndex, character: startChar },
+				end: { line: lineIndex, character: endChar }
+			};
+
+			variableDefinitions.set(varName, {
+				name: varName,
+				uri: uri,
+				range: range,
+				type: varType
 			});
 		}
 	});
@@ -1033,7 +1171,7 @@ connection.onDefinition(
 		}
 
 		// Check if it's a stdlib function call (module.function)
-		const stdlibCallRegex = new RegExp(`([a-zA-Z_][a-zA-Z0-9_]*)\.${targetWord}\s*\(`);
+		const stdlibCallRegex = new RegExp(`([a-zA-Z_][a-zA-Z0-9_]*)\.${targetWord}\\s*\\(`);
 		const stdlibMatch = lineText.match(stdlibCallRegex);
 
 		if (stdlibMatch) {
@@ -1052,6 +1190,18 @@ connection.onDefinition(
 		const funcDef = functionDefinitions.get(targetWord);
 		if (funcDef) {
 			return Location.create(funcDef.uri, funcDef.range);
+		}
+
+		// Check for class definition
+		const classDef = classDefinitions.get(targetWord);
+		if (classDef) {
+			return Location.create(classDef.uri, classDef.range);
+		}
+
+		// Check for variable definition
+		const varDef = variableDefinitions.get(targetWord);
+		if (varDef) {
+			return Location.create(varDef.uri, varDef.range);
 		}
 
 		return null;
