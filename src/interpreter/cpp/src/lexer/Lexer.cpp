@@ -42,14 +42,14 @@ std::unordered_map<std::string, TokenType> Lexer::keywords = {
     {"not", TokenType::NOT}
 };
 
-Lexer::Lexer(const std::string& source) : source(source) {}
+Lexer::Lexer(const std::string& source, const std::string& source_file) : source(source), source_file(source_file) {}
 
 std::vector<Token> Lexer::scanTokens() {
     while (!isAtEnd()) {
         start = current;
         scanToken();
     }
-    tokens.push_back({TokenType::END_OF_FILE, "", line, column});
+    tokens.push_back({TokenType::END_OF_FILE, "", line, column, source_file});
     return tokens;
 }
 
@@ -67,11 +67,11 @@ void Lexer::addToken(TokenType type) {
 }
 
 void Lexer::addToken(TokenType type, std::string literal) {
-    tokens.push_back({type, literal, line, column});
+    tokens.push_back({type, literal, line, column, source_file});
 }
 
 void Lexer::addToken(TokenType type, std::string literal, int startColumn) {
-    tokens.push_back({type, literal, line, startColumn});
+    tokens.push_back({type, literal, line, startColumn, source_file});
 }
 
 bool Lexer::match(char expected) {
@@ -351,10 +351,10 @@ void Lexer::blockComment() {
         docToken.type = TokenType::DOC_COMMENT;
         docToken.lexeme = "/**" + content + "*/";
         docToken.docText = trimDocComment(content);
-        docToken.line = startLine;
-        docToken.column = startColumn;
-        tokens.push_back(docToken);
-    }
+            docToken.line = startLine;
+            docToken.column = startColumn;
+            docToken.file = source_file;
+            tokens.push_back(docToken);    }
     // Otherwise, regular comment is discarded (current behavior)
 }
 

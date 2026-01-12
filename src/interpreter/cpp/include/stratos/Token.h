@@ -72,11 +72,12 @@ struct Token {
     std::string lexeme;
     int line;
     int column;
+    std::string file;       // Path to the source file
     std::string docText;  // For DOC_COMMENT tokens - stores the raw comment text
 
     // Helper to print token for debugging
     std::string toString() const {
-        return "Token(" + std::to_string(static_cast<int>(type)) + ", '" + lexeme + "')";
+        return "Token(" + std::to_string(static_cast<int>(type)) + ", '" + lexeme + "', " + file + ":" + std::to_string(line) + ":" + std::to_string(column) + ")";
     }
 };
 

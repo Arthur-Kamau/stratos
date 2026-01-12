@@ -270,12 +270,25 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
             for (const auto& param : funcDecl->parameters) {
                 paramTypes.push_back(param.type);
             }
-            Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType, funcDecl->isPublic);
+            Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType, funcDecl->isPublic, funcDecl->name.line, funcDecl->name.column, funcDecl->name.file);
             if (!symbolTable.define(funcSymbol)) {
-                error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined.");
+                auto existing = symbolTable.resolve(funcDecl->name.lexeme);
+                std::string loc = "";
+                if (existing) {
+                    if (existing->line > 0) {
+                        loc = " (previously defined at line " + std::to_string(existing->line);
+                        if (!existing->file.empty()) {
+                            loc += " in " + existing->file;
+                        }
+                        loc += ")";
+                    } else if (!existing->file.empty()) {
+                        loc = " (previously defined in " + existing->file + ")";
+                    }
+                }
+                error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined." + loc);
             }
         } else if (auto* classDecl = dynamic_cast<ClassDecl*>(statements[i].get())) {
-            if (!symbolTable.define(Symbol{classDecl->name.lexeme, SymbolKind::CLASS, classDecl->name.lexeme, false})) {
+            if (!symbolTable.define(Symbol::Class(classDecl->name.lexeme, classDecl->name.lexeme, false, classDecl->name.line, classDecl->name.column, classDecl->name.file))) {
                 error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined.");
             }
             // Register members
@@ -283,21 +296,21 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
                     if (auto* func = dynamic_cast<FunctionDecl*>(member.get())) {
                         std::vector<std::string> pTypes;
                         for (const auto& p : func->parameters) pTypes.push_back(p.type);
-                        Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic);
+                        Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic, func->name.line, func->name.column, func->name.file);
                         classMembers[classDecl->name.lexeme][func->name.lexeme] = sym;
                     } else if (auto* var = dynamic_cast<VarDecl*>(member.get())) {
-                        Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, false);
+                        Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, false, var->name.line, var->name.column, var->name.file);
                         classMembers[classDecl->name.lexeme][var->name.lexeme] = sym;
                     }
             }
         } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(statements[i].get())) {
-            if (!symbolTable.define(Symbol{enumDecl->name.lexeme, SymbolKind::CLASS, enumDecl->name.lexeme, false})) {
+            if (!symbolTable.define(Symbol::Class(enumDecl->name.lexeme, enumDecl->name.lexeme, false, enumDecl->name.line, enumDecl->name.column, enumDecl->name.file))) {
                 error(enumDecl->name, "Enum '" + enumDecl->name.lexeme + "' is already defined.");
             }
             // Also register enum values in first pass
             for (const auto& value : enumDecl->values) {
                 std::string fullName = enumDecl->name.lexeme + "." + value.lexeme;
-                symbolTable.define(Symbol::Variable(fullName, enumDecl->name.lexeme, false));
+                symbolTable.define(Symbol::Variable(fullName, enumDecl->name.lexeme, false, false, value.line, value.column, value.file));
             }
         }
     }
@@ -309,8 +322,9 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
             continue;
         }
 
-        // Skip package declarations
+        // Skip package declarations (and reset non-use statement flag as it implies a new file context)
         if (dynamic_cast<PackageDecl*>(statements[i].get())) {
+            seenNonUseStatement = false;
             continue;
         }
 
@@ -487,7 +501,18 @@ void SemanticAnalyzer::visit(CallExpr& expr) {
                                 std::string expectedType = signature.paramTypes[i];
 
                                 // Allow any type if expectedType is "any", or if argType is unknown
-                                if (argType != expectedType && argType != "unknown" && expectedType != "any") {
+                                bool typesMatch = (argType == expectedType) || (argType == "unknown") || (expectedType == "any");
+                                
+                                // Relaxed check for raw Array vs generic Array
+                                if (!typesMatch) {
+                                    if (argType == "Array" || argType == "array") {
+                                        if (expectedType.find("Array<") == 0 || expectedType.find("array<") == 0) {
+                                            typesMatch = true;
+                                        }
+                                    }
+                                }
+
+                                if (!typesMatch) {
                                     error(rightVar->name, "Function '" + moduleName + "." + functionName +
                                          "' expects argument " + std::to_string(i + 1) +
                                          " to be of type '" + expectedType + "', found '" + argType + "'");
@@ -578,7 +603,7 @@ void SemanticAnalyzer::visit(VarDecl& stmt) {
             type = "any";
         }
     }
-    Symbol symbol = Symbol::Variable(stmt.name.lexeme, type, stmt.isMutable);
+    Symbol symbol = Symbol::Variable(stmt.name.lexeme, type, stmt.isMutable, false, stmt.name.line, stmt.name.column, stmt.name.file);
 
     if (!symbolTable.define(symbol)) {
         error(stmt.name, "Variable '" + stmt.name.lexeme + "' is already defined in this scope.");
@@ -616,7 +641,7 @@ void SemanticAnalyzer::visit(FunctionDecl& stmt) {
 
     // Define parameters as variables
     for (const auto& param : stmt.parameters) {
-        Symbol paramSym = Symbol::Variable(param.name.lexeme, param.type, false);
+        Symbol paramSym = Symbol::Variable(param.name.lexeme, param.type, false, false, param.name.line, param.name.column, param.name.file);
         symbolTable.define(paramSym);
         
         // Analyze default value if present
@@ -644,7 +669,7 @@ void SemanticAnalyzer::visit(ClassDecl& stmt) {
 
     symbolTable.enterScope();
     // Define 'this'
-    symbolTable.define(Symbol::Variable("this", stmt.name.lexeme, false));
+    symbolTable.define(Symbol::Variable("this", stmt.name.lexeme, false, false, stmt.name.line, stmt.name.column, stmt.name.file));
 
     for (const auto& member : stmt.methods) {
         if (member) {
@@ -909,7 +934,7 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
 
         try {
             // Lex and parse the module file
-            Lexer lexer(source);
+            Lexer lexer(source, filePath);
             std::vector<Token> tokens = lexer.scanTokens();
 
             Parser parser(tokens);
@@ -926,12 +951,12 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
                     for (const auto& param : funcDecl->parameters) {
                         paramTypes.push_back(param.type);
                     }
-                    Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType, funcDecl->isPublic);
+                    Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType, funcDecl->isPublic, funcDecl->name.line, funcDecl->name.column, funcDecl->name.file);
                     if (!symbolTable.define(funcSymbol)) {
                         error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined.");
                     }
                 } else if (auto* classDecl = dynamic_cast<ClassDecl*>(statements[i].get())) {
-                    if (!symbolTable.define(Symbol{classDecl->name.lexeme, SymbolKind::CLASS, classDecl->name.lexeme, false})) {
+                    if (!symbolTable.define(Symbol::Class(classDecl->name.lexeme, classDecl->name.lexeme, false, classDecl->name.line, classDecl->name.column, classDecl->name.file))) {
                         error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined.");
                     }
                     // Register members
@@ -939,23 +964,23 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
                         if (auto* func = dynamic_cast<FunctionDecl*>(member.get())) {
                             std::vector<std::string> pTypes;
                             for (const auto& p : func->parameters) pTypes.push_back(p.type);
-                            Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic);
+                            Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic, func->name.line, func->name.column, func->name.file);
                             classMembers[classDecl->name.lexeme][func->name.lexeme] = sym;
                             // std::cout << "DEBUG: Registered method " << classDecl->name.lexeme << "." << func->name.lexeme << " return=" << func->returnType << std::endl;
                         } else if (auto* var = dynamic_cast<VarDecl*>(member.get())) {
-                            Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, false);
+                            Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, false, var->name.line, var->name.column, var->name.file);
                             classMembers[classDecl->name.lexeme][var->name.lexeme] = sym;
                             // std::cout << "DEBUG: Registered field " << classDecl->name.lexeme << "." << var->name.lexeme << " type=" << var->typeName << std::endl;
                         }
                     }
                 } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(statements[i].get())) {
-                    if (!symbolTable.define(Symbol{enumDecl->name.lexeme, SymbolKind::CLASS, enumDecl->name.lexeme, false})) {
+                    if (!symbolTable.define(Symbol::Class(enumDecl->name.lexeme, enumDecl->name.lexeme, false, enumDecl->name.line, enumDecl->name.column, enumDecl->name.file))) {
                         error(enumDecl->name, "Enum '" + enumDecl->name.lexeme + "' is already defined.");
                     }
                     // Also register enum values in first pass
                     for (const auto& value : enumDecl->values) {
                         std::string fullName = enumDecl->name.lexeme + "." + value.lexeme;
-                        symbolTable.define(Symbol::Variable(fullName, enumDecl->name.lexeme, false));
+                        symbolTable.define(Symbol::Variable(fullName, enumDecl->name.lexeme, false, false, value.line, value.column, filePath));
                     }
                 }
             }

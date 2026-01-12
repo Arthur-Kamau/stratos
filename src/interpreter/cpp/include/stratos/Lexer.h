@@ -10,16 +10,17 @@ namespace stratos {
 
 class Lexer {
 public:
-    Lexer(const std::string& source);
+    Lexer(const std::string& source, const std::string& source_file);
     std::vector<Token> scanTokens();
 
 private:
-    std::string source;
+    const std::string& source;
+    const std::string& source_file; // New member to store the source file path
     std::vector<Token> tokens;
     int start = 0;
     int current = 0;
     int line = 1;
-    int column = 0;
+    int column = 1;
 
     static std::unordered_map<std::string, TokenType> keywords;
 

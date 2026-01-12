@@ -1556,7 +1556,7 @@ void Interpreter::visit(UseStmt& stmt) {
 
                 try {
                     // Lex, parse, and execute the module file
-                    Lexer lexer(source);
+                    Lexer lexer(source, filePath);
                     std::vector<Token> tokens = lexer.scanTokens();
 
                     Parser parser(tokens);

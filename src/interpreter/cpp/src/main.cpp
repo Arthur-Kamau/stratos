@@ -185,14 +185,13 @@ CompileResult compileFile(const std::string& path, const std::string& outputPath
 
     std::stringstream buffer;
     buffer << file.rdbuf();
-    std::string source = buffer.str();
-
-    try {
-        // Lexical Analysis
-        Lexer lexer(source);
-        std::vector<Token> tokens = lexer.scanTokens();
-        if (verbose) std::cout << "  [Lexer]     OK (" << tokens.size() << " tokens)" << std::endl;
-
+            std::string source = buffer.str();
+    
+            try {
+                // Lexical Analysis
+                Lexer lexer(source, path);
+                std::vector<Token> tokens = lexer.scanTokens();
+                if (verbose) std::cout << "  [Lexer]     OK (" << tokens.size() << " tokens)" << std::endl;
         // Parsing
         Parser parser(tokens);
         std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
@@ -986,7 +985,7 @@ int handleRun(int argc, char* argv[]) {
         std::string source = buffer.str();
 
         try {
-            Lexer lexer(source);
+            Lexer lexer(source, file);
             std::vector<Token> tokens = lexer.scanTokens();
 
             Parser parser(tokens);
@@ -1213,7 +1212,7 @@ CompileResult compileMultipleFiles(const std::vector<std::string>& files, const 
         std::string source = buffer.str();
 
         try {
-            Lexer lexer(source);
+            Lexer lexer(source, file);
             std::vector<Token> tokens = lexer.scanTokens();
 
             Parser parser(tokens);
@@ -1624,7 +1623,7 @@ int handleDocGenerate(int argc, char* argv[]) {
 
         try {
             // Lex
-            Lexer lexer(source);
+            Lexer lexer(source, filePath);
             std::vector<Token> tokens = lexer.scanTokens();
 
             // Parse
@@ -1776,7 +1775,7 @@ int handleFmt(int argc, char* argv[]) {
 
         try {
             // Lexical Analysis
-            Lexer lexer(source);
+            Lexer lexer(source, filePath);
             std::vector<Token> tokens = lexer.scanTokens();
 
             if (tokens.empty()) {
@@ -1950,7 +1949,7 @@ int handleCheck(int argc, char* argv[]) {
 
                 try {
                     // Lexical Analysis
-                    Lexer lexer(source);
+                    Lexer lexer(source, filePath);
                     std::vector<Token> tokens = lexer.scanTokens();
                     if (verbose) std::cout << "  ✓ Lexer OK (" << tokens.size() << " tokens)\n";
 
@@ -2012,7 +2011,7 @@ int handleCheck(int argc, char* argv[]) {
 
     try {
         // Lexical Analysis
-        Lexer lexer(source);
+        Lexer lexer(source, inputPath);
         std::vector<Token> tokens = lexer.scanTokens();
         if (verbose) std::cout << "  ✓ Lexer OK (" << tokens.size() << " tokens)\n";
 
