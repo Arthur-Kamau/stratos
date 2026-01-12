@@ -30,6 +30,10 @@ std::unique_ptr<Stmt> Parser::declaration() {
         // std::cout << "[Parser::declaration] Current token: " << peek().lexeme << " (type " << static_cast<int>(peek().type) << ")" << std::endl;
 
         if (match({TokenType::VAR, TokenType::VAL})) return varDeclaration();
+        if (match({TokenType::ASYNC})) {
+            consume(TokenType::FN, "Expect 'fn' after 'async'.");
+            return fnDeclaration("function", true, true);
+        }
         if (match({TokenType::FN})) return fnDeclaration("function", true); // Top level functions are public by default (exported)
         if (match({TokenType::CLASS, TokenType::STRUCT, TokenType::INTERFACE})) return classDeclaration();
         if (match({TokenType::ENUM})) return enumDeclaration();
@@ -67,7 +71,7 @@ std::unique_ptr<Stmt> Parser::varDeclaration() {
     return var;
 }
 
-std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind, bool isPublic) {
+std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind, bool isPublic, bool isAsync) {
     Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
 
     // Skip generic type parameters if present (e.g., <T, E>)
@@ -124,7 +128,7 @@ std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind, bool isPubl
     if (check(TokenType::SEMICOLON)) {
         consume(TokenType::SEMICOLON, "Expect ';' after interface method signature.");
         // Return function declaration with null body (interface method)
-        auto func = std::make_unique<FunctionDecl>(name, std::move(parameters), returnType, nullptr, isPublic);
+        auto func = std::make_unique<FunctionDecl>(name, std::move(parameters), returnType, nullptr, isPublic, isAsync);
         func->documentation = takePendingDoc();
         return func;
     }
@@ -137,7 +141,7 @@ std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind, bool isPubl
     consume(TokenType::RIGHT_BRACE, "Expect '}' after " + kind + " body.");
 
     auto bodyPtr = std::make_unique<std::vector<std::unique_ptr<Stmt>>>(std::move(body));
-    auto func = std::make_unique<FunctionDecl>(name, std::move(parameters), returnType, std::move(bodyPtr), isPublic);
+    auto func = std::make_unique<FunctionDecl>(name, std::move(parameters), returnType, std::move(bodyPtr), isPublic, isAsync);
     func->documentation = takePendingDoc();
     return func;
 }

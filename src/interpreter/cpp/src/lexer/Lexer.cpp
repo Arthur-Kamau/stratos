@@ -13,6 +13,8 @@ std::unordered_map<std::string, TokenType> Lexer::keywords = {
     {"package", TokenType::PACKAGE},
     {"use", TokenType::USE},
     {"as", TokenType::AS}, // Add AS keyword
+    {"async", TokenType::ASYNC},
+    {"await", TokenType::AWAIT},
     {"break", TokenType::BREAK},
     {"class", TokenType::CLASS},
     {"continue", TokenType::CONTINUE},

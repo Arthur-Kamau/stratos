@@ -20,6 +20,7 @@ class CallExpr;
 class IndexExpr;
 class GroupingExpr;
 class CastExpr; // Forward declaration
+class AwaitExpr; // Forward declaration
 class MapLiteralExpr; // Forward declaration
 class LambdaExpr; // Forward declaration
 class StructInitExpr; // Forward declaration
@@ -48,6 +49,7 @@ public:
     virtual void visit(IndexExpr& expr) = 0;
     virtual void visit(GroupingExpr& expr) = 0;
     virtual void visit(CastExpr& expr) = 0; // Visit method for CastExpr
+    virtual void visit(AwaitExpr& expr) = 0; // Visit method for AwaitExpr
     virtual void visit(MapLiteralExpr& expr) = 0; // Visit method for MapLiteralExpr
     virtual void visit(LambdaExpr& expr) = 0; // Visit method for LambdaExpr
     virtual void visit(StructInitExpr& expr) = 0; // Visit method for StructInitExpr
@@ -166,6 +168,17 @@ public:
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };
 
+class AwaitExpr : public Expr {
+public:
+    Token keyword;
+    std::unique_ptr<Expr> expression;
+
+    AwaitExpr(Token keyword, std::unique_ptr<Expr> expression)
+        : keyword(keyword), expression(std::move(expression)) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
 class MapLiteralExpr : public Expr {
 public:
     std::vector<std::pair<std::string, std::unique_ptr<Expr>>> entries;
@@ -239,9 +252,10 @@ public:
     std::unique_ptr<std::vector<std::unique_ptr<Stmt>>> body; // Can be null for interfaces
     std::unique_ptr<DocComment> documentation;
     bool isPublic;
+    bool isAsync;
 
-    FunctionDecl(Token name, std::vector<Parameter> parameters, std::string returnType, std::unique_ptr<std::vector<std::unique_ptr<Stmt>>> body, bool isPublic = false)
-        : name(name), parameters(std::move(parameters)), returnType(returnType), body(std::move(body)), documentation(nullptr), isPublic(isPublic) {}
+    FunctionDecl(Token name, std::vector<Parameter> parameters, std::string returnType, std::unique_ptr<std::vector<std::unique_ptr<Stmt>>> body, bool isPublic = false, bool isAsync = false)
+        : name(name), parameters(std::move(parameters)), returnType(returnType), body(std::move(body)), documentation(nullptr), isPublic(isPublic), isAsync(isAsync) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };
