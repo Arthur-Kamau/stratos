@@ -885,9 +885,17 @@ function indexDefinitions(textDocument: TextDocument) {
 	const classRegex = /class\s+([a-zA-Z_][a-zA-Z0-9_]*)/g;
 
 	// Parse variable definitions: val/var name: type = value or val/var name = value
-	const varRegex = /(?:val|var)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*(?::\s*([a-zA-Z_][a-zA-Z0-9_?<>,\[\]	]+))?\s*=/g;
+	// Parse variable definitions: val/var name: type = value or val/var name = value
+	const varRegex = /(?:val|var)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*(?::\s*([a-zA-Z_][a-zA-Z0-9_?<>,\[\]	]+))?\s*=\s*(.*)/g;
+
+	let currentClassName: string | null = null;
+	let braceDepth = 0;
+	let classBraceDepth = -1;
 
 	lines.forEach((line, lineIndex) => {
+		const openBraces = (line.match(/\{/g) || []).length;
+		const closeBraces = (line.match(/\}/g) || []).length;
+
 		// Index functions
 		let match;
 		const funcReg = new RegExp(functionRegex);
@@ -920,13 +928,18 @@ function indexDefinitions(textDocument: TextDocument) {
 				end: { line: lineIndex, character: endChar }
 			};
 
-			functionDefinitions.set(functionName, {
+			const funcDef = {
 				name: functionName,
 				uri: uri,
 				range: range,
 				params: params,
 				returnType: returnType
-			});
+			};
+
+			functionDefinitions.set(functionName, funcDef);
+			if (currentClassName) {
+				functionDefinitions.set(`${currentClassName}.${functionName}`, funcDef);
+			}
 		}
 
 		// Index classes
@@ -946,15 +959,26 @@ function indexDefinitions(textDocument: TextDocument) {
 				uri: uri,
 				range: range
 			});
+			currentClassName = className;
+			classBraceDepth = braceDepth;
 		}
 
 		// Index variables
 		const varReg = new RegExp(varRegex);
 		while ((match = varReg.exec(line)) !== null) {
 			const varName = match[1];
-			const varType = match[2] ? match[2].trim() : 'auto';
+			let varType = match[2] ? match[2].trim() : 'auto';
+			const rhs = match[3] ? match[3].trim() : '';
 			const startChar = match.index;
 			const endChar = startChar + match[0].length;
+
+			// Inference Logic
+			if (varType === 'auto' && rhs) {
+				const constructorMatch = rhs.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/);
+				if (constructorMatch) {
+					varType = constructorMatch[1];
+				}
+			}
 
 			const range: Range = {
 				start: { line: lineIndex, character: startChar },
@@ -967,6 +991,13 @@ function indexDefinitions(textDocument: TextDocument) {
 				range: range,
 				type: varType
 			});
+		}
+
+		braceDepth += openBraces - closeBraces;
+
+		if (currentClassName && braceDepth <= classBraceDepth) {
+			currentClassName = null;
+			classBraceDepth = -1;
 		}
 	});
 }
@@ -1198,7 +1229,7 @@ connection.onCompletionResolve(
 
 // Definition provider (Ctrl+Click / Go to Definition)
 connection.onDefinition(
-	(params: TextDocumentPositionParams): Definition | null => {
+	(params: TextDocumentPositionParams): Definition | Location[] | Location | null => {
 		const document = documents.get(params.textDocument.uri);
 		if (!document) {
 			return null;
@@ -1213,6 +1244,7 @@ connection.onDefinition(
 		const wordRegex = /[a-zA-Z_][a-zA-Z0-9_]*/g;
 		let match;
 		let targetWord: string | null = null;
+		let targetWordStart = 0;
 
 		while ((match = wordRegex.exec(lineText)) !== null) {
 			const startChar = match.index;
@@ -1220,12 +1252,35 @@ connection.onDefinition(
 
 			if (startChar <= params.position.character && params.position.character <= endChar) {
 				targetWord = match[0];
+				targetWordStart = startChar;
 				break;
 			}
 		}
 
 		if (!targetWord) {
 			return null;
+		}
+
+		// Check for method call: object.method()
+		// Look backwards from the target word for a dot and an identifier
+		const beforeCursor = lineText.substring(0, targetWordStart);
+		const methodCallMatch = beforeCursor.match(/([a-zA-Z_][a-zA-Z0-9_]*)\.\s*$/);
+
+		if (methodCallMatch) {
+			const objectName = methodCallMatch[1];
+			// Find the variable definition to get its type
+			const varDef = variableDefinitions.get(objectName);
+			if (varDef && varDef.type && varDef.type !== 'auto') {
+				const className = varDef.type;
+				// Construct the specific method key: ClassName.MethodName
+				const specificMethodKey = `${className}.${targetWord}`;
+
+				// Check if we have a definition for this specific method
+				const specificMethodDef = functionDefinitions.get(specificMethodKey);
+				if (specificMethodDef) {
+					return Location.create(specificMethodDef.uri, specificMethodDef.range);
+				}
+			}
 		}
 
 		// Check if it's a stdlib function call (module.function)
@@ -1244,7 +1299,30 @@ connection.onDefinition(
 			}
 		}
 
-		// Check for user-defined function
+		// Default fallback: return all methods with this name if multiple exist
+		// This is useful for method calls where type is unknown or dynamic
+		const candidates: any[] = [];
+		for (const [key, def] of functionDefinitions) {
+			if (key.endsWith('.' + targetWord)) {
+				candidates.push(def);
+			} else if (key === targetWord) {
+				candidates.push(def);
+			}
+		}
+
+		// De-duplication by range
+		const uniqueCandidates = new Map<string, any>(); // range string -> def
+		candidates.forEach(c => {
+			const rangeKey = `${c.range.start.line}:${c.range.start.character}`;
+			uniqueCandidates.set(rangeKey, c);
+		});
+
+		if (uniqueCandidates.size > 0) {
+			const results = Array.from(uniqueCandidates.values()).map(d => Location.create(d.uri, d.range));
+			return results.length === 1 ? results[0] : results;
+		}
+
+		// Check for user-defined function (naive lookup)
 		const funcDef = functionDefinitions.get(targetWord);
 		if (funcDef) {
 			return Location.create(funcDef.uri, funcDef.range);
