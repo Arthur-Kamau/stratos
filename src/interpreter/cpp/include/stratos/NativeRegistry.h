@@ -40,6 +40,9 @@ public:
     // Check if a function is native
     bool isNative(const std::string& moduleName, const std::string& functionName) const;
 
+    // Check if a module exists (has any registered functions)
+    bool hasModule(const std::string& moduleName) const;
+
     // Get a native function
     NativeFunction getFunction(const std::string& moduleName, const std::string& functionName) const;
 

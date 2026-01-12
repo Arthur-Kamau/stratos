@@ -558,7 +558,15 @@ void SemanticAnalyzer::visit(UseStmt& stmt) {
         return; // Already loaded
     }
 
-    // Load the module
+    // Check if this is a native module (implemented in C++ via NativeRegistry)
+    auto& registry = NativeRegistry::getInstance();
+    if (registry.hasModule(moduleName)) {
+        // Native module - just register it as loaded
+        loadedModules.push_back(moduleName);
+        return;
+    }
+
+    // Try to load as a source file module
     loadModule(moduleName);
     loadedModules.push_back(moduleName);
 }

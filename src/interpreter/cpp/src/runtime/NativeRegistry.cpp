@@ -53,6 +53,16 @@ bool NativeRegistry::isNative(const std::string& moduleName, const std::string& 
     return functions_.find(qualifiedName) != functions_.end();
 }
 
+bool NativeRegistry::hasModule(const std::string& moduleName) const {
+    std::string modulePrefix = moduleName + "::";
+    for (const auto& [name, _] : functions_) {
+        if (name.starts_with(modulePrefix)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 NativeFunction NativeRegistry::getFunction(const std::string& moduleName, const std::string& functionName) const {
     std::string qualifiedName = getQualifiedName(moduleName, functionName);
     auto it = functions_.find(qualifiedName);

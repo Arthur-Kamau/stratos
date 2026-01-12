@@ -1,6 +1,7 @@
 package main;
 
 use io;
+use maps;
 
 fn printHeader(title: string) void {
     println("\n" + "=".repeat(50));
