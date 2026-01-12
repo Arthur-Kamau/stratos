@@ -31,6 +31,7 @@ g++ -std=c++20 -I include -I libs/sqlite `
   src/config/DependencyManager.cpp `
   src/config/LockFile.cpp `
   src/config/CacheManager.cpp `
+  src/config/RuntimeLinkConfig.cpp `
   src/formatter/Formatter.cpp `
   src/devtools/Logger.cpp `
   src/devtools/DevToolsServer.cpp `

@@ -62,7 +62,7 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
                         error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined.");
                     }
                     // Register members
-                    std::cout << "DEBUG: Registering class " << classDecl->name.lexeme << " with " << classDecl->methods.size() << " members" << std::endl;
+                    // std::cout << "DEBUG: Registering class " << classDecl->name.lexeme << " with " << classDecl->methods.size() << " members" << std::endl;
                     for (const auto& member : classDecl->methods) {
                          if (auto* func = dynamic_cast<FunctionDecl*>(member.get())) {
                              std::vector<std::string> pTypes;
@@ -192,9 +192,9 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
 
         // Check visibility for object member access
         if (classMembers.find(baseType) != classMembers.end()) {
-             std::cout << "DEBUG: Checking member access base=" << baseType << " method=" << std::endl; 
+             // std::cout << "DEBUG: Checking member access base=" << baseType << " method=" << std::endl;
              if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
-                 std::cout << "DEBUG: Checking method " << rightVar->name.lexeme << std::endl;
+                 // std::cout << "DEBUG: Checking method " << rightVar->name.lexeme << std::endl;
                  std::string methodName = rightVar->name.lexeme;
                  auto& members = classMembers[baseType];
                  if (members.find(methodName) != members.end()) {
@@ -325,6 +325,13 @@ void SemanticAnalyzer::visit(CallExpr& expr) {
                     // Check if this is a native function call via NativeRegistry
                     auto& registry = NativeRegistry::getInstance();
                     if (registry.isNative(moduleName, functionName)) {
+                        // Check if the module was imported
+                        bool isImported = std::find(loadedModules.begin(), loadedModules.end(), moduleName) != loadedModules.end();
+
+                        if (!isImported) {
+                            error(leftVar->name, "Module '" + moduleName + "' is not imported. Add 'use " + moduleName + ";' at the top of the file.");
+                            return;
+                        }
                         // Check if we have type signature for this function
                         if (registry.hasSignature(moduleName, functionName)) {
                             auto signature = registry.getSignature(moduleName, functionName);
@@ -789,11 +796,11 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
                             for (const auto& p : func->parameters) pTypes.push_back(p.type);
                             Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic);
                             classMembers[classDecl->name.lexeme][func->name.lexeme] = sym;
-                            std::cout << "DEBUG: Registered method " << classDecl->name.lexeme << "." << func->name.lexeme << " return=" << func->returnType << std::endl;
+                            // std::cout << "DEBUG: Registered method " << classDecl->name.lexeme << "." << func->name.lexeme << " return=" << func->returnType << std::endl;
                         } else if (auto* var = dynamic_cast<VarDecl*>(member.get())) {
                             Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, false);
                             classMembers[classDecl->name.lexeme][var->name.lexeme] = sym;
-                            std::cout << "DEBUG: Registered field " << classDecl->name.lexeme << "." << var->name.lexeme << " type=" << var->typeName << std::endl;
+                            // std::cout << "DEBUG: Registered field " << classDecl->name.lexeme << "." << var->name.lexeme << " type=" << var->typeName << std::endl;
                         }
                     }
                 } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(statements[i].get())) {
@@ -919,14 +926,14 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
                             // std::cout << "DEBUG: Inferred method type " << baseType << "." << methodName << " -> " << members[methodName].returnType << std::endl;
                             return members[methodName].returnType;
                         } else {
-                            std::cout << "DEBUG: Method " << methodName << " not found in class " << baseType << ". Available: ";
-                            for (const auto& kv : members) std::cout << kv.first << " ";
-                            std::cout << std::endl;
+                            // std::cout << "DEBUG: Method " << methodName << " not found in class " << baseType << ". Available: ";
+                            // for (const auto& kv : members) std::cout << kv.first << " ";
+                            // std::cout << std::endl;
                         }
                     } else {
-                         std::cout << "DEBUG: Class " << baseType << " not found. Available: ";
-                         for (const auto& kv : classMembers) std::cout << kv.first << " ";
-                         std::cout << std::endl;
+                         // std::cout << "DEBUG: Class " << baseType << " not found. Available: ";
+                         // for (const auto& kv : classMembers) std::cout << kv.first << " ";
+                         // std::cout << std::endl;
                     }
 
                     // Check generic symbols (e.g. module functions)

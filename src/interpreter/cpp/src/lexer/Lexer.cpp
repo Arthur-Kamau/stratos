@@ -70,6 +70,10 @@ void Lexer::addToken(TokenType type, std::string literal) {
     tokens.push_back({type, literal, line, column});
 }
 
+void Lexer::addToken(TokenType type, std::string literal, int startColumn) {
+    tokens.push_back({type, literal, line, startColumn});
+}
+
 bool Lexer::match(char expected) {
     if (isAtEnd()) return false;
     if (source[current] != expected) return false;
@@ -186,6 +190,7 @@ void Lexer::scanToken() {
 }
 
 void Lexer::string() {
+    int tokenStartColumn = column;
     std::string value = "";
 
     while (peek() != '"' && !isAtEnd()) {
@@ -224,10 +229,11 @@ void Lexer::string() {
     }
 
     advance(); // The closing "
-    addToken(TokenType::STRING, value);
+    addToken(TokenType::STRING, value, tokenStartColumn);
 }
 
 void Lexer::character() {
+    int tokenStartColumn = column;
     // Character literals should contain exactly one character
     if (isAtEnd() || peek() == '\'') {
         std::cerr << "Empty character literal at line " << line << std::endl;
@@ -265,10 +271,11 @@ void Lexer::character() {
     }
 
     advance(); // The closing '
-    addToken(TokenType::CHAR, std::string(1, charValue));
+    addToken(TokenType::CHAR, std::string(1, charValue), tokenStartColumn);
 }
 
 void Lexer::number() {
+    int tokenStartColumn = column;
     while (isDigit(peek())) advance();
 
     if (peek() == '.' && isDigit(peekNext())) {
@@ -276,10 +283,12 @@ void Lexer::number() {
         while (isDigit(peek())) advance();
     }
 
-    addToken(TokenType::NUMBER);
+    std::string numText = source.substr(start, current - start);
+    addToken(TokenType::NUMBER, numText, tokenStartColumn);
 }
 
 void Lexer::identifier() {
+    int tokenStartColumn = column;
     while (isAlphaNumeric(peek())) advance();
 
     std::string text = source.substr(start, current - start);
@@ -287,7 +296,7 @@ void Lexer::identifier() {
     if (keywords.find(text) != keywords.end()) {
         type = keywords[text];
     }
-    addToken(type);
+    addToken(type, text, tokenStartColumn);
 }
 
 bool Lexer::isAlpha(char c) {

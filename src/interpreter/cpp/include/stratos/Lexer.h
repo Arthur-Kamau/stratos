@@ -27,6 +27,7 @@ private:
     char advance();
     void addToken(TokenType type);
     void addToken(TokenType type, std::string literal);
+    void addToken(TokenType type, std::string literal, int startColumn);
     bool match(char expected);
     char peek();
     char peekNext();

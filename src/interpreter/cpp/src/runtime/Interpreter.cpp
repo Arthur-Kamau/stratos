@@ -21,9 +21,8 @@ Interpreter::Interpreter() {
     currentEnv = globalEnv.get();
     environments.push_back(std::move(globalEnv));
 
-    // Auto-import core modules (prelude modules - available without 'use' statement)
-    RuntimeValue mapsModule(std::any(), "module");
-    currentEnv->define("maps", mapsModule);
+    // Note: Prelude functions (print, println, etc.) are available without 'use'
+    // All other modules including 'maps' require explicit 'use' statement
 
     // Connect MemoryProfiler with GC
     MemoryProfiler::instance().setGarbageCollector(&gc);

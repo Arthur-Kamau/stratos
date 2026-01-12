@@ -911,22 +911,32 @@ int handleRun(int argc, char* argv[]) {
         std::cout << "Inferred project root: " << projectRoot << std::endl;
     }
 
-    // Collect all .st files in the project's src directory
+    // Collect source files to compile
     std::vector<std::string> sourceFiles;
-    fs::path srcDir = projectRoot / "src";
-    if (fs::exists(srcDir) && fs::is_directory(srcDir)) {
-        for (const auto& entry : fs::recursive_directory_iterator(srcDir)) {
-            if (entry.path().extension() == ".st") {
-                sourceFiles.push_back(entry.path().string());
-            }
-        }
-    } else {
-        // If no src/ directory, just use the resolved entry point
+
+    // If the input was a single file (not a directory or project), only compile that file
+    bool isSingleFileMode = !fs::is_directory(inputPath) && inputPath != ".";
+
+    if (isSingleFileMode) {
+        // Single file mode: only compile the specified file
         sourceFiles.push_back(resolvedPath);
+    } else {
+        // Project mode: collect all .st files in the project's src directory
+        fs::path srcDir = projectRoot / "src";
+        if (fs::exists(srcDir) && fs::is_directory(srcDir)) {
+            for (const auto& entry : fs::recursive_directory_iterator(srcDir)) {
+                if (entry.path().extension() == ".st") {
+                    sourceFiles.push_back(entry.path().string());
+                }
+            }
+        } else {
+            // If no src/ directory, just use the resolved entry point
+            sourceFiles.push_back(resolvedPath);
+        }
     }
 
     if (sourceFiles.empty()) {
-        std::cerr << "Error: No Stratos source files found in " << srcDir << std::endl;
+        std::cerr << "Error: No Stratos source files found\n";
         return 1;
     }
 

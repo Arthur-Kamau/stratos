@@ -591,6 +591,17 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 		// Add runtime error detection (simple pattern matching)
 		detectRuntimeErrors(textDocument, diagnostics);
 
+		// Extract imported modules from document
+		const importedModules = new Set<string>();
+		const moduleRegex = /use\s+([a-zA-Z_][a-zA-Z0-9_]*);/g;
+		let moduleMatch;
+		while ((moduleMatch = moduleRegex.exec(text)) !== null) {
+			importedModules.add(moduleMatch[1]);
+		}
+
+		// Suggest missing imports for undefined stdlib modules
+		suggestMissingImports(textDocument, diagnostics, output, importedModules);
+
 		// Send diagnostics to client
 		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
 	});
@@ -787,6 +798,52 @@ function detectRuntimeErrors(textDocument: TextDocument, diagnostics: Diagnostic
 			}
 		}
 	});
+}
+
+// Suggest missing imports for undefined stdlib modules
+function suggestMissingImports(
+	textDocument: TextDocument,
+	diagnostics: Diagnostic[],
+	compilerOutput: string,
+	importedModules: Set<string>
+): void {
+	// Pattern matches: [Error] Line:Col: Undefined variable 'name'.
+	const undefinedVarRegex = /\[Error\]\s+(?:Line\s+)?(\d+):(\d+):\s+Undefined variable '([^']+)'\./gi;
+	let match;
+
+	while ((match = undefinedVarRegex.exec(compilerOutput)) !== null) {
+		const line = parseInt(match[1]) - 1;  // Convert to 0-based
+		const col = parseInt(match[2]) - 1;
+		const varName = match[3];
+
+		// Only suggest if it's a stdlib module and not already imported
+		if (stdlibModules[varName] && !importedModules.has(varName)) {
+			const textLine = textDocument.getText({
+				start: { line, character: 0 },
+				end: { line, character: 1000 }
+			});
+
+			// Find the identifier in the line (use word boundary)
+			const identifierRegex = new RegExp(`\\b${varName}\\b`);
+			const identifierMatch = textLine.match(identifierRegex);
+
+			if (identifierMatch && identifierMatch.index !== undefined) {
+				const startCol = identifierMatch.index;
+				const endCol = startCol + varName.length;
+
+				const diagnostic: Diagnostic = {
+					severity: DiagnosticSeverity.Warning,
+					range: {
+						start: { line: line, character: startCol },
+						end: { line: line, character: endCol }
+					},
+					message: `Undefined module '${varName}'. Did you forget to add 'use ${varName};' at the top of the file?`,
+					source: 'stratos-linter'
+				};
+				diagnostics.push(diagnostic);
+			}
+		}
+	}
 }
 
 // Index function, class, and variable definitions in a document
