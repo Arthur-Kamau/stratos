@@ -26,6 +26,177 @@ void SemanticAnalyzer::defineNativeFunctions() {
 
     // Internal intrinsics
     symbolTable.define(Symbol::Function("__if_expr", {"bool", "any", "any"}, "any", true));
+
+    // Register Native/Built-in Types and their Methods
+    
+    // --- Array ---
+    auto& arrayMethods = classMembers["Array"];
+    // Note: We use "any" for generic return types for now
+    arrayMethods["length"] = Symbol::Function("length", {}, "int");
+    arrayMethods["add"] = Symbol::Function("add", {"any"}, "void");
+    arrayMethods["isEmpty"] = Symbol::Function("isEmpty", {}, "bool");
+    arrayMethods["first"] = Symbol::Function("first", {}, "any");
+    arrayMethods["last"] = Symbol::Function("last", {}, "any");
+    arrayMethods["join"] = Symbol::Function("join", {"string"}, "string");
+    arrayMethods["contains"] = Symbol::Function("contains", {"any"}, "bool");
+    arrayMethods["indexOf"] = Symbol::Function("indexOf", {"any"}, "int");
+    arrayMethods["reverse"] = Symbol::Function("reverse", {}, "Array");
+    arrayMethods["clear"] = Symbol::Function("clear", {}, "Array");
+    
+    // Alias "array" (lowercase) to "Array"
+    classMembers["array"] = arrayMethods;
+
+    // --- Map ---
+    // Note: maps.create() returns "map<...>", so we register "map"
+    auto& mapMethods = classMembers["map"];
+    mapMethods["set"] = Symbol::Function("set", {"any", "any"}, "map");
+    mapMethods["put"] = Symbol::Function("put", {"any", "any"}, "map"); // Alias for set
+    mapMethods["get"] = Symbol::Function("get", {"any"}, "any");
+    mapMethods["remove"] = Symbol::Function("remove", {"any"}, "map");
+    mapMethods["has"] = Symbol::Function("has", {"any"}, "bool");
+    mapMethods["size"] = Symbol::Function("size", {}, "int");
+    mapMethods["length"] = Symbol::Function("length", {}, "int"); // Alias for size
+    mapMethods["isEmpty"] = Symbol::Function("isEmpty", {}, "bool");
+    mapMethods["keys"] = Symbol::Function("keys", {}, "Array");
+    mapMethods["values"] = Symbol::Function("values", {}, "Array");
+    mapMethods["clear"] = Symbol::Function("clear", {}, "map");
+    mapMethods["first"] = Symbol::Function("first", {}, "any");
+    mapMethods["last"] = Symbol::Function("last", {}, "any");
+    mapMethods["firstValue"] = Symbol::Function("firstValue", {}, "any");
+    mapMethods["lastValue"] = Symbol::Function("lastValue", {}, "any");
+    mapMethods["merge"] = Symbol::Function("merge", {"map"}, "map");
+    mapMethods["entries"] = Symbol::Function("entries", {}, "Array");
+    mapMethods["containsValue"] = Symbol::Function("containsValue", {"any"}, "bool");
+    mapMethods["fromEntries"] = Symbol::Function("fromEntries", {"Array"}, "map");
+
+    // Alias "Map" (capitalized) to "map"
+    classMembers["Map"] = mapMethods;
+
+    // --- String ---
+    auto& stringMethods = classMembers["string"];
+    stringMethods["length"] = Symbol::Function("length", {}, "int");
+    stringMethods["split"] = Symbol::Function("split", {"string"}, "Array");
+    stringMethods["repeat"] = Symbol::Function("repeat", {"int"}, "string");
+    stringMethods["trim"] = Symbol::Function("trim", {}, "string");
+    stringMethods["toUpper"] = Symbol::Function("toUpper", {}, "string");
+    stringMethods["toLower"] = Symbol::Function("toLower", {}, "string");
+    stringMethods["startsWith"] = Symbol::Function("startsWith", {"string"}, "bool");
+    stringMethods["endsWith"] = Symbol::Function("endsWith", {"string"}, "bool");
+    stringMethods["replace"] = Symbol::Function("replace", {"string", "string"}, "string");
+
+    // --- IO Module ---
+    auto& fileMethods = classMembers["File"];
+    fileMethods["readAll"] = Symbol::Function("readAll", {}, "string");
+    fileMethods["readLine"] = Symbol::Function("readLine", {}, "string");
+    fileMethods["write"] = Symbol::Function("write", {"string"}, "Result"); // Result<int, Error>
+    fileMethods["close"] = Symbol::Function("close", {}, "void");
+    // Fields
+    fileMethods["path"] = Symbol::Variable("path", "string", false);
+    fileMethods["handle"] = Symbol::Variable("handle", "int", false);
+
+    auto& resultMethods = classMembers["Result"];
+    resultMethods["ok"] = Symbol::Function("ok", {}, "bool");
+    resultMethods["err"] = Symbol::Function("err", {}, "any"); // Generic E
+    resultMethods["unwrap"] = Symbol::Function("unwrap", {}, "any"); // Generic T
+    resultMethods["isOk"] = Symbol::Variable("isOk", "bool", false);
+    resultMethods["value"] = Symbol::Variable("value", "any", false);
+    resultMethods["error"] = Symbol::Variable("error", "any", false);
+
+    auto& fileInfoMethods = classMembers["FileInfo"];
+    fileInfoMethods["getName"] = Symbol::Function("getName", {}, "string");
+    fileInfoMethods["getSize"] = Symbol::Function("getSize", {}, "int");
+    fileInfoMethods["getIsDir"] = Symbol::Function("getIsDir", {}, "bool");
+    fileInfoMethods["getModTime"] = Symbol::Function("getModTime", {}, "int");
+    fileInfoMethods["fileName"] = Symbol::Variable("fileName", "string", false);
+    fileInfoMethods["size"] = Symbol::Variable("size", "int", false);
+    fileInfoMethods["isDir"] = Symbol::Variable("isDir", "bool", false);
+    fileInfoMethods["modTime"] = Symbol::Variable("modTime", "int", false);
+
+    auto& errorMethods = classMembers["Error"];
+    errorMethods["message"] = Symbol::Variable("message", "string", false);
+
+    // --- Net Module ---
+    auto& connMethods = classMembers["Conn"];
+    connMethods["read"] = Symbol::Function("read", {"Array"}, "int");
+    connMethods["write"] = Symbol::Function("write", {"Array"}, "int");
+    connMethods["readString"] = Symbol::Function("readString", {"int"}, "string");
+    connMethods["writeString"] = Symbol::Function("writeString", {"string"}, "int");
+    connMethods["close"] = Symbol::Function("close", {}, "void");
+    connMethods["setTimeout"] = Symbol::Function("setTimeout", {"int"}, "void");
+
+    auto& listenerMethods = classMembers["Listener"];
+    listenerMethods["accept"] = Symbol::Function("accept", {}, "Result");
+    listenerMethods["close"] = Symbol::Function("close", {}, "void");
+
+    auto& udpConnMethods = classMembers["UDPConn"];
+    udpConnMethods["readFrom"] = Symbol::Function("readFrom", {"Array"}, "Pair");
+    udpConnMethods["writeTo"] = Symbol::Function("writeTo", {"Array", "string", "int"}, "int");
+    udpConnMethods["close"] = Symbol::Function("close", {}, "void");
+
+    auto& ipAddrMethods = classMembers["IPAddr"];
+    ipAddrMethods["toString"] = Symbol::Function("toString", {}, "string");
+    ipAddrMethods["isIPv4"] = Symbol::Function("isIPv4", {}, "bool");
+    ipAddrMethods["isIPv6"] = Symbol::Function("isIPv6", {}, "bool");
+
+    auto& tcpServerMethods = classMembers["TCPServer"];
+    tcpServerMethods["start"] = Symbol::Function("start", {}, "void");
+    tcpServerMethods["stop"] = Symbol::Function("stop", {}, "void");
+
+    auto& udpServerMethods = classMembers["UDPServer"];
+    udpServerMethods["start"] = Symbol::Function("start", {}, "void");
+    udpServerMethods["stop"] = Symbol::Function("stop", {}, "void");
+
+    // --- Regex Module ---
+    auto& matchMethods = classMembers["Match"];
+    matchMethods["text"] = Symbol::Variable("text", "string", false);
+    matchMethods["start"] = Symbol::Variable("start", "int", false);
+    matchMethods["end"] = Symbol::Variable("end", "int", false);
+    matchMethods["groups"] = Symbol::Variable("groups", "Array", false);
+
+    auto& matchInfoMethods = classMembers["MatchInfo"];
+    matchInfoMethods["text"] = Symbol::Variable("text", "string", false);
+    matchInfoMethods["start"] = Symbol::Variable("start", "int", false);
+    matchInfoMethods["end"] = Symbol::Variable("end", "int", false);
+    matchInfoMethods["length"] = Symbol::Variable("length", "int", false);
+
+    auto& regexMethods = classMembers["Regex"];
+    regexMethods["pattern"] = Symbol::Variable("pattern", "string", false);
+    regexMethods["flags"] = Symbol::Variable("flags", "int", false);
+    regexMethods["valid"] = Symbol::Variable("valid", "bool", false);
+
+    // --- Time Module ---
+    auto& timeMethods = classMembers["Time"];
+    timeMethods["year"] = Symbol::Function("year", {}, "int");
+    timeMethods["month"] = Symbol::Function("month", {}, "int");
+    timeMethods["day"] = Symbol::Function("day", {}, "int");
+    timeMethods["hour"] = Symbol::Function("hour", {}, "int");
+    timeMethods["minute"] = Symbol::Function("minute", {}, "int");
+    timeMethods["second"] = Symbol::Function("second", {}, "int");
+    timeMethods["millisecond"] = Symbol::Function("millisecond", {}, "int");
+    timeMethods["format"] = Symbol::Function("format", {"string"}, "string");
+    timeMethods["add"] = Symbol::Function("add", {"Duration"}, "Time");
+    timeMethods["sub"] = Symbol::Function("sub", {"Time"}, "Duration");
+    timeMethods["before"] = Symbol::Function("before", {"Time"}, "bool");
+    timeMethods["after"] = Symbol::Function("after", {"Time"}, "bool");
+    timeMethods["equals"] = Symbol::Function("equals", {"Time"}, "bool");
+    timeMethods["unix"] = Symbol::Function("unix", {}, "int");
+    timeMethods["timestamp"] = Symbol::Variable("timestamp", "int", false);
+
+    auto& durationMethods = classMembers["Duration"];
+    durationMethods["getHours"] = Symbol::Function("getHours", {}, "double");
+    durationMethods["getMinutes"] = Symbol::Function("getMinutes", {}, "double");
+    durationMethods["getSeconds"] = Symbol::Function("getSeconds", {}, "double");
+    durationMethods["getMilliseconds"] = Symbol::Function("getMilliseconds", {}, "int");
+    durationMethods["add"] = Symbol::Function("add", {"Duration"}, "Duration");
+    durationMethods["sub"] = Symbol::Function("sub", {"Duration"}, "Duration");
+    durationMethods["value"] = Symbol::Variable("value", "int", false);
+
+    auto& tickerMethods = classMembers["Ticker"];
+    tickerMethods["stop"] = Symbol::Function("stop", {}, "void");
+
+    auto& timerMethods = classMembers["Timer"];
+    timerMethods["stop"] = Symbol::Function("stop", {}, "void");
+    timerMethods["reset"] = Symbol::Function("reset", {"Duration"}, "void");
 }
 
 bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& statements) {
@@ -190,60 +361,26 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
             baseType = baseType.substr(0, paramStart);
         }
 
-        // Check visibility for object member access
+        // Check object member access (methods and fields)
+        // This now handles native types (Array, map, string) as well as user classes
         if (classMembers.find(baseType) != classMembers.end()) {
-             // std::cout << "DEBUG: Checking member access base=" << baseType << " method=" << std::endl;
              if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
-                 // std::cout << "DEBUG: Checking method " << rightVar->name.lexeme << std::endl;
                  std::string methodName = rightVar->name.lexeme;
                  auto& members = classMembers[baseType];
+                 
                  if (members.find(methodName) != members.end()) {
                      Symbol methodSym = members[methodName];
                      
-                     bool isAccessible = methodSym.isPublic || (currentClassName == leftType);
+                     // Check visibility (native types are implicitly public)
+                     bool isNative = (baseType == "string" || baseType == "Array" || baseType == "array" || baseType == "map" || baseType == "Map");
+                     bool isAccessible = isNative || methodSym.isPublic || (currentClassName == leftType);
                      
                      if (!isAccessible) {
                          error(rightVar->name, "Method '" + methodName + "' is private and cannot be accessed from outside class '" + leftType + "'.");
                      }
-                     return; // Resolved as class member
+                     return; // Resolved as valid member
                  }
              }
-        }
-        // String methods
-        if (leftType == "string") {
-            if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
-                std::string memberName = rightVar->name.lexeme;
-                // Whitelist standard string methods
-                if (memberName == "split" || memberName == "repeat" || memberName == "length" || 
-                    memberName == "trim" || memberName == "toUpper" || memberName == "toLower" ||
-                    memberName == "startsWith" || memberName == "endsWith" || memberName == "replace") {
-                    return; // Resolved as valid string method
-                }
-            }
-        }
-
-        // Check if this is an array method call
-        if (leftType.find("Array<") == 0 || leftType == "Array" || leftType == "array") { // Simple check for Array type
-            if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
-                std::string memberName = rightVar->name.lexeme;
-                if (memberName == "length") { // Array has a .length() method
-                    // Define a dummy symbol for length for type checking purposes
-                    symbolTable.define(Symbol::Function("Array::length", {}, "int")); // Transient definition
-                    return; // Resolved
-                }
-                 if (memberName == "add") { // Array has an .add() method
-                    // Define a dummy symbol for add for type checking purposes
-                    symbolTable.define(Symbol::Function("Array::add", {"any"}, "void")); // Transient definition
-                    return; // Resolved
-                }
-                
-                // Other array methods
-                if (memberName == "isEmpty" || memberName == "first" || memberName == "last" || 
-                    memberName == "join" || memberName == "contains" || memberName == "indexOf" || 
-                    memberName == "reverse" || memberName == "clear") {
-                    return; // Resolved
-                }
-            }
         }
         
         // Check if this is an enum value access (e.g., Color.RED)

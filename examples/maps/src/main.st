@@ -33,13 +33,13 @@ fn main() {
     printSection(2, "Setting Key-Value Pairs");
 
     val userData = maps.create();
-    val userData2 = userData.set("name", "Alice");
-    val userData3 = userData2.set("age", "30");
-    val userData4 = userData3.set("city", "New York");
-    val userData5 = userData4.set("occupation", "Engineer");
+    val userData2 = userData.put("name", "Alice");
+    val userData3 = userData2.put("age", "30");
+    val userData4 = userData3.put("city", "New York");
+    val userData5 = userData4.put("occupation", "Engineer");
 
     println("✓ Added 4 entries to map");
-    println("  Map size: " + userData5.size());
+    println("  Map size: " + userData5.length());
     println("  Is empty: " + userData5.isEmpty());
 
     // =================================================================
@@ -134,11 +134,11 @@ fn main() {
     printSection(9, "Practical Example: Configuration Map");
 
     val config = maps.create();
-    val config2 = config.set("host", "localhost");
-    val config3 = config2.set("port", "8080");
-    val config4 = config3.set("debug", "true");
-    val config5 = config4.set("log_level", "info");
-    val config6 = config5.set("max_connections", "100");
+    val config2 = config.put("host", "localhost");
+    val config3 = config2.put("port", "8080");
+    val config4 = config3.put("debug", "true");
+    val config5 = config4.put("log_level", "info");
+    val config6 = config5.put("max_connections", "100");
 
     println("Server Configuration:");
     println("  Host: " + config6["host"]);
@@ -154,15 +154,15 @@ fn main() {
 
     // User 1
     val user1 = maps.create();
-    val user1a = user1.set("username", "alice123");
-    val user1b = user1a.set("email", "alice@example.com");
-    val user1c = user1b.set("role", "admin");
+    val user1a = user1.put("username", "alice123");
+    val user1b = user1a.put("email", "alice@example.com");
+    val user1c = user1b.put("role", "admin");
 
     // User 2
     val user2 = maps.create();
-    val user2a = user2.set("username", "bob456");
-    val user2b = user2a.set("email", "bob@example.com");
-    val user2c = user2b.set("role", "user");
+    val user2a = user2.put("username", "bob456");
+    val user2b = user2a.put("email", "bob@example.com");
+    val user2c = user2b.put("role", "user");
 
     println("User Profiles:");
     println("\nUser 1:");
@@ -181,10 +181,10 @@ fn main() {
     printSection(11, "Practical Example: HTTP Headers Map");
 
     val headers = maps.create();
-    val headers2 = headers.set("Content-Type", "application/json");
-    val headers3 = headers2.set("Authorization", "Bearer token123");
-    val headers4 = headers3.set("User-Agent", "Stratos/1.0");
-    val headers5 = headers4.set("Accept", "application/json");
+    val headers2 = headers.put("Content-Type", "application/json");
+    val headers3 = headers2.put("Authorization", "Bearer token123");
+    val headers4 = headers3.put("User-Agent", "Stratos/1.0");
+    val headers5 = headers4.put("Accept", "application/json");
 
     println("HTTP Request Headers:");
     val headerKeys = headers5.keys();
@@ -199,29 +199,29 @@ fn main() {
     printSection(12, "Saving and Loading Maps");
 
     val appSettings = maps.create();
-    val appSettings2 = appSettings.set("theme", "dark");
-    val appSettings3 = appSettings2.set("language", "en");
-    val appSettings4 = appSettings3.set("notifications", "enabled");
+    val appSettings2 = appSettings.put("theme", "dark");
+    val appSettings3 = appSettings2.put("language", "en");
+    val appSettings4 = appSettings3.put("notifications", "enabled");
 
     // Save to file (simple format: key=value)
-    val settingsKeys = appSettings4.keys();
-    val settingsValues = appSettings4.values();
-    val fileContent = settingsKeys[0] + "=" + settingsValues[0] + "\n" +
-                      settingsKeys[1] + "=" + settingsValues[1] + "\n" +
-                      settingsKeys[2] + "=" + settingsValues[2];
+    val puttingsKeys = appSettings4.keys();
+    val puttingsValues = appSettings4.values();
+    val fileContent = puttingsKeys[0] + "=" + puttingsValues[0] + "\n" +
+                      puttingsKeys[1] + "=" + puttingsValues[1] + "\n" +
+                      puttingsKeys[2] + "=" + puttingsValues[2];
 
-    io.writeFile("settings.txt", fileContent);
-    println("✓ Saved settings to settings.txt");
+    io.writeFile("puttings.txt", fileContent);
+    println("✓ Saved puttings to puttings.txt");
 
     // Read back
-    val loadedContent = io.readFile("settings.txt");
+    val loadedContent = io.readFile("puttings.txt");
     val lines = loadedContent.split("\n");
-    println("✓ Loaded " + lines.length() + " settings from file");
-    println("  First setting: " + lines[0]);
+    println("✓ Loaded " + lines.length() + " puttings from file");
+    println("  First putting: " + lines[0]);
 
     // Cleanup
-    io.remove("settings.txt");
-    println("✓ Cleaned up settings.txt");
+    io.remove("puttings.txt");
+    println("✓ Cleaned up puttings.txt");
 
     // =================================================================
     // Summary
@@ -229,7 +229,7 @@ fn main() {
     printHeader("Map Operations Summary");
 
     println("\n✓ Map Creation: maps.create()");
-    println("✓ Setting Values: map.set(key, value)");
+    println("✓ Setting Values: map.put(key, value)");
     println("✓ Getting Values: map.get(key) or map[key]");
     println("✓ Key Existence: map.has(key)");
     println("✓ Size Check: map.size()");

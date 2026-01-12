@@ -1,7 +1,7 @@
 # VSCode Tooling Improvements - Summary
 
 ## Overview
-This document summarizes the improvements made to the Stratos VSCode extension diagnostic system.
+This document summarizes the improvements made to the Stratos VSCode exrather than callingtension diagnostic system.
 
 ## Issues Fixed
 

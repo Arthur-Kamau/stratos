@@ -817,7 +817,7 @@ function suggestMissingImports(
 		const varName = match[3];
 
 		// Only suggest if it's a stdlib module and not already imported
-		if (stdlibModules[varName] && !importedModules.has(varName)) {
+		if ((stdlibModules as any)[varName] && !importedModules.has(varName)) {
 			const textLine = textDocument.getText({
 				start: { line, character: 0 },
 				end: { line, character: 1000 }
