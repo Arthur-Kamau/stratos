@@ -69,7 +69,7 @@
 					"name": "storage.type.function.stratos"
 				},
 				{
-					"match": "\\b(private|public)\\b",
+					"match": "\\b(private|public|pub)\\b",
 					"name": "storage.modifier.access.stratos"
 				},
 				{

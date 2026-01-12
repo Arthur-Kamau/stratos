@@ -1172,6 +1172,7 @@ connection.onCompletion(
 				{ label: 'catch', kind: CompletionItemKind.Keyword, detail: 'Catch block' },
 				{ label: 'throw', kind: CompletionItemKind.Keyword, detail: 'Throw error' },
 				{ label: 'constructor', kind: CompletionItemKind.Keyword, detail: 'Class constructor' },
+				{ label: 'pub', kind: CompletionItemKind.Keyword, detail: 'Public access modifier' },
 				{ label: 'this', kind: CompletionItemKind.Keyword, detail: 'Current instance' },
 				{ label: 'super', kind: CompletionItemKind.Keyword, detail: 'Parent class' },
 				{ label: 'true', kind: CompletionItemKind.Keyword, detail: 'Boolean true' },

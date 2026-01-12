@@ -24,16 +24,16 @@ class Dog : Animal {
         this.breed = breed;
     }
 
-    fn makeSound() void {
+  pub  fn makeSound() void {
         println(this.name + " (" + this.breed + ") says: Woof!");
     }
     
-    fn fetch() void {
+  pub  fn fetch() void {
         println(this.name + " runs to fetch the stick.");
     }
 
     // Manual override/implementation required if inheritance of methods isn't fully supported
-    fn sleep() void {
+  pub  fn sleep() void {
         println(this.name + " (Dog) is sleeping.");
     }
 }
@@ -43,11 +43,11 @@ class Cat : Animal {
         this.name = name;
     }
 
-    fn makeSound() void {
+  pub  fn makeSound() void {
         println(this.name + " says: Meow!");
     }
 
-    fn sleep() void {
+   pub fn sleep() void {
         println(this.name + " (Cat) is sleeping.");
     }
 }
