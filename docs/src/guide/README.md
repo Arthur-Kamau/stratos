@@ -214,8 +214,9 @@ Here's a recommended path for learning Stratos:
 3. **Explore Functions** - Function definitions, lambdas, and composition
 4. **Dive into OOP** - Classes, interfaces, and inheritance
 5. **Master Async** - Asynchronous programming with Futures
-6. **Organize Code** - Packages and module system
-7. **Build Projects** - Apply your knowledge to real applications
+6. **Write Tests** - Test your code with the built-in testing framework
+7. **Organize Code** - Packages and module system
+8. **Build Projects** - Apply your knowledge to real applications
 
 ## Community and Support
 
