@@ -193,6 +193,7 @@ Futures, async/await, and concurrent operations
 - [Control Flow](/guide/control-flow) - Conditionals and loops
 - [Object-Oriented Programming](/guide/oop) - Classes and interfaces
 - [Asynchronous Programming](/guide/async) - Async/await and Futures
+- [Testing](/guide/testing) - Write tests for your code
 - [CLI Reference](/reference/cli) - Master the command-line tools
 - [Standard Library](/reference/stdlib) - Explore built-in modules
 
