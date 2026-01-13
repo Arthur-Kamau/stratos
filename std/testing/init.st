@@ -4,448 +4,174 @@
 package testing;
 
 // ============================================================================
-// Types
+// Simple assertion functions
 // ============================================================================
 
-enum TestStatus {
-    PASSED,
-    FAILED,
-    SKIPPED
-}
+// Global test state
+var testsPassed = 0;
+var testsFailed = 0;
+var testsSkipped = 0;
+var currentSuiteName = "";
+var currentTestName = "";
 
-class TestCase {
-    var name: string;
-    var fn: Function;
-    var status: TestStatus;
-    var error: string?;
-    var duration: time.Duration;
-}
-
-class TestSuite {
-    var name: string;
-    var tests: Array<TestCase>;
-    var beforeEach: Function?;
-    var afterEach: Function?;
-    var beforeAll: Function?;
-    var afterAll: Function?;
-}
-
-class TestResult {
-    var suite: string;
-    var test: string;
-    var status: TestStatus;
-    var error: string?;
-    var duration: time.Duration;
-}
-
-class TestRunner {
-    var suites: Array<TestSuite>;
-    var results: Array<TestResult>;
-    var verbose: bool;
-
-    pub fn run() TestReport;
-    pub fn runSuite(suite: TestSuite) Array<TestResult>;
-}
-
-class TestReport {
-    var totalTests: int;
-    var passed: int;
-    var failed: int;
-    var skipped: int;
-    var duration: time.Duration;
-    var results: Array<TestResult>;
-
-    pub fn print() void;
-    pub fn toJSON() json.JsonValue;
-}
-
-class Assertion {
-    var context: string;
-
-    pub fn equals(actual: any, expected: any) void;
-    pub fn notEquals(actual: any, expected: any) void;
-    pub fn isTrue(value: bool) void;
-    pub fn isFalse(value: bool) void;
-    pub fn isNull(value: any?) void;
-    pub fn isNotNull(value: any?) void;
-    pub fn throws(fn: Function) void;
-    pub fn contains(haystack: string, needle: string) void;
-    pub fn startsWith(str: string, prefix: string) void;
-    pub fn endsWith(str: string, suffix: string) void;
-}
-
-// ============================================================================
-// Global test registry
-// ============================================================================
-
-var currentSuite: TestSuite? = null;
-var allSuites = Array<TestSuite>();
-
-// ============================================================================
-// Native function declarations
-// ============================================================================
-
-// Assertion helpers
-fn assertEqual(actual: any, expected: any, message: string) void;
-fn assertNotEqual(actual: any, expected: any, message: string) void;
-fn assertTrue(value: bool, message: string) void;
-fn assertFalse(value: bool, message: string) void;
-
-// Test execution
-fn runTests(suites: Array<TestSuite>) TestReport;
-
-// ============================================================================
-// Pure Stratos implementations
-// ============================================================================
-
-// Define test suite
-fn describe(name: string, fn: Function) void {
-    val suite = TestSuite {
-        name: name,
-        tests: Array<TestCase>(),
-        beforeEach: null,
-        afterEach: null,
-        beforeAll: null,
-        afterAll: null
-    };
-
-    currentSuite = suite;
-    fn();  // Run the suite definition
-    currentSuite = null;
-
-    allSuites.add(suite);
-}
-
-// Define test case
-fn it(name: string, fn: Function) void {
-    if currentSuite == null {
-        panic("it() must be called within describe() block");
+// Assert that two values are equal
+fn assertEqual(actual: any, expected: any) void {
+    if actual == expected {
+        testsPassed = testsPassed + 1;
+        println("[PASS] " + currentSuiteName + " > " + currentTestName);
+    } else {
+        testsFailed = testsFailed + 1;
+        println("[FAIL] " + currentSuiteName + " > " + currentTestName);
+        println("  Expected: " + expected);
+        println("  Actual: " + actual);
     }
-
-    val test = TestCase {
-        name: name,
-        fn: fn,
-        status: TestStatus.PASSED,
-        error: null,
-        duration: time.milliseconds(0)
-    };
-
-    currentSuite.tests.add(test);
 }
 
-// Skip test
-fn skip(name: string, fn: Function) void {
-    if currentSuite == null {
-        panic("skip() must be called within describe() block");
+// Assert that two values are not equal
+fn assertNotEqual(actual: any, expected: any) void {
+    if actual != expected {
+        testsPassed = testsPassed + 1;
+        println("[PASS] " + currentSuiteName + " > " + currentTestName);
+    } else {
+        testsFailed = testsFailed + 1;
+        println("[FAIL] " + currentSuiteName + " > " + currentTestName);
+        println("  Expected NOT equal to: " + expected);
+        println("  But got: " + actual);
     }
-
-    val test = TestCase {
-        name: name,
-        fn: fn,
-        status: TestStatus.SKIPPED,
-        error: null,
-        duration: time.milliseconds(0)
-    };
-
-    currentSuite.tests.add(test);
 }
 
-// Setup/teardown hooks
+// Assert that a value is true
+fn assertTrue(value: bool) void {
+    if value {
+        testsPassed = testsPassed + 1;
+        println("[PASS] " + currentSuiteName + " > " + currentTestName);
+    } else {
+        testsFailed = testsFailed + 1;
+        println("[FAIL] " + currentSuiteName + " > " + currentTestName);
+        println("  Expected: true");
+        println("  Actual: false");
+    }
+}
+
+// Assert that a value is false
+fn assertFalse(value: bool) void {
+    if !value {
+        testsPassed = testsPassed + 1;
+        println("[PASS] " + currentSuiteName + " > " + currentTestName);
+    } else {
+        testsFailed = testsFailed + 1;
+        println("[FAIL] " + currentSuiteName + " > " + currentTestName);
+        println("  Expected: false");
+        println("  Actual: true");
+    }
+}
+
+// ============================================================================
+// Fluent assertion API (simplified - just returns the value)
+// ============================================================================
+
+// Create an expectation (just returns the value for chaining)
+fn expect(actual: any) any {
+    return actual;
+}
+
+// Expectation matchers
+fn toBe(actual: any, expected: any) void {
+    assertEqual(actual, expected);
+}
+
+fn toEqual(actual: any, expected: any) void {
+    assertEqual(actual, expected);
+}
+
+fn toBeTrue(actual: any) void {
+    assertTrue(actual);
+}
+
+fn toBeFalse(actual: any) void {
+    assertFalse(actual);
+}
+
+fn toNotBe(actual: any, expected: any) void {
+    assertNotEqual(actual, expected);
+}
+
+// ============================================================================
+// Test suite structure
+// ============================================================================
+
+// Define a test suite
+fn describe(suiteName: string, suiteBody: Function) void {
+    println("");
+    println("=== " + suiteName + " ===");
+    currentSuiteName = suiteName;
+    suiteBody();
+}
+
+// Define a test case
+fn it(testName: string, testBody: Function) void {
+    currentTestName = testName;
+    testBody();
+}
+
+// Skip a test
+fn skip(testName: string, testBody: Function) void {
+    testsSkipped = testsSkipped + 1;
+    println("[SKIP] " + currentSuiteName + " > " + testName);
+}
+
+// Setup hooks (simplified - just execute immediately)
 fn beforeEach(fn: Function) void {
-    if currentSuite != null {
-        currentSuite.beforeEach = fn;
-    }
+    fn();
 }
 
 fn afterEach(fn: Function) void {
-    if currentSuite != null {
-        currentSuite.afterEach = fn;
-    }
+    fn();
 }
 
 fn beforeAll(fn: Function) void {
-    if currentSuite != null {
-        currentSuite.beforeAll = fn;
-    }
+    fn();
 }
 
 fn afterAll(fn: Function) void {
-    if currentSuite != null {
-        currentSuite.afterAll = fn;
-    }
+    fn();
 }
 
-// Assertion builder
-fn expect(value: any) Assertion {
-    return Assertion { context: "" };
+// ============================================================================
+// Test runner and reporting
+// ============================================================================
+
+// Print test summary
+fn printSummary() void {
+    println("");
+    println("===================");
+    println("Test Summary:");
+    println("  Passed: " + testsPassed);
+    println("  Failed: " + testsFailed);
+    println("  Skipped: " + testsSkipped);
+    val total = testsPassed + testsFailed + testsSkipped;
+    println("  Total: " + total);
+    println("===================");
 }
 
-// Matchers
-fn toBe(assertion: Assertion, expected: any) void {
-    assertion.equals(assertion.context, expected);
+// Reset test counters
+fn resetTests() void {
+    testsPassed = 0;
+    testsFailed = 0;
+    testsSkipped = 0;
 }
 
-fn toEqual(assertion: Assertion, expected: any) void {
-    assertion.equals(assertion.context, expected);
+// Get number of passed tests
+fn getPassedCount() int {
+    return testsPassed;
 }
 
-fn toBeTrue(assertion: Assertion) void {
-    assertion.isTrue(assertion.context);
+// Get number of failed tests
+fn getFailedCount() int {
+    return testsFailed;
 }
 
-fn toBeFalse(assertion: Assertion) void {
-    assertion.isFalse(assertion.context);
-}
-
-fn toBeNull(assertion: Assertion) void {
-    assertion.isNull(assertion.context);
-}
-
-fn toContain(assertion: Assertion, substring: string) void {
-    assertion.contains(assertion.context, substring);
-}
-
-// Run all tests
-fn runAllTests() TestReport {
-    val runner = TestRunner {
-        suites: allSuites,
-        results: Array<TestResult>(),
-        verbose: true
-    };
-
-    return runner.run();
-}
-
-// Run specific suite
-fn runSuite(name: string) TestReport {
-    var targetSuite: TestSuite? = null;
-
-    for val suite in allSuites {
-        if suite.name == name {
-            targetSuite = suite;
-            break;
-        }
-    }
-
-    if targetSuite == null {
-        log.error("Test suite not found: " + name);
-        return TestReport {
-            totalTests: 0,
-            passed: 0,
-            failed: 0,
-            skipped: 0,
-            duration: time.milliseconds(0),
-            results: Array<TestResult>()
-        };
-    }
-
-    val runner = TestRunner {
-        suites: [targetSuite],
-        results: Array<TestResult>(),
-        verbose: true
-    };
-
-    return runner.run();
-}
-
-// Mock function builder
-class Mock<T> {
-    var calls: Array<Array<any>>;
-    var returnValues: Array<T>;
-    var implementation: Function?;
-
-    constructor() {
-        this.calls = Array<Array<any>>();
-        this.returnValues = Array<T>();
-        this.implementation = null;
-    }
-
-    pub fn mockReturnValue(value: T) Mock<T> {
-        this.returnValues.add(value);
-        return this;
-    }
-
-    pub fn mockImplementation(fn: Function) Mock<T> {
-        this.implementation = fn;
-        return this;
-    }
-
-    pub fn call(args: Array<any>) T {
-        this.calls.add(args);
-
-        if this.implementation != null {
-            return this.implementation(args);
-        }
-
-        if this.returnValues.length() > 0 {
-            return this.returnValues[0];
-        }
-
-        return null;
-    }
-
-    pub fn getCalls() Array<Array<any>> {
-        return this.calls;
-    }
-
-    pub fn getCallCount() int {
-        return this.calls.length();
-    }
-
-    pub fn wasCalledWith(args: Array<any>) bool {
-        for val call in this.calls {
-            var match = true;
-            for i in 0..args.length() {
-                if call[i] != args[i] {
-                    match = false;
-                    break;
-                }
-            }
-            if match {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    pub fn reset() void {
-        this.calls = Array<Array<any>>();
-    }
-}
-
-fn mock<T>() Mock<T> {
-    return Mock<T>();
-}
-
-// Spy function wrapper
-class Spy<T> {
-    var originalFn: Function<T>;
-    var calls: Array<Array<any>>;
-
-    constructor(fn: Function<T>) {
-        this.originalFn = fn;
-        this.calls = Array<Array<any>>();
-    }
-
-    pub fn call(args: Array<any>) T {
-        this.calls.add(args);
-        return this.originalFn(args);
-    }
-
-    pub fn getCalls() Array<Array<any>> {
-        return this.calls;
-    }
-
-    pub fn reset() void {
-        this.calls = Array<Array<any>>();
-    }
-}
-
-fn spy<T>(fn: Function<T>) Spy<T> {
-    return Spy<T>(fn);
-}
-
-// Benchmark helper
-class Benchmark {
-    var name: string;
-    var iterations: int;
-    var results: Array<time.Duration>;
-
-    constructor(testName: string, iters: int) {
-        this.name = testName;
-        this.iterations = iters;
-        this.results = Array<time.Duration>();
-    }
-
-    pub fn run(fn: Function) void {
-        for i in 0..this.iterations {
-            val start = time.now();
-            fn();
-            val end = time.now();
-            this.results.add(end.sub(start));
-        }
-    }
-
-    pub fn report() void {
-        val total = this.results.reduce(time.milliseconds(0), (acc, dur) => {
-            return acc.add(dur);
-        });
-
-        val avg = total.milliseconds() / this.iterations;
-
-        log.infoWith("Benchmark: " + this.name, {
-            iterations: this.iterations,
-            total_ms: total.milliseconds(),
-            avg_ms: avg,
-            ops_per_sec: 1000.0 / avg
-        });
-    }
-}
-
-fn benchmark(name: string, iterations: int, fn: Function) void {
-    val bench = Benchmark(name, iterations);
-    bench.run(fn);
-    bench.report();
-}
-
-// Snapshot testing
-class Snapshot {
-    var snapshots: Map<string, string>;
-    var snapshotFile: string;
-
-    constructor(file: string) {
-        this.snapshotFile = file;
-        this.snapshots = collections.newMap<string, string>();
-        this.load();
-    }
-
-    pub fn load() void {
-        if io.exists(this.snapshotFile) {
-            val content = io.readFile(this.snapshotFile);
-            if content.ok() {
-                val parsed = json.parse(content.unwrap());
-                if parsed.ok() {
-                    // Load snapshots
-                }
-            }
-        }
-    }
-
-    pub fn save() void {
-        val data = json.jsonObject(this.snapshots);
-        io.writeFile(this.snapshotFile, json.pretty(data));
-    }
-
-    pub fn match(key: string, value: string) bool {
-        if !this.snapshots.containsKey(key) {
-            // Create new snapshot
-            this.snapshots.put(key, value);
-            this.save();
-            return true;
-        }
-
-        return this.snapshots.get(key) == value;
-    }
-}
-
-fn snapshot(file: string) Snapshot {
-    return Snapshot(file);
-}
-
-// Test coverage helper
-class Coverage {
-    var files: Map<string, FileCoverage>;
-
-    pub fn add(file: string, line: int) void;
-    pub fn report() void;
-}
-
-class FileCoverage {
-    var path: string;
-    var lines: Set<int>;
-    var totalLines: int;
-
-    pub fn percentage() double {
-        return (this.lines.length() * 100.0) / this.totalLines;
-    }
+// Get number of skipped tests
+fn getSkippedCount() int {
+    return testsSkipped;
 }

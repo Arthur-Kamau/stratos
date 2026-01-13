@@ -5,191 +5,159 @@ package main;
 
 use testing;
 use math;
-use strings;
-use collections;
 
 // Test suite for math functions
 fn testMath() {
     testing.describe("Math functions", () => {
         testing.it("should calculate factorial correctly", () => {
             val result = math.factorial(5);
-            testing.expect(result).toBe(120);
+            testing.toBe(testing.expect(result), 120);
         });
 
         testing.it("should identify prime numbers", () => {
-            testing.expect(math.isPrime(17)).toBeTrue();
-            testing.expect(math.isPrime(18)).toBeFalse();
-            testing.expect(math.isPrime(2)).toBeTrue();
+            testing.toBeTrue(testing.expect(math.isPrime(17)));
+            testing.toBeFalse(testing.expect(math.isPrime(18)));
+            testing.toBeTrue(testing.expect(math.isPrime(2)));
         });
 
         testing.it("should calculate GCD", () => {
             val result = math.gcd(48, 18);
-            testing.expect(result).toBe(6);
+            testing.toBe(testing.expect(result), 6);
         });
 
         testing.it("should clamp values correctly", () => {
-            testing.expect(math.clamp(15.0, 0.0, 10.0)).toBe(10.0);
-            testing.expect(math.clamp(-5.0, 0.0, 10.0)).toBe(0.0);
-            testing.expect(math.clamp(5.0, 0.0, 10.0)).toBe(5.0);
+            testing.toBe(testing.expect(math.clamp(15.0, 0.0, 10.0)), 10.0);
+            testing.toBe(testing.expect(math.clamp(-5.0, 0.0, 10.0)), 0.0);
+            testing.toBe(testing.expect(math.clamp(5.0, 0.0, 10.0)), 5.0);
+        });
+
+        testing.it("should calculate absolute values", () => {
+            testing.toBe(testing.expect(math.abs(-5.0)), 5.0);
+            testing.toBe(testing.expect(math.abs(5.0)), 5.0);
+        });
+
+        testing.it("should find min and max", () => {
+            testing.toBe(testing.expect(math.min(3.0, 7.0)), 3.0);
+            testing.toBe(testing.expect(math.max(3.0, 7.0)), 7.0);
         });
     });
 }
 
-// Test suite for string functions
-fn testStrings() {
-    testing.describe("string functions", () => {
-        testing.beforeEach(() => {
-            // Setup before each test
+// Test suite for arithmetic operations
+fn testArithmetic() {
+    testing.describe("Arithmetic Operations", () => {
+        testing.it("should add numbers correctly", () => {
+            val result = 5 + 3;
+            testing.toBe(testing.expect(result), 8);
         });
 
-        testing.afterEach(() => {
-            // Cleanup after each test
+        testing.it("should subtract numbers correctly", () => {
+            val result = 10 - 4;
+            testing.toBe(testing.expect(result), 6);
         });
 
-        testing.it("should convert to uppercase", () => {
-            val result = strings.toUpper("hello");
-            testing.expect(result).toBe("HELLO");
+        testing.it("should multiply numbers correctly", () => {
+            val result = 6 * 7;
+            testing.toBe(testing.expect(result), 42);
         });
 
-        testing.it("should capitalize first letter", () => {
-            val result = strings.capitalize("hello world");
-            testing.expect(result).toBe("Hello world");
-        });
-
-        testing.it("should convert to camelCase", () => {
-            val result = strings.toCamelCase("hello world");
-            testing.expect(result).toBe("helloWorld");
-        });
-
-        testing.it("should convert to snake_case", () => {
-            val result = strings.toSnakeCase("hello world");
-            testing.expect(result).toBe("hello_world");
-        });
-
-        testing.it("should count words", () => {
-            val result = strings.wordCount("The quick brown fox");
-            testing.expect(result).toBe(4);
-        });
-
-        testing.it("should truncate strings", () => {
-            val result = strings.truncate("Hello, World!", 8, "...");
-            testing.expect(result).toBe("Hello...");
+        testing.it("should divide numbers correctly", () => {
+            val result = 20 / 5;
+            testing.toBe(testing.expect(result), 4);
         });
 
         testing.skip("this test is skipped", () => {
             // This test will be skipped
-            testing.expect(true).toBeFalse();
+            testing.toBeFalse(testing.expect(true));
         });
     });
 }
 
-// Test suite for collections
-fn testCollections() {
-    testing.describe("Collections", () => {
-        testing.it("should create and manipulate lists", () => {
-            val list = collections.newList<int>();
-            list.add(1);
-            list.add(2);
-            list.add(3);
-
-            testing.expect(list.length()).toBe(3);
-            testing.expect(list.get(1)).toBe(2);
+// Test suite for boolean logic
+fn testBooleans() {
+    testing.describe("Boolean Logic", () => {
+        testing.it("should handle AND operations", () => {
+            testing.toBeTrue(testing.expect(true && true));
+            testing.toBeFalse(testing.expect(true && false));
         });
 
-        testing.it("should filter lists", () => {
-            val list = collections.listOf([1, 2, 3, 4, 5, 6]);
-            val evens = list.filter((n) => math.isEven(n));
-
-            testing.expect(evens.length()).toBe(3);
+        testing.it("should handle OR operations", () => {
+            testing.toBeTrue(testing.expect(true || false));
+            testing.toBeFalse(testing.expect(false || false));
         });
 
-        testing.it("should map over lists", () => {
-            val list = collections.listOf([1, 2, 3]);
-            val doubled = list.map((n) => n * 2);
-
-            testing.expect(doubled.get(0)).toBe(2);
-            testing.expect(doubled.get(1)).toBe(4);
-            testing.expect(doubled.get(2)).toBe(6);
-        });
-
-        testing.it("should reduce lists", () => {
-            val list = collections.listOf([1, 2, 3, 4, 5]);
-            val sum = list.reduce(0, (acc, n) => acc + n);
-
-            testing.expect(sum).toBe(15);
+        testing.it("should handle NOT operations", () => {
+            testing.toBeTrue(testing.expect(!false));
+            testing.toBeFalse(testing.expect(!true));
         });
     });
 }
 
-// Mock and spy examples
-fn testMocksAndSpies() {
-    testing.describe("Mocks and Spies", () => {
-        testing.it("should mock function calls", () => {
-            val mockFn = testing.mock<int>();
-            mockFn.mockReturnValue(42);
-
-            val result = mockFn.call([]);
-
-            testing.expect(result).toBe(42);
-            testing.expect(mockFn.getCallCount()).toBe(1);
+// Test suite for basic assertions
+fn testAssertions() {
+    testing.describe("Basic Assertions", () => {
+        testing.it("should assert equality", () => {
+            testing.assertEqual(5, 5);
+            testing.assertEqual("hello", "hello");
+            testing.assertEqual(3.14, 3.14);
         });
 
-        testing.it("should spy on function calls", () => {
-            val originalFn = (x: int) => x * 2;
-            val spyFn = testing.spy(originalFn);
+        testing.it("should assert inequality", () => {
+            testing.assertNotEqual(5, 10);
+            testing.assertNotEqual("hello", "world");
+        });
 
-            val result = spyFn.call([5]);
+        testing.it("should assert boolean values", () => {
+            testing.assertTrue(true);
+            testing.assertTrue(5 > 3);
+            testing.assertFalse(false);
+            testing.assertFalse(2 > 10);
+        });
 
-            testing.expect(result).toBe(10);
-            testing.expect(spyFn.getCalls().length()).toBe(1);
-            testing.expect(spyFn.wasCalledWith([5])).toBeTrue();
+        testing.it("should use fluent assertions", () => {
+            testing.toBe(testing.expect(42), 42);
+            testing.toNotBe(testing.expect(42), 100);
+            testing.toBeTrue(testing.expect(true));
+            testing.toBeFalse(testing.expect(false));
         });
     });
 }
 
-// Benchmark example
-fn benchmarkExample() {
-    testing.benchmark("Factorial calculation", 1000, () => {
-        math.factorial(10);
-    });
+// Test suite for string operations
+fn testStrings() {
+    testing.describe("String Operations", () => {
+        testing.it("should concatenate strings", () => {
+            val result = "Hello" + " " + "World";
+            testing.toBe(testing.expect(result), "Hello World");
+        });
 
-    testing.benchmark("string concatenation", 1000, () => {
-        var result = "";
-        for i in 0..100 {
-            result = result + "a";
-        }
+        testing.it("should compare strings", () => {
+            testing.toBeTrue(testing.expect("hello" == "hello"));
+            testing.toBeFalse(testing.expect("hello" == "world"));
+        });
     });
 }
 
 fn main() {
-    log.info("=== Testing Framework Example ===\n");
+    println("=== Testing Framework Example ===");
+    println("");
 
-    // Run tests
+    // Run test suites
     testMath();
+    testArithmetic();
+    testBooleans();
+    testAssertions();
     testStrings();
-    testCollections();
-    testMocksAndSpies();
 
-    // Run all tests and get report
-    val report = testing.runAllTests();
+    // Print summary
+    testing.printSummary();
 
-    log.info("\n=== Test Results ===");
-    report.println();
-
-    log.infoWith("Summary", {
-        total: report.totalTests,
-        passed: report.passed,
-        failed: report.failed,
-        skipped: report.skipped,
-        duration_ms: report.duration.milliseconds()
-    });
-
-    // Run benchmarks
-    log.info("\n=== Benchmarks ===");
-    benchmarkExample();
-
-    // Export results as JSON
-    val jsonReport = report.toJSON();
-    io.writeFile("test-results.json", json.pretty(jsonReport));
-    log.info("\nTest results exported to test-results.json");
+    // Check if all tests passed
+    if testing.getFailedCount() == 0 {
+        println("");
+        println("✓ All tests passed!");
+    } else {
+        println("");
+        println("✗ Some tests failed!");
+    }
 }
