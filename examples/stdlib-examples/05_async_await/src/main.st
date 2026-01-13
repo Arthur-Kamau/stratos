@@ -1,200 +1,181 @@
-// Example: Async/Await and Promises
-// Demonstrates the async module (TypeScript-style)
+// Example: Async/Await
+// Demonstrates async functions and await keyword
 
 package main;
 
 use async;
-use log;
-use time;
-use http;
 
-fn main() {
-    log.info("=== Async/Await Example ===");
+// Simple async function that delays and returns a value
+async fn delayedMessage(message: string, delayMs: int) Future<string> {
+    println("Starting: " + message);
+    await async.delay(delayMs);
+    println("Completed: " + message);
+    return message;
+}
 
-    // Example 1: Basic Promise
-    log.info("\n1. Basic Promise:");
+// Async function that processes data
+async fn processData(data: string) Future<string> {
+    println("Processing: " + data);
+    await async.delay(100);
+    return "Processed-" + data;
+}
 
-    val promise = async.newPromise((resolve, reject) => {
-        log.info("Promise executing...");
-        time.sleep(time.milliseconds(1000));
+// Async function that fetches data (simulated)
+async fn fetchData(id: int) Future<string> {
+    println("Fetching data for ID: " + id);
+    await async.delay(200);
+    return "Data-" + id;
+}
 
-        if math.random() > 0.5 {
-            resolve("Success!");
-        } else {
-            reject(io.Error("Random failure"));
-        }
-    });
+// Chain multiple async operations
+async fn fetchAndProcess(id: int) Future<string> {
+    val data = await fetchData(id);
+    val result = await processData(data);
+    return result;
+}
 
-    promise.then((value) => {
-        log.info("Promise resolved: " + value);
-    }).catch((error) => {
-        log.error("Promise rejected: " + error.message);
-    }).finally(() => {
-        log.info("Promise completed");
-    });
+// Example: Sequential async operations
+async fn sequentialExample() Future<void> {
+    println("\n=== Sequential Operations ===");
 
-    // Example 2: Promise chaining
-    log.info("\n2. Promise Chaining:");
+    val msg1 = await delayedMessage("First task", 300);
+    println("Got: " + msg1);
 
-    async.resolve(5)
-        .then((n) => {
-            log.info("Step 1: " + n);
-            return async.resolve(n * 2);
-        })
-        .then((n) => {
-            log.info("Step 2: " + n);
-            return async.resolve(n + 10);
-        })
-        .then((n) => {
-            log.info("Step 3: " + n);
-            log.info("Final result: " + n);
-        });
+    val msg2 = await delayedMessage("Second task", 200);
+    println("Got: " + msg2);
 
-    // Example 3: Promise.all
-    log.info("\n3. Promise.all:");
+    val msg3 = await delayedMessage("Third task", 100);
+    println("Got: " + msg3);
 
-    val promises = [
-        async.delay(100).then(() => async.resolve("Task 1 done")),
-        async.delay(200).then(() => async.resolve("Task 2 done")),
-        async.delay(150).then(() => async.resolve("Task 3 done"))
-    ];
+    println("All sequential tasks completed!");
+}
 
-    async.all(promises).then((results) => {
-        log.info("All tasks completed:");
-        for val result in results {
-            log.info("  - " + result);
-        }
-    });
+// Example: Using delayValue utility
+async fn delayValueExample() Future<void> {
+    println("\n=== DelayValue Example ===");
 
-    // Example 4: Promise.race
-    log.info("\n4. Promise.race:");
+    val result = await async.delayValue(500, 42);
+    println("Got delayed value: " + result);
+}
 
-    val racers = [
-        async.delay(300).then(() => async.resolve("Slow task")),
-        async.delay(100).then(() => async.resolve("Fast task")),
-        async.delay(200).then(() => async.resolve("Medium task"))
-    ];
+// Example: Retry with backoff
+async fn retryExample() Future<void> {
+    println("\n=== Retry with Backoff ===");
 
-    async.race(racers).then((winner) => {
-        log.info("Winner: " + winner);
-    });
-
-    // Example 5: Async map
-    log.info("\n5. Async Map:");
-
-    val numbers = [1, 2, 3, 4, 5];
-
-    async.map(numbers, (n) => {
-        return async.delay(n * 100).then(() => {
-            log.info("Processing: " + n);
-            return async.resolve(n * n);
-        });
-    }).then((squares) => {
-        log.info("Squares: " + squares);
-    });
-
-    // Example 6: Async retry
-    log.info("\n6. Async Retry:");
-
-    var attempts = 0;
-
-    val unreliableTask = () => {
-        attempts = attempts + 1;
-        log.info("Attempt " + attempts);
-
-        return async.newPromise((resolve, reject) => {
-            if attempts >= 3 {
-                resolve("Success on attempt " + attempts);
-            } else {
-                reject(io.Error("Failed attempt " + attempts));
-            }
-        });
+    val task = async () => {
+        println("Executing task...");
+        await async.delay(100);
     };
 
-    async.retry(unreliableTask, 5, 500).then((result) => {
-        log.info("Retry succeeded: " + result);
-    }).catch((error) => {
-        log.error("Retry failed: " + error.message);
-    });
-
-    // Example 7: Async HTTP requests
-    log.info("\n7. Async HTTP Requests:");
-
-    val fetchUser = (id: int) => {
-        log.info("Fetching user " + id + "...");
-
-        return async.delay(500).then(() => {
-            return async.resolve(json.jsonObject({
-                id: json.jsonNumber(id),
-                name: json.jsonString("User " + id),
-                email: json.jsonString("user" + id + "@example.com")
-            }));
-        });
-    };
-
-    // Fetch multiple users in parallel
-    val userPromises = [
-        fetchUser(1),
-        fetchUser(2),
-        fetchUser(3)
-    ];
-
-    async.all(userPromises).then((users) => {
-        log.info("Fetched " + users.length() + " users:");
-        for val user in users {
-            log.info("  - " + json.getStringPath(user, "name") + " (" + json.getStringPath(user, "email") + ")");
-        }
-    });
-
-    // Example 8: Throttle
-    log.info("\n8. Async Throttle:");
-
-    val expensiveTask = (n: int) => {
-        log.info("Running expensive task " + n);
-        return async.delay(500).then(() => {
-            return async.resolve(n * 2);
-        });
-    };
-
-    val throttled = async.throttle(expensiveTask, 2); // Max 2 concurrent
-
-    for i in 1..6 {
-        throttled.execute(i).then((result) => {
-            log.info("Throttled result: " + result);
-        });
+    val success = await async.retryWithBackoff(task, 3, 100);
+    if success {
+        println("Retry completed successfully");
     }
+}
 
-    // Example 9: Wait until
-    log.info("\n9. Wait Until:");
+// Example: Repeat operation multiple times
+async fn repeatExample() Future<void> {
+    println("\n=== Repeat with Delay ===");
 
-    var ready = false;
+    var counter = 0;
 
-    // Set ready after 2 seconds
-    concurrent.go(() => {
-        time.sleep(time.seconds(2));
-        ready = true;
-        log.info("System is now ready!");
-    });
+    val task = async () => {
+        counter = counter + 1;
+        println("Execution #" + counter);
+        await async.delay(50);
+    };
 
-    async.waitUntil(() => ready, 100, 5000).then(() => {
-        log.info("Condition met, proceeding...");
-    }).catch((error) => {
-        log.error("Timeout waiting for condition");
-    });
+    val count = await async.repeatWithDelay(task, 3, 150);
+    println("Completed " + count + " executions");
+}
 
-    // Example 10: Sequential forEach
-    log.info("\n10. Sequential forEach:");
+// Example: Conditional execution
+async fn conditionalExample() Future<void> {
+    println("\n=== Conditional Async ===");
 
-    val items = ["item1", "item2", "item3"];
+    val shouldRun = true;
 
-    async.forEach(items, (item) => {
-        log.info("Processing " + item);
-        return async.delay(300).then(() => {
-            log.info("Completed " + item);
-        });
-    }).then(() => {
-        log.info("All items processed sequentially");
-    });
+    val task = async () => {
+        println("Task is running!");
+        await async.delay(100);
+    };
 
-    log.info("\nAsync examples started! Watch the logs for results.");
+    val didRun = await async.doIf(shouldRun, task);
+    if didRun {
+        println("Task was executed");
+    }
+}
+
+// Example: Sequential task execution
+async fn sequenceExample() Future<void> {
+    println("\n=== Sequence Tasks ===");
+
+    val task1 = async () => {
+        println("Task 1 executing");
+        await async.delay(100);
+    };
+
+    val task2 = async () => {
+        println("Task 2 executing");
+        await async.delay(100);
+    };
+
+    val task3 = async () => {
+        println("Task 3 executing");
+        await async.delay(100);
+    };
+
+    await async.sequence2(task1, task2);
+    println("First two tasks completed");
+
+    await async.sequence3(task1, task2, task3);
+    println("All three tasks completed");
+}
+
+// Example: Chaining async operations
+async fn chainExample() Future<void> {
+    println("\n=== Chain Operations ===");
+
+    val result = await fetchAndProcess(123);
+    println("Final result: " + result);
+}
+
+// Main async function
+async fn main() {
+    println("=== Async/Await Examples ===");
+
+    // Example 1: Basic async/await
+    println("\n--- Example 1: Basic Async ---");
+    val data = await fetchData(1);
+    println("Received: " + data);
+
+    // Example 2: Chaining
+    println("\n--- Example 2: Chaining ---");
+    await chainExample();
+
+    // Example 3: Sequential operations
+    println("\n--- Example 3: Sequential ---");
+    await sequentialExample();
+
+    // Example 4: DelayValue
+    println("\n--- Example 4: DelayValue ---");
+    await delayValueExample();
+
+    // Example 5: Retry
+    println("\n--- Example 5: Retry ---");
+    await retryExample();
+
+    // Example 6: Repeat
+    println("\n--- Example 6: Repeat ---");
+    await repeatExample();
+
+    // Example 7: Conditional
+    println("\n--- Example 7: Conditional ---");
+    await conditionalExample();
+
+    // Example 8: Sequence
+    println("\n--- Example 8: Sequence ---");
+    await sequenceExample();
+
+    println("\n=== All Examples Completed ===");
 }

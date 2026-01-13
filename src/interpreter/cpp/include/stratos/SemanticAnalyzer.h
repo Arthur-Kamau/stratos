@@ -24,6 +24,7 @@ public:
     void visit(IndexExpr& expr) override;
     void visit(GroupingExpr& expr) override;
     void visit(CastExpr& expr) override;
+    void visit(AwaitExpr& expr) override;
     void visit(MapLiteralExpr& expr) override;
     void visit(LambdaExpr& expr) override;
     void visit(StructInitExpr& expr) override;
@@ -48,8 +49,9 @@ private:
     std::vector<std::string> loadedModules; // Track already loaded modules
     std::string lastExprType; // Track the type of the last evaluated expression
     std::string currentClassName; // Track current class name for 'this' context
+    bool currentFunctionIsAsync = false; // Track if we're inside an async function/lambda
 
-    std::string projectRoot; 
+    std::string projectRoot;
     std::unordered_map<std::string, std::unordered_map<std::string, Symbol>> classMembers; // Store members of classes for access control 
 
     void error(const std::string& message); // Generic (no loc)

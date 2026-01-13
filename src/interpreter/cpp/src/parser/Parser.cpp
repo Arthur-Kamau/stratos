@@ -29,7 +29,10 @@ std::unique_ptr<Stmt> Parser::declaration() {
 
         // std::cout << "[Parser::declaration] Current token: " << peek().lexeme << " (type " << static_cast<int>(peek().type) << ")" << std::endl;
 
-        if (match({TokenType::VAR, TokenType::VAL})) return varDeclaration();
+        if (match({TokenType::VAR, TokenType::VAL})) {
+            // std::cout << "[Parser::declaration] Matched VAR/VAL, calling varDeclaration()" << std::endl;
+            return varDeclaration();
+        }
         if (match({TokenType::ASYNC})) {
             consume(TokenType::FN, "Expect 'fn' after 'async'.");
             return fnDeclaration("function", true, true);
@@ -309,7 +312,13 @@ std::unique_ptr<Stmt> Parser::packageDeclaration() {
 }
 
 std::unique_ptr<Stmt> Parser::useStatement() {
-    Token moduleName = consume(TokenType::IDENTIFIER, "Expect module name after 'use'.");
+    Token moduleName;
+    // Allow 'async' keyword as a module name
+    if (check(TokenType::ASYNC)) {
+        moduleName = advance();
+    } else {
+        moduleName = consume(TokenType::IDENTIFIER, "Expect module name after 'use'.");
+    }
 
     // Consume the semicolon if present (Go-style allows omitting it)
     if (check(TokenType::SEMICOLON)) {
@@ -541,6 +550,13 @@ std::unique_ptr<Expr> Parser::unary() {
         std::unique_ptr<Expr> right = unary();
         return std::make_unique<UnaryExpr>(op, std::move(right));
     }
+
+    if (match({TokenType::AWAIT})) {
+        Token keyword = previous();
+        std::unique_ptr<Expr> expr = unary();
+        return std::make_unique<AwaitExpr>(keyword, std::move(expr));
+    }
+
     return call();
 }
 
@@ -688,9 +704,74 @@ std::unique_ptr<Expr> Parser::primary() {
     if (match({TokenType::IDENTIFIER})) {
         return std::make_unique<VariableExpr>(previous());
     }
-    
+
     // Handle 'this'
     if (match({TokenType::THIS})) {
+        return std::make_unique<VariableExpr>(previous());
+    }
+
+    // Allow 'async' as an identifier (for module names like async.delay)
+    // OR as async lambda: async () => { ... }
+    if (match({TokenType::ASYNC})) {
+        // Check if this is an async lambda
+        if (check(TokenType::LEFT_PAREN)) {
+            advance(); // consume '('
+
+            // Parse async lambda
+            // 1. Check for empty lambda: async () =>
+            if (check(TokenType::RIGHT_PAREN)) {
+                if (current + 1 < tokens.size() && tokens[current + 1].type == TokenType::ARROW) {
+                    advance(); // consume )
+                    advance(); // consume =>
+                    std::unique_ptr<Stmt> body = parseLambdaBody();
+                    return std::make_unique<LambdaExpr>(std::vector<Token>{}, std::move(body), true); // isAsync = true
+                }
+            }
+
+            std::unique_ptr<Expr> expr = expression();
+
+            // 2. Check for multi-param lambda: async (a, b) =>
+            if (match({TokenType::COMMA})) {
+                std::vector<Token> params;
+
+                // First param
+                if (auto* v = dynamic_cast<VariableExpr*>(expr.get())) {
+                    params.push_back(v->name);
+                } else {
+                    throw ParseError("Expect parameter name.", peek().line, peek().column);
+                }
+
+                // Remaining params
+                do {
+                    Token param = consume(TokenType::IDENTIFIER, "Expect parameter name.");
+                    params.push_back(param);
+                } while (match({TokenType::COMMA}));
+
+                consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
+                consume(TokenType::ARROW, "Expect '=>' after lambda parameters.");
+                std::unique_ptr<Stmt> body = parseLambdaBody();
+                return std::make_unique<LambdaExpr>(std::move(params), std::move(body), true); // isAsync = true
+            }
+
+            consume(TokenType::RIGHT_PAREN, "Expect ')' after expression.");
+
+            // 3. Check for single-param lambda: async (a) =>
+            if (match({TokenType::ARROW})) {
+                std::vector<Token> params;
+                if (auto* v = dynamic_cast<VariableExpr*>(expr.get())) {
+                    params.push_back(v->name);
+                } else {
+                    throw ParseError("Expect parameter name.", peek().line, peek().column);
+                }
+                std::unique_ptr<Stmt> body = parseLambdaBody();
+                return std::make_unique<LambdaExpr>(std::move(params), std::move(body), true); // isAsync = true
+            }
+
+            // Not a lambda, error - we consumed ASYNC and LEFT_PAREN but it's not a lambda
+            throw ParseError("Expected lambda expression after 'async ('.", peek().line, peek().column);
+        }
+
+        // Just 'async' as identifier (for async.delay, etc.)
         return std::make_unique<VariableExpr>(previous());
     }
 

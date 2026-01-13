@@ -20,7 +20,8 @@ struct Symbol {
     std::string type; // Simple string representation for now (e.g., "int", "fn(int,int)->void")
     bool isMutable;   // For variables (val vs var)
     bool isPublic;    // For visibility checks
-    
+    bool isAsync = false; // For async functions/lambdas
+
     // Location info
     int line = 0;
     int column = 0;
@@ -44,13 +45,14 @@ struct Symbol {
         return s;
     }
 
-    static Symbol Function(std::string name, std::vector<std::string> params, std::string ret, bool isPublic = false, int line = 0, int column = 0, std::string file = "") {
+    static Symbol Function(std::string name, std::vector<std::string> params, std::string ret, bool isPublic = false, bool isAsync = false, int line = 0, int column = 0, std::string file = "") {
         Symbol s;
         s.name = name;
         s.kind = SymbolKind::FUNCTION;
         s.paramTypes = params;
         s.returnType = ret;
         s.isPublic = isPublic;
+        s.isAsync = isAsync;
         s.line = line;
         s.column = column;
         s.file = file;

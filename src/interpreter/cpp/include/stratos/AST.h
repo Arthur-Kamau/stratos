@@ -193,9 +193,10 @@ class LambdaExpr : public Expr {
 public:
     std::vector<Token> params;
     std::unique_ptr<Stmt> body; // Usually BlockStmt
+    bool isAsync = false;
 
-    LambdaExpr(std::vector<Token> params, std::unique_ptr<Stmt> body)
-        : params(std::move(params)), body(std::move(body)) {}
+    LambdaExpr(std::vector<Token> params, std::unique_ptr<Stmt> body, bool isAsync = false)
+        : params(std::move(params)), body(std::move(body)), isAsync(isAsync) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };

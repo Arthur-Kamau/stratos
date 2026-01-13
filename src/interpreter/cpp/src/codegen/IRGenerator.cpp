@@ -659,6 +659,13 @@ void IRGenerator::visit(CastExpr& expr) {
     }
 }
 
+void IRGenerator::visit(AwaitExpr& expr) {
+    // Await not fully supported in IR gen yet
+    // Just visit the expression and return its value (blocking)
+    expr.expression->accept(*this);
+    // TODO: Implement actual async/await state machine transformation
+}
+
 void IRGenerator::visit(MapLiteralExpr& expr) {
     // Maps not fully supported in IR gen yet
     lastVal = {"null", "i8*"};

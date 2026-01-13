@@ -160,6 +160,7 @@ public:
     void visit(IndexExpr& expr) override;
     void visit(GroupingExpr& expr) override;
     void visit(CastExpr& expr) override; // Visit method for CastExpr
+    void visit(AwaitExpr& expr) override; // Visit method for AwaitExpr
     void visit(MapLiteralExpr& expr) override; // Visit method for MapLiteralExpr
     void visit(LambdaExpr& expr) override; // Visit method for LambdaExpr
     void visit(StructInitExpr& expr) override; // Visit method for StructInitExpr

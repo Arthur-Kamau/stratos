@@ -1411,6 +1411,16 @@ void Interpreter::visit(StructInitExpr& expr) {
     lastValue = RuntimeValue(instance);
 }
 
+void Interpreter::visit(AwaitExpr& expr) {
+    // Basic blocking implementation for awaiting futures/promises
+    // In a real async runtime, this would suspend execution
+    expr.expression->accept(*this);
+    
+    // Check if the result is a recognizable Future/Promise object
+    // For now, we just pass through the value as a placeholder
+    // A more complete implementation would check for specific "Future" objects
+}
+
 // --- Statement Visitors ---
 
 void Interpreter::visit(VarDecl& stmt) {

@@ -189,6 +189,13 @@ void Formatter::visit(LambdaExpr& expr) {
     }
 }
 
+
+void Formatter::visit(AwaitExpr& expr) {
+    write("await");
+    space();
+    expr.expression->accept(*this);
+}
+
 void Formatter::visit(StructInitExpr& expr) {
     write(expr.name.lexeme);
     space();

@@ -8,7 +8,7 @@ When you declare a function as `async`, it automatically returns a `Future` that
 
 ```stratos
 // This function signature means it returns Future<string>
-async fn fetchData(url: string) <string> {
+async fn fetchData(url: string) Future<string> {
     val response = await http.get(url);
     return await response.text();
 }
@@ -38,7 +38,7 @@ class User {
     var id: int;
 }
 
-async fn getUserData(userId: int) User {
+async fn getUserData(userId: int) Future<User> {
     log.info("Fetching user " + userId);
     val response = await net.get("https://api.example.com/users/" + userId);
     return encoding.json.decode(response.text());
@@ -130,17 +130,17 @@ package main;
 use async;
 use log;
 
-async fn task1() int {
+async fn task1() Future<int> {
     await async.sleep(100);
     return 1;
 }
 
-async fn task2() int {
+async fn task2() Future<int>  {
     await async.sleep(200);
     return 2;
 }
 
-async fn task3() int {
+async fn task3() Future<int>  {
     await async.sleep(150);
     return 3;
 }
@@ -206,12 +206,12 @@ package main;
 
 use async;
 
-async fn slowTask() string {
+async fn slowTask() Future<string> {
     await async.sleep(2000);
     return "Slow";
 }
 
-async fn fastTask() string {
+async fn fastTask() Future<string> {
     await async.sleep(500);
     return "Fast";
 }
@@ -237,7 +237,7 @@ use async;
 use net;
 use log;
 
-async fn fetchWithTimeout(url: string, timeoutMs: int) Result<string, Error> {
+async fn fetchWithTimeout(url: string, timeoutMs: int) Future<Result<string, Error>> {
     try {
         val result = await async.timeout(
             net.get(url).then(fn(r) { return r.text(); }),
@@ -275,7 +275,7 @@ class User {
     var id: int;
 }
 
-async fn fetchUser(userId: int) Result<User, Error> {
+async fn fetchUser(userId: int) Future<Result<User, Error>> {
     try {
         val response = await net.get("https://api.example.com/users/" + userId);
         
@@ -321,7 +321,7 @@ class User {
     var id: int;
 }
 
-async fn fetchUserSafely(userId: int) Option<User> {
+async fn fetchUserSafely(userId: int) Future<Option<User>> {
     try {
         val response = await net.get("https://api.example.com/users/" + userId);
         if (response.status() == 200) {
@@ -361,7 +361,7 @@ class ApiClient {
         this.baseUrl = baseUrl;
     }
     
-    async fn get(endpoint: string) Result<any, Error> {
+    async fn get(endpoint: string) Future<Result<any, Error>> {
         val url = this.baseUrl + endpoint;
         log.info("GET " + url);
         
@@ -378,7 +378,7 @@ class ApiClient {
         }
     }
     
-    async fn post(endpoint: string, data: any) Result<any, Error> {
+    async fn post(endpoint: string, data: any) Future<Result<any, Error>> {
         val url = this.baseUrl + endpoint;
         val body = encoding.json.encode(data);
         
@@ -404,7 +404,7 @@ class User {
     var email: string;
 }
 
-async fn fetchUsers(client: ApiClient) Array<User> {
+async fn fetchUsers(client: ApiClient) Future<Array<User>> {
     val result = await client.get("/users");
     
     match (result) {
@@ -416,7 +416,7 @@ async fn fetchUsers(client: ApiClient) Array<User> {
     }
 }
 
-async fn createUser(client: ApiClient, name: string, email: string) bool {
+async fn createUser(client: ApiClient, name: string, email: string) Future<bool> {
     val userData = {
         "name": name,
         "email": email
@@ -500,7 +500,7 @@ When using `Result<T, E>`, always handle both `Ok` and `Err` cases with `match`.
 ### Retry Logic
 
 ```stratos
-async fn fetchWithRetry(url: string, maxRetries: int) Result<string, Error> {
+async fn fetchWithRetry(url: string, maxRetries: int) Future<Result<string, Error>> {
     var attempts = 0;
     
     while (attempts < maxRetries) {
@@ -521,7 +521,7 @@ async fn fetchWithRetry(url: string, maxRetries: int) Result<string, Error> {
 ### Parallel Data Processing
 
 ```stratos
-async fn processItems(items: Array<string>) Array<Result<any, Error>> {
+async fn processItems(items: Array<string>) Future<Array<Result<any, Error>>> {
     val futures = items.map(fn(item) {
         return processItem(item);
     });
@@ -533,7 +533,7 @@ async fn processItems(items: Array<string>) Array<Result<any, Error>> {
 ### Graceful Degradation
 
 ```stratos
-async fn fetchWithFallback(primaryUrl: string, fallbackUrl: string) string {
+async fn fetchWithFallback(primaryUrl: string, fallbackUrl: string) Future<string> {
     val result = await net.get(primaryUrl);
     
     if (result.status() == 200) {

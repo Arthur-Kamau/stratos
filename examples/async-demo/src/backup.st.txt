@@ -1,0 +1,35 @@
+package main;
+
+use async;
+use io;
+use time;
+
+async fn fetchData(id: int) Future<string> {
+    io.println("Fetching data for ID: " + id + "...");
+    await async.delay(1000); // Simulate network delay
+    io.println("Data fetched for ID: " + id);
+    return "Data-" + id;
+}
+
+async fn processData(data: string) Future<string> {
+    io.println("Processing " + data + "...");
+    await async.delay(500); // Simulate processing time
+    return "Processed-" + data;
+}
+
+fn main() {
+    io.println("Starting async demo...");
+
+    // Spawn an async task using an async lambda
+    val promise = async.spawn(async () => {
+        val data = await fetchData(42);
+        val result = await processData(data);
+        return result;
+    });
+
+    io.println("Main thread continues...");
+
+    // Wait for result
+    val finalResult = promise.await();
+    io.println("Final Result: " + finalResult);
+}

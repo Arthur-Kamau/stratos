@@ -270,7 +270,7 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
             for (const auto& param : funcDecl->parameters) {
                 paramTypes.push_back(param.type);
             }
-            Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType, funcDecl->isPublic, funcDecl->name.line, funcDecl->name.column, funcDecl->name.file);
+            Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType, funcDecl->isPublic, funcDecl->isAsync, funcDecl->name.line, funcDecl->name.column, funcDecl->name.file);
             if (!symbolTable.define(funcSymbol)) {
                 auto existing = symbolTable.resolve(funcDecl->name.lexeme);
                 std::string loc = "";
@@ -296,7 +296,7 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
                     if (auto* func = dynamic_cast<FunctionDecl*>(member.get())) {
                         std::vector<std::string> pTypes;
                         for (const auto& p : func->parameters) pTypes.push_back(p.type);
-                        Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic, func->name.line, func->name.column, func->name.file);
+                        Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic, func->isAsync, func->name.line, func->name.column, func->name.file);
                         classMembers[classDecl->name.lexeme][func->name.lexeme] = sym;
                     } else if (auto* var = dynamic_cast<VarDecl*>(member.get())) {
                         Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, false, var->name.line, var->name.column, var->name.file);
@@ -497,6 +497,9 @@ void SemanticAnalyzer::visit(CallExpr& expr) {
 
                             // Check argument types
                             for (size_t i = 0; i < expr.arguments.size(); i++) {
+                                // Visit the argument first to perform semantic analysis (e.g., for lambdas)
+                                expr.arguments[i]->accept(*this);
+
                                 std::string argType = inferType(expr.arguments[i].get());
                                 std::string expectedType = signature.paramTypes[i];
 
@@ -571,6 +574,29 @@ void SemanticAnalyzer::visit(CastExpr& expr) {
     // Future: Verify if cast is valid (e.g. primitive to primitive)
 }
 
+void SemanticAnalyzer::visit(AwaitExpr& expr) {
+    if (!currentFunctionIsAsync) {
+        error(expr.keyword, "Can only use 'await' inside an async function.");
+    }
+
+    expr.expression->accept(*this);
+    std::string type = inferType(expr.expression.get());
+
+    // Check if type is awaitable (Promise<T> or Future<T>)
+    if (type.find("Promise<") == 0 || type.find("Future<") == 0) {
+        // Valid
+    } else if (type != "any" && type != "unknown") {
+        // Warning or error? For now allow any for dynamic behavior, but warn/error on known non-awaitables
+        // error(expr.keyword, "Expression of type '" + type + "' is not awaitable.");
+    }
+
+    lastExprType = "any"; // Ideally T from Promise<T>
+    if (type.find("<") != std::string::npos && type.back() == '>') {
+        size_t start = type.find("<") + 1;
+        lastExprType = type.substr(start, type.length() - start - 1);
+    }
+}
+
 void SemanticAnalyzer::visit(MapLiteralExpr& expr) {
     for (const auto& pair : expr.entries) {
         pair.second->accept(*this);
@@ -578,12 +604,17 @@ void SemanticAnalyzer::visit(MapLiteralExpr& expr) {
 }
 
 void SemanticAnalyzer::visit(LambdaExpr& expr) {
+    bool previousAsync = currentFunctionIsAsync;
+    currentFunctionIsAsync = expr.isAsync;
+
     symbolTable.enterScope();
     for (const auto& param : expr.params) {
-        symbolTable.define(Symbol::Variable(param.lexeme, "any", false));
+        symbolTable.define(Symbol::Variable(param.lexeme, "any", false, false, param.line, param.column, param.file));
     }
     if (expr.body) expr.body->accept(*this);
     symbolTable.exitScope();
+
+    currentFunctionIsAsync = previousAsync;
 }
 
 // --- Statements ---
@@ -617,7 +648,7 @@ void SemanticAnalyzer::visit(FunctionDecl& stmt) {
         paramTypes.push_back(param.type);
     }
     
-    Symbol funcSymbol = Symbol::Function(stmt.name.lexeme, paramTypes, stmt.returnType, stmt.isPublic);
+    Symbol funcSymbol = Symbol::Function(stmt.name.lexeme, paramTypes, stmt.returnType, stmt.isPublic, stmt.isAsync);
     if (!symbolTable.define(funcSymbol)) {
         // Only error if we're in a class (class methods should be defined fresh)
         // Top-level functions are expected to fail here due to first pass registration
@@ -643,7 +674,7 @@ void SemanticAnalyzer::visit(FunctionDecl& stmt) {
     for (const auto& param : stmt.parameters) {
         Symbol paramSym = Symbol::Variable(param.name.lexeme, param.type, false, false, param.name.line, param.name.column, param.name.file);
         symbolTable.define(paramSym);
-        
+
         // Analyze default value if present
         if (param.defaultValue) {
             param.defaultValue->accept(*this);
@@ -651,9 +682,14 @@ void SemanticAnalyzer::visit(FunctionDecl& stmt) {
     }
 
     // Analyze body
+    bool previousAsync = currentFunctionIsAsync;
+    currentFunctionIsAsync = stmt.isAsync;
+
     for (const auto& s : *stmt.body) {
         if (s) s->accept(*this);
     }
+
+    currentFunctionIsAsync = previousAsync;
 
     // Exit scope
     symbolTable.exitScope();
@@ -722,15 +758,18 @@ void SemanticAnalyzer::visit(UseStmt& stmt) {
 
     // Check if this is a native module (implemented in C++ via NativeRegistry)
     auto& registry = NativeRegistry::getInstance();
-    if (registry.hasModule(moduleName)) {
-        // Native module - just register it as loaded
+    bool isNativeModule = registry.hasModule(moduleName);
+
+    // Try to load as a source file module (even for native modules - they can have .st implementations)
+    loadModule(moduleName);
+
+    // Register as loaded (loadModule already adds to loadedModules)
+    if (std::find(loadedModules.begin(), loadedModules.end(), moduleName) == loadedModules.end()) {
         loadedModules.push_back(moduleName);
-        return;
     }
 
-    // Try to load as a source file module
-    loadModule(moduleName);
-    loadedModules.push_back(moduleName);
+    // Define the module name as a variable in the current scope
+    symbolTable.define(Symbol::Variable(moduleName, "module", false, false, stmt.moduleName.line, stmt.moduleName.column, stmt.moduleName.file));
 }
 
 void SemanticAnalyzer::visit(BlockStmt& stmt) {
@@ -951,7 +990,7 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
                     for (const auto& param : funcDecl->parameters) {
                         paramTypes.push_back(param.type);
                     }
-                    Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType, funcDecl->isPublic, funcDecl->name.line, funcDecl->name.column, funcDecl->name.file);
+                    Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType, funcDecl->isPublic, funcDecl->isAsync, funcDecl->name.line, funcDecl->name.column, funcDecl->name.file);
                     if (!symbolTable.define(funcSymbol)) {
                         error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined.");
                     }
@@ -964,7 +1003,7 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
                         if (auto* func = dynamic_cast<FunctionDecl*>(member.get())) {
                             std::vector<std::string> pTypes;
                             for (const auto& p : func->parameters) pTypes.push_back(p.type);
-                            Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic, func->name.line, func->name.column, func->name.file);
+                            Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic, func->isAsync, func->name.line, func->name.column, func->name.file);
                             classMembers[classDecl->name.lexeme][func->name.lexeme] = sym;
                             // std::cout << "DEBUG: Registered method " << classDecl->name.lexeme << "." << func->name.lexeme << " return=" << func->returnType << std::endl;
                         } else if (auto* var = dynamic_cast<VarDecl*>(member.get())) {
