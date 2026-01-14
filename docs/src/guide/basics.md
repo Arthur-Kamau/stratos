@@ -318,42 +318,51 @@ Stratos requires explicit casting for most type conversions. This prevents accid
 
 ## Arrays
 
-Arrays hold multiple values of the same type:
+Arrays hold multiple values of the same type. Stratos supports array literal syntax with square brackets:
 
 ```stratos
 package main;
 
 fn main() {
-    // Array literals
-    val numbers = [1, 2, 3, 4, 5];
-    val names = ["Alice", "Bob", "Charlie"];
-    val mixed = [1, 2.5, 3];  // Type inferred as Array<double>
+    // Array literals with type annotations (recommended)
+    val numbers: Array<int> = [1, 2, 3, 4, 5];
+    val names: Array<string> = ["Alice", "Bob", "Charlie"];
+    val scores: Array<double> = [95.5, 87.3, 92.0];
 
-    // Explicit type
-    val scores: Array<int> = [95, 87, 92, 100];
+    // Type is inferred from first element
+    val fruits = ["apple", "banana", "orange"];  // Array<string>
+    val values = [10, 20, 30];                    // Array<int>
 
     // Access elements
     val first = numbers[0];   // 1
     val last = numbers[4];    // 5
 
     // Modify elements (if array is mutable)
-    var mutableArray = [10, 20, 30];
+    var mutableArray: Array<int> = [10, 20, 30];
     mutableArray[0] = 15;     // [15, 20, 30]
 
     // Array length
-    val count = numbers.length;  // 5
+    val count = numbers.length();  // 5
 
     // Iterate over array
-    for (num in numbers) {
+    for val num in numbers {
         print(num);
     }
 
     // Iterate with index
-    for (i, num in numbers) {
-        print("Index " + i + ": " + num);
+    for val i in 0..numbers.length() {
+        print("Index " + i + ": " + numbers[i]);
     }
 }
 ```
+
+::: warning Array Type Consistency
+All elements in an array literal must be of the same type. The type is inferred from the first element. For clarity, it's recommended to use explicit type annotations:
+
+```stratos
+val items: Array<string> = ["apple", "banana", "orange"];
+```
+:::
 
 ::: info Array Indexing
 Arrays in Stratos are zero-indexed, meaning the first element is at index 0. Accessing an index outside the array bounds will cause a runtime error.

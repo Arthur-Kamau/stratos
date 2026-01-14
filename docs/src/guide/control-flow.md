@@ -199,6 +199,40 @@ fn main() {
 - `a..=b` creates a range from `a` to `b` (inclusive end)
 :::
 
+### Iterating Over Strings
+
+Strings are iterable in Stratos, allowing you to loop over each character:
+
+```stratos
+package main;
+
+use strings;
+
+fn main() {
+    val text = "Hello";
+
+    // Iterate over each character
+    for val char in text {
+        println(char);
+    }
+    // Output: H, e, l, l, o (each on a new line)
+
+    // You can also use index-based iteration
+    for val i in 0..strings.length(text) {
+        val char = strings.charAt(text, i);
+        println("Character at " + i + ": " + char);
+    }
+}
+```
+
+::: tip String Iteration
+Both approaches work for string iteration:
+- `for val char in text` - Direct character iteration
+- `for val i in 0..length(text)` with `charAt(text, i)` - Index-based access
+
+Choose the approach that best fits your use case.
+:::
+
 ## Pattern Matching (When)
 
 Stratos provides powerful pattern matching with the `when` expression.

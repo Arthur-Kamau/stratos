@@ -194,6 +194,7 @@ Futures, async/await, and concurrent operations
 - [Object-Oriented Programming](/guide/oop) - Classes and interfaces
 - [Asynchronous Programming](/guide/async) - Async/await and Futures
 - [Testing](/guide/testing) - Write tests for your code
+- [Strings Module](/guide/strings) - String manipulation and formatting
 - [CLI Reference](/reference/cli) - Master the command-line tools
 - [Standard Library](/reference/stdlib) - Explore built-in modules
 
