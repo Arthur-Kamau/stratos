@@ -43,34 +43,40 @@ struct RuntimeValue {
     // Backward compatibility constructor (accepts std::any for migration)
     RuntimeValue(std::any val, std::string t) : type(t) {
         // Convert std::any to std::variant based on type string
-        if (t == "int") {
-            value = std::any_cast<int>(val);
-        } else if (t == "double") {
-            value = std::any_cast<double>(val);
-        } else if (t == "string") {
-            value = std::any_cast<std::string>(val);
-        } else if (t == "char") {
-            value = std::any_cast<char>(val);
-        } else if (t == "bool") {
-            value = std::any_cast<bool>(val);
-        } else if (t == "object") {
-            value = std::any_cast<std::shared_ptr<ClassInstance>>(val);
-        } else if (t.starts_with("array")) {
-            // For arrays, store the std::any directly
-            value = val;
-        } else if (t.starts_with("map")) {
-            // For maps, store the std::any directly
-            value = val;
-        } else if (t == "function") {
-            // For functions/closures, store the std::any directly
-            value = val;
-        } else if (t == "any") {
-            // For any type, store the std::any directly
-            value = val;
-        } else if (t == "void") {
+        try {
+            if (t == "int") {
+                value = std::any_cast<int>(val);
+            } else if (t == "double") {
+                value = std::any_cast<double>(val);
+            } else if (t == "string") {
+                value = std::any_cast<std::string>(val);
+            } else if (t == "char") {
+                value = std::any_cast<char>(val);
+            } else if (t == "bool") {
+                value = std::any_cast<bool>(val);
+            } else if (t == "object") {
+                value = std::any_cast<std::shared_ptr<ClassInstance>>(val);
+            } else if (t.starts_with("array")) {
+                // For arrays, store the std::any directly
+                value = val;
+            } else if (t.starts_with("map")) {
+                // For maps, store the std::any directly
+                value = val;
+            } else if (t == "function") {
+                // For functions/closures, store the std::any directly
+                value = val;
+            } else if (t == "any") {
+                // For any type, store the std::any directly
+                value = val;
+            } else if (t == "void") {
+                value = std::monostate{};
+            } else {
+                value = std::monostate{};
+            }
+        } catch (const std::bad_any_cast& e) {
+            // Failed to cast - set to void
             value = std::monostate{};
-        } else {
-            value = std::monostate{};
+            type = "void";
         }
     }
 
@@ -162,6 +168,7 @@ public:
     void visit(CastExpr& expr) override; // Visit method for CastExpr
     void visit(AwaitExpr& expr) override; // Visit method for AwaitExpr
     void visit(MapLiteralExpr& expr) override; // Visit method for MapLiteralExpr
+    void visit(ArrayLiteralExpr& expr) override; // Visit method for ArrayLiteralExpr
     void visit(LambdaExpr& expr) override; // Visit method for LambdaExpr
     void visit(StructInitExpr& expr) override; // Visit method for StructInitExpr
 

@@ -89,6 +89,13 @@ void Optimizer::visit(MapLiteralExpr& expr) {
     lastConst.type = 0;
 }
 
+void Optimizer::visit(ArrayLiteralExpr& expr) {
+    for (const auto& element : expr.elements) {
+        element->accept(*this);
+    }
+    lastConst.type = 0;
+}
+
 void Optimizer::visit(LambdaExpr& expr) {
     if (expr.body) expr.body->accept(*this);
     lastConst.type = 0;

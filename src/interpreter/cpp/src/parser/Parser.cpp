@@ -861,13 +861,8 @@ std::unique_ptr<Expr> Parser::primary() {
                 elements.push_back(expression());
             } while (match({TokenType::COMMA}));
         }
-        Token bracket = consume(TokenType::RIGHT_BRACKET, "Expect ']' after array elements.");
-        // Represent array literal as a call to Array constructor with elements as arguments
-        return std::make_unique<CallExpr>(
-            std::make_unique<VariableExpr>(Token{TokenType::IDENTIFIER, "Array", bracket.line, bracket.column}),
-            bracket,
-            std::move(elements)
-        );
+        consume(TokenType::RIGHT_BRACKET, "Expect ']' after array elements.");
+        return std::make_unique<ArrayLiteralExpr>(std::move(elements));
     }
 
     // Handle map/object literals: { key: value, ... }

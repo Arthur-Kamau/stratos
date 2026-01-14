@@ -167,6 +167,18 @@ void Formatter::visit(MapLiteralExpr& expr) {
     write("}");
 }
 
+void Formatter::visit(ArrayLiteralExpr& expr) {
+    write("[");
+    for (size_t i = 0; i < expr.elements.size(); ++i) {
+        expr.elements[i]->accept(*this);
+        if (i < expr.elements.size() - 1) {
+            write(",");
+            space();
+        }
+    }
+    write("]");
+}
+
 void Formatter::visit(LambdaExpr& expr) {
     write("(");
     for (size_t i = 0; i < expr.params.size(); ++i) {

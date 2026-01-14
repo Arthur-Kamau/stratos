@@ -1052,18 +1052,18 @@ void Interpreter::visit(CallExpr& expr) {
                     if (auto* leftVar = dynamic_cast<VariableExpr*>(binExpr->left.get())) {
                         std::string moduleName = leftVar->name.lexeme;
 
-                        // FIRST: Check if it's a user-defined module function
+                        // FIRST: Check if it's a native function
+                        auto& registry = NativeRegistry::getInstance();
+                        if (registry.isNative(moduleName, methodName)) {
+                            lastValue = evaluateNativeCall(moduleName, methodName, args);
+                            return;
+                        }
+
+                        // SECOND: Check if it's a user-defined module function
                         if (moduleFunctions.count(moduleName) &&
                             moduleFunctions.at(moduleName).count(methodName)) {
                             FunctionDecl& funcDeclRef = moduleFunctions.at(moduleName).at(methodName).get();
                             lastValue = callModuleFunction(moduleName, methodName, args, &funcDeclRef);
-                            return;
-                        }
-
-                        // SECOND: Check if it's a native function
-                        auto& registry = NativeRegistry::getInstance();
-                        if (registry.isNative(moduleName, methodName)) {
-                            lastValue = evaluateNativeCall(moduleName, methodName, args);
                             return;
                         }
 
@@ -1130,18 +1130,18 @@ void Interpreter::visit(CallExpr& expr) {
             return;
         }
 
-        // If we're executing within a module, check if the function exists in that module first
+        // Check if this is a native function in the current executing module first
+        if (!currentExecutingModule.empty() && registry.isNative(currentExecutingModule, functionName)) {
+            lastValue = evaluateNativeCall(currentExecutingModule, functionName, args);
+            return;
+        }
+
+        // If we're executing within a module, check if the function exists in that module
         if (!currentExecutingModule.empty() &&
             moduleFunctions.count(currentExecutingModule) &&
             moduleFunctions.at(currentExecutingModule).count(functionName)) {
             FunctionDecl& funcDeclRef = moduleFunctions.at(currentExecutingModule).at(functionName).get();
             lastValue = callModuleFunction(currentExecutingModule, functionName, args, &funcDeclRef);
-            return;
-        }
-
-        // Check if this is a native function in the current executing module
-        if (!currentExecutingModule.empty() && registry.isNative(currentExecutingModule, functionName)) {
-            lastValue = evaluateNativeCall(currentExecutingModule, functionName, args);
             return;
         }
 
@@ -1350,7 +1350,7 @@ void Interpreter::visit(MapLiteralExpr& expr) {
     std::unordered_map<std::string, std::any> mapData;
     for (const auto& pair : expr.entries) {
         pair.second->accept(*this);
-        
+
         // Unwrap RuntimeValue to std::any
         std::any anyValue;
         if (std::holds_alternative<int>(lastValue.value)) {
@@ -1368,10 +1368,80 @@ void Interpreter::visit(MapLiteralExpr& expr) {
         } else if (std::holds_alternative<std::any>(lastValue.value)) {
             anyValue = std::get<std::any>(lastValue.value);
         }
-        
+
         mapData[pair.first] = anyValue;
     }
     lastValue = RuntimeValue(std::any(mapData), "map<string,any>");
+}
+
+void Interpreter::visit(ArrayLiteralExpr& expr) {
+    // Collect element values and determine array type
+    std::string elementType = "any";
+
+    // Evaluate first element to determine type
+    if (!expr.elements.empty()) {
+        expr.elements[0]->accept(*this);
+        elementType = lastValue.type;
+    }
+
+    // Build appropriate typed array
+    if (elementType == "string") {
+        std::vector<std::string> arrayData;
+        for (const auto& element : expr.elements) {
+            element->accept(*this);
+            if (std::holds_alternative<std::string>(lastValue.value)) {
+                arrayData.push_back(std::get<std::string>(lastValue.value));
+            } else {
+                error("Array elements must be of the same type (expected: string, got: " + lastValue.type + ")");
+                return;
+            }
+        }
+        lastValue = RuntimeValue(std::any(arrayData), "array<string>");
+    } else if (elementType == "int") {
+        std::vector<int> arrayData;
+        for (const auto& element : expr.elements) {
+            element->accept(*this);
+            if (std::holds_alternative<int>(lastValue.value)) {
+                arrayData.push_back(std::get<int>(lastValue.value));
+            } else {
+                error("Array elements must be of the same type (expected: int, got: " + lastValue.type + ")");
+                return;
+            }
+        }
+        lastValue = RuntimeValue(std::any(arrayData), "array<int>");
+    } else if (elementType == "double") {
+        std::vector<double> arrayData;
+        for (const auto& element : expr.elements) {
+            element->accept(*this);
+            if (std::holds_alternative<double>(lastValue.value)) {
+                arrayData.push_back(std::get<double>(lastValue.value));
+            } else {
+                error("Array elements must be of the same type (expected: double, got: " + lastValue.type + ")");
+                return;
+            }
+        }
+        lastValue = RuntimeValue(std::any(arrayData), "array<double>");
+    } else if (elementType == "bool") {
+        std::vector<bool> arrayData;
+        for (const auto& element : expr.elements) {
+            element->accept(*this);
+            if (std::holds_alternative<bool>(lastValue.value)) {
+                arrayData.push_back(std::get<bool>(lastValue.value));
+            } else {
+                error("Array elements must be of the same type (expected: bool, got: " + lastValue.type + ")");
+                return;
+            }
+        }
+        lastValue = RuntimeValue(std::any(arrayData), "array<bool>");
+    } else {
+        // Generic array for other types
+        std::vector<RuntimeValue> arrayData;
+        for (const auto& element : expr.elements) {
+            element->accept(*this);
+            arrayData.push_back(lastValue);
+        }
+        lastValue = RuntimeValue(std::any(arrayData), "array<" + elementType + ">");
+    }
 }
 
 void Interpreter::visit(LambdaExpr& expr) {
@@ -1750,8 +1820,31 @@ void Interpreter::visit(ForStmt& stmt) {
             error("Unsupported map type in for loop: " + iterableValue.type);
         }
     }
+    // Handle string iteration (iterate over characters)
+    else if (iterableValue.type == "string") {
+        if (!std::holds_alternative<std::string>(iterableValue.value)) {
+            error("Invalid string value in for loop");
+        }
+
+        const std::string& str = std::get<std::string>(iterableValue.value);
+
+        // Iterate over each character
+        for (size_t i = 0; i < str.length(); ++i) {
+            // Create new scope for loop body
+            enterScope();
+
+            // Define loop variable with current character as a string
+            std::string charStr(1, str[i]);
+            currentEnv->define(stmt.variable.lexeme, RuntimeValue(charStr));
+
+            // Execute loop body
+            stmt.body->accept(*this);
+
+            exitScope();
+        }
+    }
     else {
-        error("For loop requires an iterable (array or map), got: " + iterableValue.type);
+        error("For loop requires an iterable (array, map, or string), got: " + iterableValue.type);
     }
 }
 

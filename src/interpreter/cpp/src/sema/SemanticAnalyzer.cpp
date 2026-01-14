@@ -603,6 +603,12 @@ void SemanticAnalyzer::visit(MapLiteralExpr& expr) {
     }
 }
 
+void SemanticAnalyzer::visit(ArrayLiteralExpr& expr) {
+    for (const auto& element : expr.elements) {
+        element->accept(*this);
+    }
+}
+
 void SemanticAnalyzer::visit(LambdaExpr& expr) {
     bool previousAsync = currentFunctionIsAsync;
     currentFunctionIsAsync = expr.isAsync;

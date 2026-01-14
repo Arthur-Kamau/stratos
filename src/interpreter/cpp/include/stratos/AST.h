@@ -22,6 +22,7 @@ class GroupingExpr;
 class CastExpr; // Forward declaration
 class AwaitExpr; // Forward declaration
 class MapLiteralExpr; // Forward declaration
+class ArrayLiteralExpr; // Forward declaration
 class LambdaExpr; // Forward declaration
 class StructInitExpr; // Forward declaration
 class VarDecl;
@@ -51,6 +52,7 @@ public:
     virtual void visit(CastExpr& expr) = 0; // Visit method for CastExpr
     virtual void visit(AwaitExpr& expr) = 0; // Visit method for AwaitExpr
     virtual void visit(MapLiteralExpr& expr) = 0; // Visit method for MapLiteralExpr
+    virtual void visit(ArrayLiteralExpr& expr) = 0; // Visit method for ArrayLiteralExpr
     virtual void visit(LambdaExpr& expr) = 0; // Visit method for LambdaExpr
     virtual void visit(StructInitExpr& expr) = 0; // Visit method for StructInitExpr
 
@@ -185,6 +187,16 @@ public:
 
     MapLiteralExpr(std::vector<std::pair<std::string, std::unique_ptr<Expr>>> entries)
         : entries(std::move(entries)) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class ArrayLiteralExpr : public Expr {
+public:
+    std::vector<std::unique_ptr<Expr>> elements;
+
+    ArrayLiteralExpr(std::vector<std::unique_ptr<Expr>> elements)
+        : elements(std::move(elements)) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };

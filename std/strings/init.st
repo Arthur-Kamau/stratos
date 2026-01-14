@@ -39,7 +39,8 @@ fn isDigit(s: string) bool {
     }
 
     val digits = "0123456789";
-    for val char in s {
+    for val i in 0..length(s) {
+        val char = charAt(s, i);
         if !contains(digits, char) {
             return false;
         }
@@ -252,29 +253,63 @@ fn commonPrefix(strings_array: Array<string>) string {
 }
 
 // sprintf - String formatting with placeholders
-// Replaces {} placeholders in format string with arguments
-// Example: sprintf("Hello {}, you are {} years old", ["Alice", "25"])
-fn sprintf(format: string, args: Array<any>) string {
+// Supports both {} and Rust-like format specifiers:
+//   {} - default formatting (converts to string)
+//   %v - value (default formatting)
+//   %s - string
+//   %d - integer
+//   %f - float/double
+//   %#v - debug representation (with type info)
+// Example: sprintf("Hello %s, you are %d years old", ["Alice", "25"])
+// Example: sprintf("Debug: %#v", [someValue])
+fn sprintf(format: string, args: Array<string>) string {
     var result = format;
-    var argIndex = 0;
 
-    // Replace each {} with the corresponding argument
-    for val arg in args {
-        // Convert arg to string
-        val argStr = "" + arg;
+    // Process each argument
+    for val i in 0..args.length() {
+        val arg = args[i];
+        var replaced = false;
 
-        // Find the first occurrence of {}
-        val placeholder = "{}";
-        val index = indexOf(result, placeholder);
-
-        if index >= 0 {
-            // Replace the first {} with the argument
-            val before = substring(result, 0, index);
-            val after = substring(result, index + 2, length(result));
-            result = before + argStr + after;
+        // Try to find format specifiers in order of priority
+        // First try %#v (debug format)
+        var idx = indexOf(result, "%#v");
+        if idx >= 0 {
+            val before = substring(result, 0, idx);
+            val after = substring(result, idx + 3, length(result));
+            result = before + arg + after;
+            replaced = true;
         }
 
-        argIndex = argIndex + 1;
+        // Then try %v, %s, %d, %f
+        if !replaced {
+            idx = indexOf(result, "%v");
+            if idx < 0 {
+                idx = indexOf(result, "%s");
+            }
+            if idx < 0 {
+                idx = indexOf(result, "%d");
+            }
+            if idx < 0 {
+                idx = indexOf(result, "%f");
+            }
+
+            if idx >= 0 {
+                val before = substring(result, 0, idx);
+                val after = substring(result, idx + 2, length(result));
+                result = before + arg + after;
+                replaced = true;
+            }
+        }
+
+        // Finally try {} (positional)
+        if !replaced {
+            idx = indexOf(result, "{}");
+            if idx >= 0 {
+                val before = substring(result, 0, idx);
+                val after = substring(result, idx + 2, length(result));
+                result = before + arg + after;
+            }
+        }
     }
 
     return result;

@@ -671,6 +671,11 @@ void IRGenerator::visit(MapLiteralExpr& expr) {
     lastVal = {"null", "i8*"};
 }
 
+void IRGenerator::visit(ArrayLiteralExpr& expr) {
+    // Arrays not fully supported in IR gen yet
+    lastVal = {"null", "i8*"};
+}
+
 void IRGenerator::visit(LambdaExpr& expr) {
     // TODO: IR Gen for lambdas
     lastVal = {"null", "i8*"};

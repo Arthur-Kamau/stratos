@@ -41,6 +41,7 @@ public:
     void visit(GroupingExpr& expr) override;
     void visit(CastExpr& expr) override;
     void visit(MapLiteralExpr& expr) override;
+    void visit(ArrayLiteralExpr& expr) override;
     void visit(LambdaExpr& expr) override;
     void visit(AwaitExpr& expr) override;
     void visit(StructInitExpr& expr) override;
