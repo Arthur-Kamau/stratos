@@ -24,17 +24,30 @@ fn main() {
     val add10 = makeAdder(10);
     println("5 + 10 = " + add10(5));
 
-    // 4. Map implementation using callbacks
-    fn map(arr: Array<int>, transform: Function) Array<int> {
-        val result = []; 
-        
+    // 4. Array transformation using callbacks
+    println("--- Array Transformation ---");
+    val numbers: Array<int> = [1, 2, 3, 4, 5];
+
+    // Transform each element
+    println("Original: 1, 2, 3, 4, 5");
+    println("Doubled:");
+    for val i in 0..numbers.length() {
+        val doubled = (numbers[i]) * 2;
+        println("  " + numbers[i] + " -> " + doubled);
+    }
+
+    // Using a callback for transformation
+    fn processArray(arr: Array<int>, callback: Function) void {
         for val i in 0..arr.length() {
             val item = arr[i];
-            val transformed = transform(item);
-            result.push(transformed);
+            callback(item);
         }
-        return result;
     }
-    
+
+    println("Squared using callback:");
+    processArray(numbers, (n) => {
+        println("  " + n + " -> " + (n * n));
+    });
+
     println("--- Done ---");
 }
