@@ -126,7 +126,7 @@ void NativeRegistry::initCollections() {
         // Return an empty map<string, any>
         std::unordered_map<std::string, std::any> map;
         return map;
-    }, FunctionSignature{{}, "Map<K, V>"});
+    }, FunctionSignature{{}, "map<string, any>"});
 
     // mapOf<K, V>(entries) - Create map from entries
     registerFunction("collections", "mapOf", [](const std::vector<std::any>& args) -> std::any {
@@ -135,7 +135,7 @@ void NativeRegistry::initCollections() {
         // For now return empty or simple implementation if args provided
         // This is complex as entries is Array<Pair<K,V>> which is List<Object>...
         return map;
-    }, FunctionSignature{{"Array<Pair<K, V>>"}, "Map<K, V>"});
+    }, FunctionSignature{{"Array<Pair<K, V>>"}, "map<K, V>"});
 
     // newList<T>() - Implementation returns a native array (vector)
     registerFunction("collections", "newList", [](const std::vector<std::any>& args) -> std::any {

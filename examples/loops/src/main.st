@@ -111,8 +111,9 @@ fn forLoopOverMap() void {
     config.put("timeout", "30");
 
     println("Configuration:");
-    for val key in config {
-        val value = config[key];
+    for val entry in config.entries() {
+        val key = entry.first;
+        val value = entry.second;
         println("  " + key + " = " + value);
     }
 }

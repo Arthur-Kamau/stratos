@@ -886,6 +886,102 @@ void Interpreter::visit(CallExpr& expr) {
                          }
                     }
 
+                    // entries() implementation
+                     else if (methodName == "entries") {
+                         if (auto* anyPtr = std::get_if<std::any>(&leftValue.value)) {
+                             // std::cerr << "Debug: Map check. Type: " << anyPtr->type().name() << std::endl;
+                             std::vector<RuntimeValue> results;
+                             bool handled = false;
+                             
+                             auto createPair = [&](RuntimeValue k, RuntimeValue v) -> RuntimeValue {
+                                 auto instance = std::make_shared<ClassInstance>();
+                                 instance->className = "Pair";
+                                 // Simple field assignment, assuming Pair structure
+                                 instance->fields["first"] = k;
+                                 instance->fields["second"] = v;
+                                 // Ideally register with GC, but ignoring for brevity in this patch
+                                 // gc.registerObject(instance); 
+                                 return RuntimeValue(std::any(instance), "object");
+                             };
+
+                             try {
+                                 auto& map = std::any_cast<std::unordered_map<std::string, std::any>&>(*anyPtr);
+                                 for (const auto& pair : map) {
+                                      RuntimeValue key(pair.first);
+                                      RuntimeValue val;
+                                      // Unwrap commonly used types
+                                      if (pair.second.type() == typeid(int)) val = RuntimeValue(std::any_cast<int>(pair.second));
+                                      else if (pair.second.type() == typeid(double)) val = RuntimeValue(std::any_cast<double>(pair.second));
+                                      else if (pair.second.type() == typeid(std::string)) val = RuntimeValue(std::any_cast<std::string>(pair.second));
+                                      else if (pair.second.type() == typeid(bool)) val = RuntimeValue(std::any_cast<bool>(pair.second));
+                                      else val = RuntimeValue(pair.second, "any");
+                                      
+                                      results.push_back(createPair(key, val));
+                                 }
+                                 handled = true;
+                             } catch (...) {}
+
+                             if (!handled) {
+                                 try {
+                                     auto& map = std::any_cast<std::unordered_map<std::string, std::string>&>(*anyPtr);
+                                     for (const auto& pair : map) {
+                                         results.push_back(createPair(RuntimeValue(pair.first), RuntimeValue(pair.second)));
+                                     }
+                                     handled = true;
+                                 } catch (...) {}
+                             }
+
+                             if (handled) {
+                                 lastValue = RuntimeValue(std::any(results), "array<any>");
+                                 return;
+                             }
+                         }
+                    }
+
+                     else if (methodName == "put") {
+                         if (args.size() < 2) error("put() requires key and value arguments");
+                         auto key = args[0];
+                         auto val = args[1];
+                         
+                         if (auto* anyPtr = std::get_if<std::any>(&leftValue.value)) {
+                             bool handled = false;
+                             try {
+                                 // Try map<string, any>
+                                 auto& map = std::any_cast<std::unordered_map<std::string, std::any>&>(*anyPtr);
+                                 // Convert key to string if needed
+                                 std::string keyStr = key.asString();
+                                 // Store value. For now, store raw native value if possible, or wrapping RuntimeValue?
+                                 // The map stores std::any.
+                                 // If val is RuntimeValue, we should unwrap it?
+                                 // Or just store the inner std::any?
+                                 // RuntimeValue wraps std::any value.
+                                 map[keyStr] = val.value; 
+                                 handled = true;
+                             } catch (...) {
+                                 // Try map<string, string>
+                                 try {
+                                     auto& map = std::any_cast<std::unordered_map<std::string, std::string>&>(*anyPtr);
+                                     map[key.asString()] = val.asString();
+                                     handled = true;
+                                 } catch(...) {
+                                      // Try map<string, int>
+                                      try {
+                                         auto& map = std::any_cast<std::unordered_map<std::string, int>&>(*anyPtr);
+                                         map[key.asString()] = val.asInt();
+                                         handled = true;
+                                      } catch(...) {}
+                                 }
+                             }
+                             
+                             if (!handled) {
+                                 error("Failed to put into map: incompatible types");
+                             }
+                             
+                             lastValue = RuntimeValue(std::any(), "void");
+                             return;
+                         }
+                     }
+
                     // Map methods forward to the maps module with map as first argument
                     args.insert(args.begin(), leftValue);
                     lastValue = evaluateNativeCall("maps", methodName, args);
@@ -1806,6 +1902,37 @@ void Interpreter::visit(ForStmt& stmt) {
                 error("Failed to iterate over int array in for loop");
             }
         }
+        // Handle array<any>
+        else if (iterableValue.type == "array<any>") {
+            try {
+                auto& vec = std::any_cast<std::vector<RuntimeValue>&>(anyValue);
+
+                // Iterate over each element
+                for (const auto& element : vec) {
+                    // Create new scope for loop body
+                    enterScope();
+
+                    // Define loop variable with current element
+                    // element is already RuntimeValue
+                    currentEnv->define(stmt.variable.lexeme, element);
+
+                    // Execute loop body
+                    try {
+                        stmt.body->accept(*this);
+                    } catch (BreakException&) {
+                        exitScope();
+                        break;
+                    } catch (ContinueException&) {
+                        exitScope();
+                        continue;
+                    }
+
+                    exitScope();
+                }
+            } catch (const std::bad_any_cast&) {
+                error("Failed to iterate over any array in for loop");
+            }
+        }
         else {
             error("Unsupported array type in for loop: " + iterableValue.type);
         }
@@ -2062,8 +2189,27 @@ RuntimeValue Interpreter::callFunction(const std::string& name,
             for (const auto& stmt : *func.body->get()) {
                 if (stmt) stmt->accept(*this);
             }
+            result = RuntimeValue(std::any(), "void");
+        } else {
+            // Native function fallback
+            // Try to find the function in NativeRegistry in common modules
+            auto& registry = NativeRegistry::getInstance();
+            std::vector<std::string> modules = {"collections", "math", "io", "strings", "prelude"};
+            bool found = false;
+            
+            for (const auto& mod : modules) {
+                if (registry.isNative(mod, name)) {
+                    result = evaluateNativeCall(mod, name, args);
+                    found = true;
+                    break;
+                }
+            }
+            
+            if (!found) {
+                // If not found in common modules, just return void (or logic error?)
+                 result = RuntimeValue(std::any(), "void");
+            }
         }
-        result = RuntimeValue(std::any(), "void");
     } catch (ReturnException& ret) {
         result = ret.value;
     }

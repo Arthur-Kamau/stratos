@@ -251,8 +251,8 @@ class Environment {
 
     pub fn restore() void {
         // Restore all original environment variables
-        this.originalVars.keys().forEach((key) => {
-            setenv(key, this.originalVars.get(key));
+        this.originalVars.entries().forEach((entry) => {
+            setenv(entry.first, entry.second);
         });
     }
 
@@ -266,16 +266,17 @@ fn newEnvironment() Environment {
 }
 
 // Temporary environment for execution
-fn withEnv(vars: Map<string, string>, fn: Function) void {
+fn withEnv(vars: Map<string, string>, action: Function) void {
     val env = newEnvironment();
 
     // Set temporary variables
-    vars.keys().forEach((key) => {
-        env.set(key, vars.get(key));
+    vars.entries().forEach((entry) => {
+        env.set(entry.first, entry.second);
     });
 
     // Execute function
-    fn();
+    action();
+
 
     // Restore original environment
     env.restore();

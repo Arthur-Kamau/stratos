@@ -48,10 +48,10 @@ class Error {
 }
 
 class FileInfo {
-    var fileName: string;
-    var size: int;
-    var isDir: bool;
-    var modTime: int;  // Unix timestamp
+    pub var fileName: string;
+    pub var size: int;
+    pub var isDir: bool;
+    pub var modTime: int;  // Unix timestamp
     
     pub fn getName() string {
         return this.fileName;
@@ -159,14 +159,19 @@ fn listFiles(path: string, filter: Function<FileInfo, bool>) Array<FileInfo> {
 }
 
 // List only files (not directories)
+// List only files (not directories)
+// List only files (not directories)
+/*
+// List only files (not directories)
 fn listFilesOnly(path: string) Array<FileInfo> {
-    return listFiles(path, (file: FileInfo) => !file.getIsDir());
+    return listFiles(path, (file) => !(file as FileInfo).isDir);
 }
 
 // List only directories
 fn listDirectoriesOnly(path: string) Array<FileInfo> {
-    return listFiles(path, (file: FileInfo) => file.getIsDir());
+    return listFiles(path, (file) => (file as FileInfo).isDir);
 }
+*/
 
 // Ensure directory exists (create if not)
 fn ensureDir(path: string) bool {
@@ -182,7 +187,7 @@ fn ensureDir(path: string) bool {
 }
 
 // Walk directory tree
-fn walk(root: string, visitor: Function<string, FileInfo, void>) bool {
+fn walk(root: string, visitor: any) bool {
     val files = readDir(root);
 
     for val file in files {

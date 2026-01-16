@@ -70,11 +70,11 @@ fn parseWithHeaders(csv: string) Result<Array<Map<string, string>>, Error> {
     val headers = rows[0];
     var result = Array<Map<string, string>>();
 
-    for i in 1..rows.length() {
+    for val i in 1..rows.length() {
         val row = rows[i];
         var obj = collections.newMap<string, string>();
 
-        for j in 0..headers.length() {
+        for val j in 0..headers.length() {
             if j < row.length() {
                 obj.put(headers[j], row[j]);
             }
@@ -181,11 +181,11 @@ fn filterRows(records: Array<Array<string>>, predicate: Function<Array<string>, 
 }
 
 // Map CSV rows
-fn mapRows(records: Array<Array<string>>, fn: Function<Array<string>, Array<string>>) Array<Array<string>> {
+fn mapRows(records: Array<Array<string>>, mapper: Function<Array<string>, Array<string>>) Array<Array<string>> {
     var mapped = Array<Array<string>>();
 
     for val record in records {
-        mapped.add(fn(record));
+        mapped.add(mapper(record));
     }
 
     return mapped;
@@ -200,7 +200,7 @@ fn transpose(records: Array<Array<string>>) Array<Array<string>> {
     val numCols = records[0].length();
     var transposed = Array<Array<string>>();
 
-    for col in 0..numCols {
+    for val col in 0..numCols {
         var newRow = Array<string>();
         for val record in records {
             if col < record.length() {
@@ -220,7 +220,7 @@ fn mergeByColumns(records1: Array<Array<string>>, records2: Array<Array<string>>
     var merged = Array<Array<string>>();
     val maxRows = math.max(records1.length(), records2.length());
 
-    for i in 0..maxRows {
+    for val i in 0..maxRows {
         var row = Array<string>();
 
         if i < records1.length() {

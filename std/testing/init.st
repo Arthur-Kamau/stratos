@@ -121,20 +121,20 @@ fn skip(testName: string, testBody: Function) void {
 }
 
 // Setup hooks (simplified - just execute immediately)
-fn beforeEach(fn: Function) void {
-    fn();
+fn beforeEach(action: Function) void {
+    action();
 }
 
-fn afterEach(fn: Function) void {
-    fn();
+fn afterEach(action: Function) void {
+    action();
 }
 
-fn beforeAll(fn: Function) void {
-    fn();
+fn beforeAll(action: Function) void {
+    action();
 }
 
-fn afterAll(fn: Function) void {
-    fn();
+fn afterAll(action: Function) void {
+    action();
 }
 
 // ============================================================================

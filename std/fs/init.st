@@ -1,9 +1,10 @@
-package std.fs
+package std.fs;
 
 // Native C bindings
-extern fn fopen(filename: string, mode: string) any; // returns FILE*
-extern fn fclose(stream: any) int;
-extern fn fputs(str: string, stream: any) int;
+// Native C bindings
+fn fopen(filename: string, mode: string) any; // returns FILE*
+fn fclose(stream: any) int;
+fn fputs(str: string, stream: any) int;
 
 class File {
     var handle: any; // FILE*

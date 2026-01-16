@@ -197,6 +197,11 @@ void SemanticAnalyzer::defineNativeFunctions() {
     auto& timerMethods = classMembers["Timer"];
     timerMethods["stop"] = Symbol::Function("stop", {}, "void");
     timerMethods["reset"] = Symbol::Function("reset", {"Duration"}, "void");
+
+    // --- Pair ---
+    auto& pairMethods = classMembers["Pair"];
+    pairMethods["first"] = Symbol::Variable("first", "any", false);
+    pairMethods["second"] = Symbol::Variable("second", "any", false);
 }
 
 bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& statements) {
@@ -461,6 +466,11 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
         
         // Check for member access (method call or property get)
         // If the left type is a class/struct, check if the member exists
+        if (baseType == "any") {
+            // Allow dynamic member access on 'any' type
+            return;
+        }
+
         if (classMembers.find(baseType) != classMembers.end()) {
              if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
                  std::string methodName = rightVar->name.lexeme;

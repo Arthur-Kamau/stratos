@@ -35,7 +35,7 @@ class PromiseResult<T> {
 // Basic async operations
 fn delay(ms: int) void;
 fn sleep(ms: int) void;
-fn spawn(fn: Function) void;
+fn spawn(action: Function) void;
 
 // Future combinators (to be implemented in C++)
 // fn all<T>(futures: Array<Future<T>>) Future<Array<T>>;
