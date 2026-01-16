@@ -53,7 +53,9 @@ public:
     void visit(IfStmt& stmt) override {}
     void visit(WhileStmt& stmt) override {}
     void visit(ForStmt& stmt) override {}
-    void visit(ReturnStmt& stmt) override {}
+    void visit(ReturnStmt& stmt) override;
+    void visit(BreakStmt& stmt) override;
+    void visit(ContinueStmt& stmt) override;
 
 private:
     std::string sourceFile_;

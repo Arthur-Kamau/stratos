@@ -439,4 +439,14 @@ void Formatter::visit(ReturnStmt& stmt) {
     newline();
 }
 
+void Formatter::visit(BreakStmt& stmt) {
+    write("break;");
+    newline();
+}
+
+void Formatter::visit(ContinueStmt& stmt) {
+    write("continue;");
+    newline();
+}
+
 } // namespace stratos

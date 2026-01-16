@@ -60,6 +60,8 @@ public:
     void visit(WhileStmt& stmt) override;
     void visit(ForStmt& stmt) override;
     void visit(ReturnStmt& stmt) override;
+    void visit(BreakStmt& stmt) override;
+    void visit(ContinueStmt& stmt) override;
 
 private:
     std::ostringstream output_;

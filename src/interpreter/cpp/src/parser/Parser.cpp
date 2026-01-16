@@ -40,7 +40,8 @@ std::unique_ptr<Stmt> Parser::declaration() {
             return fnDeclaration("function", true, true);
         }
         if (match({TokenType::FN})) return fnDeclaration("function", true); // Top level functions are public by default (exported)
-        if (match({TokenType::CLASS, TokenType::STRUCT, TokenType::INTERFACE})) return classDeclaration();
+        if (match({TokenType::CLASS, TokenType::INTERFACE})) return classDeclaration();
+        if (match({TokenType::STRUCT})) return structDeclaration();
         if (match({TokenType::ENUM})) return enumDeclaration();
         if (match({TokenType::PACKAGE})) return packageDeclaration();
         if (match({TokenType::USE})) return useStatement();
@@ -239,8 +240,6 @@ std::unique_ptr<Stmt> Parser::structDeclaration() {
     consume(TokenType::LEFT_BRACE, "Expect '{' before struct body.");
 
     std::vector<std::unique_ptr<Stmt>> methods; // Structs fields are VarDecls
-    
-    std::cerr << "DEBUG: Parsing struct " << name.lexeme << std::endl;
 
     while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
         bool isPublic = true; // Struct fields are public by default
@@ -248,25 +247,16 @@ std::unique_ptr<Stmt> Parser::structDeclaration() {
             isPublic = true;
         }
 
-        if (!check(TokenType::IDENTIFIER)) {
-             std::cerr << "DEBUG: Struct parse loop - Expected IDENTIFIER, found " << peek().toString() << std::endl;
-             break; // avoid infinite loop if we get stuck
-        }
-
         Token fieldName = consume(TokenType::IDENTIFIER, "Expect field name.");
         consume(TokenType::COLON, "Expect ':' after field name.");
         std::string typeName = parseType();
         consume(TokenType::SEMICOLON, "Expect ';' after field declaration.");
-
-        std::cerr << "DEBUG: Parsed struct field " << fieldName.lexeme << " type=" << typeName << std::endl;
 
         // Create a VarDecl for the field
         // Fields in structs are mutable by default in this implementation context
         auto varDecl = std::make_unique<VarDecl>(fieldName, typeName, nullptr, true, isPublic); 
         methods.push_back(std::move(varDecl));
     }
-    
-    std::cerr << "DEBUG: Finished parsing struct " << name.lexeme << " with " << methods.size() << " fields." << std::endl;
 
     consume(TokenType::RIGHT_BRACE, "Expect '}' after struct body.");
 
@@ -360,6 +350,8 @@ std::unique_ptr<Stmt> Parser::statement() {
     if (match({TokenType::WHILE})) return whileStatement();
     if (match({TokenType::FOR})) return forStatement();
     if (match({TokenType::RETURN})) return returnStatement();
+    if (match({TokenType::BREAK})) return breakStatement();
+    if (match({TokenType::CONTINUE})) return continueStatement();
     if (match({TokenType::WHEN})) return whenStatement();
     if (match({TokenType::LEFT_BRACE})) return block();
 
@@ -451,6 +443,18 @@ std::unique_ptr<Stmt> Parser::returnStatement() {
     }
     consume(TokenType::SEMICOLON, "Expect ';' after return value.");
     return std::make_unique<ReturnStmt>(keyword, std::move(value));
+}
+
+std::unique_ptr<Stmt> Parser::breakStatement() {
+    Token keyword = previous();
+    consume(TokenType::SEMICOLON, "Expect ';' after 'break'.");
+    return std::make_unique<BreakStmt>(keyword);
+}
+
+std::unique_ptr<Stmt> Parser::continueStatement() {
+    Token keyword = previous();
+    consume(TokenType::SEMICOLON, "Expect ';' after 'continue'.");
+    return std::make_unique<ContinueStmt>(keyword);
 }
 
 std::unique_ptr<Stmt> Parser::block() {

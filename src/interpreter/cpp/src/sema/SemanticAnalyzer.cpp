@@ -268,7 +268,7 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
                         error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined." + loc);
                     }
                     // Register members
-                    std::cerr << "DEBUG: Registering class " << classDecl->name.lexeme << " with " << classDecl->methods.size() << " members" << std::endl;
+                    // std::cout << "DEBUG: Registering class " << classDecl->name.lexeme << " with " << classDecl->methods.size() << " members" << std::endl;
                     for (const auto& member : classDecl->methods) {
                          if (auto* func = dynamic_cast<FunctionDecl*>(member.get())) {
                              std::vector<std::string> pTypes;
@@ -278,9 +278,6 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
                          } else if (auto* var = dynamic_cast<VarDecl*>(member.get())) {
                              Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, var->isPublic); 
                              classMembers[classDecl->name.lexeme][var->name.lexeme] = sym;
-                             std::cerr << "DEBUG: Registered field in analyze: " << classDecl->name.lexeme << "." << var->name.lexeme << " isPublic=" << var->isPublic << std::endl;
-                         } else {
-                             std::cerr << "DEBUG: Member is neither FunctionDecl nor VarDecl" << std::endl;
                          }
                     }
                 } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(decl.get())) {
@@ -462,8 +459,6 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
             baseType = baseType.substr(0, paramStart);
         }
         
-        std::cerr << "DEBUG: BinaryExpr DOT access on type '" << leftType << "' (base: '" << baseType << "')" << std::endl;
-
         // Check for member access (method call or property get)
         // If the left type is a class/struct, check if the member exists
         if (classMembers.find(baseType) != classMembers.end()) {
@@ -478,18 +473,12 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
                      bool isNative = (baseType == "string" || baseType == "Array" || baseType == "array" || baseType == "map" || baseType == "Map" || baseType == "File" || baseType == "Result");
                      bool isAccessible = isNative || methodSym.isPublic || (currentClassName == baseType);
                      
-                     std::cerr << "DEBUG: Found member '" << methodName << "' in '" << baseType << "'. isPublic=" << methodSym.isPublic << ", isAccessible=" << isAccessible << std::endl;
-
                      if (!isAccessible) {
                          error(rightVar->name, "Member '" + methodName + "' is private and cannot be accessed from outside class '" + leftType + "'.");
                      }
                      return; // Resolved as valid member
-                 } else {
-                     std::cerr << "DEBUG: Member '" << methodName << "' NOT found in classMembers[" << baseType << "]" << std::endl;
                  }
              }
-        } else {
-             std::cerr << "DEBUG: Type '" << baseType << "' NOT found in classMembers" << std::endl;
         }
         
         // Check if this is an enum value access (e.g., Color.RED)
@@ -913,12 +902,16 @@ void SemanticAnalyzer::visit(IfStmt& stmt) {
 
 void SemanticAnalyzer::visit(WhileStmt& stmt) {
     stmt.condition->accept(*this);
+    loopDepth++;
     stmt.body->accept(*this);
+    loopDepth--;
 }
 
 void SemanticAnalyzer::visit(ForStmt& stmt) {
     // Analyze the iterable expression first (in outer scope)
     stmt.iterable->accept(*this);
+    
+    loopDepth++;
 
     // Enter new scope for loop variable and body
     symbolTable.enterScope();
@@ -947,6 +940,8 @@ void SemanticAnalyzer::visit(ForStmt& stmt) {
 
     // Exit loop scope
     symbolTable.exitScope();
+    
+    loopDepth--;
 }
 
 void SemanticAnalyzer::visit(ReturnStmt& stmt) {
@@ -954,6 +949,18 @@ void SemanticAnalyzer::visit(ReturnStmt& stmt) {
         stmt.value->accept(*this);
     }
     // TODO: Check if return type matches function signature
+}
+
+void SemanticAnalyzer::visit(BreakStmt& stmt) {
+    if (loopDepth == 0) {
+        error(stmt.keyword, "'break' cannot be used outside of a loop.");
+    }
+}
+
+void SemanticAnalyzer::visit(ContinueStmt& stmt) {
+    if (loopDepth == 0) {
+        error(stmt.keyword, "'continue' cannot be used outside of a loop.");
+    }
 }
 
 void SemanticAnalyzer::loadModule(const std::string& moduleName) {

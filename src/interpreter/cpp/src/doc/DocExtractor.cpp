@@ -151,4 +151,16 @@ void DocExtractor::visit(UseStmt& stmt) {
     }
 }
 
+void DocExtractor::visit(ReturnStmt& stmt) {
+    // No documentation for return statements
+}
+
+void DocExtractor::visit(BreakStmt& stmt) {
+    // No documentation for break statements
+}
+
+void DocExtractor::visit(ContinueStmt& stmt) {
+    // No documentation for continue statements
+}
+
 } // namespace stratos

@@ -37,7 +37,10 @@ class WhileStmt;
 class ForStmt;
 class ReturnStmt;
 class PackageDecl;
+class PackageDecl;
 class UseStmt;
+class BreakStmt;
+class ContinueStmt;
 
 // Visitor Interface
 class ASTVisitor {
@@ -69,6 +72,8 @@ public:
     virtual void visit(WhileStmt& stmt) = 0;
     virtual void visit(ForStmt& stmt) = 0;
     virtual void visit(ReturnStmt& stmt) = 0;
+    virtual void visit(BreakStmt& stmt) = 0;
+    virtual void visit(ContinueStmt& stmt) = 0;
 };
 
 // Base Node
@@ -397,6 +402,24 @@ public:
 
     ReturnStmt(Token keyword, std::unique_ptr<Expr> value)
         : keyword(keyword), value(std::move(value)) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class BreakStmt : public Stmt {
+public:
+    Token keyword;
+
+    BreakStmt(Token keyword) : keyword(keyword) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class ContinueStmt : public Stmt {
+public:
+    Token keyword;
+
+    ContinueStmt(Token keyword) : keyword(keyword) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };

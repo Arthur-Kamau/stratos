@@ -4,6 +4,8 @@
 
 Write-Host "Building Stratos interpreter..." -ForegroundColor Cyan
 
+Set-Location $PSScriptRoot
+
 # Compile SQLite as C first
 Write-Host "Compiling SQLite..." -ForegroundColor Yellow
 gcc -c libs/sqlite/sqlite3.c -o build/sqlite3.o

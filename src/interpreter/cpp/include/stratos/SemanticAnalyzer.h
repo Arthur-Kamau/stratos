@@ -43,6 +43,8 @@ public:
     void visit(WhileStmt& stmt) override;
     void visit(ForStmt& stmt) override;
     void visit(ReturnStmt& stmt) override;
+    void visit(BreakStmt& stmt) override;
+    void visit(ContinueStmt& stmt) override;
 
 private:
     SymbolTable symbolTable;
@@ -51,6 +53,7 @@ private:
     std::string lastExprType; // Track the type of the last evaluated expression
     std::string currentClassName; // Track current class name for 'this' context
     bool currentFunctionIsAsync = false; // Track if we're inside an async function/lambda
+    int loopDepth = 0; // Track if we are inside a loop
 
     std::string projectRoot;
     std::unordered_map<std::string, std::unordered_map<std::string, Symbol>> classMembers; // Store members of classes for access control 

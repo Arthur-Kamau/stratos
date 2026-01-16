@@ -1723,7 +1723,13 @@ void Interpreter::visit(WhileStmt& stmt) {
 
         if (!isTruthy(condition)) break;
 
-        stmt.body->accept(*this);
+        try {
+            stmt.body->accept(*this);
+        } catch (BreakException&) {
+            break;
+        } catch (ContinueException&) {
+            continue;
+        }
     }
 }
 
@@ -1754,7 +1760,15 @@ void Interpreter::visit(ForStmt& stmt) {
                     currentEnv->define(stmt.variable.lexeme, RuntimeValue(element));
 
                     // Execute loop body
-                    stmt.body->accept(*this);
+                    try {
+                        stmt.body->accept(*this);
+                    } catch (BreakException&) {
+                        exitScope();
+                        break;
+                    } catch (ContinueException&) {
+                        exitScope();
+                        continue;
+                    }
 
                     exitScope();
                 }
@@ -1776,7 +1790,15 @@ void Interpreter::visit(ForStmt& stmt) {
                     currentEnv->define(stmt.variable.lexeme, RuntimeValue(element));
 
                     // Execute loop body
-                    stmt.body->accept(*this);
+                    try {
+                        stmt.body->accept(*this);
+                    } catch (BreakException&) {
+                        exitScope();
+                        break;
+                    } catch (ContinueException&) {
+                        exitScope();
+                        continue;
+                    }
 
                     exitScope();
                 }
@@ -1809,7 +1831,15 @@ void Interpreter::visit(ForStmt& stmt) {
                     currentEnv->define(stmt.variable.lexeme, RuntimeValue(pair.first));
 
                     // Execute loop body
-                    stmt.body->accept(*this);
+                    try {
+                        stmt.body->accept(*this);
+                    } catch (BreakException&) {
+                        exitScope();
+                        break;
+                    } catch (ContinueException&) {
+                        exitScope();
+                        continue;
+                    }
 
                     exitScope();
                 }
@@ -1838,7 +1868,15 @@ void Interpreter::visit(ForStmt& stmt) {
             currentEnv->define(stmt.variable.lexeme, RuntimeValue(charStr));
 
             // Execute loop body
-            stmt.body->accept(*this);
+            try {
+                stmt.body->accept(*this);
+            } catch (BreakException&) {
+                exitScope();
+                break;
+            } catch (ContinueException&) {
+                exitScope();
+                continue;
+            }
 
             exitScope();
         }
@@ -1859,6 +1897,14 @@ void Interpreter::visit(ReturnStmt& stmt) {
     }
 
     throw ReturnException(value);
+}
+
+void Interpreter::visit(BreakStmt& stmt) {
+    throw BreakException();
+}
+
+void Interpreter::visit(ContinueStmt& stmt) {
+    throw ContinueException();
 }
 
 // --- Helper Methods ---

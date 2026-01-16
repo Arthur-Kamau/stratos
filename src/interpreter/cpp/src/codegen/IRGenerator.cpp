@@ -1030,4 +1030,8 @@ void IRGenerator::generateNativeCall(const std::string& moduleName, const std::s
     }
 }
 
+// TODO: Implement IR generation for control flow
+void IRGenerator::visit(BreakStmt& stmt) {}
+void IRGenerator::visit(ContinueStmt& stmt) {}
+
 } // namespace stratos

@@ -143,6 +143,16 @@ public:
     ReturnException(RuntimeValue val) : std::runtime_error("return"), value(val) {}
 };
 
+class BreakException : public std::runtime_error {
+public:
+    BreakException() : std::runtime_error("break") {}
+};
+
+class ContinueException : public std::runtime_error {
+public:
+    ContinueException() : std::runtime_error("continue") {}
+};
+
 // AST Interpreter - executes Stratos programs directly
 class Interpreter : public ASTVisitor {
 public:
@@ -185,6 +195,8 @@ public:
     void visit(WhileStmt& stmt) override;
     void visit(ForStmt& stmt) override;
     void visit(ReturnStmt& stmt) override;
+    void visit(BreakStmt& stmt) override;
+    void visit(ContinueStmt& stmt) override;
 
 private:
     // Forward declaration
