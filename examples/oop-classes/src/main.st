@@ -9,14 +9,18 @@ class BankAccount {
         this.balance = initialBalance;
     }
 
-    fn deposit(amount: int) void {
+      pub  fn getOwner() string {
+        return this.owner;
+    }
+
+  pub  fn deposit(amount: int) void {
         if amount > 0 {
             this.balance = this.balance + amount;
             println(this.owner + " deposited " + amount);
         }
     }
 
-    fn withdraw(amount: int) bool {
+  pub  fn withdraw(amount: int) bool {
         if amount <= this.balance {
             this.balance = this.balance - amount;
             println(this.owner + " withdrew " + amount);
@@ -27,7 +31,7 @@ class BankAccount {
         }
     }
 
-    fn getBalance() int {
+ pub   fn getBalance() int {
         return this.balance;
     }
 }
@@ -36,7 +40,7 @@ fn main() {
     println("--- OOP Classes Demo ---");
     
     val account = BankAccount("Alice", 100);
-    println("Created account for " + account.owner);
+    println("Created account for " + account.getOwner());
     
     account.deposit(50);
     println("Balance: " + account.getBalance());

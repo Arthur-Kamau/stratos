@@ -11,6 +11,7 @@
  */
 package main;
 
+use math;
 use math_utils;
 use user;
 use geometry;
@@ -30,13 +31,13 @@ fn main() {
 
     // 1. Using documented math functions
     println("--- Math Utilities ---");
-    val result = factorial(5);
+    val result = math.factorial(5);
     println("Factorial of 5 is: " + result);
 
-    val primeCheck = isPrime(17);
+    val primeCheck = math.isPrime(17);
     println("Is 17 prime? " + primeCheck);
 
-    val gcdVal = gcd(48, 18);
+    val gcdVal = math.gcd(48, 18);
     println("GCD of 48 and 18: " + gcdVal);
 
     if (isValidEmail("test@example.com")) {

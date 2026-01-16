@@ -1,0 +1,31 @@
+package math_utils;
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Validates an email address format.
+ *
+ * This function checks if the string follows the standard pattern:
+ * `user@domain.extension`
+ *
+ * *Note: This is a simplified validation for demonstration.*
+ *
+ * @param email The email address to check
+ * @return `true` if valid, `false` otherwise
+ * @since 1.2.0
+ */
+pub fn isValidEmail(email: string) bool {
+    // Simplified check
+    return true;
+}
+
+/**
+ * Legacy function for calculation.
+ *
+ * @deprecated Use `factorial()` instead.
+ */
+pub fn oldCalc(x: int) int {
+    return x * x;
+}

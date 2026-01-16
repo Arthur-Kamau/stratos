@@ -218,19 +218,53 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
 
         // Check for PackageDecl and process its contents
         if (auto* pkgDecl = dynamic_cast<PackageDecl*>(statements[i].get())) {
+            std::cerr << "DEBUG: First pass - Processing PackageDecl '" << pkgDecl->name.lexeme << "' with " << pkgDecl->declarations.size() << " declarations" << std::endl;
             for (const auto& decl : pkgDecl->declarations) {
                 if (auto* funcDecl = dynamic_cast<FunctionDecl*>(decl.get())) {
                     std::vector<std::string> paramTypes;
                     for (const auto& param : funcDecl->parameters) {
                         paramTypes.push_back(param.type);
                     }
-                    Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType, funcDecl->isPublic);
+                    Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType, funcDecl->isPublic, funcDecl->isAsync, funcDecl->name.line, funcDecl->name.column, funcDecl->name.file);
                     if (!symbolTable.define(funcSymbol)) {
-                        error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined.");
+                        auto existing = symbolTable.resolve(funcDecl->name.lexeme);
+                        std::string loc = "";
+                        if (existing) {
+                            if (existing->line > 0) {
+                                std::filesystem::path p(existing->file.empty() ? "" : existing->file);
+                                std::string fileName = p.filename().string();
+                                loc = " (previously defined at ";
+                                if (!fileName.empty()) {
+                                    loc += fileName + ":";
+                                }
+                                loc += std::to_string(existing->line) + ":" + std::to_string(existing->column) + ")";
+                            } else if (!existing->file.empty()) {
+                                std::filesystem::path p(existing->file);
+                                loc = " (previously defined in " + p.filename().string() + ")";
+                            }
+                        }
+                        error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined." + loc);
                     }
                 } else if (auto* classDecl = dynamic_cast<ClassDecl*>(decl.get())) {
-                    if (!symbolTable.define(Symbol{classDecl->name.lexeme, SymbolKind::CLASS, classDecl->name.lexeme, false})) {
-                        error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined.");
+                    std::cerr << "DEBUG: First pass - Found ClassDecl '" << classDecl->name.lexeme << "' in package" << std::endl;
+                    if (!symbolTable.define(Symbol::Class(classDecl->name.lexeme, classDecl->name.lexeme, false, classDecl->name.line, classDecl->name.column, classDecl->name.file))) {
+                        auto existing = symbolTable.resolve(classDecl->name.lexeme);
+                        std::string loc = "";
+                        if (existing) {
+                            if (existing->line > 0) {
+                                std::filesystem::path p(existing->file.empty() ? "" : existing->file);
+                                std::string fileName = p.filename().string();
+                                loc = " (previously defined at ";
+                                if (!fileName.empty()) {
+                                    loc += fileName + ":";
+                                }
+                                loc += std::to_string(existing->line) + ":" + std::to_string(existing->column) + ")";
+                            } else if (!existing->file.empty()) {
+                                std::filesystem::path p(existing->file);
+                                loc = " (previously defined in " + p.filename().string() + ")";
+                            }
+                        }
+                        error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined." + loc);
                     }
                     // Register members
                     // std::cout << "DEBUG: Registering class " << classDecl->name.lexeme << " with " << classDecl->methods.size() << " members" << std::endl;
@@ -252,8 +286,24 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
                          }
                     }
                 } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(decl.get())) {
-                    if (!symbolTable.define(Symbol{enumDecl->name.lexeme, SymbolKind::CLASS, enumDecl->name.lexeme, false})) {
-                        error(enumDecl->name, "Enum '" + enumDecl->name.lexeme + "' is already defined.");
+                    if (!symbolTable.define(Symbol::Class(enumDecl->name.lexeme, enumDecl->name.lexeme, false, enumDecl->name.line, enumDecl->name.column, enumDecl->name.file))) {
+                        auto existing = symbolTable.resolve(enumDecl->name.lexeme);
+                        std::string loc = "";
+                        if (existing) {
+                            if (existing->line > 0) {
+                                std::filesystem::path p(existing->file.empty() ? "" : existing->file);
+                                std::string fileName = p.filename().string();
+                                loc = " (previously defined at ";
+                                if (!fileName.empty()) {
+                                    loc += fileName + ":";
+                                }
+                                loc += std::to_string(existing->line) + ":" + std::to_string(existing->column) + ")";
+                            } else if (!existing->file.empty()) {
+                                std::filesystem::path p(existing->file);
+                                loc = " (previously defined in " + p.filename().string() + ")";
+                            }
+                        }
+                        error(enumDecl->name, "Enum '" + enumDecl->name.lexeme + "' is already defined." + loc);
                     }
                     for (const auto& value : enumDecl->values) {
                         std::string fullName = enumDecl->name.lexeme + "." + value.lexeme;
@@ -289,7 +339,23 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
             }
         } else if (auto* classDecl = dynamic_cast<ClassDecl*>(statements[i].get())) {
             if (!symbolTable.define(Symbol::Class(classDecl->name.lexeme, classDecl->name.lexeme, false, classDecl->name.line, classDecl->name.column, classDecl->name.file))) {
-                error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined.");
+                auto existing = symbolTable.resolve(classDecl->name.lexeme);
+                std::string loc = "";
+                if (existing) {
+                    if (existing->line > 0) {
+                        std::filesystem::path p(existing->file.empty() ? "" : existing->file);
+                        std::string fileName = p.filename().string();
+                        loc = " (previously defined at ";
+                        if (!fileName.empty()) {
+                            loc += fileName + ":";
+                        }
+                        loc += std::to_string(existing->line) + ":" + std::to_string(existing->column) + ")";
+                    } else if (!existing->file.empty()) {
+                        std::filesystem::path p(existing->file);
+                        loc = " (previously defined in " + p.filename().string() + ")";
+                    }
+                }
+                error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined." + loc);
             }
             // Register members
             for (const auto& member : classDecl->methods) {
@@ -305,7 +371,23 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
             }
         } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(statements[i].get())) {
             if (!symbolTable.define(Symbol::Class(enumDecl->name.lexeme, enumDecl->name.lexeme, false, enumDecl->name.line, enumDecl->name.column, enumDecl->name.file))) {
-                error(enumDecl->name, "Enum '" + enumDecl->name.lexeme + "' is already defined.");
+                auto existing = symbolTable.resolve(enumDecl->name.lexeme);
+                std::string loc = "";
+                if (existing) {
+                    if (existing->line > 0) {
+                        std::filesystem::path p(existing->file.empty() ? "" : existing->file);
+                        std::string fileName = p.filename().string();
+                        loc = " (previously defined at ";
+                        if (!fileName.empty()) {
+                            loc += fileName + ":";
+                        }
+                        loc += std::to_string(existing->line) + ":" + std::to_string(existing->column) + ")";
+                    } else if (!existing->file.empty()) {
+                        std::filesystem::path p(existing->file);
+                        loc = " (previously defined in " + p.filename().string() + ")";
+                    }
+                }
+                error(enumDecl->name, "Enum '" + enumDecl->name.lexeme + "' is already defined." + loc);
             }
             // Also register enum values in first pass
             for (const auto& value : enumDecl->values) {
@@ -355,7 +437,14 @@ void SemanticAnalyzer::error(const std::string& message) {
 }
 
 void SemanticAnalyzer::error(Token token, const std::string& message) {
-    std::cerr << "[Error] " << token.line << ":" << token.column << ": " << message << std::endl;
+    std::string location = "[Error] ";
+    if (!token.file.empty()) {
+        // Extract just the filename from the path for brevity
+        std::filesystem::path p(token.file);
+        location += p.filename().string() + ":";
+    }
+    location += std::to_string(token.line) + ":" + std::to_string(token.column) + ": ";
+    std::cerr << location << message << std::endl;
     hadError = true;
 }
 
@@ -669,10 +758,12 @@ void SemanticAnalyzer::visit(FunctionDecl& stmt) {
     }
 
     // Enter new scope for function body
+    std::cerr << "DEBUG: Visiting FunctionDecl '" << stmt.name.lexeme << "', currentClassName='" << currentClassName << "'" << std::endl;
     symbolTable.enterScope();
 
     // If we're in a class, define 'this' in the method scope
     if (!currentClassName.empty()) {
+        std::cerr << "DEBUG: Defining 'this' in FunctionDecl scope with type '" << currentClassName << "'" << std::endl;
         symbolTable.define(Symbol::Variable("this", currentClassName, false));
     }
 
@@ -708,9 +799,11 @@ void SemanticAnalyzer::visit(ClassDecl& stmt) {
     // Set current class context
     std::string previousClassName = currentClassName;
     currentClassName = stmt.name.lexeme;
+    std::cerr << "DEBUG: Visiting ClassDecl for '" << stmt.name.lexeme << "', setting currentClassName" << std::endl;
 
     symbolTable.enterScope();
     // Define 'this'
+    std::cerr << "DEBUG: Defining 'this' in ClassDecl scope for '" << stmt.name.lexeme << "'" << std::endl;
     symbolTable.define(Symbol::Variable("this", stmt.name.lexeme, false, false, stmt.name.line, stmt.name.column, stmt.name.file));
 
     for (const auto& member : stmt.methods) {
@@ -739,7 +832,7 @@ void SemanticAnalyzer::visit(EnumDecl& stmt) {
 }
 
 void SemanticAnalyzer::visit(PackageDecl& stmt) {
-    // std::cout << "  [PackageDecl] Package: " << stmt.name.lexeme << " with " << stmt.declarations.size() << " declarations" << std::endl;
+    std::cerr << "DEBUG: Visiting PackageDecl '" << stmt.name.lexeme << "' with " << stmt.declarations.size() << " declarations" << std::endl;
     // Package declaration (like "package main;") just declares what package
     // this file belongs to - it doesn't create a symbol in the namespace.
     // Don't define the package name as a symbol to avoid conflicts.
@@ -748,8 +841,14 @@ void SemanticAnalyzer::visit(PackageDecl& stmt) {
     // Process declarations within the package without creating a new scope
     // or defining the package name as a symbol
     for (size_t i = 0; i < stmt.declarations.size(); ++i) {
-        // std::cout << "  [PackageDecl] Processing declaration " << (i+1) << "/" << stmt.declarations.size() << std::endl;
-        if (stmt.declarations[i]) stmt.declarations[i]->accept(*this);
+        if (stmt.declarations[i]) {
+            if (auto* classDecl = dynamic_cast<ClassDecl*>(stmt.declarations[i].get())) {
+                std::cerr << "DEBUG:   - Declaration " << i << ": ClassDecl '" << classDecl->name.lexeme << "'" << std::endl;
+            } else if (auto* funcDecl = dynamic_cast<FunctionDecl*>(stmt.declarations[i].get())) {
+                std::cerr << "DEBUG:   - Declaration " << i << ": FunctionDecl '" << funcDecl->name.lexeme << "'" << std::endl;
+            }
+            stmt.declarations[i]->accept(*this);
+        }
     }
 }
 
@@ -757,8 +856,11 @@ void SemanticAnalyzer::visit(UseStmt& stmt) {
     // Load the module if not already loaded
     std::string moduleName = stmt.moduleName.lexeme;
 
+    std::cerr << "DEBUG: UseStmt processing module '" << moduleName << "'" << std::endl;
+
     // Check if already loaded
     if (std::find(loadedModules.begin(), loadedModules.end(), moduleName) != loadedModules.end()) {
+        std::cerr << "DEBUG: Module '" << moduleName << "' already loaded" << std::endl;
         return; // Already loaded
     }
 
@@ -776,6 +878,7 @@ void SemanticAnalyzer::visit(UseStmt& stmt) {
 
     // Define the module name as a variable in the current scope
     symbolTable.define(Symbol::Variable(moduleName, "module", false, false, stmt.moduleName.line, stmt.moduleName.column, stmt.moduleName.file));
+    std::cerr << "DEBUG: UseStmt completed for module '" << moduleName << "'" << std::endl;
 }
 
 void SemanticAnalyzer::visit(BlockStmt& stmt) {
@@ -911,9 +1014,15 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
     }
 
     if (moduleFilePath.empty()) {
+        std::cerr << "DEBUG: Module '" << moduleName << "' not found. Searched paths:" << std::endl;
+        for (const auto& path : searchPaths) {
+            std::cerr << "  - " << path << std::endl;
+        }
         error("Could not find module '" + moduleName + "'. Searched in std directories.");
         return;
     }
+
+    std::cerr << "DEBUG: Found module '" << moduleName << "' at: " << moduleFilePath << std::endl;
 
     // UPDATED: Now we parse ALL modules (std and user-defined) to support pure Stratos implementations
     // /* OLD BEHAVIOR - commented out to preserve history
@@ -968,8 +1077,10 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
 
     // Parse and process each file in the module
     for (const auto& filePath : moduleFiles) {
+        std::cerr << "DEBUG: Processing module file: " << filePath << std::endl;
         std::ifstream file(filePath);
         if (!file.is_open()) {
+            std::cerr << "DEBUG: Failed to open file: " << filePath << std::endl;
             continue; // Skip files we can't open
         }
 
@@ -984,6 +1095,23 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
 
             Parser parser(tokens);
             std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
+            std::cerr << "DEBUG: Parsed " << statements.size() << " statements from " << filePath << std::endl;
+
+            // Debug: print what types of statements we got
+            for (size_t i = 0; i < statements.size(); ++i) {
+                if (!statements[i]) continue;
+                if (dynamic_cast<PackageDecl*>(statements[i].get())) {
+                    std::cerr << "  Statement " << i << ": PackageDecl" << std::endl;
+                } else if (auto* classDecl = dynamic_cast<ClassDecl*>(statements[i].get())) {
+                    std::cerr << "  Statement " << i << ": ClassDecl '" << classDecl->name.lexeme << "'" << std::endl;
+                } else if (auto* funcDecl = dynamic_cast<FunctionDecl*>(statements[i].get())) {
+                    std::cerr << "  Statement " << i << ": FunctionDecl '" << funcDecl->name.lexeme << "'" << std::endl;
+                } else if (dynamic_cast<UseStmt*>(statements[i].get())) {
+                    std::cerr << "  Statement " << i << ": UseStmt" << std::endl;
+                } else {
+                    std::cerr << "  Statement " << i << ": Other type" << std::endl;
+                }
+            }
 
             // Two-pass processing like analyze() does:
             // First pass: Collect all function, class, and enum declarations
@@ -998,11 +1126,46 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
                     }
                     Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType, funcDecl->isPublic, funcDecl->isAsync, funcDecl->name.line, funcDecl->name.column, funcDecl->name.file);
                     if (!symbolTable.define(funcSymbol)) {
-                        error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined.");
+                        auto existing = symbolTable.resolve(funcDecl->name.lexeme);
+                        std::string loc = "";
+                        if (existing) {
+                            if (existing->line > 0) {
+                                std::filesystem::path p(existing->file.empty() ? "" : existing->file);
+                                std::string fileName = p.filename().string();
+                                loc = " (previously defined at ";
+                                if (!fileName.empty()) {
+                                    loc += fileName + ":";
+                                }
+                                loc += std::to_string(existing->line) + ":" + std::to_string(existing->column) + ")";
+                            } else if (!existing->file.empty()) {
+                                std::filesystem::path p(existing->file);
+                                loc = " (previously defined in " + p.filename().string() + ")";
+                            }
+                        }
+                        error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined." + loc);
                     }
                 } else if (auto* classDecl = dynamic_cast<ClassDecl*>(statements[i].get())) {
+                    std::cerr << "DEBUG: Registering class '" << classDecl->name.lexeme << "' from file: " << filePath << std::endl;
                     if (!symbolTable.define(Symbol::Class(classDecl->name.lexeme, classDecl->name.lexeme, false, classDecl->name.line, classDecl->name.column, classDecl->name.file))) {
-                        error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined.");
+                        auto existing = symbolTable.resolve(classDecl->name.lexeme);
+                        std::string loc = "";
+                        if (existing) {
+                            if (existing->line > 0) {
+                                std::filesystem::path p(existing->file.empty() ? "" : existing->file);
+                                std::string fileName = p.filename().string();
+                                loc = " (previously defined at ";
+                                if (!fileName.empty()) {
+                                    loc += fileName + ":";
+                                }
+                                loc += std::to_string(existing->line) + ":" + std::to_string(existing->column) + ")";
+                            } else if (!existing->file.empty()) {
+                                std::filesystem::path p(existing->file);
+                                loc = " (previously defined in " + p.filename().string() + ")";
+                            }
+                        }
+                        error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined." + loc);
+                    } else {
+                        std::cerr << "DEBUG: Successfully registered class '" << classDecl->name.lexeme << "'" << std::endl;
                     }
                     // Register members
                     for (const auto& member : classDecl->methods) {
@@ -1020,7 +1183,23 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
                     }
                 } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(statements[i].get())) {
                     if (!symbolTable.define(Symbol::Class(enumDecl->name.lexeme, enumDecl->name.lexeme, false, enumDecl->name.line, enumDecl->name.column, enumDecl->name.file))) {
-                        error(enumDecl->name, "Enum '" + enumDecl->name.lexeme + "' is already defined.");
+                        auto existing = symbolTable.resolve(enumDecl->name.lexeme);
+                        std::string loc = "";
+                        if (existing) {
+                            if (existing->line > 0) {
+                                std::filesystem::path p(existing->file.empty() ? "" : existing->file);
+                                std::string fileName = p.filename().string();
+                                loc = " (previously defined at ";
+                                if (!fileName.empty()) {
+                                    loc += fileName + ":";
+                                }
+                                loc += std::to_string(existing->line) + ":" + std::to_string(existing->column) + ")";
+                            } else if (!existing->file.empty()) {
+                                std::filesystem::path p(existing->file);
+                                loc = " (previously defined in " + p.filename().string() + ")";
+                            }
+                        }
+                        error(enumDecl->name, "Enum '" + enumDecl->name.lexeme + "' is already defined." + loc);
                     }
                     // Also register enum values in first pass
                     for (const auto& value : enumDecl->values) {
