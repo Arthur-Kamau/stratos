@@ -29,6 +29,13 @@ std::unique_ptr<Stmt> Parser::declaration() {
 
         // std::cout << "[Parser::declaration] Current token: " << peek().lexeme << " (type " << static_cast<int>(peek().type) << ")" << std::endl;
 
+        // Check for common mistake: using 'function' instead of 'fn'
+        if (check(TokenType::IDENTIFIER) && peek().lexeme == "function") {
+            if (current + 1 < tokens.size() && tokens[current + 1].type == TokenType::IDENTIFIER) {
+                throw ParseError("Stratos uses 'fn' to declare functions, not 'function'.", peek().line, peek().column);
+            }
+        }
+
         bool isPublic = match({TokenType::PUB});
 
         if (match({TokenType::VAR, TokenType::VAL})) {

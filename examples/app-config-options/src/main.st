@@ -1,6 +1,6 @@
 package main;
 
-function start(){
+fn main(){
  
   println("Hey there");
 

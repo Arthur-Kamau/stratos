@@ -1,0 +1,3 @@
+Hello from Stratos!
+This is a test file.
+Error handling works!
