@@ -234,10 +234,11 @@ public:
     std::string typeName;
     std::unique_ptr<Expr> initializer;
     bool isMutable;
+    bool isPublic;
     std::unique_ptr<DocComment> documentation;
 
-    VarDecl(Token name, std::string typeName, std::unique_ptr<Expr> initializer, bool isMutable)
-        : name(name), typeName(typeName), initializer(std::move(initializer)), isMutable(isMutable), documentation(nullptr) {}
+    VarDecl(Token name, std::string typeName, std::unique_ptr<Expr> initializer, bool isMutable, bool isPublic = false)
+        : name(name), typeName(typeName), initializer(std::move(initializer)), isMutable(isMutable), isPublic(isPublic), documentation(nullptr) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };

@@ -29,9 +29,11 @@ std::unique_ptr<Stmt> Parser::declaration() {
 
         // std::cout << "[Parser::declaration] Current token: " << peek().lexeme << " (type " << static_cast<int>(peek().type) << ")" << std::endl;
 
+        bool isPublic = match({TokenType::PUB});
+
         if (match({TokenType::VAR, TokenType::VAL})) {
             // std::cout << "[Parser::declaration] Matched VAR/VAL, calling varDeclaration()" << std::endl;
-            return varDeclaration();
+            return varDeclaration(isPublic);
         }
         if (match({TokenType::ASYNC})) {
             consume(TokenType::FN, "Expect 'fn' after 'async'.");
@@ -48,13 +50,13 @@ std::unique_ptr<Stmt> Parser::declaration() {
 
         return statement();
     } catch (ParseError& error) {
-        // std::cout << "[Parser::declaration] Caught ParseError: " << error.what() << " at " << error.line << ":" << error.column << std::endl;
+        std::cout << "[Parser::declaration] Caught ParseError: " << error.what() << " at " << error.line << ":" << error.column << std::endl;
         synchronize();
         return nullptr;
     }
 }
 
-std::unique_ptr<Stmt> Parser::varDeclaration() {
+std::unique_ptr<Stmt> Parser::varDeclaration(bool isPublic) {
     bool isMutable = (previous().type == TokenType::VAR);
     Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
 
@@ -69,7 +71,7 @@ std::unique_ptr<Stmt> Parser::varDeclaration() {
     }
 
     consume(TokenType::SEMICOLON, "Expect ';' after variable declaration.");
-    auto var = std::make_unique<VarDecl>(name, typeName, std::move(initializer), isMutable);
+    auto var = std::make_unique<VarDecl>(name, typeName, std::move(initializer), isMutable, isPublic);
     var->documentation = takePendingDoc();
     return var;
 }
@@ -176,13 +178,14 @@ std::unique_ptr<Stmt> Parser::classDeclaration() {
 
     std::vector<std::unique_ptr<Stmt>> methods;
     while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
+        bool isPublic = false;
+        if (match({TokenType::PUB})) {
+            isPublic = true;
+        }
+
         if (match({TokenType::VAR, TokenType::VAL})) {
-            methods.push_back(varDeclaration());
-        } else if (match({TokenType::FN, TokenType::PUB})) {
-             bool isPublic = (previous().type == TokenType::PUB);
-             if (isPublic) {
-                 consume(TokenType::FN, "Expect 'fn' after 'pub'.");
-             }
+            methods.push_back(varDeclaration(isPublic));
+        } else if (match({TokenType::FN})) {
              methods.push_back(fnDeclaration("method", isPublic));
         } else if (match({TokenType::CONSTRUCTOR})) {
             // Parse constructor as a special function named "constructor"
@@ -305,8 +308,14 @@ std::unique_ptr<Stmt> Parser::packageDeclaration() {
     if (check(TokenType::SEMICOLON)) {
         advance(); // consume the semicolon
     }
-    // Return empty package declaration (body will be rest of file)
-    auto pkg = std::make_unique<PackageDecl>(name, std::vector<std::unique_ptr<Stmt>>());
+    
+    // Parse the rest of the file as the package body
+    std::vector<std::unique_ptr<Stmt>> body;
+    while (!isAtEnd()) {
+        body.push_back(declaration());
+    }
+
+    auto pkg = std::make_unique<PackageDecl>(name, std::move(body));
     pkg->documentation = takePendingDoc();
     return pkg;
 }

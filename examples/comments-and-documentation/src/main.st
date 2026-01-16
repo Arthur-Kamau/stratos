@@ -16,6 +16,14 @@ use math_utils;
 use user;
 use geometry;
 
+
+class TestClass {
+    fn hello() {
+        print("Hello");
+    }
+}
+
+
 /**
  * Main entry point for the documentation demo.
  *

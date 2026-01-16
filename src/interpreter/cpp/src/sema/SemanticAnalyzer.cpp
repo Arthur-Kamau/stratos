@@ -275,7 +275,7 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
                              Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic);
                              classMembers[classDecl->name.lexeme][func->name.lexeme] = sym;
                          } else if (auto* var = dynamic_cast<VarDecl*>(member.get())) {
-                             Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, false); // Fields private by default?
+                             Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, var->isPublic); // Fields private by default?
                              // TODO: Add pub for fields if needed. For now, assume fields are public or handle separately.
                              // Documentation example showed: private var balance: double;
                              // We haven't implemented 'private' token or 'pub' for fields nicely yet in Parser?
@@ -365,7 +365,7 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
                         Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic, func->isAsync, func->name.line, func->name.column, func->name.file);
                         classMembers[classDecl->name.lexeme][func->name.lexeme] = sym;
                     } else if (auto* var = dynamic_cast<VarDecl*>(member.get())) {
-                        Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, false, var->name.line, var->name.column, var->name.file);
+                        Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, var->isPublic, var->name.line, var->name.column, var->name.file);
                         classMembers[classDecl->name.lexeme][var->name.lexeme] = sym;
                     }
             }
@@ -479,7 +479,7 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
                      bool isAccessible = isNative || methodSym.isPublic || (currentClassName == leftType);
                      
                      if (!isAccessible) {
-                         error(rightVar->name, "Method '" + methodName + "' is private and cannot be accessed from outside class '" + leftType + "'.");
+                         error(rightVar->name, "Member '" + methodName + "' is private and cannot be accessed from outside class '" + leftType + "'.");
                      }
                      return; // Resolved as valid member
                  }
