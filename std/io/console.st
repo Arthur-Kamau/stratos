@@ -18,4 +18,4 @@ fn println(message: string) {
 
 // Simplified readLine (requires more complex buffer handling in C usually)
 // For now, placeholder or wrapping simple gets?
-extern fn gets(buffer: string) any;
+//extern fn gets(buffer: string) any;

@@ -15,6 +15,12 @@ fn printSection(num: int, title: string) {
 
 fn main() {
     printHeader("Stratos Array Operations Demo");
+
+    val numbers: Array<int> = [1, 2, 3, 4, 5];
+    println("Array length: " + numbers . length());
+    println("First number: " + numbers[0]);
+    println("Last number: " + numbers[4]);
+
     printSection(1, "Creating Arrays from string Split");
     val text = "apple,banana,cherry,date,elderberry";
     val fruits = text . split(",");

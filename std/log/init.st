@@ -115,7 +115,7 @@ fn fatalWith(message: string, fields: Map<string, any>) void {
 }
 
 fn formatFields(fields: Map<string, any>) string {
-    if (fields.lenth == 0) {
+    if (fields.length == 0) {
         return "";
     }
     // Placeholder for field formatting

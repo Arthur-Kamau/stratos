@@ -236,9 +236,10 @@ fn commonPrefix(strings_array: Array<string>) string {
         var match = true;
 
         for val str in strings_array {
-            if !startsWith(str, prefix + char) {
-                match = false;
-                break;
+            if match {
+                if !startsWith(str, prefix + char) {
+                    match = false;
+                }
             }
         }
 

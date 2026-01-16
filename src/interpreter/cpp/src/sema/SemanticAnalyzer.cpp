@@ -103,10 +103,10 @@ void SemanticAnalyzer::defineNativeFunctions() {
     resultMethods["error"] = Symbol::Variable("error", "any", false);
 
     auto& fileInfoMethods = classMembers["FileInfo"];
-    fileInfoMethods["getName"] = Symbol::Function("getName", {}, "string");
-    fileInfoMethods["getSize"] = Symbol::Function("getSize", {}, "int");
-    fileInfoMethods["getIsDir"] = Symbol::Function("getIsDir", {}, "bool");
-    fileInfoMethods["getModTime"] = Symbol::Function("getModTime", {}, "int");
+    fileInfoMethods["getName"] = Symbol::Function("getName", {}, "string", true);
+    fileInfoMethods["getSize"] = Symbol::Function("getSize", {}, "int", true);
+    fileInfoMethods["getIsDir"] = Symbol::Function("getIsDir", {}, "bool", true);
+    fileInfoMethods["getModTime"] = Symbol::Function("getModTime", {}, "int", true);
     fileInfoMethods["fileName"] = Symbol::Variable("fileName", "string", false);
     fileInfoMethods["size"] = Symbol::Variable("size", "int", false);
     fileInfoMethods["isDir"] = Symbol::Variable("isDir", "bool", false);
@@ -247,6 +247,7 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
                     }
                 } else if (auto* classDecl = dynamic_cast<ClassDecl*>(decl.get())) {
                     std::cerr << "DEBUG: First pass - Found ClassDecl '" << classDecl->name.lexeme << "' in package" << std::endl;
+                    std::cerr << "DEBUG: Attempting to define class symbol..." << std::endl;
                     if (!symbolTable.define(Symbol::Class(classDecl->name.lexeme, classDecl->name.lexeme, false, classDecl->name.line, classDecl->name.column, classDecl->name.file))) {
                         auto existing = symbolTable.resolve(classDecl->name.lexeme);
                         std::string loc = "";
@@ -267,7 +268,7 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
                         error(classDecl->name, "Class '" + classDecl->name.lexeme + "' is already defined." + loc);
                     }
                     // Register members
-                    // std::cout << "DEBUG: Registering class " << classDecl->name.lexeme << " with " << classDecl->methods.size() << " members" << std::endl;
+                    std::cerr << "DEBUG: Registering class " << classDecl->name.lexeme << " with " << classDecl->methods.size() << " members" << std::endl;
                     for (const auto& member : classDecl->methods) {
                          if (auto* func = dynamic_cast<FunctionDecl*>(member.get())) {
                              std::vector<std::string> pTypes;
@@ -275,14 +276,11 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
                              Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic);
                              classMembers[classDecl->name.lexeme][func->name.lexeme] = sym;
                          } else if (auto* var = dynamic_cast<VarDecl*>(member.get())) {
-                             Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, var->isPublic); // Fields private by default?
-                             // TODO: Add pub for fields if needed. For now, assume fields are public or handle separately.
-                             // Documentation example showed: private var balance: double;
-                             // We haven't implemented 'private' token or 'pub' for fields nicely yet in Parser?
-                             // Parser handles 'private' via... wait, Parser doesn't handle 'private' keyword yet!
-                             // The user request said "functions in a class are not exported by default... unless they have pub".
-                             // So we focus on functions.
+                             Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, var->isPublic); 
                              classMembers[classDecl->name.lexeme][var->name.lexeme] = sym;
+                             std::cerr << "DEBUG: Registered field in analyze: " << classDecl->name.lexeme << "." << var->name.lexeme << " isPublic=" << var->isPublic << std::endl;
+                         } else {
+                             std::cerr << "DEBUG: Member is neither FunctionDecl nor VarDecl" << std::endl;
                          }
                     }
                 } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(decl.get())) {
@@ -453,9 +451,9 @@ void SemanticAnalyzer::error(Token token, const std::string& message) {
 void SemanticAnalyzer::visit(BinaryExpr& expr) {
     expr.left->accept(*this);
     std::string leftType = inferType(expr.left.get());
-
     if (expr.op.type == TokenType::DOT) {
-        // Handle member access (e.g., obj.field, Enum.VALUE, array.length())
+        expr.left->accept(*this);
+        std::string leftType = inferType(expr.left.get());
         
         // Helper to strip generics for member lookup: "List<T>" -> "List"
         std::string baseType = leftType;
@@ -463,9 +461,11 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
         if (paramStart != std::string::npos) {
             baseType = baseType.substr(0, paramStart);
         }
+        
+        std::cerr << "DEBUG: BinaryExpr DOT access on type '" << leftType << "' (base: '" << baseType << "')" << std::endl;
 
-        // Check object member access (methods and fields)
-        // This now handles native types (Array, map, string) as well as user classes
+        // Check for member access (method call or property get)
+        // If the left type is a class/struct, check if the member exists
         if (classMembers.find(baseType) != classMembers.end()) {
              if (auto* rightVar = dynamic_cast<VariableExpr*>(expr.right.get())) {
                  std::string methodName = rightVar->name.lexeme;
@@ -475,15 +475,21 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
                      Symbol methodSym = members[methodName];
                      
                      // Check visibility (native types are implicitly public)
-                     bool isNative = (baseType == "string" || baseType == "Array" || baseType == "array" || baseType == "map" || baseType == "Map");
-                     bool isAccessible = isNative || methodSym.isPublic || (currentClassName == leftType);
+                     bool isNative = (baseType == "string" || baseType == "Array" || baseType == "array" || baseType == "map" || baseType == "Map" || baseType == "File" || baseType == "Result");
+                     bool isAccessible = isNative || methodSym.isPublic || (currentClassName == baseType);
                      
+                     std::cerr << "DEBUG: Found member '" << methodName << "' in '" << baseType << "'. isPublic=" << methodSym.isPublic << ", isAccessible=" << isAccessible << std::endl;
+
                      if (!isAccessible) {
                          error(rightVar->name, "Member '" + methodName + "' is private and cannot be accessed from outside class '" + leftType + "'.");
                      }
                      return; // Resolved as valid member
+                 } else {
+                     std::cerr << "DEBUG: Member '" << methodName << "' NOT found in classMembers[" << baseType << "]" << std::endl;
                  }
              }
+        } else {
+             std::cerr << "DEBUG: Type '" << baseType << "' NOT found in classMembers" << std::endl;
         }
         
         // Check if this is an enum value access (e.g., Color.RED)
@@ -729,7 +735,7 @@ void SemanticAnalyzer::visit(VarDecl& stmt) {
             type = "any";
         }
     }
-    Symbol symbol = Symbol::Variable(stmt.name.lexeme, type, stmt.isMutable, false, stmt.name.line, stmt.name.column, stmt.name.file);
+    Symbol symbol = Symbol::Variable(stmt.name.lexeme, type, stmt.isMutable, stmt.isPublic, stmt.name.line, stmt.name.column, stmt.name.file);
 
     if (!symbolTable.define(symbol)) {
         error(stmt.name, "Variable '" + stmt.name.lexeme + "' is already defined in this scope.");
@@ -1118,6 +1124,49 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
             for (size_t i = 0; i < statements.size(); ++i) {
                 if (!statements[i]) continue;
 
+                // Check for PackageDecl and process its contents
+                if (auto* pkgDecl = dynamic_cast<PackageDecl*>(statements[i].get())) {
+                    std::cerr << "DEBUG: First pass - Processing PackageDecl '" << pkgDecl->name.lexeme << "' with " << pkgDecl->declarations.size() << " declarations" << std::endl;
+                    for (const auto& decl : pkgDecl->declarations) {
+                        if (auto* funcDecl = dynamic_cast<FunctionDecl*>(decl.get())) {
+                            std::vector<std::string> paramTypes;
+                            for (const auto& param : funcDecl->parameters) {
+                                paramTypes.push_back(param.type);
+                            }
+                            Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType, funcDecl->isPublic, funcDecl->isAsync, funcDecl->name.line, funcDecl->name.column, funcDecl->name.file);
+                            if (!symbolTable.define(funcSymbol)) {
+                                // Ignore redefinitions for now or handle gracefully
+                            }
+                        } else if (auto* classDecl = dynamic_cast<ClassDecl*>(decl.get())) {
+                            std::cerr << "DEBUG: Registering class '" << classDecl->name.lexeme << "' from file: " << filePath << std::endl;
+                            if (symbolTable.define(Symbol::Class(classDecl->name.lexeme, classDecl->name.lexeme, false, classDecl->name.line, classDecl->name.column, classDecl->name.file))) {
+                                std::cerr << "DEBUG: Successfully registered class '" << classDecl->name.lexeme << "'" << std::endl;
+                            }
+                            // Register members
+                            for (const auto& member : classDecl->methods) {
+                                if (auto* func = dynamic_cast<FunctionDecl*>(member.get())) {
+                                    std::vector<std::string> pTypes;
+                                    for (const auto& p : func->parameters) pTypes.push_back(p.type);
+                                    Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic, func->isAsync, func->name.line, func->name.column, func->name.file);
+                                    classMembers[classDecl->name.lexeme][func->name.lexeme] = sym;
+                                } else if (auto* var = dynamic_cast<VarDecl*>(member.get())) {
+                                    Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, var->isPublic, var->name.line, var->name.column, var->name.file);
+                                    classMembers[classDecl->name.lexeme][var->name.lexeme] = sym;
+                                }
+                            }
+                        } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(decl.get())) {
+                            if (symbolTable.define(Symbol::Class(enumDecl->name.lexeme, enumDecl->name.lexeme, false, enumDecl->name.line, enumDecl->name.column, enumDecl->name.file))) {
+                                // Success
+                            }
+                            for (const auto& value : enumDecl->values) {
+                                std::string fullName = enumDecl->name.lexeme + "." + value.lexeme;
+                                symbolTable.define(Symbol::Variable(fullName, enumDecl->name.lexeme, false, false, value.line, value.column, filePath));
+                            }
+                        }
+                    }
+                    continue;
+                }
+
                 // Only process declarations, not their bodies
                 if (auto* funcDecl = dynamic_cast<FunctionDecl*>(statements[i].get())) {
                     std::vector<std::string> paramTypes;
@@ -1176,7 +1225,7 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
                             classMembers[classDecl->name.lexeme][func->name.lexeme] = sym;
                             // std::cout << "DEBUG: Registered method " << classDecl->name.lexeme << "." << func->name.lexeme << " return=" << func->returnType << std::endl;
                         } else if (auto* var = dynamic_cast<VarDecl*>(member.get())) {
-                            Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, false, var->name.line, var->name.column, var->name.file);
+                            Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, var->isPublic, var->name.line, var->name.column, var->name.file);
                             classMembers[classDecl->name.lexeme][var->name.lexeme] = sym;
                             // std::cout << "DEBUG: Registered field " << classDecl->name.lexeme << "." << var->name.lexeme << " type=" << var->typeName << std::endl;
                         }
@@ -1294,6 +1343,10 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
                 if (symbolOpt->kind == SymbolKind::FUNCTION) {
                     return symbolOpt->returnType;
                 }
+                // If it's a variable (like a callback), check if it's a generic Function type
+                if (symbolOpt->type.find("Function<") == 0 && symbolOpt->type.back() == '>') {
+                     return symbolOpt->type.substr(9, symbolOpt->type.length() - 10);
+                }
                 return symbolOpt->type;
             }
         }
@@ -1384,6 +1437,10 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
         }
     } 
     
+    if (auto* castExpr = dynamic_cast<CastExpr*>(expr)) {
+        return castExpr->typeToken.lexeme;
+    }
+
     if (auto* structExpr = dynamic_cast<StructInitExpr*>(expr)) {
         return structExpr->name.lexeme;
     }

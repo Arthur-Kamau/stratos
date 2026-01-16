@@ -5,16 +5,16 @@ use json;
 use yaml;
 
 struct Address {
-    street: string;
-    city: string;
-    zip: int;
+   pub street: string;
+   pub city: string;
+   pub zip: int;
 }
 
 struct User {
-    id: int;
-    name: string;
-    active: bool;
-    address: Address;
+   pub id: int;
+   pub name: string;
+   pub active: bool;
+   pub address: Address;
 }
 
 fn main() {
@@ -47,7 +47,7 @@ fn main() {
     val inputJson: string = "{\"id\": 2, \"name\": \"Akira\", \"active\": false, \"address\": {\"street\": \"456 Lunar Ave\", \"city\": \"Moon City\", \"zip\": 12345}}";
     
     // Unmarshal using 'user' instance as a prototype/template
-    val newUser = json.jsonUnmarshal(inputJson, user);
+    val newUser = json.jsonUnmarshal(inputJson, user) as User;
     
     log.info("Restored User Name: " + newUser.name);
     log.info("Restored User City: " + newUser.address.city);
