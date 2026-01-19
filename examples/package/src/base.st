@@ -4,13 +4,13 @@ package main;
 // a package file can have multiple files.
 // a file can hold multiple classes
 class Base{
-     fn hello(){
+   pub  fn hello(){
          println("base hello");
      }
 }
 // example of an extra class
 class Core{
-     fn hello(){
+    pub fn hello(){
          println("core hello");
      }
 }

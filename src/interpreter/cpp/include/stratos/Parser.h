@@ -48,8 +48,12 @@ private:
     std::unique_ptr<Expr> pipe(); // New
     std::unique_ptr<Expr> logicOr();
     std::unique_ptr<Expr> logicAnd();
+    std::unique_ptr<Expr> bitwiseOr();
+    std::unique_ptr<Expr> bitwiseXor();
+    std::unique_ptr<Expr> bitwiseAnd();
     std::unique_ptr<Expr> equality();
     std::unique_ptr<Expr> comparison();
+    std::unique_ptr<Expr> bitwiseShift();
     std::unique_ptr<Expr> term();
     std::unique_ptr<Expr> factor();
     std::unique_ptr<Expr> unary();

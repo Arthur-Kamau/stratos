@@ -28,6 +28,10 @@ fn replace(s: string, old: string, new: string) string;
 fn replaceAll(s: string, old: string, new: string) string;
 fn repeat(s: string, count: int) string;
 
+// Conversion
+fn toBytes(s: string) Array<byte>;
+fn fromBytes(bytes: Array<byte>) string;
+
 // ============================================================================
 // Pure Stratos implementations
 // ============================================================================

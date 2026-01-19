@@ -2,6 +2,8 @@ package main;
 
 use crypto;
 use log;
+use strings;
+use io;
 
 fn main() {
     log.info("=== UUID v4 Generation Demo ===");

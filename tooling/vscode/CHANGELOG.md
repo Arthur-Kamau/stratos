@@ -4,7 +4,7 @@ All notable changes to the "stratos-laguage" extension will be documented in thi
 
 Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
 
-## [0.1.1] - 2026-01-08
+## [0.1.3] - 2026-01-08
 
 ### Added
 - Syntax highlighting for `.st` files.

@@ -1,9 +1,9 @@
 {
-    "name": "stratos-language",
-    "displayName": "Stratos Language",
+    "name": "stratos-language-support",
+    "displayName": "Stratos Language Support",
     "description": "Language support for Stratos",
-    "publisher": "arthurKamau",
-    "version": "0.1.3",
+    "publisher": "arthur-kamau",
+    "version": "0.2.0",
     "engines": {
         "vscode": "^1.75.0"
     },
@@ -14,7 +14,6 @@
     "activationEvents": [
         "onLanguage:stratos"
     ],
-    "publisher": "arthur-kamau",
     "repository": {
         "type": "git",
         "url": "https://github.com/Arthur-Kamau/stratos.git",

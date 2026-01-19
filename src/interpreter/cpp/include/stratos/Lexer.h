@@ -42,6 +42,7 @@ private:
     bool isAlpha(char c);
     bool isAlphaNumeric(char c);
     bool isDigit(char c);
+    bool isHexDigit(char c);
 };
 
 } // namespace stratos

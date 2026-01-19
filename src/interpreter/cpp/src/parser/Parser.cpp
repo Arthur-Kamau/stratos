@@ -531,8 +531,38 @@ std::unique_ptr<Expr> Parser::logicOr() {
 }
 
 std::unique_ptr<Expr> Parser::logicAnd() {
-    std::unique_ptr<Expr> expr = equality();
+    std::unique_ptr<Expr> expr = bitwiseOr();
     while (match({TokenType::AND})) {
+        Token op = previous();
+        std::unique_ptr<Expr> right = bitwiseOr();
+        expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
+    }
+    return expr;
+}
+
+std::unique_ptr<Expr> Parser::bitwiseOr() {
+    std::unique_ptr<Expr> expr = bitwiseXor();
+    while (match({TokenType::BITWISE_OR})) {
+        Token op = previous();
+        std::unique_ptr<Expr> right = bitwiseXor();
+        expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
+    }
+    return expr;
+}
+
+std::unique_ptr<Expr> Parser::bitwiseXor() {
+    std::unique_ptr<Expr> expr = bitwiseAnd();
+    while (match({TokenType::BITWISE_XOR})) {
+        Token op = previous();
+        std::unique_ptr<Expr> right = bitwiseAnd();
+        expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
+    }
+    return expr;
+}
+
+std::unique_ptr<Expr> Parser::bitwiseAnd() {
+    std::unique_ptr<Expr> expr = equality();
+    while (match({TokenType::BITWISE_AND})) {
         Token op = previous();
         std::unique_ptr<Expr> right = equality();
         expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
@@ -551,8 +581,18 @@ std::unique_ptr<Expr> Parser::equality() {
 }
 
 std::unique_ptr<Expr> Parser::comparison() {
-    std::unique_ptr<Expr> expr = term();
+    std::unique_ptr<Expr> expr = bitwiseShift();
     while (match({TokenType::GREATER, TokenType::GREATER_EQUAL, TokenType::LESS, TokenType::LESS_EQUAL})) {
+        Token op = previous();
+        std::unique_ptr<Expr> right = bitwiseShift();
+        expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
+    }
+    return expr;
+}
+
+std::unique_ptr<Expr> Parser::bitwiseShift() {
+    std::unique_ptr<Expr> expr = term();
+    while (match({TokenType::LEFT_SHIFT, TokenType::RIGHT_SHIFT})) {
         Token op = previous();
         std::unique_ptr<Expr> right = term();
         expr = std::make_unique<BinaryExpr>(std::move(expr), op, std::move(right));
@@ -581,7 +621,7 @@ std::unique_ptr<Expr> Parser::factor() {
 }
 
 std::unique_ptr<Expr> Parser::unary() {
-    if (match({TokenType::BANG, TokenType::MINUS})) {
+    if (match({TokenType::BANG, TokenType::MINUS, TokenType::BITWISE_NOT})) {
         Token op = previous();
         std::unique_ptr<Expr> right = unary();
         return std::make_unique<UnaryExpr>(op, std::move(right));

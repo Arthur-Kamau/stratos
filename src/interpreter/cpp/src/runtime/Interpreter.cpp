@@ -415,6 +415,46 @@ void Interpreter::visit(BinaryExpr& expr) {
             }
             break;
 
+        case TokenType::BITWISE_AND:
+            if (left.type == "int" && right.type == "int") {
+                lastValue = RuntimeValue(std::any(left.asInt() & right.asInt()), "int");
+            } else {
+                error("Bitwise AND requires integer operands");
+            }
+            break;
+
+        case TokenType::BITWISE_OR:
+            if (left.type == "int" && right.type == "int") {
+                lastValue = RuntimeValue(std::any(left.asInt() | right.asInt()), "int");
+            } else {
+                error("Bitwise OR requires integer operands");
+            }
+            break;
+
+        case TokenType::BITWISE_XOR:
+            if (left.type == "int" && right.type == "int") {
+                lastValue = RuntimeValue(std::any(left.asInt() ^ right.asInt()), "int");
+            } else {
+                error("Bitwise XOR requires integer operands");
+            }
+            break;
+
+        case TokenType::LEFT_SHIFT:
+            if (left.type == "int" && right.type == "int") {
+                lastValue = RuntimeValue(std::any(left.asInt() << right.asInt()), "int");
+            } else {
+                error("Left shift requires integer operands");
+            }
+            break;
+
+        case TokenType::RIGHT_SHIFT:
+            if (left.type == "int" && right.type == "int") {
+                lastValue = RuntimeValue(std::any(left.asInt() >> right.asInt()), "int");
+            } else {
+                error("Right shift requires integer operands");
+            }
+            break;
+
         case TokenType::DOT_DOT:
             if (left.type == "int" && right.type == "int") {
                 int start = left.asInt();
@@ -457,6 +497,14 @@ void Interpreter::visit(UnaryExpr& expr) {
             lastValue = RuntimeValue(!isTruthy(operand));
             break;
 
+        case TokenType::BITWISE_NOT:
+            if (operand.type == "int") {
+                lastValue = RuntimeValue(std::any(~operand.asInt()), "int");
+            } else {
+                error("Bitwise NOT requires integer operand");
+            }
+            break;
+
         default:
             error("Unsupported unary operator");
     }
@@ -468,7 +516,7 @@ void Interpreter::visit(LiteralExpr& expr) {
             if (expr.value.find('.') != std::string::npos) {
                 lastValue = RuntimeValue(std::any(std::stod(expr.value)), "double");
             } else {
-                lastValue = RuntimeValue(std::any(std::stoi(expr.value)), "int");
+                lastValue = RuntimeValue(std::any(std::stoi(expr.value, nullptr, 0)), "int");
             }
             break;
 

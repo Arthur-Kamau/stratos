@@ -136,20 +136,26 @@ void Lexer::scanToken() {
             else addToken(TokenType::EQUAL);
             break;
         case '<':
-            addToken(match('=') ? TokenType::LESS_EQUAL : TokenType::LESS);
+            if (match('=')) addToken(TokenType::LESS_EQUAL);
+            else if (match('<')) addToken(TokenType::LEFT_SHIFT);
+            else addToken(TokenType::LESS);
             break;
         case '>':
-            addToken(match('=') ? TokenType::GREATER_EQUAL : TokenType::GREATER);
+            if (match('=')) addToken(TokenType::GREATER_EQUAL);
+            else if (match('>')) addToken(TokenType::RIGHT_SHIFT);
+            else addToken(TokenType::GREATER);
             break;
         case '|':
             if (match('>')) addToken(TokenType::PIPE);
             else if (match('|')) addToken(TokenType::OR);
-            else { /* Bitwise OR handling if needed */ }
+            else addToken(TokenType::BITWISE_OR);
             break;
         case '&':
             if (match('&')) addToken(TokenType::AND);
-            else { /* Bitwise AND handling if needed */ }
+            else addToken(TokenType::BITWISE_AND);
             break;
+        case '^': addToken(TokenType::BITWISE_XOR); break;
+        case '~': addToken(TokenType::BITWISE_NOT); break;
         case '?':
              if (match('.')) addToken(TokenType::QUESTION_DOT);
              else if (match(':')) addToken(TokenType::ELVIS);
@@ -277,12 +283,21 @@ void Lexer::character() {
 }
 
 void Lexer::number() {
-    int tokenStartColumn = column;
-    while (isDigit(peek())) advance();
-
-    if (peek() == '.' && isDigit(peekNext())) {
-        advance(); // Consume .
+    int tokenStartColumn = column - 1;
+    
+    // Check for hex literal
+    // We already consumed the first digit in scanToken
+    if (source[current - 1] == '0' && (peek() == 'x' || peek() == 'X')) {
+        advance(); // consume 'x'
+        
+        while (isHexDigit(peek())) advance();
+    } else {
         while (isDigit(peek())) advance();
+
+        if (peek() == '.' && isDigit(peekNext())) {
+            advance(); // Consume .
+            while (isDigit(peek())) advance();
+        }
     }
 
     std::string numText = source.substr(start, current - start);
@@ -313,6 +328,10 @@ bool Lexer::isAlphaNumeric(char c) {
 
 bool Lexer::isDigit(char c) {
     return c >= '0' && c <= '9';
+}
+
+bool Lexer::isHexDigit(char c) {
+    return isDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
 }
 
 void Lexer::blockComment() {

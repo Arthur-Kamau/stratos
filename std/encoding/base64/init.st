@@ -3,6 +3,10 @@
 
 package base64;
 
+use io;
+use strings;
+use math;
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -55,6 +59,8 @@ fn quickDecode(encoded: string) string {
     return "";
 }
 
+// TODO: Fix Result type instantiation syntax
+/*
 // Encode file
 fn encodeFile(path: string) Result<string, Error> {
     val content = io.readBytes(path);
@@ -90,6 +96,7 @@ fn decodeToFile(encoded: string, path: string) Result<void, Error> {
 
     return io.writeBytes(path, decoded.unwrap());
 }
+*/
 
 // Encode with line breaks (for readability)
 fn encodeMultiline(data: Array<byte>, lineLength: int) string {
@@ -113,11 +120,11 @@ fn encodeMultiline(data: Array<byte>, lineLength: int) string {
     return result;
 }
 
-// Decode multiline (ignore whitespace)
-fn decodeMultiline(encoded: string) Result<Array<byte>, Error> {
+// Decode multiline (ignore whitespace) - TODO: Fix Result type
+/*fn decodeMultiline(encoded: string) Result<Array<byte>, Error> {
     val cleaned = strings.removeWhitespace(encoded);
     return decode(cleaned);
-}
+}*/
 
 // Validate base64 string
 fn isValid(encoded: string) bool {

@@ -46,6 +46,14 @@ enum class TokenType {
     DOT_DOT, // ..
     DOT_DOT_DOT, // ...
 
+    // Bitwise operators
+    BITWISE_AND, // &
+    BITWISE_OR,  // |
+    BITWISE_XOR, // ^
+    BITWISE_NOT, // ~
+    LEFT_SHIFT,  // <<
+    RIGHT_SHIFT, // >>
+
     // Literals
     IDENTIFIER, STRING, NUMBER, CHAR,
 
