@@ -1237,6 +1237,62 @@ public:
 
 
 // ============================================================================
+// Helper Functions for Result Types
+// ============================================================================
+
+// Helper to create io::Result<T, Error> objects
+template<typename T>
+std::shared_ptr<ClassInstance> createOkResult(const T& value, const std::string& typeName) {
+    auto result = std::make_shared<ClassInstance>();
+    result->className = "io::Result";
+
+    // Set the value field
+    if constexpr (std::is_same_v<T, std::string>) {
+        result->fields["value"] = RuntimeValue(value, "string");
+    } else if constexpr (std::is_same_v<T, int>) {
+        result->fields["value"] = RuntimeValue(value, "int");
+    } else if constexpr (std::is_same_v<T, bool>) {
+        result->fields["value"] = RuntimeValue(value, "bool");
+    } else if constexpr (std::is_same_v<T, std::vector<uint8_t>>) {
+        result->fields["value"] = RuntimeValue(std::any(value), "array<byte>");
+    } else if constexpr (std::is_same_v<T, std::shared_ptr<ClassInstance>>) {
+        result->fields["value"] = RuntimeValue(value, "object");
+    } else {
+        result->fields["value"] = RuntimeValue(std::any(value), typeName);
+    }
+
+    // Set the error field (null for Ok)
+    auto errorObj = std::make_shared<ClassInstance>();
+    errorObj->className = "io::Error";
+    errorObj->fields["message"] = RuntimeValue(std::string(""), "string");
+    result->fields["error"] = RuntimeValue(errorObj, "object");
+
+    // Set isOk flag
+    result->fields["isOk"] = RuntimeValue(true, "bool");
+
+    return result;
+}
+
+std::shared_ptr<ClassInstance> createErrResult(const std::string& errorMessage) {
+    auto result = std::make_shared<ClassInstance>();
+    result->className = "io::Result";
+
+    // Set the value field (null for Err)
+    result->fields["value"] = RuntimeValue(std::any(), "any");
+
+    // Set the error field
+    auto errorObj = std::make_shared<ClassInstance>();
+    errorObj->className = "io::Error";
+    errorObj->fields["message"] = RuntimeValue(errorMessage, "string");
+    result->fields["error"] = RuntimeValue(errorObj, "object");
+
+    // Set isOk flag
+    result->fields["isOk"] = RuntimeValue(false, "bool");
+
+    return result;
+}
+
+// ============================================================================
 // IO Module Native Functions
 // ============================================================================
 
@@ -1248,24 +1304,23 @@ void NativeRegistry::initIO() {
         std::string path = std::any_cast<std::string>(args[0]);
         std::ifstream file(path);
         if (!file.is_open()) {
-            // Return error result
-            return std::string(""); // Simplified - should return Result type
+            return createErrResult("Failed to open file: " + path);
         }
         std::stringstream buffer;
         buffer << file.rdbuf();
-        return buffer.str();
-    }, FunctionSignature{{"string"}, "string"});
+        return createOkResult(buffer.str(), "string");
+    }, FunctionSignature{{"string"}, "Result<string, Error>"});
 
     registerFunction("io", "readBytes", [](const std::vector<std::any>& args) -> std::any {
         std::string path = std::any_cast<std::string>(args[0]);
         std::ifstream file(path, std::ios::binary);
         if (!file.is_open()) {
-            return std::vector<uint8_t>();
+            return createErrResult("Failed to open file: " + path);
         }
         std::vector<uint8_t> bytes((std::istreambuf_iterator<char>(file)),
                                     std::istreambuf_iterator<char>());
-        return bytes;
-    });
+        return createOkResult(bytes, "array<byte>");
+    }, FunctionSignature{{"string"}, "Result<Array<byte>, Error>"});
 
     // File writing
     registerFunction("io", "writeFile", [](const std::vector<std::any>& args) -> std::any {
@@ -1273,104 +1328,202 @@ void NativeRegistry::initIO() {
         std::string content = std::any_cast<std::string>(args[1]);
         std::ofstream file(path);
         if (!file.is_open()) {
-            return false;
+            return createErrResult("Failed to write file: " + path);
         }
         file << content;
-        return true;
-    });
+        return createOkResult(true, "bool");
+    }, FunctionSignature{{"string", "string"}, "Result<bool, Error>"});
 
     registerFunction("io", "appendFile", [](const std::vector<std::any>& args) -> std::any {
         std::string path = std::any_cast<std::string>(args[0]);
         std::string content = std::any_cast<std::string>(args[1]);
         std::ofstream file(path, std::ios::app);
         if (!file.is_open()) {
-            return false;
+            return createErrResult("Failed to append to file: " + path);
         }
         file << content;
-        return true;
-    });
+        return createOkResult(true, "bool");
+    }, FunctionSignature{{"string", "string"}, "Result<bool, Error>"});
 
     registerFunction("io", "writeBytes", [](const std::vector<std::any>& args) -> std::any {
         std::string path = std::any_cast<std::string>(args[0]);
         auto bytes = std::any_cast<std::vector<uint8_t>>(args[1]);
         std::ofstream file(path, std::ios::binary);
         if (!file.is_open()) {
-            return false;
+            return createErrResult("Failed to write bytes to file: " + path);
         }
         file.write(reinterpret_cast<const char*>(bytes.data()), bytes.size());
-        return true;
-    });
+        return createOkResult(true, "bool");
+    }, FunctionSignature{{"string", "Array<byte>"}, "Result<bool, Error>"});
 
     // File operations
     registerFunction("io", "remove", [](const std::vector<std::any>& args) -> std::any {
         std::string path = std::any_cast<std::string>(args[0]);
-        return fs::remove(path);
-    });
+        try {
+            bool success = fs::remove(path);
+            if (!success) {
+                return createErrResult("File not found: " + path);
+            }
+            return createOkResult(true, "bool");
+        } catch (const std::exception& e) {
+            return createErrResult(std::string("Failed to remove file: ") + e.what());
+        }
+    }, FunctionSignature{{"string"}, "Result<bool, Error>"});
 
     registerFunction("io", "rename", [](const std::vector<std::any>& args) -> std::any {
         std::string oldPath = std::any_cast<std::string>(args[0]);
         std::string newPath = std::any_cast<std::string>(args[1]);
         try {
             fs::rename(oldPath, newPath);
-            return true;
-        } catch (...) {
-            return false;
+            return createOkResult(true, "bool");
+        } catch (const std::exception& e) {
+            return createErrResult(std::string("Failed to rename file: ") + e.what());
         }
-    });
+    }, FunctionSignature{{"string", "string"}, "Result<bool, Error>"});
 
     registerFunction("io", "copy", [](const std::vector<std::any>& args) -> std::any {
         std::string src = std::any_cast<std::string>(args[0]);
         std::string dst = std::any_cast<std::string>(args[1]);
         try {
             fs::copy_file(src, dst, fs::copy_options::overwrite_existing);
-            return true;
-        } catch (...) {
-            return false;
+            return createOkResult(true, "bool");
+        } catch (const std::exception& e) {
+            return createErrResult(std::string("Failed to copy file: ") + e.what());
         }
-    });
+    }, FunctionSignature{{"string", "string"}, "Result<bool, Error>"});
 
     // Directory operations
     registerFunction("io", "mkdir", [](const std::vector<std::any>& args) -> std::any {
         std::string path = std::any_cast<std::string>(args[0]);
-        return fs::create_directory(path);
-    });
+        try {
+            bool success = fs::create_directory(path);
+            if (!success && !fs::exists(path)) {
+                return createErrResult("Failed to create directory: " + path);
+            }
+            return createOkResult(true, "bool");
+        } catch (const std::exception& e) {
+            return createErrResult(std::string("Failed to create directory: ") + e.what());
+        }
+    }, FunctionSignature{{"string"}, "Result<bool, Error>"});
 
     registerFunction("io", "mkdirAll", [](const std::vector<std::any>& args) -> std::any {
         std::string path = std::any_cast<std::string>(args[0]);
-        return fs::create_directories(path);
-    });
+        try {
+            bool success = fs::create_directories(path);
+            if (!success && !fs::exists(path)) {
+                return createErrResult("Failed to create directories: " + path);
+            }
+            return createOkResult(true, "bool");
+        } catch (const std::exception& e) {
+            return createErrResult(std::string("Failed to create directories: ") + e.what());
+        }
+    }, FunctionSignature{{"string"}, "Result<bool, Error>"});
 
     registerFunction("io", "removeDir", [](const std::vector<std::any>& args) -> std::any {
         std::string path = std::any_cast<std::string>(args[0]);
-        return fs::remove(path);
-    });
+        try {
+            bool success = fs::remove(path);
+            if (!success) {
+                return createErrResult("Directory not found or not empty: " + path);
+            }
+            return createOkResult(true, "bool");
+        } catch (const std::exception& e) {
+            return createErrResult(std::string("Failed to remove directory: ") + e.what());
+        }
+    }, FunctionSignature{{"string"}, "Result<bool, Error>"});
 
     registerFunction("io", "removeDirAll", [](const std::vector<std::any>& args) -> std::any {
         std::string path = std::any_cast<std::string>(args[0]);
-        return fs::remove_all(path) > 0;
-    });
+        try {
+            uintmax_t removed = fs::remove_all(path);
+            return createOkResult(true, "bool");
+        } catch (const std::exception& e) {
+            return createErrResult(std::string("Failed to remove directory tree: ") + e.what());
+        }
+    }, FunctionSignature{{"string"}, "Result<bool, Error>"});
 
-    // File info
+    // File info - exists is simple bool, no Result needed
     registerFunction("io", "exists", [](const std::vector<std::any>& args) -> std::any {
         std::string path = std::any_cast<std::string>(args[0]);
-        bool exists = fs::exists(path);
-        return exists;
-    });
+        try {
+            return fs::exists(path);
+        } catch (...) {
+            return false;
+        }
+    }, FunctionSignature{{"string"}, "bool"});
 
     registerFunction("io", "isFile", [](const std::vector<std::any>& args) -> std::any {
         std::string path = std::any_cast<std::string>(args[0]);
-        return fs::is_regular_file(path);
-    });
+        try {
+            return fs::is_regular_file(path);
+        } catch (...) {
+            return false;
+        }
+    }, FunctionSignature{{"string"}, "bool"});
 
     registerFunction("io", "isDirectory", [](const std::vector<std::any>& args) -> std::any {
         std::string path = std::any_cast<std::string>(args[0]);
-        return fs::is_directory(path);
-    });
+        try {
+            return fs::is_directory(path);
+        } catch (...) {
+            return false;
+        }
+    }, FunctionSignature{{"string"}, "bool"});
 
     registerFunction("io", "fileSize", [](const std::vector<std::any>& args) -> std::any {
         std::string path = std::any_cast<std::string>(args[0]);
-        return static_cast<int>(fs::file_size(path));
-    });
+        try {
+            int size = static_cast<int>(fs::file_size(path));
+            return createOkResult(size, "int");
+        } catch (const std::exception& e) {
+            return createErrResult(std::string("Failed to get file size: ") + e.what());
+        }
+    }, FunctionSignature{{"string"}, "Result<int, Error>"});
+
+    // Directory listing
+    registerFunction("io", "readDir", [](const std::vector<std::any>& args) -> std::any {
+        std::string path = std::any_cast<std::string>(args[0]);
+        try {
+            std::vector<std::shared_ptr<ClassInstance>> fileInfoList;
+
+            for (const auto& entry : fs::directory_iterator(path)) {
+                auto fileInfo = std::make_shared<ClassInstance>();
+                fileInfo->className = "io::FileInfo";
+
+                fileInfo->fields["fileName"] = RuntimeValue(entry.path().filename().string(), "string");
+                fileInfo->fields["isDir"] = RuntimeValue(entry.is_directory(), "bool");
+
+                // Get file size (0 for directories)
+                int size = 0;
+                if (entry.is_regular_file()) {
+                    try {
+                        size = static_cast<int>(fs::file_size(entry.path()));
+                    } catch (...) {
+                        size = 0;
+                    }
+                }
+                fileInfo->fields["size"] = RuntimeValue(size, "int");
+
+                // Get modification time (Unix timestamp)
+                try {
+                    auto ftime = fs::last_write_time(entry.path());
+                    auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>(
+                        ftime - fs::file_time_type::clock::now() + std::chrono::system_clock::now()
+                    );
+                    auto timestamp = std::chrono::system_clock::to_time_t(sctp);
+                    fileInfo->fields["modTime"] = RuntimeValue(static_cast<int>(timestamp), "int");
+                } catch (...) {
+                    fileInfo->fields["modTime"] = RuntimeValue(0, "int");
+                }
+
+                fileInfoList.push_back(fileInfo);
+            }
+
+            return createOkResult(std::any(fileInfoList), "array<FileInfo>");
+        } catch (const std::exception& e) {
+            return createErrResult(std::string("Failed to read directory: ") + e.what());
+        }
+    }, FunctionSignature{{"string"}, "Result<Array<FileInfo>, Error>"});
 
     // Path operations
     registerFunction("io", "join", [](const std::vector<std::any>& args) -> std::any {

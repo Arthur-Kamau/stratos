@@ -75,34 +75,34 @@ class FileInfo {
 // ============================================================================
 
 // File reading
-fn readFile(path: string) string;
-fn readBytes(path: string) Array<byte>;
+fn readFile(path: string) Result<string, Error>;
+fn readBytes(path: string) Result<Array<byte>, Error>;
 
 // File writing
-fn writeFile(path: string, content: string) bool;
-fn appendFile(path: string, content: string) bool;
-fn writeBytes(path: string, data: Array<byte>) bool;
+fn writeFile(path: string, content: string) Result<bool, Error>;
+fn appendFile(path: string, content: string) Result<bool, Error>;
+fn writeBytes(path: string, data: Array<byte>) Result<bool, Error>;
 
 // File operations
 fn open(path: string, mode: string) Result<File, Error>;
 fn create(path: string) Result<File, Error>;
-fn remove(path: string) bool;
-fn rename(oldPath: string, newPath: string) bool;
-fn copy(src: string, dst: string) bool;
+fn remove(path: string) Result<bool, Error>;
+fn rename(oldPath: string, newPath: string) Result<bool, Error>;
+fn copy(src: string, dst: string) Result<bool, Error>;
 
 // Directory operations
-fn mkdir(path: string) bool;
-fn mkdirAll(path: string) bool;
-fn removeDir(path: string) bool;
-fn removeDirAll(path: string) bool;
-fn readDir(path: string) Array<FileInfo>;
+fn mkdir(path: string) Result<bool, Error>;
+fn mkdirAll(path: string) Result<bool, Error>;
+fn removeDir(path: string) Result<bool, Error>;
+fn removeDirAll(path: string) Result<bool, Error>;
+fn readDir(path: string) Result<Array<FileInfo>, Error>;
 
-// File info
+// File info - simple bools, no Result needed
 fn exists(path: string) bool;
 fn isFile(path: string) bool;
 fn isDirectory(path: string) bool;
-fn fileSize(path: string) int;
-fn stat(path: string) FileInfo;
+fn fileSize(path: string) Result<int, Error>;
+fn stat(path: string) Result<FileInfo, Error>;
 
 // Path operations
 fn pathJoin(parts: Array<string>) string;  // Renamed from join to avoid conflict with strings.join
@@ -120,22 +120,26 @@ fn tempDir(pattern: string) Result<string, Error>;
 // ============================================================================
 
 // Read lines from file
-fn readLines(path: string) Array<string> {
-    val content = readFile(path);
-    if (content == "") { // Assuming empty string on error for now
-        return [];
+fn readLines(path: string) Result<Array<string>, Error> {
+    val result = readFile(path);
+    when (result) {
+        Ok(content) -> {
+            return Ok(content.split("\n"));
+        }
+        Err(error) -> {
+            return Err(error);
+        }
     }
-    return content.split("\n");
 }
 
 // Write lines to file
-fn writeLines(path: string, lines: Array<string>) bool {
+fn writeLines(path: string, lines: Array<string>) Result<bool, Error> {
     val content = lines.join("\n");
     return writeFile(path, content);
 }
 
 // Append line to file
-fn appendLine(path: string, line: string) bool {
+fn appendLine(path: string, line: string) Result<bool, Error> {
     return appendFile(path, line + "\n");
 }
 
@@ -145,17 +149,24 @@ fn hasExtension(path: string, ext: string) bool {
 }
 
 // List files in directory with filter
-fn listFiles(path: string, filter: Function<FileInfo, bool>) Array<FileInfo> {
-    val files = readDir(path);
-    var filtered = Array<FileInfo>();
+fn listFiles(path: string, filter: Function<FileInfo, bool>) Result<Array<FileInfo>, Error> {
+    val result = readDir(path);
+    when (result) {
+        Ok(files) -> {
+            var filtered = Array<FileInfo>();
 
-    for val file in files {
-        if filter(file) {
-            filtered.add(file);
+            for val file in files {
+                if filter(file) {
+                    filtered.add(file);
+                }
+            }
+
+            return Ok(filtered);
+        }
+        Err(error) -> {
+            return Err(error);
         }
     }
-
-    return filtered;
 }
 
 // List only files (not directories)
@@ -174,12 +185,12 @@ fn listDirectoriesOnly(path: string) Array<FileInfo> {
 */
 
 // Ensure directory exists (create if not)
-fn ensureDir(path: string) bool {
+fn ensureDir(path: string) Result<bool, Error> {
     if exists(path) {
         if isDirectory(path) {
-            return true;
+            return Ok(true);
         } else {
-            return false;
+            return Err(Error("Path exists but is not a directory"));
         }
     }
 
@@ -187,17 +198,24 @@ fn ensureDir(path: string) bool {
 }
 
 // Walk directory tree
-fn walk(root: string, visitor: any) bool {
-    val files = readDir(root);
+fn walk(root: string, visitor: any) Result<bool, Error> {
+    val result = readDir(root);
 
-    for val file in files {
-        val fullPath = pathJoin([root, file.getName()]);
-        visitor(fullPath, file);
+    when (result) {
+        Ok(files) -> {
+            for val file in files {
+                val fullPath = pathJoin([root, file.getName()]);
+                visitor(fullPath, file);
 
-        if file.getIsDir() {
-            walk(fullPath, visitor);
+                if file.getIsDir() {
+                    walk(fullPath, visitor);
+                }
+            }
+
+            return Ok(true);
+        }
+        Err(error) -> {
+            return Err(error);
         }
     }
-
-    return true;
 }

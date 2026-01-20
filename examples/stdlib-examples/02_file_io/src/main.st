@@ -1,94 +1,134 @@
 // Example: File I/O Operations
-// Demonstrates the io module
+// Demonstrates the io module with Result types
 
 package main;
 
 use io;
 use log;
 use strings;
-use async;
 
 fn main() {
-    log.info("STARTING MAIN");
     log.info("=== File I/O Example ===");
 
     // Write to file
     val content = "Hello, Stratos!\nThis is a test file.\nLine 3";
-    log.info("About to write file...");
-    val writeSuccess = io.writeFile("test.txt", content);
+    val writeResult = io.writeFile("test.txt", content);
 
-    if writeSuccess {
-        log.info("File written successfully");
-    } else {
-        log.error("Failed to write file");
-        return;
+    when (writeResult) {
+        Ok(_) -> {
+            log.info("✓ File written successfully");
+        }
+        Err(error) -> {
+            log.error("Failed to write file: " + error.message);
+            return;
+        }
     }
 
     // Read from file
-    log.info("About to read file...");
-    val fileContent = io.readFile("test.txt");
-    log.info("File content:");
-    log.info(fileContent);
+    val readResult = io.readFile("test.txt");
+
+    when (readResult) {
+        Ok(content) -> {
+            log.info("✓ File content:");
+            log.info(content);
+        }
+        Err(error) -> {
+            log.error("Failed to read file: " + error.message);
+            return;
+        }
+    }
 
     // Read lines
-    log.info("About to read lines...");
-    val lines = io.readLines("test.txt");
-    log.info("File has " + lines.length() + " lines:");
+    val linesResult = io.readLines("test.txt");
 
-    for val i in 0..lines.length() {
-        log.info("Line " + i + ": " + lines[i]);
+    when (linesResult) {
+        Ok(lines) -> {
+            log.info("✓ File has " + lines.length() + " lines:");
+
+            for val i in 0..lines.length() {
+                log.info("  Line " + i + ": " + lines[i]);
+            }
+        }
+        Err(error) -> {
+            log.error("Failed to read lines: " + error.message);
+        }
     }
 
     // Append to file
-    log.info("About to append lines...");
-    io.appendLine("test.txt", "Appended line 4");
-    io.appendLine("test.txt", "Appended line 5");
-    log.info("Lines appended");
+    val append1 = io.appendLine("test.txt", "Appended line 4");
+    val append2 = io.appendLine("test.txt", "Appended line 5");
+
+    when (append1) {
+        Ok(_) -> when (append2) {
+            Ok(_) -> log.info("✓ Lines appended")
+            Err(error) -> log.error("Failed to append: " + error.message)
+        }
+        Err(error) -> log.error("Failed to append: " + error.message)
+    }
 
     // File info
     if io.exists("test.txt") {
-        log.info("test.txt exists");
-        log.info("Is file: " + io.isFile("test.txt"));
+        log.info("✓ test.txt exists");
+        log.info("  Is file: " + io.isFile("test.txt"));
 
-        val size = io.fileSize("test.txt");
-        log.info("File size: " + size + " bytes");
+        val sizeResult = io.fileSize("test.txt");
+        when (sizeResult) {
+            Ok(size) -> {
+                log.info("  File size: " + size + " bytes");
+            }
+            Err(error) -> {
+                log.error("Failed to get file size: " + error.message);
+            }
+        }
     }
 
     // Directory operations
-    log.info("About to create directory...");
-    val mkdirSuccess = io.mkdir("test_dir");
+    val mkdirResult = io.mkdir("test_dir");
 
-    if mkdirSuccess {
-        log.info("Directory created successfully");
+    when (mkdirResult) {
+        Ok(_) -> {
+            log.info("✓ Directory created successfully");
 
-        // Copy file to directory
-        val copySuccess = io.copy("test.txt", "test_dir/copy.txt");
+            // Copy file to directory
+            val copyResult = io.copy("test.txt", "test_dir/copy.txt");
 
-        if copySuccess {
-            log.info("File copied successfully");
-        } else {
-            log.error("Failed to copy file");
+            when (copyResult) {
+                Ok(_) -> {
+                    log.info("✓ File copied successfully");
+                }
+                Err(error) -> {
+                    log.error("Failed to copy file: " + error.message);
+                }
+            }
+
+            // List directory
+            val dirResult = io.readDir("test_dir");
+
+            when (dirResult) {
+                Ok(files) -> {
+                    log.info("✓ Files in test_dir:");
+
+                    for val file in files {
+                        log.infoWith("  File", {
+                            name: file.fileName,
+                            size: file.size,
+                            isDir: file.isDir
+                        });
+                    }
+                }
+                Err(error) -> {
+                    log.error("Failed to read directory: " + error.message);
+                }
+            }
         }
-
-        // List directory
-        val files = io.readDir("test_dir");
-        log.info("Files in test_dir:");
-
-        for val file in files {
-            log.infoWith("File info", {
-                name: file.fileName,
-                size: file.size,
-                isDir: file.isDir
-            });
+        Err(error) -> {
+            log.error("Failed to create directory: " + error.message);
         }
-    } else {
-        log.error("Failed to create directory");
     }
 
     // Clean up
-    await async.delay(100);
-    log.info("About to clean up...");
+    log.info("\nCleaning up...");
     io.remove("test.txt");
     io.removeDirAll("test_dir");
-    log.info("Cleanup complete");
+    log.info("✓ Cleanup complete");
 }
