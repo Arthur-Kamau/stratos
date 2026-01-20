@@ -17,7 +17,8 @@ fn main() {
     if writeResult.ok() {
         log.info("✓ File written successfully");
     } else {
-        log.error("Failed to write file: " + writeResult.err().message);
+        val err: io.Error = writeResult.err();
+        log.error("Failed to write file: " + err.message);
         return;
     }
 
@@ -26,10 +27,11 @@ fn main() {
 
     if readResult.ok() {
         log.info("✓ File content:");
-        val content = readResult.unwrap();
+        val content: string = readResult.unwrap();
         log.info(content);
     } else {
-        log.error("Failed to read file: " + readResult.err().message);
+        val err: io.Error = readResult.err();
+        log.error("Failed to read file: " + err.message);
         return;
     }
 
@@ -74,7 +76,8 @@ fn main() {
         if copyResult.ok() {
             log.info("✓ File copied successfully");
         } else {
-            log.error("Failed to copy file: " + copyResult.err().message);
+            val err: io.Error = copyResult.err();
+            log.error("Failed to copy file: " + err.message);
         }
 
         // List directory
@@ -92,10 +95,12 @@ fn main() {
                 });
             }
         } else {
-            log.error("Failed to read directory: " + dirResult.err().message);
+            val err: io.Error = dirResult.err();
+            log.error("Failed to read directory: " + err.message);
         }
     } else {
-        log.error("Failed to create directory: " + mkdirResult.err().message);
+        val err: io.Error = mkdirResult.err();
+        log.error("Failed to create directory: " + err.message);
     }
 
     // Clean up

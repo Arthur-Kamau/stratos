@@ -127,7 +127,7 @@ fn tempDir(pattern: string) Result<string, Error>;
 fn readLines(path: string) Array<string> {
     val result = readFile(path);
     if result.ok() {
-        val content = result.unwrap();
+        val content: string = result.unwrap();
         // Use strings module to split by newline
         return strings.split(content, "\n");
     }
