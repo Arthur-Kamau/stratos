@@ -15,10 +15,10 @@ fn main() {
     val writeResult = io.writeFile("test.txt", content);
 
     when (writeResult) {
-        Ok(_) -> {
+        Result.Ok(_) -> {
             log.info("✓ File written successfully");
         }
-        Err(error) -> {
+        Result.Err(error) -> {
             log.error("Failed to write file: " + error.message);
             return;
         }
@@ -28,11 +28,11 @@ fn main() {
     val readResult = io.readFile("test.txt");
 
     when (readResult) {
-        Ok(content) -> {
+        Result.Ok(content) -> {
             log.info("✓ File content:");
             log.info(content);
         }
-        Err(error) -> {
+        Result.Err(error) -> {
             log.error("Failed to read file: " + error.message);
             return;
         }
@@ -42,14 +42,14 @@ fn main() {
     val linesResult = io.readLines("test.txt");
 
     when (linesResult) {
-        Ok(lines) -> {
+        Result.Ok(lines) -> {
             log.info("✓ File has " + lines.length() + " lines:");
 
             for val i in 0..lines.length() {
                 log.info("  Line " + i + ": " + lines[i]);
             }
         }
-        Err(error) -> {
+        Result.Err(error) -> {
             log.error("Failed to read lines: " + error.message);
         }
     }
@@ -59,11 +59,11 @@ fn main() {
     val append2 = io.appendLine("test.txt", "Appended line 5");
 
     when (append1) {
-        Ok(_) -> when (append2) {
-            Ok(_) -> log.info("✓ Lines appended")
-            Err(error) -> log.error("Failed to append: " + error.message)
+        Result.Ok(_) -> when (append2) {
+            Result.Ok(_) -> log.info("✓ Lines appended")
+            Result.Err(error) -> log.error("Failed to append: " + error.message)
         }
-        Err(error) -> log.error("Failed to append: " + error.message)
+        Result.Err(error) -> log.error("Failed to append: " + error.message)
     }
 
     // File info
@@ -73,10 +73,10 @@ fn main() {
 
         val sizeResult = io.fileSize("test.txt");
         when (sizeResult) {
-            Ok(size) -> {
+            Result.Ok(size) -> {
                 log.info("  File size: " + size + " bytes");
             }
-            Err(error) -> {
+            Result.Err(error) -> {
                 log.error("Failed to get file size: " + error.message);
             }
         }
@@ -86,17 +86,17 @@ fn main() {
     val mkdirResult = io.mkdir("test_dir");
 
     when (mkdirResult) {
-        Ok(_) -> {
+        Result.Ok(_) -> {
             log.info("✓ Directory created successfully");
 
             // Copy file to directory
             val copyResult = io.copy("test.txt", "test_dir/copy.txt");
 
             when (copyResult) {
-                Ok(_) -> {
+                Result.Ok(_) -> {
                     log.info("✓ File copied successfully");
                 }
-                Err(error) -> {
+                Result.Err(error) -> {
                     log.error("Failed to copy file: " + error.message);
                 }
             }
@@ -105,7 +105,7 @@ fn main() {
             val dirResult = io.readDir("test_dir");
 
             when (dirResult) {
-                Ok(files) -> {
+                Result.Ok(files) -> {
                     log.info("✓ Files in test_dir:");
 
                     for val file in files {
@@ -116,12 +116,12 @@ fn main() {
                         });
                     }
                 }
-                Err(error) -> {
+                Result.Err(error) -> {
                     log.error("Failed to read directory: " + error.message);
                 }
             }
         }
-        Err(error) -> {
+        Result.Err(error) -> {
             log.error("Failed to create directory: " + error.message);
         }
     }

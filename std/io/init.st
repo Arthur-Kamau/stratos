@@ -18,27 +18,13 @@ class File {
     pub fn close() void;
 }
 
-class Result<T, E> {
-    var value: T;
-    var error: E;
-    var isOk: bool;
-
-    pub fn ok() bool {
-        return this.isOk;
-    }
-
-    pub fn err() E {
-        return this.error;
-    }
-
-    pub fn unwrap() T {
-        if !this.isOk {
-            panic("Called unwrap on Error result");
-        }
-        return this.value;
-    }
+// Result enum for pattern matching
+enum Result<T, E> {
+    Ok(T),
+    Err(E)
 }
 
+// Error class for error details
 class Error {
     var message: string;
 
@@ -123,11 +109,11 @@ fn tempDir(pattern: string) Result<string, Error>;
 fn readLines(path: string) Result<Array<string>, Error> {
     val result = readFile(path);
     when (result) {
-        Ok(content) -> {
-            return Ok(content.split("\n"));
+        Result.Ok(content) -> {
+            return Result.Ok(content.split("\n"));
         }
-        Err(error) -> {
-            return Err(error);
+        Result.Err(error) -> {
+            return Result.Err(error);
         }
     }
 }
@@ -152,7 +138,7 @@ fn hasExtension(path: string, ext: string) bool {
 fn listFiles(path: string, filter: Function<FileInfo, bool>) Result<Array<FileInfo>, Error> {
     val result = readDir(path);
     when (result) {
-        Ok(files) -> {
+        Result.Ok(files) -> {
             var filtered = Array<FileInfo>();
 
             for val file in files {
@@ -161,10 +147,10 @@ fn listFiles(path: string, filter: Function<FileInfo, bool>) Result<Array<FileIn
                 }
             }
 
-            return Ok(filtered);
+            return Result.Ok(filtered);
         }
-        Err(error) -> {
-            return Err(error);
+        Result.Err(error) -> {
+            return Result.Err(error);
         }
     }
 }
@@ -188,9 +174,9 @@ fn listDirectoriesOnly(path: string) Array<FileInfo> {
 fn ensureDir(path: string) Result<bool, Error> {
     if exists(path) {
         if isDirectory(path) {
-            return Ok(true);
+            return Result.Ok(true);
         } else {
-            return Err(Error("Path exists but is not a directory"));
+            return Result.Err(Error("Path exists but is not a directory"));
         }
     }
 
@@ -202,7 +188,7 @@ fn walk(root: string, visitor: any) Result<bool, Error> {
     val result = readDir(root);
 
     when (result) {
-        Ok(files) -> {
+        Result.Ok(files) -> {
             for val file in files {
                 val fullPath = pathJoin([root, file.getName()]);
                 visitor(fullPath, file);
@@ -212,10 +198,10 @@ fn walk(root: string, visitor: any) Result<bool, Error> {
                 }
             }
 
-            return Ok(true);
+            return Result.Ok(true);
         }
-        Err(error) -> {
-            return Err(error);
+        Result.Err(error) -> {
+            return Result.Err(error);
         }
     }
 }

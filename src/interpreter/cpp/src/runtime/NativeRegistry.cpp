@@ -1240,54 +1240,41 @@ public:
 // Helper Functions for Result Types
 // ============================================================================
 
-// Helper to create io::Result<T, Error> objects
+// Helper to create io::Result enum variants
 template<typename T>
 std::shared_ptr<ClassInstance> createOkResult(const T& value, const std::string& typeName) {
     auto result = std::make_shared<ClassInstance>();
-    result->className = "io::Result";
+    result->className = "Result::Ok";  // Enum variant name
 
-    // Set the value field
+    // Store the wrapped value in field "0" (first enum field)
     if constexpr (std::is_same_v<T, std::string>) {
-        result->fields["value"] = RuntimeValue(value, "string");
+        result->fields["0"] = RuntimeValue(value, "string");
     } else if constexpr (std::is_same_v<T, int>) {
-        result->fields["value"] = RuntimeValue(value, "int");
+        result->fields["0"] = RuntimeValue(value, "int");
     } else if constexpr (std::is_same_v<T, bool>) {
-        result->fields["value"] = RuntimeValue(value, "bool");
+        result->fields["0"] = RuntimeValue(value, "bool");
     } else if constexpr (std::is_same_v<T, std::vector<uint8_t>>) {
-        result->fields["value"] = RuntimeValue(std::any(value), "array<byte>");
+        result->fields["0"] = RuntimeValue(std::any(value), "array<byte>");
     } else if constexpr (std::is_same_v<T, std::shared_ptr<ClassInstance>>) {
-        result->fields["value"] = RuntimeValue(value, "object");
+        result->fields["0"] = RuntimeValue(value, "object");
     } else {
-        result->fields["value"] = RuntimeValue(std::any(value), typeName);
+        result->fields["0"] = RuntimeValue(std::any(value), typeName);
     }
-
-    // Set the error field (null for Ok)
-    auto errorObj = std::make_shared<ClassInstance>();
-    errorObj->className = "io::Error";
-    errorObj->fields["message"] = RuntimeValue(std::string(""), "string");
-    result->fields["error"] = RuntimeValue(errorObj, "object");
-
-    // Set isOk flag
-    result->fields["isOk"] = RuntimeValue(true, "bool");
 
     return result;
 }
 
 std::shared_ptr<ClassInstance> createErrResult(const std::string& errorMessage) {
     auto result = std::make_shared<ClassInstance>();
-    result->className = "io::Result";
+    result->className = "Result::Err";  // Enum variant name
 
-    // Set the value field (null for Err)
-    result->fields["value"] = RuntimeValue(std::any(), "any");
-
-    // Set the error field
+    // Create error object
     auto errorObj = std::make_shared<ClassInstance>();
     errorObj->className = "io::Error";
     errorObj->fields["message"] = RuntimeValue(errorMessage, "string");
-    result->fields["error"] = RuntimeValue(errorObj, "object");
 
-    // Set isOk flag
-    result->fields["isOk"] = RuntimeValue(false, "bool");
+    // Store error in field "0" (first enum field)
+    result->fields["0"] = RuntimeValue(errorObj, "object");
 
     return result;
 }
