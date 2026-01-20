@@ -71,7 +71,7 @@ class FileInfo {
 }
 
 // ============================================================================
-// Native function declarations
+// Native function declarations (C++ implementations)
 // ============================================================================
 
 // File reading
@@ -84,7 +84,7 @@ fn appendFile(path: string, content: string) bool;
 fn writeBytes(path: string, data: Array<byte>) bool;
 
 // File operations
-fn open(path: string, mode: string) Result<File, Error>; // Keep Result for now or TODO
+fn open(path: string, mode: string) Result<File, Error>;
 fn create(path: string) Result<File, Error>;
 fn remove(path: string) bool;
 fn rename(oldPath: string, newPath: string) bool;
