@@ -202,7 +202,25 @@ function loadStandardLibraryCompletions() {
 				detail = `fn ${item.name}(${item.params}) ${item.returnType}`;
 
 				// Store function signature for validation
-				const params = item.params ? item.params.split(',').map((p: string) => p.trim()) : [];
+				const params: string[] = [];
+				if (item.params) {
+					let current = '';
+					let depth = 0;
+					for (let i = 0; i < item.params.length; i++) {
+						const char = item.params[i];
+						if (char === '<') depth++;
+						else if (char === '>') depth--;
+						
+						if (char === ',' && depth === 0) {
+							params.push(current.trim());
+							current = '';
+						} else {
+							current += char;
+						}
+					}
+					if (current.trim()) params.push(current.trim());
+				}
+
 				stdlibFunctions.set(label, {
 					name: item.name,
 					params: params,
@@ -213,7 +231,7 @@ function loadStandardLibraryCompletions() {
 				if (item.params) {
 					// Create snippet with parameter placeholders
 					const paramCount = params.length;
-					const placeholders = Array.from({ length: paramCount }, (_, i) => `	${i + 1}}`).join(', ');
+					const placeholders = Array.from({ length: paramCount }, (_, i) => `\${${i + 1}}`).join(', ');
 					insertText = `${item.name}(${placeholders})`;
 				} else {
 					insertText = `${item.name}()`;

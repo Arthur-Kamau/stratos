@@ -3,6 +3,8 @@
 
 package io;
 
+use strings;
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -18,15 +20,31 @@ class File {
     pub fn close() void;
 }
 
-// Result enum for pattern matching
-enum Result<T, E> {
-    Ok(T),
-    Err(E)
+// Result class for error handling
+class Result<T, E> {
+    var value: T;
+    var error: E;
+    var isOk: bool;
+
+    pub fn ok() bool {
+        return this.isOk;
+    }
+
+    pub fn err() E {
+        return this.error;
+    }
+
+    pub fn unwrap() T {
+        if !this.isOk {
+            panic("Called unwrap on Error result");
+        }
+        return this.value;
+    }
 }
 
 // Error class for error details
 class Error {
-    var message: string;
+    pub var message: string;
 
     constructor(msg: string) {
         this.message = msg;
@@ -106,16 +124,14 @@ fn tempDir(pattern: string) Result<string, Error>;
 // ============================================================================
 
 // Read lines from file
-fn readLines(path: string) Result<Array<string>, Error> {
+fn readLines(path: string) Array<string> {
     val result = readFile(path);
-    when (result) {
-        Result.Ok(content) -> {
-            return Result.Ok(content.split("\n"));
-        }
-        Result.Err(error) -> {
-            return Result.Err(error);
-        }
+    if result.ok() {
+        val content = result.unwrap();
+        // Use strings module to split by newline
+        return strings.split(content, "\n");
     }
+    return [];
 }
 
 // Write lines to file
@@ -134,25 +150,23 @@ fn hasExtension(path: string, ext: string) bool {
     return extension(path) == ext;
 }
 
-// List files in directory with filter
-fn listFiles(path: string, filter: Function<FileInfo, bool>) Result<Array<FileInfo>, Error> {
+// List files in directory with filter - simplified
+fn listFiles(path: string, filter: Function<FileInfo, bool>) Array<FileInfo> {
     val result = readDir(path);
-    when (result) {
-        Result.Ok(files) -> {
-            var filtered = Array<FileInfo>();
+    if !result.ok() {
+        return [];
+    }
 
-            for val file in files {
-                if filter(file) {
-                    filtered.add(file);
-                }
-            }
+    val files = result.unwrap();
+    var filtered = Array<FileInfo>();
 
-            return Result.Ok(filtered);
-        }
-        Result.Err(error) -> {
-            return Result.Err(error);
+    for val file in files {
+        if filter(file) {
+            filtered.add(file);
         }
     }
+
+    return filtered;
 }
 
 // List only files (not directories)
@@ -174,34 +188,28 @@ fn listDirectoriesOnly(path: string) Array<FileInfo> {
 fn ensureDir(path: string) Result<bool, Error> {
     if exists(path) {
         if isDirectory(path) {
-            return Result.Ok(true);
-        } else {
-            return Result.Err(Error("Path exists but is not a directory"));
+            return mkdirAll(path);  // Returns Ok if already exists
         }
     }
-
     return mkdirAll(path);
 }
 
-// Walk directory tree
-fn walk(root: string, visitor: any) Result<bool, Error> {
+// Walk directory tree - simplified
+fn walk(root: string, visitor: any) bool {
     val result = readDir(root);
+    if !result.ok() {
+        return false;
+    }
 
-    when (result) {
-        Result.Ok(files) -> {
-            for val file in files {
-                val fullPath = pathJoin([root, file.getName()]);
-                visitor(fullPath, file);
+    val files = result.unwrap();
+    for val file in files {
+        val fullPath = pathJoin([root, file.getName()]);
+        visitor(fullPath, file);
 
-                if file.getIsDir() {
-                    walk(fullPath, visitor);
-                }
-            }
-
-            return Result.Ok(true);
-        }
-        Result.Err(error) -> {
-            return Result.Err(error);
+        if file.getIsDir() {
+            walk(fullPath, visitor);
         }
     }
+
+    return true;
 }
