@@ -463,6 +463,12 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
         if (paramStart != std::string::npos) {
             baseType = baseType.substr(0, paramStart);
         }
+
+        // Strip module prefix for member lookup: "io.Error" -> "Error"
+        size_t dotPos = baseType.rfind('.');
+        if (dotPos != std::string::npos) {
+            baseType = baseType.substr(dotPos + 1);
+        }
         
         // Check for member access (method call or property get)
         // If the left type is a class/struct, check if the member exists
@@ -1312,13 +1318,20 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
         std::string leftType = inferType(binary->left.get());
         
         if (binary->op.type == TokenType::DOT) {
+            // Strip module prefix for lookup: "io.Error" -> "Error"
+            std::string baseType = leftType;
+            size_t dotPos = baseType.rfind('.');
+            if (dotPos != std::string::npos) {
+                baseType = baseType.substr(dotPos + 1);
+            }
+
             // Check lookup for fields
-             if (classMembers.find(leftType) != classMembers.end()) {
+             if (classMembers.find(baseType) != classMembers.end()) {
                  if (auto* rightVar = dynamic_cast<VariableExpr*>(binary->right.get())) {
                       std::string name = rightVar->name.lexeme;
-                      if (classMembers[leftType].count(name)) {
-                          // std::cout << "DEBUG: Inferred member " << leftType << "." << name << " -> " << classMembers[leftType][name].type << std::endl;
-                          return classMembers[leftType][name].type; // For fields and methods (return type)
+                      if (classMembers[baseType].count(name)) {
+                          // std::cout << "DEBUG: Inferred member " << baseType << "." << name << " -> " << classMembers[baseType][name].type << std::endl;
+                          return classMembers[baseType][name].type; // For fields and methods (return type)
                       }
                  }
             }
@@ -1381,6 +1394,12 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
                     size_t paramStart = baseType.find('<');
                     if (paramStart != std::string::npos) {
                         baseType = baseType.substr(0, paramStart);
+                    }
+
+                    // Strip module prefix for lookup: "io.Error" -> "Error"
+                    size_t dotPos = baseType.rfind('.');
+                    if (dotPos != std::string::npos) {
+                        baseType = baseType.substr(dotPos + 1);
                     }
 
                     // Check class members

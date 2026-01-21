@@ -1119,6 +1119,30 @@ void Interpreter::visit(CallExpr& expr) {
                 if (leftValue.type == "object") {
                     auto instance = leftValue.asObject();
 
+                    // Handle Result type methods (io::Result)
+                    if (instance->className == "io::Result") {
+                        if (methodName == "ok") {
+                            // Return the isOk flag
+                            lastValue = instance->fields["isOk"];
+                            return;
+                        } else if (methodName == "err") {
+                            // Return the error object
+                            lastValue = instance->fields["error"];
+                            return;
+                        } else if (methodName == "unwrap") {
+                            // Return value if ok, otherwise throw error
+                            bool isOk = instance->fields["isOk"].asBool();
+                            if (isOk) {
+                                lastValue = instance->fields["value"];
+                            } else {
+                                auto errorObj = instance->fields["error"].asObject();
+                                std::string errMsg = errorObj->fields["message"].asString();
+                                error("unwrap() called on Err result: " + errMsg);
+                            }
+                            return;
+                        }
+                    }
+
                     // Find the method in the class definition
                     if (classes.count(instance->className)) {
                         Class& cls = classes[instance->className];
@@ -1981,8 +2005,35 @@ void Interpreter::visit(ForStmt& stmt) {
                 error("Failed to iterate over any array in for loop");
             }
         }
+        // Handle array of objects (e.g., array<FileInfo>, array<ClassInstance>)
         else {
-            error("Unsupported array type in for loop: " + iterableValue.type);
+            try {
+                auto& vec = std::any_cast<std::vector<std::shared_ptr<ClassInstance>>&>(anyValue);
+
+                // Iterate over each element
+                for (const auto& element : vec) {
+                    // Create new scope for loop body
+                    enterScope();
+
+                    // Define loop variable with current element as object
+                    currentEnv->define(stmt.variable.lexeme, RuntimeValue(element));
+
+                    // Execute loop body
+                    try {
+                        stmt.body->accept(*this);
+                    } catch (BreakException&) {
+                        exitScope();
+                        break;
+                    } catch (ContinueException&) {
+                        exitScope();
+                        continue;
+                    }
+
+                    exitScope();
+                }
+            } catch (const std::bad_any_cast&) {
+                error("Unsupported array type in for loop: " + iterableValue.type);
+            }
         }
     }
     // Handle map iteration (iterate over keys)
@@ -2133,6 +2184,11 @@ RuntimeValue Interpreter::evaluateNativeCall(const std::string& moduleName,
         // Use the registered signature's return type
         auto signature = registry.getSignature(moduleName, functionName);
         resultType = signature.returnType;
+
+        // Handle Result types as objects (they are ClassInstance)
+        if (resultType.starts_with("Result")) {
+            resultType = "object";
+        }
     } else {
         // Fallback: Determine type based on module and function for legacy functions
         if (moduleName == "math") {

@@ -1005,6 +1005,12 @@ std::string Parser::parseType() {
     if (match({TokenType::IDENTIFIER, TokenType::INT, TokenType::STRING, TokenType::BOOL, TokenType::DOUBLE, TokenType::VOID})) {
         std::string typeName = previous().lexeme;
 
+        // Handle qualified type names (e.g., io.Error, module.Type)
+        while (match({TokenType::DOT})) {
+            Token name = consume(TokenType::IDENTIFIER, "Expect type name after '.'");
+            typeName += "." + name.lexeme;
+        }
+
         // Handle generic type parameters (e.g., Result<string, Error>, Array<int>)
         if (match({TokenType::LESS})) {
             typeName += "<";

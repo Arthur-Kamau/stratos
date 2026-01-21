@@ -1322,6 +1322,20 @@ void NativeRegistry::initIO() {
         return createOkResult(bytes, "array<byte>");
     }, FunctionSignature{{"string"}, "Result<Array<byte>, Error>"});
 
+    registerFunction("io", "readLines", [](const std::vector<std::any>& args) -> std::any {
+        std::string path = std::any_cast<std::string>(args[0]);
+        std::ifstream file(path);
+        if (!file.is_open()) {
+            return std::vector<std::string>();
+        }
+        std::vector<std::string> lines;
+        std::string line;
+        while (std::getline(file, line)) {
+            lines.push_back(line);
+        }
+        return lines;
+    }, FunctionSignature{{"string"}, "array<string>"});
+
     // File writing
     registerFunction("io", "writeFile", [](const std::vector<std::any>& args) -> std::any {
         std::string path = std::any_cast<std::string>(args[0]);
@@ -1342,6 +1356,17 @@ void NativeRegistry::initIO() {
             return createErrResult("Failed to append to file: " + path);
         }
         file << content;
+        return createOkResult(true, "bool");
+    }, FunctionSignature{{"string", "string"}, "Result<bool, Error>"});
+
+    registerFunction("io", "appendLine", [](const std::vector<std::any>& args) -> std::any {
+        std::string path = std::any_cast<std::string>(args[0]);
+        std::string content = std::any_cast<std::string>(args[1]);
+        std::ofstream file(path, std::ios::app);
+        if (!file.is_open()) {
+            return createErrResult("Failed to append to file: " + path);
+        }
+        file << content << "\n";
         return createOkResult(true, "bool");
     }, FunctionSignature{{"string", "string"}, "Result<bool, Error>"});
 
@@ -1588,6 +1613,46 @@ void NativeRegistry::initLog() {
 
         return std::any();
     }, FunctionSignature{{"string"}, "void"});
+
+    // log.infoWith(message, data) - Log info message with structured data
+    registerFunction("log", "infoWith", [](const std::vector<std::any>& args) -> std::any {
+        if (args.size() < 2) return std::any();
+
+        try {
+            std::string message = std::any_cast<std::string>(args[0]);
+
+            // Format the data as key=value pairs
+            std::string dataStr;
+            try {
+                auto data = std::any_cast<std::unordered_map<std::string, std::any>>(args[1]);
+                for (const auto& [key, value] : data) {
+                    if (!dataStr.empty()) dataStr += ", ";
+                    dataStr += key + "=";
+
+                    // Try different types
+                    if (auto* s = std::any_cast<std::string>(&value)) {
+                        dataStr += *s;
+                    } else if (auto* i = std::any_cast<int>(&value)) {
+                        dataStr += std::to_string(*i);
+                    } else if (auto* b = std::any_cast<bool>(&value)) {
+                        dataStr += (*b ? "true" : "false");
+                    } else if (auto* d = std::any_cast<double>(&value)) {
+                        dataStr += std::to_string(*d);
+                    } else {
+                        dataStr += "<unknown>";
+                    }
+                }
+            } catch (...) {
+                dataStr = "<data>";
+            }
+
+            Logger::instance().info(message + " {" + dataStr + "}");
+        } catch (...) {
+            Logger::instance().error("Failed to log info message: invalid type");
+        }
+
+        return std::any();
+    }, FunctionSignature{{"string", "map"}, "void"});
 
     // log.warn(message) - Log warning message
     registerFunction("log", "warn", [](const std::vector<std::any>& args) -> std::any {
