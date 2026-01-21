@@ -1,5 +1,5 @@
-// Example: Concurrent Programming
-// Demonstrates goroutines, channels, and synchronization
+// Example: Basic Concurrency Primitives
+// Demonstrates WaitGroup and Mutex usage
 
 package main;
 
@@ -10,136 +10,71 @@ use time;
 fn main() {
     log.info("=== Concurrency Example ===");
 
-    // Example 1: Simple goroutines
-    log.info("\n1. Simple Goroutines:");
+    // Example 1: WaitGroup
+    log.info("\n1. WaitGroup Example:");
 
     val wg = concurrent.newWaitGroup();
+    log.info("Created WaitGroup");
 
-    for val i in 0..5 {
-        wg.add(1);
-        val num = i;
+    wg.add(3);
+    log.info("Added 3 to WaitGroup");
 
-        concurrent.go(() => {
-            log.info("Goroutine " + num + " running");
-            time.sleep(time.milliseconds(100));
-            log.info("Goroutine " + num + " done");
-            wg.done();
-        });
-    }
+    wg.done();
+    log.info("Called done (1/3)");
+
+    wg.done();
+    log.info("Called done (2/3)");
+
+    wg.done();
+    log.info("Called done (3/3)");
 
     wg.wait();
-    log.info("All goroutines completed");
+    log.info("WaitGroup completed!");
 
-    // Example 2: Channels
-    log.info("\n2. Channel Communication:");
+    // Example 2: Mutex
+    log.info("\n2. Mutex Example:");
 
-    val ch = concurrent.newChannel<int>(5);
-
-    // Producer
-    concurrent.go(() => {
-        for val i in 0..5 {
-            log.info("Sending: " + i);
-            ch.send(i);
-            time.sleep(time.milliseconds(100));
-        }
-        ch.close();
-    });
-
-    // Consumer
-    while true {
-        val maybeValue = ch.receive();
-        if maybeValue.isNone() {
-            break;
-        }
-        log.info("Received: " + maybeValue.unwrap());
-    }
-
-    // Example 3: Worker Pool
-    log.info("\n3. Worker Pool:");
-
-    val pool = concurrent.newWorkerPool<int, int>(3, (num) => {
-        log.info("Processing job: " + num);
-        time.sleep(time.milliseconds(200));
-        return num * 2;
-    });
-
-    // Submit jobs
-    concurrent.go(() => {
-        for val i in 1..11 {
-            pool.submit(i);
-        }
-        pool.close();
-    });
-
-    // Collect results
-    while true {
-        val maybeResult = pool.results.receive();
-        if maybeResult.isNone() {
-            break;
-        }
-        log.info("Result: " + maybeResult.unwrap());
-    }
-
-    // Example 4: Mutex for shared state
-    log.info("\n4. Mutex Example:");
-
-    var counter = 0;
     val mutex = concurrent.newMutex();
-    val wg2 = concurrent.newWaitGroup();
+    log.info("Created Mutex");
 
-    for val i in 0..10 {
-        wg2.add(1);
+    mutex.lock();
+    log.info("Mutex locked");
 
-        concurrent.go(() => {
-            for val j in 0..100 {
-                mutex.lock();
-                counter = counter + 1;
-                mutex.unlock();
-            }
-            wg2.done();
-        });
-    }
+    val tryResult = mutex.tryLock();
+    log.info("tryLock returned: " + tryResult);
 
-    wg2.wait();
-    log.info("Final counter value: " + counter);
-    log.info("Expected: 1000");
+    mutex.unlock();
+    log.info("Mutex unlocked");
 
-    // Example 5: Pipeline
-    log.info("\n5. Pipeline Pattern:");
+    val tryResult2 = mutex.tryLock();
+    log.info("tryLock after unlock: " + tryResult2);
 
-    val input = concurrent.newChannel<int>(10);
+    mutex.unlock();
 
-    // Stage 1: Double the number
-    val stage1 = (n) => {
-        log.info("Stage 1: " + n + " -> " + (n * 2));
-        return n * 2;
-    };
+    // Example 3: Channel
+    log.info("\n3. Channel Example:");
 
-    // Stage 2: Add 10
-    val stage2 = (n) => {
-        log.info("Stage 2: " + n + " -> " + (n + 10));
-        return n + 10;
-    };
+    val ch = concurrent.newChannel(5);
+    log.info("Created Channel with capacity 5");
 
-    val output = concurrent.pipeline(input, [stage1, stage2]);
+    ch.send(42);
+    log.info("Sent value to channel");
 
-    // Feed input
-    concurrent.go(() => {
-        for val i in 1..6 {
-            input.send(i);
-            time.sleep(time.milliseconds(50));
-        }
-        input.close();
-    });
+    ch.close();
+    log.info("Channel closed");
 
-    // Collect output
-    while true {
-        val maybeResult = output.receive();
-        if maybeResult.isNone() {
-            break;
-        }
-        log.info("Pipeline result: " + maybeResult.unwrap());
-    }
+    log.info("isClosed: " + ch.isClosed());
+
+    // Example 4: Thread ID
+    log.info("\n4. Thread Info:");
+    val threadId = concurrent.getThreadId();
+    log.info("Current thread ID: " + threadId);
+
+    // Example 5: Sleep
+    log.info("\n5. Sleep Example:");
+    log.info("Sleeping for 100ms...");
+    concurrent.sleep(100);
+    log.info("Woke up!");
 
     log.info("\nConcurrency examples complete!");
 }

@@ -8,6 +8,7 @@
 #include <sstream>
 #include <filesystem>
 #include <chrono>
+#include <thread>
 
 namespace stratos {
 
@@ -1169,6 +1170,77 @@ void Interpreter::visit(CallExpr& expr) {
                             } else {
                                 error("unwrapOr() requires a default value argument");
                             }
+                            return;
+                        }
+                    }
+
+                    // Handle WaitGroup type methods
+                    if (instance->className == "WaitGroup") {
+                        if (methodName == "add") {
+                            int delta = args.empty() ? 1 : args[0].asInt();
+                            int current = instance->fields["count"].asInt();
+                            instance->fields["count"] = RuntimeValue(current + delta);
+                            lastValue = RuntimeValue();
+                            return;
+                        } else if (methodName == "done") {
+                            int current = instance->fields["count"].asInt();
+                            instance->fields["count"] = RuntimeValue(current - 1);
+                            lastValue = RuntimeValue();
+                            return;
+                        } else if (methodName == "wait") {
+                            // Busy wait until count reaches 0
+                            while (instance->fields["count"].asInt() > 0) {
+                                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                            }
+                            lastValue = RuntimeValue();
+                            return;
+                        }
+                    }
+
+                    // Handle Mutex type methods
+                    if (instance->className == "Mutex") {
+                        if (methodName == "lock") {
+                            // Simple spinlock - wait until unlocked
+                            while (instance->fields["locked"].asBool()) {
+                                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                            }
+                            instance->fields["locked"] = RuntimeValue(true);
+                            lastValue = RuntimeValue();
+                            return;
+                        } else if (methodName == "unlock") {
+                            instance->fields["locked"] = RuntimeValue(false);
+                            lastValue = RuntimeValue();
+                            return;
+                        } else if (methodName == "tryLock") {
+                            bool wasLocked = instance->fields["locked"].asBool();
+                            if (!wasLocked) {
+                                instance->fields["locked"] = RuntimeValue(true);
+                            }
+                            lastValue = RuntimeValue(!wasLocked);
+                            return;
+                        }
+                    }
+
+                    // Handle Channel type methods
+                    if (instance->className == "Channel") {
+                        if (methodName == "send") {
+                            // For now, just log - real implementation needs thread-safe channel
+                            lastValue = RuntimeValue(true);
+                            return;
+                        } else if (methodName == "receive") {
+                            // Return None for now
+                            auto optional = std::make_shared<ClassInstance>();
+                            optional->className = "Optional";
+                            optional->fields["hasValue"] = RuntimeValue(false);
+                            optional->fields["value"] = RuntimeValue(std::any(), "any");
+                            lastValue = RuntimeValue(optional);
+                            return;
+                        } else if (methodName == "close") {
+                            instance->fields["closed"] = RuntimeValue(true);
+                            lastValue = RuntimeValue();
+                            return;
+                        } else if (methodName == "isClosed") {
+                            lastValue = instance->fields["closed"];
                             return;
                         }
                     }

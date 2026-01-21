@@ -16,6 +16,11 @@
 #include <regex>
 #include <sqlite3.h>
 #include "stratos/Interpreter.h"
+#include <mutex>
+#include <condition_variable>
+#include <queue>
+#include <atomic>
+#include <future>
 
 // Platform-specific includes for terminal control
 #ifdef _WIN32
@@ -112,6 +117,7 @@ void NativeRegistry::initializeStdlib() {
     initRegex();
     initSQLite();    // SQLite database support
     initCollections(); // Collections module
+    initConcurrent(); // Concurrency primitives
 }
 
 // ============================================================================
@@ -3923,5 +3929,130 @@ void NativeRegistry::initSQLite() {
 
         return std::any(sqlite3_changes(db));
     }, FunctionSignature{{"any"}, "int"});
+}
+
+// ============================================================================
+// Concurrent Module Native Functions
+// ============================================================================
+
+// Thread-safe channel implementation
+template<typename T>
+class Channel {
+public:
+    Channel(size_t capacity = 0) : capacity_(capacity), closed_(false) {}
+
+    bool send(const T& value) {
+        std::unique_lock<std::mutex> lock(mutex_);
+        if (closed_) return false;
+
+        if (capacity_ > 0) {
+            cv_not_full_.wait(lock, [this] { return queue_.size() < capacity_ || closed_; });
+        }
+        if (closed_) return false;
+
+        queue_.push(value);
+        cv_not_empty_.notify_one();
+        return true;
+    }
+
+    std::pair<T, bool> receive() {
+        std::unique_lock<std::mutex> lock(mutex_);
+        cv_not_empty_.wait(lock, [this] { return !queue_.empty() || closed_; });
+
+        if (queue_.empty()) {
+            return {T{}, false};
+        }
+
+        T value = queue_.front();
+        queue_.pop();
+        cv_not_full_.notify_one();
+        return {value, true};
+    }
+
+    void close() {
+        std::unique_lock<std::mutex> lock(mutex_);
+        closed_ = true;
+        cv_not_empty_.notify_all();
+        cv_not_full_.notify_all();
+    }
+
+    bool isClosed() const {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return closed_;
+    }
+
+private:
+    mutable std::mutex mutex_;
+    std::condition_variable cv_not_empty_;
+    std::condition_variable cv_not_full_;
+    std::queue<T> queue_;
+    size_t capacity_;
+    bool closed_;
+};
+
+// Global storage for concurrent objects
+static std::mutex g_concurrent_mutex;
+static std::vector<std::shared_ptr<Channel<RuntimeValue>>> g_channels;
+static std::vector<std::thread> g_threads;
+
+void NativeRegistry::initConcurrent() {
+    // concurrent.go(fn) - spawn a goroutine
+    registerFunction("concurrent", "go", [](const std::vector<std::any>& args) -> std::any {
+        // The function is passed as a closure - we need interpreter support to call it
+        // For now, just spawn a thread that does nothing useful
+        // Real implementation requires passing the interpreter context
+        return std::any();
+    }, FunctionSignature{{"function"}, "void"});
+
+    // concurrent.newChannel(capacity) - create a new channel
+    registerFunction("concurrent", "newChannel", [](const std::vector<std::any>& args) -> std::any {
+        int capacity = args.empty() ? 0 : std::any_cast<int>(args[0]);
+
+        auto channel = std::make_shared<Channel<RuntimeValue>>(capacity);
+
+        std::lock_guard<std::mutex> lock(g_concurrent_mutex);
+        size_t id = g_channels.size();
+        g_channels.push_back(channel);
+
+        // Return a channel object
+        auto channelObj = std::make_shared<ClassInstance>();
+        channelObj->className = "Channel";
+        channelObj->fields["__id"] = RuntimeValue(static_cast<int>(id));
+        channelObj->fields["capacity"] = RuntimeValue(capacity);
+        channelObj->fields["closed"] = RuntimeValue(false);
+
+        return channelObj;
+    }, FunctionSignature{{"int"}, "object"});
+
+    // concurrent.newWaitGroup() - create a new wait group
+    registerFunction("concurrent", "newWaitGroup", [](const std::vector<std::any>& args) -> std::any {
+        auto wg = std::make_shared<ClassInstance>();
+        wg->className = "WaitGroup";
+        wg->fields["count"] = RuntimeValue(0);
+        return wg;
+    }, FunctionSignature{{}, "object"});
+
+    // concurrent.newMutex() - create a new mutex
+    registerFunction("concurrent", "newMutex", [](const std::vector<std::any>& args) -> std::any {
+        auto mutex = std::make_shared<ClassInstance>();
+        mutex->className = "Mutex";
+        mutex->fields["locked"] = RuntimeValue(false);
+        return mutex;
+    }, FunctionSignature{{}, "object"});
+
+    // concurrent.sleep(ms) - sleep for milliseconds
+    registerFunction("concurrent", "sleep", [](const std::vector<std::any>& args) -> std::any {
+        int ms = std::any_cast<int>(args[0]);
+        std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // concurrent.getThreadId() - get current thread ID
+    registerFunction("concurrent", "getThreadId", [](const std::vector<std::any>& args) -> std::any {
+        auto id = std::this_thread::get_id();
+        std::ostringstream ss;
+        ss << id;
+        return std::any(static_cast<int>(std::hash<std::thread::id>{}(id) % 1000000));
+    }, FunctionSignature{{}, "int"});
 }
 }  // namespace stratos

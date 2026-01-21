@@ -115,6 +115,27 @@ void SemanticAnalyzer::defineNativeFunctions() {
     optionalMethods["hasValue"] = Symbol::Variable("hasValue", "bool", false);
     optionalMethods["value"] = Symbol::Variable("value", "any", false);
 
+    // Concurrent types
+    auto& waitGroupMethods = classMembers["WaitGroup"];
+    waitGroupMethods["add"] = Symbol::Function("add", {"int"}, "void");
+    waitGroupMethods["done"] = Symbol::Function("done", {}, "void");
+    waitGroupMethods["wait"] = Symbol::Function("wait", {}, "void");
+    waitGroupMethods["count"] = Symbol::Variable("count", "int", false);
+
+    auto& mutexMethods = classMembers["Mutex"];
+    mutexMethods["lock"] = Symbol::Function("lock", {}, "void");
+    mutexMethods["unlock"] = Symbol::Function("unlock", {}, "void");
+    mutexMethods["tryLock"] = Symbol::Function("tryLock", {}, "bool");
+    mutexMethods["locked"] = Symbol::Variable("locked", "bool", false);
+
+    auto& channelMethods = classMembers["Channel"];
+    channelMethods["send"] = Symbol::Function("send", {"any"}, "bool");
+    channelMethods["receive"] = Symbol::Function("receive", {}, "Optional");
+    channelMethods["close"] = Symbol::Function("close", {}, "void");
+    channelMethods["isClosed"] = Symbol::Function("isClosed", {}, "bool");
+    channelMethods["capacity"] = Symbol::Variable("capacity", "int", false);
+    channelMethods["closed"] = Symbol::Variable("closed", "bool", false);
+
     auto& fileInfoMethods = classMembers["FileInfo"];
     fileInfoMethods["getName"] = Symbol::Function("getName", {}, "string", true);
     fileInfoMethods["getSize"] = Symbol::Function("getSize", {}, "int", true);

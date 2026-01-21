@@ -89,6 +89,7 @@ private:
     void initRegex();
     void initYAML();
     void initSQLite();
+    void initConcurrent();
 };
 
 // Helper macros for registering native functions
