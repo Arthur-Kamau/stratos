@@ -734,12 +734,15 @@ std::unique_ptr<Expr> Parser::call() {
     while (true) {
         if (match({TokenType::LEFT_PAREN})) {
             expr = finishCall(std::move(expr));
-        } else if (match({TokenType::LESS})) {
+        } else if (check(TokenType::LESS)) {
             // Could be generic function call like func<Type>(args) or comparison
+            // Save position BEFORE consuming < for backtracking
+            int savedCurrent = current;
+            advance(); // consume <
+
             // Try to parse as generic type arguments
             std::vector<std::string> typeArgs;
             bool isGenericCall = true;
-            int savedCurrent = current;
 
             // Try to parse type arguments
             do {

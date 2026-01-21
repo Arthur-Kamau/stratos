@@ -24,6 +24,10 @@ void SemanticAnalyzer::defineNativeFunctions() {
     symbolTable.define(Symbol::Variable("None", "Optional", false, true));
     symbolTable.define(Symbol::Function("Array", {}, "any", true)); // Generic array constructor
 
+    // Define Result and Optional as types with static factory methods
+    symbolTable.define(Symbol::Class("Result", "type", true)); // Result type for error handling
+    symbolTable.define(Symbol::Class("Optional", "type", true)); // Optional type for nullable values
+
     // Internal intrinsics
     symbolTable.define(Symbol::Function("__if_expr", {"bool", "any", "any"}, "any", true));
 
@@ -98,9 +102,18 @@ void SemanticAnalyzer::defineNativeFunctions() {
     resultMethods["ok"] = Symbol::Function("ok", {}, "bool");
     resultMethods["err"] = Symbol::Function("err", {}, "any"); // Generic E
     resultMethods["unwrap"] = Symbol::Function("unwrap", {}, "any"); // Generic T
+    resultMethods["unwrapOr"] = Symbol::Function("unwrapOr", {"any"}, "any");
     resultMethods["isOk"] = Symbol::Variable("isOk", "bool", false);
     resultMethods["value"] = Symbol::Variable("value", "any", false);
     resultMethods["error"] = Symbol::Variable("error", "any", false);
+
+    auto& optionalMethods = classMembers["Optional"];
+    optionalMethods["isSome"] = Symbol::Function("isSome", {}, "bool");
+    optionalMethods["isNone"] = Symbol::Function("isNone", {}, "bool");
+    optionalMethods["unwrap"] = Symbol::Function("unwrap", {}, "any");
+    optionalMethods["unwrapOr"] = Symbol::Function("unwrapOr", {"any"}, "any");
+    optionalMethods["hasValue"] = Symbol::Variable("hasValue", "bool", false);
+    optionalMethods["value"] = Symbol::Variable("value", "any", false);
 
     auto& fileInfoMethods = classMembers["FileInfo"];
     fileInfoMethods["getName"] = Symbol::Function("getName", {}, "string", true);
@@ -507,6 +520,16 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
                 // Check if this is a registered enum value
                 if (symbolTable.resolve(fullName)) {
                     // Valid enum value access
+                    return;
+                }
+
+                // Check for static method calls on Result and Optional types
+                if (enumName == "Result" && (valueName == "ok" || valueName == "err")) {
+                    // Valid static factory method on Result type
+                    return;
+                }
+                if (enumName == "Optional" && (valueName == "some" || valueName == "none")) {
+                    // Valid static factory method on Optional type
                     return;
                 }
 

@@ -1119,8 +1119,8 @@ void Interpreter::visit(CallExpr& expr) {
                 if (leftValue.type == "object") {
                     auto instance = leftValue.asObject();
 
-                    // Handle Result type methods (io::Result)
-                    if (instance->className == "io::Result") {
+                    // Handle Result type methods (io::Result or Result)
+                    if (instance->className == "io::Result" || instance->className == "Result") {
                         if (methodName == "ok") {
                             // Return the isOk flag
                             lastValue = instance->fields["isOk"];
@@ -1268,6 +1268,77 @@ void Interpreter::visit(CallExpr& expr) {
                         // Function not found
                         error("Undefined function: " + moduleName + "::" + methodName);
                         return;
+                    }
+                }
+
+                // Handle static type method calls (Result.err, Result.ok, Optional.some, Optional.none)
+                if (auto* leftVar = dynamic_cast<VariableExpr*>(binExpr->left.get())) {
+                    std::string typeName = leftVar->name.lexeme;
+
+                    // Result type static methods
+                    if (typeName == "Result") {
+                        if (methodName == "err") {
+                            // Result.err(message) - create error result
+                            auto result = std::make_shared<ClassInstance>();
+                            result->className = "Result";
+                            result->fields["value"] = RuntimeValue(std::any(), "any");
+                            result->fields["isOk"] = RuntimeValue(false);
+
+                            auto errorObj = std::make_shared<ClassInstance>();
+                            errorObj->className = "Error";
+                            if (!args.empty()) {
+                                errorObj->fields["message"] = args[0];
+                            } else {
+                                errorObj->fields["message"] = RuntimeValue(std::string("Unknown error"));
+                            }
+                            result->fields["error"] = RuntimeValue(errorObj);
+
+                            lastValue = RuntimeValue(result);
+                            return;
+                        } else if (methodName == "ok") {
+                            // Result.ok(value) - create success result
+                            auto result = std::make_shared<ClassInstance>();
+                            result->className = "Result";
+                            if (!args.empty()) {
+                                result->fields["value"] = args[0];
+                            } else {
+                                result->fields["value"] = RuntimeValue(std::any(), "any");
+                            }
+                            result->fields["isOk"] = RuntimeValue(true);
+
+                            auto errorObj = std::make_shared<ClassInstance>();
+                            errorObj->className = "Error";
+                            errorObj->fields["message"] = RuntimeValue(std::string(""));
+                            result->fields["error"] = RuntimeValue(errorObj);
+
+                            lastValue = RuntimeValue(result);
+                            return;
+                        }
+                    }
+
+                    // Optional type static methods
+                    if (typeName == "Optional") {
+                        if (methodName == "some") {
+                            // Optional.some(value) - create Some optional
+                            auto optional = std::make_shared<ClassInstance>();
+                            optional->className = "Optional";
+                            optional->fields["hasValue"] = RuntimeValue(true);
+                            if (!args.empty()) {
+                                optional->fields["value"] = args[0];
+                            } else {
+                                optional->fields["value"] = RuntimeValue(std::any(), "any");
+                            }
+                            lastValue = RuntimeValue(optional);
+                            return;
+                        } else if (methodName == "none") {
+                            // Optional.none() - create None optional
+                            auto optional = std::make_shared<ClassInstance>();
+                            optional->className = "Optional";
+                            optional->fields["hasValue"] = RuntimeValue(false);
+                            optional->fields["value"] = RuntimeValue(std::any(), "any");
+                            lastValue = RuntimeValue(optional);
+                            return;
+                        }
                     }
                 }
             }
