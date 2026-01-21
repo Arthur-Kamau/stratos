@@ -15,7 +15,7 @@ fn main() {
 
     val wg = concurrent.newWaitGroup();
 
-    for i in 0..5 {
+    for val i in 0..5 {
         wg.add(1);
         val num = i;
 
@@ -37,7 +37,7 @@ fn main() {
 
     // Producer
     concurrent.go(() => {
-        for i in 0..5 {
+        for val i in 0..5 {
             log.info("Sending: " + i);
             ch.send(i);
             time.sleep(time.milliseconds(100));
@@ -47,11 +47,11 @@ fn main() {
 
     // Consumer
     while true {
-        val value = ch.receive();
-        if value == null {
+        val maybeValue = ch.receive();
+        if maybeValue.isNone() {
             break;
         }
-        log.info("Received: " + value);
+        log.info("Received: " + maybeValue.unwrap());
     }
 
     // Example 3: Worker Pool
@@ -65,7 +65,7 @@ fn main() {
 
     // Submit jobs
     concurrent.go(() => {
-        for i in 1..11 {
+        for val i in 1..11 {
             pool.submit(i);
         }
         pool.close();
@@ -73,11 +73,11 @@ fn main() {
 
     // Collect results
     while true {
-        val result = pool.results.receive();
-        if result == null {
+        val maybeResult = pool.results.receive();
+        if maybeResult.isNone() {
             break;
         }
-        log.info("Result: " + result);
+        log.info("Result: " + maybeResult.unwrap());
     }
 
     // Example 4: Mutex for shared state
@@ -87,11 +87,11 @@ fn main() {
     val mutex = concurrent.newMutex();
     val wg2 = concurrent.newWaitGroup();
 
-    for i in 0..10 {
+    for val i in 0..10 {
         wg2.add(1);
 
         concurrent.go(() => {
-            for j in 0..100 {
+            for val j in 0..100 {
                 mutex.lock();
                 counter = counter + 1;
                 mutex.unlock();
@@ -125,7 +125,7 @@ fn main() {
 
     // Feed input
     concurrent.go(() => {
-        for i in 1..6 {
+        for val i in 1..6 {
             input.send(i);
             time.sleep(time.milliseconds(50));
         }
@@ -134,11 +134,11 @@ fn main() {
 
     // Collect output
     while true {
-        val result = output.receive();
-        if result == null {
+        val maybeResult = output.receive();
+        if maybeResult.isNone() {
             break;
         }
-        log.info("Pipeline result: " + result);
+        log.info("Pipeline result: " + maybeResult.unwrap());
     }
 
     log.info("\nConcurrency examples complete!");

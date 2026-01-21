@@ -65,12 +65,11 @@ class Semaphore {
 }
 
 class Future<T> {
-    var value: T?;
-    var error: Error?;
+    var result: Optional<Result<T, Error>>;
     var done: bool;
-    var channel: Channel<T>;
+    var channel: Channel<Result<T, Error>>;
 
-    pub fn get() T;
+    pub fn get() Result<T, Error>;
     pub fn getWithTimeout(timeout: Duration) Result<T, Error>;
     pub fn isDone() bool;
     pub fn cancel() void;
@@ -94,7 +93,7 @@ fn select(cases: Array<SelectCase>) int;
 class SelectCase {
     var channel: Channel<any>;
     var send: bool;
-    var value: any?;
+    var value: Optional<any>;
     var handler: Function;
 }
 
@@ -123,24 +122,19 @@ fn atomicStore(ptr: int*, value: int) void;
 // ============================================================================
 
 // Run function in background, return future
-fn spawn<T>(task: Function<T>) Future<T> {
+// Task should return Result<T, Error> for error handling
+fn spawn<T>(task: Function<Result<T, Error>>) Future<T> {
     val future = Future<T> {
-        value: null,
-        error: null,
+        result: None,
         done: false,
-        channel: newChannel<T>(1)
+        channel: newChannel<Result<T, Error>>(1)
     };
 
     go(() => {
-        try {
-            val result = task();
-            future.value = result;
-            future.done = true;
-            future.channel.send(result);
-        } catch (e: Error) {
-            future.error = e;
-            future.done = true;
-        }
+        val taskResult = task();
+        future.result = Some(taskResult);
+        future.done = true;
+        future.channel.send(taskResult);
     });
 
     return future;
@@ -303,86 +297,68 @@ fn newRateLimiter(requestsPerSecond: int) RateLimiter {
     return RateLimiter(requestsPerSecond);
 }
 
-// Timeout wrapper
-fn withTimeout<T>(task: Function<T>, timeout: Duration) Result<T, Error> {
-    val done = newChannel<T>(1);
-    val timedOut = false;
+// Timeout wrapper - task should return Result<T, Error>
+fn withTimeout<T>(task: Function<Result<T, Error>>, timeout: Duration) Result<T, Error> {
+    val done = newChannel<Result<T, Error>>(1);
+    var timedOut = false;
 
     go(() => {
-        val result = task();
+        val taskResult = task();
         if !timedOut {
-            done.send(result);
+            done.send(taskResult);
         }
     });
 
     val timer = time.newTimer(timeout);
 
     // Wait for either completion or timeout
-    val result = select([
+    val selectResult = select([
         SelectCase {
             channel: done,
             send: false,
-            value: null,
             handler: () => {
-                return Result<T, Error> {
-                    value: done.receive(),
-                    error: null,
-                    isOk: true
-                };
+                val received = done.receive();
+                if received.isSome() {
+                    return received.unwrap();
+                }
+                return Result.err("Channel closed unexpectedly");
             }
         },
         SelectCase {
             channel: timer.channel,
             send: false,
-            value: null,
             handler: () => {
                 timedOut = true;
-                return Result<T, Error> {
-                    value: null,
-                    error: Error("Timeout exceeded"),
-                    isOk: false
-                };
+                return Result.err("Timeout exceeded");
             }
         }
     ]);
 
-    return result;
+    return selectResult;
 }
 
 // Retry with concurrent attempts
-fn retryParallel<T>(task: Function<T>, attempts: int) Result<T, Error> {
+// Task should return Result<T, Error> for error handling
+fn retryParallel<T>(task: Function<Result<T, Error>>, attempts: int) Result<T, Error> {
     val results = newChannel<Result<T, Error>>(attempts);
 
     for val i in 0..attempts {
         go(() => {
-            try {
-                val result = task();
-                results.send(Result<T, Error> {
-                    value: result,
-                    error: null,
-                    isOk: true
-                });
-            } catch (e: Error) {
-                results.send(Result<T, Error> {
-                    value: null,
-                    error: e,
-                    isOk: false
-                });
-            }
+            val taskResult = task();
+            results.send(taskResult);
         });
     }
 
     // Return first successful result
     for val i in 0..attempts {
         val result = results.receive();
-        if result.ok() {
-            return result;
+        if result.isSome() {
+            val r = result.unwrap();
+            if r.ok() {
+                return r;
+            }
         }
     }
 
-    return Result<T, Error> {
-        value: null,
-        error: Error("All attempts failed"),
-        isOk: false
-    };
+    return Result.err("All attempts failed");
 }

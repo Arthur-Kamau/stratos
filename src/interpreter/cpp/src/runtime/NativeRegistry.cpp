@@ -1293,6 +1293,44 @@ std::shared_ptr<ClassInstance> createErrResult(const std::string& errorMessage) 
 }
 
 // ============================================================================
+// Optional Type Helpers
+// ============================================================================
+
+template<typename T>
+std::shared_ptr<ClassInstance> createSome(const T& value, const std::string& typeName = "any") {
+    auto optional = std::make_shared<ClassInstance>();
+    optional->className = "Optional<" + typeName + ">";
+
+    optional->fields["hasValue"] = RuntimeValue(true, "bool");
+
+    if constexpr (std::is_same_v<T, std::string>) {
+        optional->fields["value"] = RuntimeValue(value, "string");
+    } else if constexpr (std::is_same_v<T, int>) {
+        optional->fields["value"] = RuntimeValue(value, "int");
+    } else if constexpr (std::is_same_v<T, bool>) {
+        optional->fields["value"] = RuntimeValue(value, "bool");
+    } else if constexpr (std::is_same_v<T, double>) {
+        optional->fields["value"] = RuntimeValue(value, "double");
+    } else if constexpr (std::is_same_v<T, std::shared_ptr<ClassInstance>>) {
+        optional->fields["value"] = RuntimeValue(value, "object");
+    } else {
+        optional->fields["value"] = RuntimeValue(std::any(value), typeName);
+    }
+
+    return optional;
+}
+
+std::shared_ptr<ClassInstance> createNone(const std::string& typeName = "any") {
+    auto optional = std::make_shared<ClassInstance>();
+    optional->className = "Optional<" + typeName + ">";
+
+    optional->fields["hasValue"] = RuntimeValue(false, "bool");
+    optional->fields["value"] = RuntimeValue(std::any(), "any");
+
+    return optional;
+}
+
+// ============================================================================
 // IO Module Native Functions
 // ============================================================================
 

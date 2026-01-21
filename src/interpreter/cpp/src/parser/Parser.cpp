@@ -734,6 +734,36 @@ std::unique_ptr<Expr> Parser::call() {
     while (true) {
         if (match({TokenType::LEFT_PAREN})) {
             expr = finishCall(std::move(expr));
+        } else if (match({TokenType::LESS})) {
+            // Could be generic function call like func<Type>(args) or comparison
+            // Try to parse as generic type arguments
+            std::vector<std::string> typeArgs;
+            bool isGenericCall = true;
+            int savedCurrent = current;
+
+            // Try to parse type arguments
+            do {
+                try {
+                    typeArgs.push_back(parseType());
+                } catch (...) {
+                    isGenericCall = false;
+                    break;
+                }
+            } while (match({TokenType::COMMA}));
+
+            // Check for closing > and following (
+            if (isGenericCall && match({TokenType::GREATER}) && check(TokenType::LEFT_PAREN)) {
+                // It's a generic function call - consume ( and parse as call
+                advance(); // consume (
+                expr = finishCall(std::move(expr));
+                // Store type args in the CallExpr (we'll need to extend CallExpr for this)
+                // For now, type args are parsed but not stored - the callee name carries them
+            } else {
+                // Not a generic call - backtrack and treat < as comparison
+                current = savedCurrent;
+                // Let the comparison parsing handle this by breaking out
+                break;
+            }
         } else if (match({TokenType::LEFT_BRACKET})) {
             std::unique_ptr<Expr> index = expression();
             Token bracket = consume(TokenType::RIGHT_BRACKET, "Expect ']' after array index.");
@@ -1002,7 +1032,10 @@ std::string Parser::parseType() {
         consume(TokenType::GREATER, "Expect >");
         return "Optional<" + inner + ">";
     }
-    if (match({TokenType::IDENTIFIER, TokenType::INT, TokenType::STRING, TokenType::BOOL, TokenType::DOUBLE, TokenType::VOID})) {
+    if (match({TokenType::IDENTIFIER, TokenType::INT, TokenType::STRING, TokenType::BOOL, TokenType::DOUBLE, TokenType::VOID,
+                TokenType::I8, TokenType::I16, TokenType::I32, TokenType::I64,
+                TokenType::U8, TokenType::U16, TokenType::U32, TokenType::U64,
+                TokenType::F32, TokenType::F64, TokenType::USIZE, TokenType::ISIZE})) {
         std::string typeName = previous().lexeme;
 
         // Handle qualified type names (e.g., io.Error, module.Type)
@@ -1024,6 +1057,11 @@ std::string Parser::parseType() {
                     depth--;
                 }
             }
+        }
+
+        // Handle pointer type suffix '*' (e.g., i32*, u8*)
+        while (match({TokenType::STAR})) {
+            typeName += "*";
         }
 
         // Handle optional type suffix '?' (e.g., String?)

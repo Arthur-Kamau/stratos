@@ -1143,6 +1143,36 @@ void Interpreter::visit(CallExpr& expr) {
                         }
                     }
 
+                    // Handle Optional type methods
+                    if (instance->className == "Optional" || instance->className.find("Optional<") == 0) {
+                        if (methodName == "isSome") {
+                            lastValue = instance->fields["hasValue"];
+                            return;
+                        } else if (methodName == "isNone") {
+                            bool hasValue = instance->fields["hasValue"].asBool();
+                            lastValue = RuntimeValue(!hasValue);
+                            return;
+                        } else if (methodName == "unwrap") {
+                            bool hasValue = instance->fields["hasValue"].asBool();
+                            if (hasValue) {
+                                lastValue = instance->fields["value"];
+                            } else {
+                                error("unwrap() called on None optional");
+                            }
+                            return;
+                        } else if (methodName == "unwrapOr") {
+                            bool hasValue = instance->fields["hasValue"].asBool();
+                            if (hasValue) {
+                                lastValue = instance->fields["value"];
+                            } else if (!args.empty()) {
+                                lastValue = args[0];
+                            } else {
+                                error("unwrapOr() requires a default value argument");
+                            }
+                            return;
+                        }
+                    }
+
                     // Find the method in the class definition
                     if (classes.count(instance->className)) {
                         Class& cls = classes[instance->className];
