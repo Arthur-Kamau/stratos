@@ -520,7 +520,10 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
                      Symbol methodSym = members[methodName];
                      
                      // Check visibility (native types are implicitly public)
-                     bool isNative = (baseType == "string" || baseType == "Array" || baseType == "array" || baseType == "map" || baseType == "Map" || baseType == "File" || baseType == "Result");
+                     bool isNative = (baseType == "string" || baseType == "Array" || baseType == "array" ||
+                                      baseType == "map" || baseType == "Map" || baseType == "File" ||
+                                      baseType == "Result" || baseType == "Optional" ||
+                                      baseType == "WaitGroup" || baseType == "Mutex" || baseType == "Channel");
                      bool isAccessible = isNative || methodSym.isPublic || (currentClassName == baseType);
                      
                      if (!isAccessible) {
@@ -660,9 +663,18 @@ void SemanticAnalyzer::visit(CallExpr& expr) {
                                 }
 
                                 if (!typesMatch) {
-                                    error(rightVar->name, "Function '" + moduleName + "." + functionName +
+                                    std::string errorMsg = "Function '" + moduleName + "." + functionName +
                                          "' expects argument " + std::to_string(i + 1) +
-                                         " to be of type '" + expectedType + "', found '" + argType + "'");
+                                         " to be of type '" + expectedType + "', found '" + argType + "'";
+
+                                    // Provide helpful hint for unresolved generic types
+                                    if (argType == "any" || argType == "T" || argType == "E") {
+                                        errorMsg += ".\n       Hint: The generic type could not be inferred. "
+                                                    "Try adding a type annotation, e.g.:\n"
+                                                    "         val result: " + expectedType + " = expr.unwrap();";
+                                    }
+
+                                    error(rightVar->name, errorMsg);
                                 }
                             }
                         } else {
@@ -1170,22 +1182,6 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
             std::vector<std::unique_ptr<Stmt>> statements = parser.parse();
             // Debug statements removed Parsed " << statements.size() << " statements from " << filePath << std::endl;
 
-            // Debug: print what types of statements we got
-            for (size_t i = 0; i < statements.size(); ++i) {
-                if (!statements[i]) continue;
-                if (dynamic_cast<PackageDecl*>(statements[i].get())) {
-                    std::cerr << "  Statement " << i << ": PackageDecl" << std::endl;
-                } else if (auto* classDecl = dynamic_cast<ClassDecl*>(statements[i].get())) {
-                    std::cerr << "  Statement " << i << ": ClassDecl '" << classDecl->name.lexeme << "'" << std::endl;
-                } else if (auto* funcDecl = dynamic_cast<FunctionDecl*>(statements[i].get())) {
-                    std::cerr << "  Statement " << i << ": FunctionDecl '" << funcDecl->name.lexeme << "'" << std::endl;
-                } else if (dynamic_cast<UseStmt*>(statements[i].get())) {
-                    std::cerr << "  Statement " << i << ": UseStmt" << std::endl;
-                } else {
-                    std::cerr << "  Statement " << i << ": Other type" << std::endl;
-                }
-            }
-
             // Two-pass processing like analyze() does:
             // First pass: Collect all function, class, and enum declarations
             for (size_t i = 0; i < statements.size(); ++i) {
@@ -1450,8 +1446,53 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
                     if (classMembers.find(baseType) != classMembers.end()) {
                         auto& members = classMembers[baseType];
                         if (members.find(methodName) != members.end()) {
-                            // std::cout << "DEBUG: Inferred method type " << baseType << "." << methodName << " -> " << members[methodName].returnType << std::endl;
-                            return members[methodName].returnType;
+                            std::string returnType = members[methodName].returnType;
+
+                            // Handle generic type extraction for Result<T, E> and Optional<T>
+                            if (returnType == "any" || returnType == "T" || returnType == "E") {
+                                // Extract generic parameters from leftType (e.g., "Result<string, Error>")
+                                size_t openBracket = leftType.find('<');
+                                size_t closeBracket = leftType.rfind('>');
+
+                                if (openBracket != std::string::npos && closeBracket != std::string::npos) {
+                                    std::string genericParams = leftType.substr(openBracket + 1, closeBracket - openBracket - 1);
+
+                                    if (baseType == "Result") {
+                                        // Result<T, E> - find comma separator (handling nested generics)
+                                        int depth = 0;
+                                        size_t commaPos = std::string::npos;
+                                        for (size_t i = 0; i < genericParams.size(); i++) {
+                                            if (genericParams[i] == '<') depth++;
+                                            else if (genericParams[i] == '>') depth--;
+                                            else if (genericParams[i] == ',' && depth == 0) {
+                                                commaPos = i;
+                                                break;
+                                            }
+                                        }
+
+                                        if (commaPos != std::string::npos) {
+                                            std::string typeT = genericParams.substr(0, commaPos);
+                                            std::string typeE = genericParams.substr(commaPos + 1);
+                                            // Trim whitespace
+                                            while (!typeT.empty() && typeT.back() == ' ') typeT.pop_back();
+                                            while (!typeE.empty() && typeE.front() == ' ') typeE.erase(0, 1);
+
+                                            if (methodName == "unwrap" || methodName == "unwrapOr") {
+                                                return typeT;
+                                            } else if (methodName == "err") {
+                                                return typeE;
+                                            }
+                                        }
+                                    } else if (baseType == "Optional") {
+                                        // Optional<T> - single generic parameter
+                                        if (methodName == "unwrap" || methodName == "unwrapOr") {
+                                            return genericParams;
+                                        }
+                                    }
+                                }
+                            }
+
+                            return returnType;
                         } else {
                             // std::cout << "DEBUG: Method " << methodName << " not found in class " << baseType << ". Available: ";
                             // for (const auto& kv : members) std::cout << kv.first << " ";

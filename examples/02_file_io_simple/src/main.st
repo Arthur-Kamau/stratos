@@ -18,9 +18,11 @@ fn main() {
     val fileContentResult = io.readFile("test.txt");
     if fileContentResult.ok() {
         log.info("File content:");
-        log.info(fileContentResult.unwrap());
+        val content: string = fileContentResult.unwrap();
+        log.info(content);
     } else {
-        log.error("Failed to read file: " + fileContentResult.err().message);
+        val err: io.Error = fileContentResult.err();
+        log.error("Failed to read file: " + err.message);
         return;
     }
 

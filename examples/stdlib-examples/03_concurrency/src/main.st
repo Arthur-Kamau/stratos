@@ -76,5 +76,8 @@ fn main() {
     concurrent.sleep(100);
     log.info("Woke up!");
 
-    log.info("\nConcurrency examples complete!");
+    log.info("\nBasic concurrency examples complete!");
+
+    // Run advanced demo
+    advancedConcurrencyDemo();
 }

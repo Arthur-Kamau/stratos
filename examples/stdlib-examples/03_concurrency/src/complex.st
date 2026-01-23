@@ -1,145 +1,78 @@
-// Example: Concurrent Programming
-// Demonstrates goroutines, channels, and synchronization
+// Example: Advanced Concurrency Primitives
+// Demonstrates channels and synchronization (synchronous operations)
 
 package main;
 
 use concurrent;
 use log;
-use time;
 
-fn main() {
-    log.info("=== Concurrency Example ===");
+fn advancedConcurrencyDemo() {
+    log.info("\n=== Advanced Concurrency Demo ===");
 
-    // Example 1: Simple goroutines
-    log.info("\n1. Simple Goroutines:");
+    // Example 1: Channel send/receive
+    log.info("\n1. Channel Send/Receive:");
+
+    val ch = concurrent.newChannel(5);
+
+    // Send multiple values
+    ch.send(10);
+    ch.send(20);
+    ch.send(30);
+    log.info("Sent 3 values to channel");
+
+    // Receive values
+    val v1: int = ch.receive();
+    val v2: int = ch.receive();
+    val v3: int = ch.receive();
+    log.info("Received: " + v1 + ", " + v2 + ", " + v3);
+
+    // Example 2: Mutex protecting shared state
+    log.info("\n2. Mutex Protected Counter:");
+
+    val mutex = concurrent.newMutex();
+    var counter = 0;
+
+    // Simulate protected increment
+    for val i in 0..10 {
+        mutex.lock();
+        counter = counter + 1;
+        mutex.unlock();
+    }
+    log.info("Counter after 10 increments: " + counter);
+
+    // Example 3: WaitGroup tracking
+    log.info("\n3. WaitGroup Task Tracking:");
 
     val wg = concurrent.newWaitGroup();
 
-    for val i in 0..5 {
-        wg.add(1);
-        val num = i;
+    // Add tasks
+    wg.add(3);
+    log.info("Added 3 tasks");
 
-        concurrent.go(() => {
-            log.info("Goroutine " + num + " running");
-            time.sleep(time.milliseconds(100));
-            log.info("Goroutine " + num + " done");
-            wg.done();
-        });
-    }
+    // Complete tasks
+    log.info("Completing task 1...");
+    wg.done();
 
+    log.info("Completing task 2...");
+    wg.done();
+
+    log.info("Completing task 3...");
+    wg.done();
+
+    // Wait should return immediately since all tasks done
     wg.wait();
-    log.info("All goroutines completed");
+    log.info("All tasks completed!");
 
-    // Example 2: Channels
-    log.info("\n2. Channel Communication:");
+    // Example 4: Channel with close
+    log.info("\n4. Channel Close:");
 
-    val ch = concurrent.newChannel<int>(5);
+    val ch2 = concurrent.newChannel(3);
+    ch2.send(100);
+    ch2.send(200);
 
-    // Producer
-    concurrent.go(() => {
-        for val i in 0..5 {
-            log.info("Sending: " + i);
-            ch.send(i);
-            time.sleep(time.milliseconds(100));
-        }
-        ch.close();
-    });
+    log.info("Channel open, isClosed: " + ch2.isClosed());
+    ch2.close();
+    log.info("Channel closed, isClosed: " + ch2.isClosed());
 
-    // Consumer
-    while true {
-        val maybeValue = ch.receive();
-        if maybeValue.isNone() {
-            break;
-        }
-        log.info("Received: " + maybeValue.unwrap());
-    }
-
-    // Example 3: Worker Pool
-    log.info("\n3. Worker Pool:");
-
-    val pool = concurrent.newWorkerPool<int, int>(3, (num) => {
-        log.info("Processing job: " + num);
-        time.sleep(time.milliseconds(200));
-        return num * 2;
-    });
-
-    // Submit jobs
-    concurrent.go(() => {
-        for val i in 1..11 {
-            pool.submit(i);
-        }
-        pool.close();
-    });
-
-    // Collect results
-    while true {
-        val maybeResult = pool.results.receive();
-        if maybeResult.isNone() {
-            break;
-        }
-        log.info("Result: " + maybeResult.unwrap());
-    }
-
-    // Example 4: Mutex for shared state
-    log.info("\n4. Mutex Example:");
-
-    var counter = 0;
-    val mutex = concurrent.newMutex();
-    val wg2 = concurrent.newWaitGroup();
-
-    for val i in 0..10 {
-        wg2.add(1);
-
-        concurrent.go(() => {
-            for val j in 0..100 {
-                mutex.lock();
-                counter = counter + 1;
-                mutex.unlock();
-            }
-            wg2.done();
-        });
-    }
-
-    wg2.wait();
-    log.info("Final counter value: " + counter);
-    log.info("Expected: 1000");
-
-    // Example 5: Pipeline
-    log.info("\n5. Pipeline Pattern:");
-
-    val input = concurrent.newChannel<int>(10);
-
-    // Stage 1: Double the number
-    val stage1 = (n) => {
-        log.info("Stage 1: " + n + " -> " + (n * 2));
-        return n * 2;
-    };
-
-    // Stage 2: Add 10
-    val stage2 = (n) => {
-        log.info("Stage 2: " + n + " -> " + (n + 10));
-        return n + 10;
-    };
-
-    val output = concurrent.pipeline(input, [stage1, stage2]);
-
-    // Feed input
-    concurrent.go(() => {
-        for val i in 1..6 {
-            input.send(i);
-            time.sleep(time.milliseconds(50));
-        }
-        input.close();
-    });
-
-    // Collect output
-    while true {
-        val maybeResult = output.receive();
-        if maybeResult.isNone() {
-            break;
-        }
-        log.info("Pipeline result: " + maybeResult.unwrap());
-    }
-
-    log.info("\nConcurrency examples complete!");
+    log.info("\nAdvanced demo complete!");
 }

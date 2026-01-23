@@ -1224,23 +1224,51 @@ void Interpreter::visit(CallExpr& expr) {
                     // Handle Channel type methods
                     if (instance->className == "Channel") {
                         if (methodName == "send") {
-                            // For now, just log - real implementation needs thread-safe channel
+                            // Store value in channel's internal queue
+                            if (args.size() > 0) {
+                                // Get or create the queue
+                                if (instance->fields.find("__queue") == instance->fields.end()) {
+                                    std::vector<RuntimeValue> emptyQueue;
+                                    instance->fields["__queue"] = RuntimeValue(std::any(emptyQueue), "array<any>");
+                                }
+                                auto& queueVal = instance->fields["__queue"];
+                                if (auto* anyPtr = std::get_if<std::any>(&queueVal.value)) {
+                                    auto queue = std::any_cast<std::vector<RuntimeValue>>(*anyPtr);
+                                    queue.push_back(args[0]);
+                                    instance->fields["__queue"] = RuntimeValue(std::any(queue), "array<any>");
+                                }
+                            }
                             lastValue = RuntimeValue(true);
                             return;
                         } else if (methodName == "receive") {
-                            // Return None for now
-                            auto optional = std::make_shared<ClassInstance>();
-                            optional->className = "Optional";
-                            optional->fields["hasValue"] = RuntimeValue(false);
-                            optional->fields["value"] = RuntimeValue(std::any(), "any");
-                            lastValue = RuntimeValue(optional);
+                            // Get value from channel's internal queue
+                            if (instance->fields.find("__queue") != instance->fields.end()) {
+                                auto& queueVal = instance->fields["__queue"];
+                                if (auto* anyPtr = std::get_if<std::any>(&queueVal.value)) {
+                                    auto queue = std::any_cast<std::vector<RuntimeValue>>(*anyPtr);
+                                    if (!queue.empty()) {
+                                        RuntimeValue value = queue.front();
+                                        queue.erase(queue.begin());
+                                        instance->fields["__queue"] = RuntimeValue(std::any(queue), "array<any>");
+                                        // Return the value directly (not wrapped in Optional for simplicity)
+                                        lastValue = value;
+                                        return;
+                                    }
+                                }
+                            }
+                            // Return empty/default value if queue is empty
+                            lastValue = RuntimeValue();
                             return;
                         } else if (methodName == "close") {
                             instance->fields["closed"] = RuntimeValue(true);
                             lastValue = RuntimeValue();
                             return;
                         } else if (methodName == "isClosed") {
-                            lastValue = instance->fields["closed"];
+                            if (instance->fields.find("closed") != instance->fields.end()) {
+                                lastValue = instance->fields["closed"];
+                            } else {
+                                lastValue = RuntimeValue(false);
+                            }
                             return;
                         }
                     }
@@ -2358,8 +2386,10 @@ RuntimeValue Interpreter::evaluateNativeCall(const std::string& moduleName,
         auto signature = registry.getSignature(moduleName, functionName);
         resultType = signature.returnType;
 
-        // Handle Result types as objects (they are ClassInstance)
-        if (resultType.starts_with("Result")) {
+        // Handle object types (they are ClassInstance)
+        if (resultType.starts_with("Result") || resultType == "Channel" ||
+            resultType == "WaitGroup" || resultType == "Mutex" ||
+            resultType == "Optional" || resultType == "File") {
             resultType = "object";
         }
     } else {

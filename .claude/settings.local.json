@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(powershell.exe -File build.ps1)"
+      "Bash(powershell.exe -File build.ps1)",
+      "Bash(./src/interpreter/cpp/build/stratos run:*)"
     ]
   }
 }

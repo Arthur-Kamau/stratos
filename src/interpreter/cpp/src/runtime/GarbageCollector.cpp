@@ -1,5 +1,6 @@
 #include "stratos/GarbageCollector.h"
 #include "stratos/Interpreter.h"
+#include <algorithm>
 #include <iostream>
 
 namespace stratos {

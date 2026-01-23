@@ -4022,7 +4022,7 @@ void NativeRegistry::initConcurrent() {
         channelObj->fields["closed"] = RuntimeValue(false);
 
         return channelObj;
-    }, FunctionSignature{{"int"}, "object"});
+    }, FunctionSignature{{"int"}, "Channel"});
 
     // concurrent.newWaitGroup() - create a new wait group
     registerFunction("concurrent", "newWaitGroup", [](const std::vector<std::any>& args) -> std::any {
@@ -4030,7 +4030,7 @@ void NativeRegistry::initConcurrent() {
         wg->className = "WaitGroup";
         wg->fields["count"] = RuntimeValue(0);
         return wg;
-    }, FunctionSignature{{}, "object"});
+    }, FunctionSignature{{}, "WaitGroup"});
 
     // concurrent.newMutex() - create a new mutex
     registerFunction("concurrent", "newMutex", [](const std::vector<std::any>& args) -> std::any {
@@ -4038,7 +4038,7 @@ void NativeRegistry::initConcurrent() {
         mutex->className = "Mutex";
         mutex->fields["locked"] = RuntimeValue(false);
         return mutex;
-    }, FunctionSignature{{}, "object"});
+    }, FunctionSignature{{}, "Mutex"});
 
     // concurrent.sleep(ms) - sleep for milliseconds
     registerFunction("concurrent", "sleep", [](const std::vector<std::any>& args) -> std::any {

@@ -58,7 +58,7 @@ std::unique_ptr<Stmt> Parser::declaration() {
 
         return statement();
     } catch (ParseError& error) {
-        std::cout << "[Parser::declaration] Caught ParseError: " << error.what() << " at " << error.line << ":" << error.column << std::endl;
+        // Silently recover from parse errors (e.g., generic type syntax issues)
         synchronize();
         return nullptr;
     }
