@@ -3,6 +3,12 @@
 
 package http;
 
+use time;
+use log;
+use io;
+use json;
+use concurrent;
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -18,14 +24,14 @@ enum HttpMethod {
 }
 
 class Request {
-    var method: HttpMethod;
-    var url: string;
-    var path: string;
-    var query: Map<string, string>;
-    var headers: Map<string, string>;
-    var body: string;
-    var params: Map<string, string>;
-    var remoteAddr: string;
+    pub var method: HttpMethod;
+    pub var url: string;
+    pub var path: string;
+    pub var query: Map<string, string>;
+    pub var headers: Map<string, string>;
+    pub var body: string;
+    pub var params: Map<string, string>;
+    pub var remoteAddr: string;
 
     pub fn header(name: string) string;
     pub fn queryParam(name: string) string;
@@ -34,10 +40,10 @@ class Request {
 }
 
 class Response {
-    var statusCode: int;
-    var headers: Map<string, string>;
-    var body: string;
-    var written: bool;
+    pub var statusCode: int;
+    pub var headers: Map<string, string>;
+    pub var body: string;
+    pub var written: bool;
 
     pub fn setHeader(name: string, value: string) void;
     pub fn setStatus(code: int) void;
@@ -50,8 +56,8 @@ class Response {
 }
 
 class Router {
-    var routes: Array<Route>;
-    var middleware: Array<Middleware>;
+    pub var routes: Array<Route>;
+    pub var middleware: Array<Middleware>;
 
     pub fn get(path: string, handler: Handler) void;
     pub fn post(path: string, handler: Handler) void;
@@ -63,20 +69,20 @@ class Router {
 }
 
 class Route {
-    var method: HttpMethod;
-    var pattern: string;
-    var handler: Handler;
-    var middleware: Array<Middleware>;
+    pub var method: HttpMethod;
+    pub var pattern: string;
+    pub var handler: Handler;
+    pub var middleware: Array<Middleware>;
 }
 
 class Handler = Function<Request, Response, void>;
 class Middleware = Function<Request, Response, Function, void>;
 
 class Server {
-    var addr: string;
-    var port: int;
-    var router: Router;
-    var running: bool;
+    pub var addr: string;
+    pub var port: int;
+    pub var router: Router;
+    pub var running: bool;
 
     pub fn listen(port: int) void;
     pub fn listenAndServe(addr: string, port: int) void;
@@ -84,8 +90,8 @@ class Server {
 }
 
 class Client {
-    var timeout: int;
-    var headers: Map<string, string>;
+    pub var timeout: int;
+    pub var headers: Map<string, string>;
 
     pub fn get(url: string) async.Promise<Response>;
     pub fn post(url: string, body: string) async.Promise<Response>;
@@ -112,15 +118,15 @@ fn parseRequest(raw: string) Result<Request, Error>;
 fn buildResponse(response: Response) string;
 
 // URL parsing
-fn parseURL(url: string) Result<URL, Error>;
+fn parseURL(urlStr: string) Result<URL, Error>;
 
 class URL {
-    var scheme: string;
-    var host: string;
-    var port: int;
-    var path: string;
-    var query: string;
-    var fragment: string;
+    pub var scheme: string;
+    pub var host: string;
+    pub var port: int;
+    pub var path: string;
+    pub var query: string;
+    pub var fragment: string;
 }
 
 // ============================================================================
@@ -137,22 +143,22 @@ fn serve(port: int, handler: Handler) void {
 }
 
 // Quick HTTP GET
-fn get(url: string) async.Promise<Response> {
-    val client = newClient(30000);
-    return client.get(url);
+fn quickGet(urlStr: string) async.Promise<Response> {
+    val httpClient = newClient(30000);
+    return httpClient.get(urlStr);
 }
 
 // Quick HTTP POST
-fn post(url: string, body: string) async.Promise<Response> {
-    val client = newClient(30000);
-    return client.post(url, body);
+fn quickPost(urlStr: string, bodyData: string) async.Promise<Response> {
+    val httpClient = newClient(30000);
+    return httpClient.post(urlStr, bodyData);
 }
 
 // Quick HTTP POST JSON
-fn postJSON(url: string, data: json.JsonValue) async.Promise<Response> {
-    val client = newClient(30000);
-    client.headers.put("Content-Type", "application/json");
-    return client.post(url, json.stringify(data));
+fn postJSON(urlStr: string, data: json.JsonValue) async.Promise<Response> {
+    val httpClient = newClient(30000);
+    httpClient.headers.put("Content-Type", "application/json");
+    return httpClient.post(urlStr, json.stringify(data));
 }
 
 // Middleware: Logger
@@ -289,8 +295,8 @@ fn staticMiddleware(directory: string) Middleware {
 
 // RESTful API helpers
 class RestAPI {
-    var router: Router;
-    var basePath: string;
+    pub var router: Router;
+    pub var basePath: string;
 
     constructor(base: string) {
         this.router = newRouter();
@@ -301,38 +307,38 @@ class RestAPI {
         val path = this.basePath + "/" + name;
 
         // GET /resource - list
-        if handlers.list != null {
+        if handlers.list != nil {
             this.router.get(path, handlers.list);
         }
 
         // POST /resource - create
-        if handlers.create != null {
+        if handlers.create != nil {
             this.router.post(path, handlers.create);
         }
 
         // GET /resource/:id - show
-        if handlers.show != null {
+        if handlers.show != nil {
             this.router.get(path + "/:id", handlers.show);
         }
 
         // PUT /resource/:id - update
-        if handlers.update != null {
+        if handlers.update != nil {
             this.router.put(path + "/:id", handlers.update);
         }
 
         // DELETE /resource/:id - delete
-        if handlers.delete != null {
-            this.router.delete(path + "/:id", handlers.delete);
+        if handlers.remove != nil {
+            this.router.delete(path + "/:id", handlers.remove);
         }
     }
 }
 
 class ResourceHandlers {
-    var list: Handler?;
-    var create: Handler?;
-    var show: Handler?;
-    var update: Handler?;
-    var delete: Handler?;
+    pub var list: Handler?;
+    pub var create: Handler?;
+    pub var show: Handler?;
+    pub var update: Handler?;
+    pub var remove: Handler?;
 }
 
 fn newRestAPI(basePath: string) RestAPI {
@@ -341,9 +347,9 @@ fn newRestAPI(basePath: string) RestAPI {
 
 // WebSocket upgrade (simplified)
 class WebSocket {
-    var conn: net.Conn;
-    var onMessage: Function<string, void>;
-    var onClose: Function;
+    pub var conn: net.Conn;
+    pub var onMessage: Function<string, void>;
+    pub var onClose: Function;
 
     pub fn send(message: string) void;
     pub fn close() void;
@@ -351,8 +357,8 @@ class WebSocket {
 
 // Server-Sent Events
 class SSE {
-    var clients: Array<Response>;
-    var mutex: concurrent.Mutex;
+    pub var clients: Array<Response>;
+    pub var mutex: concurrent.Mutex;
 
     constructor() {
         this.clients = Array<Response>();

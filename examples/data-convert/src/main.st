@@ -17,6 +17,8 @@ struct User {
    pub address: Address;
 }
 
+
+
 fn main() {
     log.info("Starting Data Convert Example");
 

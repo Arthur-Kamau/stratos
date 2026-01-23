@@ -1060,28 +1060,36 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
         // Current directory (fallback)
         "std/" + moduleName + "/init.st",
         "std/encoding/" + moduleName + "/init.st",
+        "std/net/" + moduleName + "/init.st",
 
         // Build directory
         "build/std/" + moduleName + "/init.st",
         "build/std/encoding/" + moduleName + "/init.st",
+        "build/std/net/" + moduleName + "/init.st",
 
         // One level up (from samples/ or similar)
         "../std/" + moduleName + "/init.st",
         "../std/encoding/" + moduleName + "/init.st",
+        "../std/net/" + moduleName + "/init.st",
         "../build/std/" + moduleName + "/init.st",
         "../build/std/encoding/" + moduleName + "/init.st",
+        "../build/std/net/" + moduleName + "/init.st",
         "../interpreter/C++/build/std/" + moduleName + "/init.st",
         "../interpreter/C++/build/std/encoding/" + moduleName + "/init.st",
+        "../interpreter/C++/build/std/net/" + moduleName + "/init.st",
 
         // Two levels up
         "../../std/" + moduleName + "/init.st",
         "../../std/encoding/" + moduleName + "/init.st",
+        "../../std/net/" + moduleName + "/init.st",
         "../../interpreter/C++/build/std/" + moduleName + "/init.st",
         "../../interpreter/C++/build/std/encoding/" + moduleName + "/init.st",
+        "../../interpreter/C++/build/std/net/" + moduleName + "/init.st",
 
         // Three levels up
         "../../../std/" + moduleName + "/init.st",
-        "../../../std/encoding/" + moduleName + "/init.st"
+        "../../../std/encoding/" + moduleName + "/init.st",
+        "../../../std/net/" + moduleName + "/init.st"
     };
 
     std::string moduleFilePath;
