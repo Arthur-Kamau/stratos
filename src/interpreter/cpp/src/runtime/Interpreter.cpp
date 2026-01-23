@@ -29,6 +29,11 @@ Interpreter::Interpreter() {
     MemoryProfiler::instance().setGarbageCollector(&gc);
 }
 
+Interpreter::~Interpreter() {
+    // Ensure all threads are properly cleaned up
+    cleanup();
+}
+
 void Interpreter::execute(std::vector<std::unique_ptr<Stmt>>&& statements) {
     // Move statements into interpreter for ownership
     for (auto& stmt : statements) {
@@ -46,6 +51,11 @@ void Interpreter::execute(std::vector<std::unique_ptr<Stmt>>&& statements) {
 }
 
 void Interpreter::cleanup() {
+    // Guard against double cleanup
+    if (workerPools.empty() && goroutines.empty() && environments.size() <= 1) {
+        return;
+    }
+
     // First, shut down all worker pools
     for (auto& pool : workerPools) {
         {

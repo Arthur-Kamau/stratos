@@ -162,6 +162,7 @@ public:
 class Interpreter : public ASTVisitor {
 public:
     Interpreter();
+    ~Interpreter();
 
     // Execute a program (takes ownership of statements)
     void execute(std::vector<std::unique_ptr<Stmt>>&& statements);

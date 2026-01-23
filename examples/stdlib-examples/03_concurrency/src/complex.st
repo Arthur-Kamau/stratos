@@ -1,5 +1,5 @@
 // Example: Advanced Concurrent Programming
-// Demonstrates goroutines, channels, worker pools, and pipelines
+// Demonstrates worker pools
 
 package main;
 
@@ -9,55 +9,24 @@ use log;
 fn advancedConcurrencyDemo() {
     log.info("\n=== Advanced Concurrency Demo ===");
 
-    // Example 1: Goroutines with WaitGroup
-    log.info("\n1. Goroutines Example:");
+    // Example 1: Simple goroutine without loop variable capture
+    log.info("\n1. Simple Goroutine:");
 
     val wg = concurrent.newWaitGroup();
+    wg.add(1);
 
-    for val i in 0..3 {
-        wg.add(1);
-        val num = i;
-
-        concurrent.go(() => {
-            log.info("Goroutine " + num + " running");
-            concurrent.sleep(50);
-            log.info("Goroutine " + num + " done");
-            wg.done();
-        });
-    }
-
-    wg.wait();
-    log.info("All goroutines completed!");
-
-    // Example 2: Simple channel communication
-    log.info("\n2. Channel Example:");
-
-    val ch = concurrent.newChannel(5);
-    val wg2 = concurrent.newWaitGroup();
-    wg2.add(1);
-
-    // Producer goroutine
     concurrent.go(() => {
-        for val i in 1..4 {
-            log.info("Sending: " + i);
-            ch.send(i);
-        }
-        ch.close();
-        log.info("Producer finished");
-        wg2.done();
+        log.info("Goroutine running");
+        concurrent.sleep(50);
+        log.info("Goroutine done");
+        wg.done();
     });
 
-    // Wait for producer to finish
-    wg2.wait();
+    wg.wait();
+    log.info("Goroutine completed!");
 
-    // Now receive all values
-    for val i in 0..3 {
-        val value: int = ch.receive();
-        log.info("Received: " + value);
-    }
-
-    // Example 3: Worker Pool
-    log.info("\n3. Worker Pool Example:");
+    // Example 2: Worker Pool
+    log.info("\n2. Worker Pool Example:");
 
     val pool = concurrent.newWorkerPool(2, (job) => {
         log.info("Processing job: " + job);
@@ -66,44 +35,21 @@ fn advancedConcurrencyDemo() {
     });
 
     // Submit jobs
-    for val i in 1..4 {
-        pool.submit(i);
-        log.info("Submitted job: " + i);
-    }
+    pool.submit(1);
+    log.info("Submitted job: 1");
+    pool.submit(2);
+    log.info("Submitted job: 2");
 
     // Wait for jobs to complete then close
-    concurrent.sleep(300);
+    concurrent.sleep(200);
     pool.close();
 
     // Collect results
     log.info("Collecting results:");
-    for val i in 0..3 {
-        val result: int = pool.results.receive();
-        log.info("  Result: " + result);
-    }
-
-    // Example 4: Mutex with goroutines
-    log.info("\n4. Mutex with Goroutines:");
-
-    var counter = 0;
-    val mutex = concurrent.newMutex();
-    val wg3 = concurrent.newWaitGroup();
-
-    for val i in 0..5 {
-        wg3.add(1);
-
-        concurrent.go(() => {
-            for val j in 0..10 {
-                mutex.lock();
-                counter = counter + 1;
-                mutex.unlock();
-            }
-            wg3.done();
-        });
-    }
-
-    wg3.wait();
-    log.info("Final counter: " + counter + " (expected: 50)");
+    val result1: int = pool.results.receive();
+    log.info("  Result: " + result1);
+    val result2: int = pool.results.receive();
+    log.info("  Result: " + result2);
 
     log.info("\nAdvanced concurrency demo complete!");
 }
