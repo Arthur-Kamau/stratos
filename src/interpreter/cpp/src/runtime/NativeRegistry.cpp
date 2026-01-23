@@ -4054,5 +4054,19 @@ void NativeRegistry::initConcurrent() {
         ss << id;
         return std::any(static_cast<int>(std::hash<std::thread::id>{}(id) % 1000000));
     }, FunctionSignature{{}, "int"});
+
+    // concurrent.newWorkerPool(numWorkers, workerFunc) - create a worker pool
+    // Actual implementation is in Interpreter - this is just a signature registration
+    registerFunction("concurrent", "newWorkerPool", [](const std::vector<std::any>& args) -> std::any {
+        // Implementation handled by Interpreter for closure support
+        return std::any();
+    }, FunctionSignature{{"int", "function"}, "WorkerPool"});
+
+    // concurrent.pipeline(inputChannel, stages) - create a pipeline
+    // Actual implementation is in Interpreter - this is just a signature registration
+    registerFunction("concurrent", "pipeline", [](const std::vector<std::any>& args) -> std::any {
+        // Implementation handled by Interpreter for closure support
+        return std::any();
+    }, FunctionSignature{{"Channel", "array"}, "Channel"});
 }
 }  // namespace stratos

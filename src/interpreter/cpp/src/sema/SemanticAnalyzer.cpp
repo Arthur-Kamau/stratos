@@ -136,6 +136,12 @@ void SemanticAnalyzer::defineNativeFunctions() {
     channelMethods["capacity"] = Symbol::Variable("capacity", "int", false);
     channelMethods["closed"] = Symbol::Variable("closed", "bool", false);
 
+    auto& workerPoolMethods = classMembers["WorkerPool"];
+    workerPoolMethods["submit"] = Symbol::Function("submit", {"any"}, "void");
+    workerPoolMethods["close"] = Symbol::Function("close", {}, "void");
+    workerPoolMethods["results"] = Symbol::Variable("results", "Channel", false);
+    workerPoolMethods["numWorkers"] = Symbol::Variable("numWorkers", "int", false);
+
     auto& fileInfoMethods = classMembers["FileInfo"];
     fileInfoMethods["getName"] = Symbol::Function("getName", {}, "string", true);
     fileInfoMethods["getSize"] = Symbol::Function("getSize", {}, "int", true);
@@ -523,7 +529,8 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
                      bool isNative = (baseType == "string" || baseType == "Array" || baseType == "array" ||
                                       baseType == "map" || baseType == "Map" || baseType == "File" ||
                                       baseType == "Result" || baseType == "Optional" ||
-                                      baseType == "WaitGroup" || baseType == "Mutex" || baseType == "Channel");
+                                      baseType == "WaitGroup" || baseType == "Mutex" || baseType == "Channel" ||
+                                      baseType == "WorkerPool");
                      bool isAccessible = isNative || methodSym.isPublic || (currentClassName == baseType);
                      
                      if (!isAccessible) {

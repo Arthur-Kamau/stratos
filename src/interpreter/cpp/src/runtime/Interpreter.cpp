@@ -46,6 +46,24 @@ void Interpreter::execute(std::vector<std::unique_ptr<Stmt>>&& statements) {
 }
 
 void Interpreter::cleanup() {
+    // First, shut down all worker pools
+    for (auto& pool : workerPools) {
+        {
+            std::lock_guard<std::mutex> lock(pool->poolMutex);
+            pool->closed = true;
+        }
+        pool->jobAvailable.notify_all();
+        for (auto& worker : pool->workers) {
+            if (worker.joinable()) {
+                worker.join();
+            }
+        }
+    }
+    workerPools.clear();
+
+    // Join all goroutines
+    joinAllGoroutines();
+
     // Clear local environments to allow cycle detection
     // Keep only global environment (first one)
     while (environments.size() > 1) {
@@ -1273,6 +1291,56 @@ void Interpreter::visit(CallExpr& expr) {
                         }
                     }
 
+                    // Handle WorkerPool type methods
+                    if (instance->className == "WorkerPool") {
+                        if (methodName == "submit") {
+                            // Submit a job to the worker pool
+                            if (!args.empty()) {
+                                int poolId = instance->fields["__poolId"].asInt();
+                                if (poolId >= 0 && poolId < static_cast<int>(workerPools.size())) {
+                                    auto& pool = workerPools[poolId];
+                                    {
+                                        std::lock_guard<std::mutex> lock(pool->poolMutex);
+                                        pool->jobQueue.push(args[0]);
+                                    }
+                                    pool->jobAvailable.notify_one();
+                                }
+                            }
+                            lastValue = RuntimeValue();
+                            return;
+                        } else if (methodName == "close") {
+                            // Close the worker pool
+                            int poolId = instance->fields["__poolId"].asInt();
+                            if (poolId >= 0 && poolId < static_cast<int>(workerPools.size())) {
+                                auto& pool = workerPools[poolId];
+                                {
+                                    std::lock_guard<std::mutex> lock(pool->poolMutex);
+                                    pool->closed = true;
+                                }
+                                pool->jobAvailable.notify_all();
+
+                                // Wait for all workers to finish
+                                for (auto& worker : pool->workers) {
+                                    if (worker.joinable()) {
+                                        worker.join();
+                                    }
+                                }
+
+                                // Close the results channel
+                                pool->resultsChannel->fields["closed"] = RuntimeValue(true);
+                            }
+                            lastValue = RuntimeValue();
+                            return;
+                        } else if (methodName == "results") {
+                            // Return the results channel
+                            int poolId = instance->fields["__poolId"].asInt();
+                            if (poolId >= 0 && poolId < static_cast<int>(workerPools.size())) {
+                                lastValue = RuntimeValue(workerPools[poolId]->resultsChannel);
+                                return;
+                            }
+                        }
+                    }
+
                     // Find the method in the class definition
                     if (classes.count(instance->className)) {
                         Class& cls = classes[instance->className];
@@ -1349,6 +1417,48 @@ void Interpreter::visit(CallExpr& expr) {
                 if (leftValue.type == "module") {
                     if (auto* leftVar = dynamic_cast<VariableExpr*>(binExpr->left.get())) {
                         std::string moduleName = leftVar->name.lexeme;
+
+                        // Special handling for concurrent module functions that need interpreter access
+                        if (moduleName == "concurrent") {
+                            if (methodName == "go") {
+                                // concurrent.go(closure) - spawn a goroutine
+                                if (!args.empty() && args[0].type == "function") {
+                                    spawnGoroutine(args[0]);
+                                    lastValue = RuntimeValue();
+                                    return;
+                                }
+                                error("concurrent.go() requires a function argument");
+                                return;
+                            } else if (methodName == "newWorkerPool") {
+                                // concurrent.newWorkerPool(numWorkers, workerFunc)
+                                if (args.size() >= 2 && args[0].type == "int" && args[1].type == "function") {
+                                    lastValue = createWorkerPool(args[0].asInt(), args[1]);
+                                    return;
+                                }
+                                error("concurrent.newWorkerPool() requires (int numWorkers, function workerFunc)");
+                                return;
+                            } else if (methodName == "pipeline") {
+                                // concurrent.pipeline(inputChannel, [stage1, stage2, ...])
+                                if (args.size() >= 2) {
+                                    std::vector<RuntimeValue> stages;
+                                    // Extract stages from array argument
+                                    if (auto* anyPtr = std::get_if<std::any>(&args[1].value)) {
+                                        try {
+                                            auto stageVec = std::any_cast<std::vector<RuntimeValue>>(*anyPtr);
+                                            stages = stageVec;
+                                        } catch (...) {
+                                            // Try as vector of closures stored differently
+                                        }
+                                    }
+                                    if (!stages.empty()) {
+                                        lastValue = createPipeline(args[0], stages);
+                                        return;
+                                    }
+                                }
+                                error("concurrent.pipeline() requires (channel input, array stages)");
+                                return;
+                            }
+                        }
 
                         // FIRST: Check if it's a native function
                         auto& registry = NativeRegistry::getInstance();
@@ -2389,7 +2499,8 @@ RuntimeValue Interpreter::evaluateNativeCall(const std::string& moduleName,
         // Handle object types (they are ClassInstance)
         if (resultType.starts_with("Result") || resultType == "Channel" ||
             resultType == "WaitGroup" || resultType == "Mutex" ||
-            resultType == "Optional" || resultType == "File") {
+            resultType == "Optional" || resultType == "File" ||
+            resultType == "WorkerPool") {
             resultType = "object";
         }
     } else {
@@ -2777,11 +2888,239 @@ RuntimeValue Interpreter::executeCallback(const RuntimeValue& closureValue, cons
     
     // Exit parameter scope
     exitScope();
-    
+
     // Restore original environment
     currentEnv = previousEnv;
-    
+
     return result;
+}
+
+void Interpreter::spawnGoroutine(const RuntimeValue& closureValue) {
+    if (closureValue.type != "function") {
+        error("concurrent.go() requires a function argument");
+        return;
+    }
+
+    // Extract the closure
+    auto* anyPtr = std::get_if<std::any>(&closureValue.value);
+    if (!anyPtr) {
+        error("Internal error: Function value is not stored as std::any");
+        return;
+    }
+
+    auto closure = std::any_cast<std::shared_ptr<Closure>>(*anyPtr);
+
+    // Spawn a new thread that executes the closure
+    // We need to capture a copy of the closure and use a mutex to protect interpreter state
+    goroutines.emplace_back([this, closure]() {
+        // Acquire the interpreter mutex to execute the closure
+        std::lock_guard<std::mutex> lock(interpreterMutex);
+
+        if (shuttingDown) return;
+
+        // Save current environment
+        Environment* previousEnv = currentEnv;
+
+        // Switch to closure's captured environment
+        currentEnv = closure->env;
+
+        // Enter new scope for parameters (closures passed to go() typically have no params)
+        enterScope();
+
+        // Execute body
+        try {
+            if (closure->body) {
+                closure->body->accept(*this);
+            }
+        } catch (ReturnException& ret) {
+            // Ignore return value from goroutine
+        } catch (std::exception& e) {
+            std::cerr << "Error in goroutine: " << e.what() << std::endl;
+        }
+
+        // Exit parameter scope
+        exitScope();
+
+        // Restore original environment
+        currentEnv = previousEnv;
+    });
+}
+
+void Interpreter::joinAllGoroutines() {
+    shuttingDown = true;
+    for (auto& t : goroutines) {
+        if (t.joinable()) {
+            t.join();
+        }
+    }
+    goroutines.clear();
+    shuttingDown = false;
+}
+
+RuntimeValue Interpreter::createWorkerPool(int numWorkers, const RuntimeValue& workerFunc) {
+    // Create a worker pool object
+    auto pool = std::make_shared<WorkerPool>();
+
+    // Create the results channel
+    auto resultsChannel = std::make_shared<ClassInstance>();
+    resultsChannel->className = "Channel";
+    resultsChannel->fields["closed"] = RuntimeValue(false);
+    std::vector<RuntimeValue> emptyQueue;
+    resultsChannel->fields["__queue"] = RuntimeValue(std::any(emptyQueue), "array<any>");
+    pool->resultsChannel = resultsChannel;
+
+    // Extract the worker function closure
+    auto* anyPtr = std::get_if<std::any>(&workerFunc.value);
+    if (!anyPtr) {
+        error("Worker function is not a valid closure");
+        return RuntimeValue();
+    }
+    auto workerClosure = std::any_cast<std::shared_ptr<Closure>>(*anyPtr);
+
+    // Spawn worker threads
+    for (int i = 0; i < numWorkers; i++) {
+        pool->workers.emplace_back([this, pool, workerClosure]() {
+            while (true) {
+                RuntimeValue job;
+                {
+                    std::unique_lock<std::mutex> lock(pool->poolMutex);
+                    pool->jobAvailable.wait(lock, [&pool]() {
+                        return !pool->jobQueue.empty() || pool->closed;
+                    });
+
+                    if (pool->closed && pool->jobQueue.empty()) {
+                        return;
+                    }
+
+                    job = pool->jobQueue.front();
+                    pool->jobQueue.pop();
+                    pool->activeWorkers++;
+                }
+
+                // Execute the worker function with the job
+                RuntimeValue result;
+                {
+                    std::lock_guard<std::mutex> lock(interpreterMutex);
+                    std::vector<RuntimeValue> args = {job};
+                    result = executeCallback(RuntimeValue(std::any(workerClosure), "function"), args);
+                }
+
+                // Put result in results channel
+                {
+                    std::lock_guard<std::mutex> lock(pool->poolMutex);
+                    if (auto* queuePtr = std::get_if<std::any>(&pool->resultsChannel->fields["__queue"].value)) {
+                        auto queue = std::any_cast<std::vector<RuntimeValue>>(*queuePtr);
+                        queue.push_back(result);
+                        pool->resultsChannel->fields["__queue"] = RuntimeValue(std::any(queue), "array<any>");
+                    }
+                    pool->activeWorkers--;
+                    pool->jobDone.notify_all();
+                }
+            }
+        });
+    }
+
+    // Store the pool
+    workerPools.push_back(pool);
+
+    // Create and return a WorkerPool object
+    auto poolObj = std::make_shared<ClassInstance>();
+    poolObj->className = "WorkerPool";
+    poolObj->fields["__poolId"] = RuntimeValue(static_cast<int>(workerPools.size() - 1));
+    poolObj->fields["numWorkers"] = RuntimeValue(numWorkers);
+    poolObj->fields["results"] = RuntimeValue(resultsChannel);
+
+    return RuntimeValue(poolObj);
+}
+
+RuntimeValue Interpreter::createPipeline(const RuntimeValue& inputChannel, const std::vector<RuntimeValue>& stages) {
+    if (stages.empty()) {
+        error("Pipeline requires at least one stage");
+        return RuntimeValue();
+    }
+
+    // Create intermediate channels for each stage
+    std::vector<std::shared_ptr<ClassInstance>> channels;
+
+    // First channel is the input
+    auto inputObj = inputChannel.asObject();
+    channels.push_back(inputObj);
+
+    // Create intermediate and output channels
+    for (size_t i = 0; i < stages.size(); i++) {
+        auto channel = std::make_shared<ClassInstance>();
+        channel->className = "Channel";
+        channel->fields["closed"] = RuntimeValue(false);
+        std::vector<RuntimeValue> emptyQueue;
+        channel->fields["__queue"] = RuntimeValue(std::any(emptyQueue), "array<any>");
+        channels.push_back(channel);
+    }
+
+    // Spawn a goroutine for each stage
+    for (size_t i = 0; i < stages.size(); i++) {
+        auto* anyPtr = std::get_if<std::any>(&stages[i].value);
+        if (!anyPtr) continue;
+
+        auto stageClosure = std::any_cast<std::shared_ptr<Closure>>(*anyPtr);
+        auto inChannel = channels[i];
+        auto outChannel = channels[i + 1];
+
+        goroutines.emplace_back([this, stageClosure, inChannel, outChannel]() {
+            while (true) {
+                // Receive from input channel
+                RuntimeValue value;
+                bool hasValue = false;
+                {
+                    std::lock_guard<std::mutex> lock(interpreterMutex);
+                    if (inChannel->fields.find("__queue") != inChannel->fields.end()) {
+                        if (auto* queuePtr = std::get_if<std::any>(&inChannel->fields["__queue"].value)) {
+                            auto queue = std::any_cast<std::vector<RuntimeValue>>(*queuePtr);
+                            if (!queue.empty()) {
+                                value = queue.front();
+                                queue.erase(queue.begin());
+                                inChannel->fields["__queue"] = RuntimeValue(std::any(queue), "array<any>");
+                                hasValue = true;
+                            }
+                        }
+                    }
+
+                    // Check if channel is closed and empty
+                    if (!hasValue && inChannel->fields["closed"].asBool()) {
+                        // Close output channel and exit
+                        outChannel->fields["closed"] = RuntimeValue(true);
+                        return;
+                    }
+                }
+
+                if (!hasValue) {
+                    // Wait a bit and try again
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                    continue;
+                }
+
+                // Process value through stage function
+                RuntimeValue result;
+                {
+                    std::lock_guard<std::mutex> lock(interpreterMutex);
+                    std::vector<RuntimeValue> args = {value};
+                    result = executeCallback(RuntimeValue(std::any(stageClosure), "function"), args);
+                }
+
+                // Send result to output channel
+                {
+                    std::lock_guard<std::mutex> lock(interpreterMutex);
+                    if (auto* queuePtr = std::get_if<std::any>(&outChannel->fields["__queue"].value)) {
+                        auto queue = std::any_cast<std::vector<RuntimeValue>>(*queuePtr);
+                        queue.push_back(result);
+                        outChannel->fields["__queue"] = RuntimeValue(std::any(queue), "array<any>");
+                    }
+                }
+            }
+        });
+    }
+
+    // Return the output channel (last in the chain)
+    return RuntimeValue(channels.back());
 }
 
 } // namespace stratos

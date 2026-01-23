@@ -12,6 +12,11 @@
 #include <unordered_map>
 #include <memory>
 #include <stdexcept>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <queue>
+#include <functional>
 
 namespace stratos {
 
@@ -303,6 +308,24 @@ private:
     // Garbage collector for cycle detection
     GarbageCollector gc;
 
+    // Thread management for concurrent.go()
+    mutable std::mutex interpreterMutex;
+    std::vector<std::thread> goroutines;
+    bool shuttingDown = false;
+
+    // Worker pool support
+    struct WorkerPool {
+        std::vector<std::thread> workers;
+        std::queue<RuntimeValue> jobQueue;
+        std::shared_ptr<ClassInstance> resultsChannel;
+        std::mutex poolMutex;
+        std::condition_variable jobAvailable;
+        std::condition_variable jobDone;
+        bool closed = false;
+        int activeWorkers = 0;
+    };
+    std::vector<std::shared_ptr<WorkerPool>> workerPools;
+
     // Helper methods
     void enterScope();
     void exitScope();
@@ -323,6 +346,12 @@ private:
     RuntimeValue instantiateClass(const std::string& className, const std::vector<RuntimeValue>& args);
 
     RuntimeValue executeCallback(const RuntimeValue& closureValue, const std::vector<RuntimeValue>& args);
+
+    // Concurrency support
+    void spawnGoroutine(const RuntimeValue& closureValue);
+    RuntimeValue createWorkerPool(int numWorkers, const RuntimeValue& workerFunc);
+    RuntimeValue createPipeline(const RuntimeValue& inputChannel, const std::vector<RuntimeValue>& stages);
+    void joinAllGoroutines();
 
     bool isTruthy(const RuntimeValue& value);
 

@@ -1,5 +1,5 @@
-// Example: Advanced Concurrency Primitives
-// Demonstrates channels and synchronization (synchronous operations)
+// Example: Advanced Concurrent Programming
+// Demonstrates goroutines, channels, worker pools, and pipelines
 
 package main;
 
@@ -9,70 +9,101 @@ use log;
 fn advancedConcurrencyDemo() {
     log.info("\n=== Advanced Concurrency Demo ===");
 
-    // Example 1: Channel send/receive
-    log.info("\n1. Channel Send/Receive:");
-
-    val ch = concurrent.newChannel(5);
-
-    // Send multiple values
-    ch.send(10);
-    ch.send(20);
-    ch.send(30);
-    log.info("Sent 3 values to channel");
-
-    // Receive values
-    val v1: int = ch.receive();
-    val v2: int = ch.receive();
-    val v3: int = ch.receive();
-    log.info("Received: " + v1 + ", " + v2 + ", " + v3);
-
-    // Example 2: Mutex protecting shared state
-    log.info("\n2. Mutex Protected Counter:");
-
-    val mutex = concurrent.newMutex();
-    var counter = 0;
-
-    // Simulate protected increment
-    for val i in 0..10 {
-        mutex.lock();
-        counter = counter + 1;
-        mutex.unlock();
-    }
-    log.info("Counter after 10 increments: " + counter);
-
-    // Example 3: WaitGroup tracking
-    log.info("\n3. WaitGroup Task Tracking:");
+    // Example 1: Goroutines with WaitGroup
+    log.info("\n1. Goroutines Example:");
 
     val wg = concurrent.newWaitGroup();
 
-    // Add tasks
-    wg.add(3);
-    log.info("Added 3 tasks");
+    for val i in 0..3 {
+        wg.add(1);
+        val num = i;
 
-    // Complete tasks
-    log.info("Completing task 1...");
-    wg.done();
+        concurrent.go(() => {
+            log.info("Goroutine " + num + " running");
+            concurrent.sleep(50);
+            log.info("Goroutine " + num + " done");
+            wg.done();
+        });
+    }
 
-    log.info("Completing task 2...");
-    wg.done();
-
-    log.info("Completing task 3...");
-    wg.done();
-
-    // Wait should return immediately since all tasks done
     wg.wait();
-    log.info("All tasks completed!");
+    log.info("All goroutines completed!");
 
-    // Example 4: Channel with close
-    log.info("\n4. Channel Close:");
+    // Example 2: Simple channel communication
+    log.info("\n2. Channel Example:");
 
-    val ch2 = concurrent.newChannel(3);
-    ch2.send(100);
-    ch2.send(200);
+    val ch = concurrent.newChannel(5);
+    val wg2 = concurrent.newWaitGroup();
+    wg2.add(1);
 
-    log.info("Channel open, isClosed: " + ch2.isClosed());
-    ch2.close();
-    log.info("Channel closed, isClosed: " + ch2.isClosed());
+    // Producer goroutine
+    concurrent.go(() => {
+        for val i in 1..4 {
+            log.info("Sending: " + i);
+            ch.send(i);
+        }
+        ch.close();
+        log.info("Producer finished");
+        wg2.done();
+    });
 
-    log.info("\nAdvanced demo complete!");
+    // Wait for producer to finish
+    wg2.wait();
+
+    // Now receive all values
+    for val i in 0..3 {
+        val value: int = ch.receive();
+        log.info("Received: " + value);
+    }
+
+    // Example 3: Worker Pool
+    log.info("\n3. Worker Pool Example:");
+
+    val pool = concurrent.newWorkerPool(2, (job) => {
+        log.info("Processing job: " + job);
+        concurrent.sleep(50);
+        return job * 2;
+    });
+
+    // Submit jobs
+    for val i in 1..4 {
+        pool.submit(i);
+        log.info("Submitted job: " + i);
+    }
+
+    // Wait for jobs to complete then close
+    concurrent.sleep(300);
+    pool.close();
+
+    // Collect results
+    log.info("Collecting results:");
+    for val i in 0..3 {
+        val result: int = pool.results.receive();
+        log.info("  Result: " + result);
+    }
+
+    // Example 4: Mutex with goroutines
+    log.info("\n4. Mutex with Goroutines:");
+
+    var counter = 0;
+    val mutex = concurrent.newMutex();
+    val wg3 = concurrent.newWaitGroup();
+
+    for val i in 0..5 {
+        wg3.add(1);
+
+        concurrent.go(() => {
+            for val j in 0..10 {
+                mutex.lock();
+                counter = counter + 1;
+                mutex.unlock();
+            }
+            wg3.done();
+        });
+    }
+
+    wg3.wait();
+    log.info("Final counter: " + counter + " (expected: 50)");
+
+    log.info("\nAdvanced concurrency demo complete!");
 }
