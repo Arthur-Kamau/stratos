@@ -1112,10 +1112,12 @@ std::string Parser::parseType() {
         consume(TokenType::GREATER, "Expect >");
         return "Optional<" + inner + ">";
     }
+    // Include ASYNC to support async.Promise<T> type syntax
     if (match({TokenType::IDENTIFIER, TokenType::INT, TokenType::STRING, TokenType::BOOL, TokenType::DOUBLE, TokenType::VOID,
                 TokenType::I8, TokenType::I16, TokenType::I32, TokenType::I64,
                 TokenType::U8, TokenType::U16, TokenType::U32, TokenType::U64,
-                TokenType::F32, TokenType::F64, TokenType::USIZE, TokenType::ISIZE})) {
+                TokenType::F32, TokenType::F64, TokenType::USIZE, TokenType::ISIZE,
+                TokenType::ASYNC})) {
         std::string typeName = previous().lexeme;
 
         // Handle qualified type names (e.g., io.Error, module.Type)

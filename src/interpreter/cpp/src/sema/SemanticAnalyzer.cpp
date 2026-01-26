@@ -1305,7 +1305,6 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
 
                 // Check for PackageDecl and process its contents
                 if (auto* pkgDecl = dynamic_cast<PackageDecl*>(statements[i].get())) {
-                    std::cerr << "DEBUG loadModule: First pass - Processing PackageDecl '" << pkgDecl->name.lexeme << "' with " << pkgDecl->declarations.size() << " declarations" << std::endl;
                     for (const auto& decl : pkgDecl->declarations) {
                         if (auto* funcDecl = dynamic_cast<FunctionDecl*>(decl.get())) {
                             std::vector<std::string> paramTypes;
@@ -1317,10 +1316,7 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
                                 // Ignore redefinitions for now or handle gracefully
                             }
                         } else if (auto* classDecl = dynamic_cast<ClassDecl*>(decl.get())) {
-                            std::cerr << "DEBUG loadModule: Registering class '" << classDecl->name.lexeme << "' with " << classDecl->methods.size() << " members" << std::endl;
-                            if (symbolTable.define(Symbol::Class(classDecl->name.lexeme, classDecl->name.lexeme, false, classDecl->name.line, classDecl->name.column, classDecl->name.file))) {
-                                std::cerr << "DEBUG loadModule:   -> class symbol defined" << std::endl;
-                            }
+                            symbolTable.define(Symbol::Class(classDecl->name.lexeme, classDecl->name.lexeme, false, classDecl->name.line, classDecl->name.column, classDecl->name.file));
                             // Register members
                             for (const auto& member : classDecl->methods) {
                                 if (auto* func = dynamic_cast<FunctionDecl*>(member.get())) {
@@ -1328,11 +1324,9 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
                                     for (const auto& p : func->parameters) pTypes.push_back(p.type);
                                     Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic, func->isAsync, func->name.line, func->name.column, func->name.file);
                                     classMembers[classDecl->name.lexeme][func->name.lexeme] = sym;
-                                    std::cerr << "DEBUG loadModule:   -> registered method " << classDecl->name.lexeme << "." << func->name.lexeme << std::endl;
                                 } else if (auto* var = dynamic_cast<VarDecl*>(member.get())) {
                                     Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, var->isPublic, var->name.line, var->name.column, var->name.file);
                                     classMembers[classDecl->name.lexeme][var->name.lexeme] = sym;
-                                    std::cerr << "DEBUG loadModule:   -> registered field " << classDecl->name.lexeme << "." << var->name.lexeme << std::endl;
                                 }
                             }
                         } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(decl.get())) {
