@@ -23,4 +23,5 @@ fn main() {
     if age >= 18 {
         println("Adult");
     }
+    
 }

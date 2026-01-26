@@ -54,7 +54,8 @@ std::unordered_map<std::string, TokenType> Lexer::keywords = {
     {"isize", TokenType::ISIZE},
     {"constructor", TokenType::CONSTRUCTOR},
     {"pub", TokenType::PUB},
-    {"not", TokenType::NOT}
+    {"not", TokenType::NOT},
+    {"type", TokenType::TYPE}
 };
 
 Lexer::Lexer(const std::string& source, const std::string& source_file) : source(source), source_file(source_file) {}

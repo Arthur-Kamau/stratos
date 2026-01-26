@@ -162,6 +162,7 @@ public:
 class Interpreter : public ASTVisitor {
 public:
     Interpreter();
+    explicit Interpreter(const std::string& projectRoot);
     ~Interpreter();
 
     // Execute a program (takes ownership of statements)
@@ -187,11 +188,13 @@ public:
     void visit(ArrayLiteralExpr& expr) override; // Visit method for ArrayLiteralExpr
     void visit(LambdaExpr& expr) override; // Visit method for LambdaExpr
     void visit(StructInitExpr& expr) override; // Visit method for StructInitExpr
+    void visit(WhenExpr& expr) override; // Visit method for WhenExpr
 
     void visit(VarDecl& stmt) override;
     void visit(FunctionDecl& stmt) override;
     void visit(ClassDecl& stmt) override;
     void visit(EnumDecl& stmt) override;
+    void visit(TypeAliasDecl& stmt) override;
     void visit(PackageDecl& stmt) override;
     void visit(UseStmt& stmt) override;
     void visit(BlockStmt& stmt) override;
@@ -302,6 +305,9 @@ private:
 
     // Track which module function is currently executing (for recursive calls)
     std::string currentExecutingModule;
+
+    // Project root directory for module resolution
+    std::string projectRoot;
 
     // Result of last expression evaluation
     RuntimeValue lastValue;

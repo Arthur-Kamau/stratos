@@ -25,10 +25,12 @@ class MapLiteralExpr; // Forward declaration
 class ArrayLiteralExpr; // Forward declaration
 class LambdaExpr; // Forward declaration
 class StructInitExpr; // Forward declaration
+class WhenExpr; // Forward declaration
 class VarDecl;
 class FunctionDecl;
 class ClassDecl;
 class EnumDecl;
+class TypeAliasDecl;
 class BlockStmt;
 class ExpressionStmt;
 class PrintStmt;
@@ -58,11 +60,13 @@ public:
     virtual void visit(ArrayLiteralExpr& expr) = 0; // Visit method for ArrayLiteralExpr
     virtual void visit(LambdaExpr& expr) = 0; // Visit method for LambdaExpr
     virtual void visit(StructInitExpr& expr) = 0; // Visit method for StructInitExpr
+    virtual void visit(WhenExpr& expr) = 0; // Visit method for WhenExpr
 
     virtual void visit(VarDecl& stmt) = 0;
     virtual void visit(FunctionDecl& stmt) = 0;
     virtual void visit(ClassDecl& stmt) = 0;
     virtual void visit(EnumDecl& stmt) = 0;
+    virtual void visit(TypeAliasDecl& stmt) = 0;
     virtual void visit(PackageDecl& stmt) = 0;
     virtual void visit(UseStmt& stmt) = 0;
     virtual void visit(BlockStmt& stmt) = 0;
@@ -229,6 +233,26 @@ public:
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };
 
+struct WhenCase {
+    std::vector<std::unique_ptr<Expr>> conditions; // Empty for 'else'
+    std::unique_ptr<Stmt> body; // Can be BlockStmt or single statement
+    bool isElse = false;
+
+    WhenCase(std::vector<std::unique_ptr<Expr>> conditions, std::unique_ptr<Stmt> body, bool isElse = false)
+        : conditions(std::move(conditions)), body(std::move(body)), isElse(isElse) {}
+};
+
+class WhenExpr : public Expr {
+public:
+    std::unique_ptr<Expr> condition; // Optional, for 'when (x) { ... }' vs 'when { ... }'
+    std::vector<WhenCase> cases;
+
+    WhenExpr(std::unique_ptr<Expr> condition, std::vector<WhenCase> cases)
+        : condition(std::move(condition)), cases(std::move(cases)) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
 // --- Statements ---
 
 class Stmt : public ASTNode {};
@@ -300,6 +324,19 @@ public:
 
     EnumDecl(Token name, std::vector<Token> values)
         : name(name), values(std::move(values)), documentation(nullptr) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+// Type alias declaration: type Handler = Function<Request, Response, void>;
+class TypeAliasDecl : public Stmt {
+public:
+    Token name;           // The alias name (e.g., Handler)
+    std::string aliasedType;  // The type being aliased (e.g., "Function<Request, Response, void>")
+    std::unique_ptr<DocComment> documentation;
+
+    TypeAliasDecl(Token name, std::string aliasedType)
+        : name(name), aliasedType(std::move(aliasedType)), documentation(nullptr) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };

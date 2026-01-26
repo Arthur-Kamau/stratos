@@ -686,6 +686,11 @@ void IRGenerator::visit(StructInitExpr& expr) {
     lastVal = {"null", "i8*"};
 }
 
+void IRGenerator::visit(WhenExpr& expr) {
+    // TODO: IR Gen for when expressions
+    lastVal = {"null", "i8*"};
+}
+
 void IRGenerator::visit(ClassDecl& stmt) {
     // Generate constructors and methods for this class
     currentClass = stmt.name.lexeme;
@@ -722,6 +727,10 @@ void IRGenerator::visit(ClassDecl& stmt) {
 void IRGenerator::visit(EnumDecl& stmt) {
     // Enums are handled at compile time, no IR code needed
     // Enum values are simply constants resolved by the semantic analyzer
+}
+
+void IRGenerator::visit(TypeAliasDecl& stmt) {
+    // Type aliases are compile-time constructs, no IR code needed
 }
 
 void IRGenerator::visit(PackageDecl& stmt) {

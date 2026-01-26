@@ -45,12 +45,14 @@ public:
     void visit(LambdaExpr& expr) override;
     void visit(AwaitExpr& expr) override;
     void visit(StructInitExpr& expr) override;
+    void visit(WhenExpr& expr) override;
 
     // Statement visitors
     void visit(VarDecl& stmt) override;
     void visit(FunctionDecl& stmt) override;
     void visit(ClassDecl& stmt) override;
     void visit(EnumDecl& stmt) override;
+    void visit(TypeAliasDecl& stmt) override;
     void visit(PackageDecl& stmt) override;
     void visit(UseStmt& stmt) override;
     void visit(BlockStmt& stmt) override;

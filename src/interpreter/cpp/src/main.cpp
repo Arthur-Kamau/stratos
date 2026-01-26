@@ -1058,7 +1058,7 @@ int handleRun(int argc, char* argv[]) {
 
     // --- Execute ---
     try {
-        Interpreter interpreter;
+        Interpreter interpreter(projectRoot.string());
         interpreter.execute(std::move(allStatements)); // Interprets all declarations
 
         // Call main function

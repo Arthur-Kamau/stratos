@@ -50,6 +50,7 @@ std::unique_ptr<Stmt> Parser::declaration() {
         if (match({TokenType::CLASS, TokenType::INTERFACE})) return classDeclaration();
         if (match({TokenType::STRUCT})) return structDeclaration();
         if (match({TokenType::ENUM})) return enumDeclaration();
+        if (match({TokenType::TYPE})) return typeAliasDeclaration();
         if (match({TokenType::PACKAGE})) return packageDeclaration();
         if (match({TokenType::USE})) return useStatement();
 
@@ -85,7 +86,24 @@ std::unique_ptr<Stmt> Parser::varDeclaration(bool isPublic) {
 }
 
 std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind, bool isPublic, bool isAsync) {
-    Token name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
+    // For methods, allow keywords like 'get', 'set', 'use', 'delete' as method names
+    Token name;
+    if (kind == "method") {
+        // Accept either an identifier or certain keywords as method names
+        if (check(TokenType::IDENTIFIER)) {
+            name = advance();
+        } else if (check(TokenType::USE) || check(TokenType::FOR) || check(TokenType::IF) ||
+                   check(TokenType::WHILE) || check(TokenType::RETURN) || check(TokenType::VAR) ||
+                   check(TokenType::VAL) || check(TokenType::TRUE) || check(TokenType::FALSE)) {
+            // Convert the keyword token to act as an identifier for method name
+            name = advance();
+            name.type = TokenType::IDENTIFIER;  // Treat it as identifier for AST purposes
+        } else {
+            name = consume(TokenType::IDENTIFIER, "Expect method name.");
+        }
+    } else {
+        name = consume(TokenType::IDENTIFIER, "Expect " + kind + " name.");
+    }
 
     // Skip generic type parameters if present (e.g., <T, E>)
     if (match({TokenType::LESS})) {
@@ -300,6 +318,18 @@ std::unique_ptr<Stmt> Parser::enumDeclaration() {
     return enumDecl;
 }
 
+std::unique_ptr<Stmt> Parser::typeAliasDeclaration() {
+    // type Handler = Function<Request, Response, void>;
+    Token name = consume(TokenType::IDENTIFIER, "Expect type alias name.");
+    consume(TokenType::EQUAL, "Expect '=' after type alias name.");
+    std::string aliasedType = parseType();
+    consume(TokenType::SEMICOLON, "Expect ';' after type alias.");
+
+    auto typeAlias = std::make_unique<TypeAliasDecl>(name, aliasedType);
+    typeAlias->documentation = takePendingDoc();
+    return typeAlias;
+}
+
 std::unique_ptr<Stmt> Parser::packageDeclaration() {
     Token name = consume(TokenType::IDENTIFIER, "Expect package name.");
     // Package declarations don't use braces in Go-style
@@ -359,29 +389,72 @@ std::unique_ptr<Stmt> Parser::statement() {
     if (match({TokenType::RETURN})) return returnStatement();
     if (match({TokenType::BREAK})) return breakStatement();
     if (match({TokenType::CONTINUE})) return continueStatement();
-    if (match({TokenType::WHEN})) return whenStatement();
+    // if (match({TokenType::WHEN})) return whenStatement(); // Handled as expression statement now
     if (match({TokenType::LEFT_BRACE})) return block();
 
     return expressionStatement();
 }
 
-std::unique_ptr<Stmt> Parser::whenStatement() {
+std::unique_ptr<Expr> Parser::whenExpression() {
     consume(TokenType::LEFT_PAREN, "Expect '(' after 'when'.");
-    std::unique_ptr<Expr> condition = expression();
+    
+    std::unique_ptr<Expr> condition = nullptr;
+    // Check if we have a condition or if it's 'when ()' (which acts like switch true)
+    // Or maybe 'when ( expr )'
+    // Stratos syntax: when (x) { ... } or when { ... } (if we supported no parens)
+    // But typical is when (x) { case 1 -> ... }
+    
+    if (!check(TokenType::RIGHT_PAREN)) {
+        condition = expression();
+    }
     consume(TokenType::RIGHT_PAREN, "Expect ')' after when condition.");
     
     consume(TokenType::LEFT_BRACE, "Expect '{' before when body.");
     
-    // Skip body for now to ensure parsing completes
-    int braces = 1;
-    while (braces > 0 && !isAtEnd()) {
-        Token t = peek();
-        if (t.type == TokenType::LEFT_BRACE) braces++;
-        if (t.type == TokenType::RIGHT_BRACE) braces--;
-        advance();
+    std::vector<WhenCase> cases;
+    
+    while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
+        // Parse case
+        // Case syntax: 
+        // 1. value -> statement/block
+        // 2. else -> statement/block
+        // 3. value1, value2 -> ...
+        
+        std::vector<std::unique_ptr<Expr>> caseConditions;
+        bool isElse = false;
+        
+        if (match({TokenType::ELSE})) {
+            isElse = true;
+            consume(TokenType::ARROW, "Expect '->' after 'else'.");
+        } else {
+            // Parse conditions
+            do {
+                caseConditions.push_back(expression());
+            } while (match({TokenType::COMMA}));
+            
+            consume(TokenType::ARROW, "Expect '->' after case conditions.");
+        }
+        
+        // Parse body
+        std::unique_ptr<Stmt> body;
+        if (match({TokenType::LEFT_BRACE})) {
+            body = block();
+        } else {
+            // Single statement/expression
+            // If it's an expression, wrap in return/expression stmt?
+            // "when" is an expression, so the body should evaluate to something.
+            // If we parse as statement(), it covers ExpressionStmt.
+            // But we need to capture the value if it's being assigned.
+            // For now, let's parse as statement. Interpreter handles returning value from block/stmt.
+            body = statement();
+        }
+        
+        cases.push_back(WhenCase(std::move(caseConditions), std::move(body), isElse));
     }
     
-    return std::make_unique<BlockStmt>(std::vector<std::unique_ptr<Stmt>>{});
+    consume(TokenType::RIGHT_BRACE, "Expect '}' after when body.");
+    
+    return std::make_unique<WhenExpr>(std::move(condition), std::move(cases));
 }
 
 std::unique_ptr<Stmt> Parser::ifStatement() {
@@ -817,6 +890,10 @@ std::unique_ptr<Expr> Parser::primary() {
     // Handle 'this'
     if (match({TokenType::THIS})) {
         return std::make_unique<VariableExpr>(previous());
+    }
+
+    if (match({TokenType::WHEN})) {
+        return whenExpression(); // Parse as expression
     }
 
     // Allow 'async' as an identifier (for module names like async.delay)

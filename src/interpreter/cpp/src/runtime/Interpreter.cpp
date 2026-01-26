@@ -12,7 +12,9 @@
 
 namespace stratos {
 
-Interpreter::Interpreter() {
+Interpreter::Interpreter() : Interpreter("") {}
+
+Interpreter::Interpreter(const std::string& root) : projectRoot(root) {
     // Reserve capacity to prevent vector reallocation (which would invalidate currentEnv pointer)
     // This ensures currentEnv remains valid throughout execution
     environments.reserve(1000);
@@ -1634,6 +1636,16 @@ void Interpreter::visit(CallExpr& expr) {
             return;
         }
 
+        // If we're loading a module, check if the function exists in that module
+        // (for module initialization code like `var x = myFunction()`)
+        if (!currentModuleName.empty() &&
+            moduleFunctions.count(currentModuleName) &&
+            moduleFunctions.at(currentModuleName).count(functionName)) {
+            FunctionDecl& funcDeclRef = moduleFunctions.at(currentModuleName).at(functionName).get();
+            lastValue = callModuleFunction(currentModuleName, functionName, args, &funcDeclRef);
+            return;
+        }
+
         // Call user-defined function
         lastValue = callFunction(functionName, args);
     }
@@ -1968,6 +1980,71 @@ void Interpreter::visit(StructInitExpr& expr) {
     
     // Return the instance
     lastValue = RuntimeValue(instance);
+    // Return the instance
+    lastValue = RuntimeValue(instance);
+}
+
+void Interpreter::visit(WhenExpr& expr) {
+    RuntimeValue subjectValue;
+    bool hasSubject = false;
+
+    if (expr.condition) {
+        expr.condition->accept(*this);
+        subjectValue = lastValue;
+        hasSubject = true;
+    }
+
+    for (const auto& kase : expr.cases) {
+        // Skip else cases during normal iteration (handle at end if no match)
+        if (kase.isElse) continue;
+
+        bool matchFound = false;
+        
+        // Logical OR between multiple conditions in a single case (value1, value2 -> ...)
+        for (const auto& condExpr : kase.conditions) {
+            condExpr->accept(*this);
+            RuntimeValue condValue = lastValue;
+            
+            if (hasSubject) {
+                // Equality check
+                if (subjectValue.type == condValue.type) {
+                    if (subjectValue.type == "int") matchFound = (subjectValue.asInt() == condValue.asInt());
+                    else if (subjectValue.type == "double") matchFound = (subjectValue.asDouble() == condValue.asDouble());
+                    else if (subjectValue.type == "string") matchFound = (subjectValue.asString() == condValue.asString());
+                    else if (subjectValue.type == "bool") matchFound = (subjectValue.asBool() == condValue.asBool());
+                }
+            } else {
+                // Truthiness check
+                matchFound = isTruthy(condValue);
+            }
+
+            if (matchFound) break; // Found a matching condition for this case
+        }
+
+        if (matchFound) {
+            if (kase.body) {
+                kase.body->accept(*this);
+            } else {
+                lastValue = RuntimeValue();
+            }
+            return; // Exit after executing the first matching case
+        }
+    }
+
+    // No match found in regular cases, check for else
+    for (const auto& kase : expr.cases) {
+        if (kase.isElse) {
+            if (kase.body) {
+                kase.body->accept(*this);
+            } else {
+                lastValue = RuntimeValue();
+            }
+            return;
+        }
+    }
+    
+    // No match and no else
+    lastValue = RuntimeValue(); 
 }
 
 void Interpreter::visit(AwaitExpr& expr) {
@@ -2058,7 +2135,19 @@ void Interpreter::visit(EnumDecl& stmt) {
     }
 }
 
+void Interpreter::visit(TypeAliasDecl& stmt) {
+    // Type aliases are purely compile-time constructs
+    // At runtime, they don't need any special handling
+    // The alias just maps one type name to another
+}
+
 void Interpreter::visit(PackageDecl& stmt) {
+    // Skip non-main packages if we're not loading a module
+    // These will be loaded via UseStmt when needed
+    if (currentModuleName.empty() && stmt.name.lexeme != "main") {
+        return;
+    }
+
     // Execute package contents
     for (const auto& s : stmt.declarations) {
         if (s) s->accept(*this);
@@ -2075,19 +2164,31 @@ void Interpreter::visit(UseStmt& stmt) {
     currentEnv->define(moduleName, moduleValue);
 
     // Search paths in priority order
-    std::vector<std::string> searchPaths = {
-        "src/" + moduleName,                                  // Internal packages (highest priority)
-        "deps/" + moduleName + "/src",                        // External dependencies
-        "deps/" + moduleName,                                  // Alternative layout
-        "std/" + moduleName,                                  // Standard library
-        "std/encoding/" + moduleName,                         // Encoding modules
-        "../std/" + moduleName,                               // One level up
-        "../std/encoding/" + moduleName,
-        "../../std/" + moduleName,                            // Two levels up
-        "../../std/encoding/" + moduleName,
-        "../../../std/" + moduleName,                         // Three levels up
-        "../../../std/encoding/" + moduleName,
-    };
+    std::vector<std::string> searchPaths;
+
+    // Add project-root-relative paths if projectRoot is set
+    if (!projectRoot.empty()) {
+        searchPaths.push_back(projectRoot + "/src/" + moduleName);
+        searchPaths.push_back(projectRoot + "/deps/" + moduleName + "/src");
+        searchPaths.push_back(projectRoot + "/deps/" + moduleName);
+    }
+
+    // Add relative paths as fallback
+    searchPaths.push_back("src/" + moduleName);
+    searchPaths.push_back("deps/" + moduleName + "/src");
+    searchPaths.push_back("deps/" + moduleName);
+    searchPaths.push_back("std/" + moduleName);
+    searchPaths.push_back("std/encoding/" + moduleName);
+    searchPaths.push_back("std/net/" + moduleName);
+    searchPaths.push_back("../std/" + moduleName);
+    searchPaths.push_back("../std/encoding/" + moduleName);
+    searchPaths.push_back("../std/net/" + moduleName);
+    searchPaths.push_back("../../std/" + moduleName);
+    searchPaths.push_back("../../std/encoding/" + moduleName);
+    searchPaths.push_back("../../std/net/" + moduleName);
+    searchPaths.push_back("../../../std/" + moduleName);
+    searchPaths.push_back("../../../std/encoding/" + moduleName);
+    searchPaths.push_back("../../../std/net/" + moduleName);
 
     // Try each search path until we find the module
     for (const auto& modulePath : searchPaths) {
@@ -2112,7 +2213,8 @@ void Interpreter::visit(UseStmt& stmt) {
 
         // If we found files to load, process them
         if (!filesToLoad.empty()) {
-            // Set current module name to track module context
+            // Save and set current module name to track module context
+            std::string previousModuleName = currentModuleName;
             currentModuleName = moduleName;
 
             for (const auto& filePath : filesToLoad) {
@@ -2145,8 +2247,8 @@ void Interpreter::visit(UseStmt& stmt) {
                 }
             }
 
-            // Clear current module name after loading
-            currentModuleName = "";
+            // Restore previous module name after loading
+            currentModuleName = previousModuleName;
             return; // Module found and loaded
         }
     }

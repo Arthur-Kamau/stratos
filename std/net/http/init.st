@@ -75,8 +75,8 @@ class Route {
     pub var middleware: Array<Middleware>;
 }
 
-class Handler = Function<Request, Response, void>;
-class Middleware = Function<Request, Response, Function, void>;
+type Handler = Function<Request, Response, void>;
+type Middleware = Function<Request, Response, Function, void>;
 
 class Server {
     pub var addr: string;

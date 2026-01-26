@@ -37,11 +37,11 @@ public:
         if (scopes.empty()) return false;
         auto& currentScope = scopes.back();
         if (currentScope.find(symbol.name) != currentScope.end()) {
-            std::cerr << "[DEBUG] Symbol '" << symbol.name << "' already defined in current scope (depth " << scopes.size() << ")" << std::endl;
+            // std::cerr << "[DEBUG] Symbol '" << symbol.name << "' already defined in current scope (depth " << scopes.size() << ")" << std::endl;
             return false; // Already defined in this scope
         }
         currentScope[symbol.name] = symbol;
-        std::cerr << "[DEBUG] Defined Symbol '" << symbol.name << "' type='" << symbol.type << "' (depth " << scopes.size() << ")" << std::endl;
+        // std::cerr << "[DEBUG] Defined Symbol '" << symbol.name << "' type='" << symbol.type << "' (depth " << scopes.size() << ")" << std::endl;
         return true;
     }
 
@@ -50,11 +50,11 @@ public:
         for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
             auto found = it->find(name);
             if (found != it->end()) {
-                std::cerr << "[DEBUG] Resolved Symbol '" << name << "' (depth " << (scopes.size() - (it - scopes.rbegin())) << ")" << std::endl;
+                // std::cerr << "[DEBUG] Resolved Symbol '" << name << "' (depth " << (scopes.size() - (it - scopes.rbegin())) << ")" << std::endl;
                 return found->second;
             }
         }
-        std::cerr << "[DEBUG] Failed to resolve Symbol '" << name << "'" << std::endl;
+        // std::cerr << "[DEBUG] Failed to resolve Symbol '" << name << "'" << std::endl;
         return std::nullopt;
     }
 

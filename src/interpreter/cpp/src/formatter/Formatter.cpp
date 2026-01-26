@@ -233,6 +233,36 @@ void Formatter::visit(StructInitExpr& expr) {
     write("}");
 }
 
+void Formatter::visit(WhenExpr& expr) {
+    write("when");
+    if (expr.condition) {
+        space();
+        expr.condition->accept(*this);
+    }
+    space();
+    write("{");
+    newline();
+    indentLevel_++;
+    for (const auto& c : expr.cases) {
+        indent();
+        for (size_t i = 0; i < c.conditions.size(); ++i) {
+            c.conditions[i]->accept(*this);
+            if (i < c.conditions.size() - 1) {
+                write(",");
+                space();
+            }
+        }
+        space();
+        write("->");
+        space();
+        if (c.body) c.body->accept(*this);
+        newline();
+    }
+    indentLevel_--;
+    indent();
+    write("}");
+}
+
 // Statement visitors
 void Formatter::visit(VarDecl& stmt) {
     write(stmt.isMutable ? "var" : "val");
@@ -344,6 +374,18 @@ void Formatter::visit(EnumDecl& stmt) {
 
     indent();
     write("}");
+    newline();
+}
+
+void Formatter::visit(TypeAliasDecl& stmt) {
+    write("type");
+    space();
+    write(stmt.name.lexeme);
+    space();
+    write("=");
+    space();
+    write(stmt.aliasedType);
+    write(";");
     newline();
 }
 

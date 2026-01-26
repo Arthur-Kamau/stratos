@@ -692,6 +692,76 @@ void SemanticAnalyzer::visit(CallExpr& expr) {
                         }
                         return;
                     }
+
+                    // Check if this is a user-defined module function
+                    // (module was loaded and function was registered in symbol table)
+                    bool isLoadedModule = std::find(loadedModules.begin(), loadedModules.end(), moduleName) != loadedModules.end();
+                    if (isLoadedModule) {
+                        // Look up function in symbol table
+                        auto funcSymbol = symbolTable.resolve(functionName);
+                        if (funcSymbol && funcSymbol->kind == SymbolKind::FUNCTION) {
+                            // Valid user-defined module function call
+                            for (const auto& arg : expr.arguments) {
+                                arg->accept(*this);
+                            }
+                            return;
+                        }
+                    }
+
+                    // Check if this is a method call on an object (e.g., router.get())
+                    // First, check if the left side is a variable (not a module)
+                    auto varSymbol = symbolTable.resolve(moduleName);
+                    std::cerr << "DEBUG: Checking method call " << moduleName << "." << functionName << std::endl;
+                    std::cerr << "DEBUG:   varSymbol=" << (varSymbol ? "found" : "null") << std::endl;
+                    if (varSymbol) {
+                        std::cerr << "DEBUG:   varSymbol->kind=" << static_cast<int>(varSymbol->kind) << " (VARIABLE=" << static_cast<int>(SymbolKind::VARIABLE) << ")" << std::endl;
+                        std::cerr << "DEBUG:   varSymbol->type=" << varSymbol->type << std::endl;
+                    }
+                    if (varSymbol && varSymbol->kind == SymbolKind::VARIABLE) {
+                        std::string objectType = varSymbol->type;
+
+                        // Strip generics for lookup: "List<T>" -> "List"
+                        std::string baseType = objectType;
+                        size_t paramStart = baseType.find('<');
+                        if (paramStart != std::string::npos) {
+                            baseType = baseType.substr(0, paramStart);
+                        }
+                        std::cerr << "DEBUG:   baseType=" << baseType << std::endl;
+
+                        // Check if type is "any" - allow any method
+                        if (baseType == "any") {
+                            for (const auto& arg : expr.arguments) {
+                                arg->accept(*this);
+                            }
+                            return;
+                        }
+
+                        // Check class members for the method
+                        std::cerr << "DEBUG:   classMembers has " << baseType << "? " << (classMembers.find(baseType) != classMembers.end() ? "yes" : "no") << std::endl;
+                        if (classMembers.find(baseType) != classMembers.end()) {
+                            auto& members = classMembers[baseType];
+                            std::cerr << "DEBUG:   members has " << functionName << "? " << (members.find(functionName) != members.end() ? "yes" : "no") << std::endl;
+                            if (members.find(functionName) != members.end()) {
+                                // Valid method call - analyze arguments
+                                for (const auto& arg : expr.arguments) {
+                                    arg->accept(*this);
+                                }
+                                return;
+                            }
+                        }
+
+                        // If the type is a known class, allow method calls even if method not found
+                        // (might be a native method or defined elsewhere)
+                        auto classSymbol = symbolTable.resolve(baseType);
+                        std::cerr << "DEBUG:   classSymbol=" << (classSymbol ? "found" : "null") << std::endl;
+                        if (classSymbol && classSymbol->kind == SymbolKind::CLASS) {
+                            std::cerr << "DEBUG:   -> valid class, allowing method call" << std::endl;
+                            for (const auto& arg : expr.arguments) {
+                                arg->accept(*this);
+                            }
+                            return;
+                        }
+                    }
                 }
             }
         }
@@ -784,6 +854,30 @@ void SemanticAnalyzer::visit(LambdaExpr& expr) {
     symbolTable.exitScope();
 
     currentFunctionIsAsync = previousAsync;
+}
+
+void SemanticAnalyzer::visit(WhenExpr& expr) {
+    if (expr.condition) {
+        expr.condition->accept(*this);
+    }
+    
+    // Analyze cases
+    for (const auto& c : expr.cases) {
+        for (const auto& cond : c.conditions) {
+            cond->accept(*this);
+            // TODO: Verify condition type matches subject type (if present)
+        }
+        
+        symbolTable.enterScope();
+        if (c.body) c.body->accept(*this);
+        symbolTable.exitScope();
+    }
+    
+    // Set type of the whole expression based on the first case's body (implied)
+    // or just "any" / "unknown" for now since bodies are Stmts (BlockStmt usually)
+    // If we want `val x = when...`, the body must yield a value.
+    // Since Stratos is statement-oriented, `when` returning a value might need logic similar to Rust's block expressions.
+    // For now, we assume implicit return or "any".
 }
 
 // --- Statements ---
@@ -905,6 +999,13 @@ void SemanticAnalyzer::visit(EnumDecl& stmt) {
     }
 }
 
+void SemanticAnalyzer::visit(TypeAliasDecl& stmt) {
+    // Register the type alias as a class/type so it can be used in type annotations
+    // The aliased type is stored in the symbol's type field
+    symbolTable.define(Symbol::Class(stmt.name.lexeme, stmt.aliasedType, false,
+                                      stmt.name.line, stmt.name.column, stmt.name.file));
+}
+
 void SemanticAnalyzer::visit(PackageDecl& stmt) {
     // Debug statements removed Visiting PackageDecl '" << stmt.name.lexeme << "' with " << stmt.declarations.size() << " declarations" << std::endl;
     // Package declaration (like "package main;") just declares what package
@@ -933,24 +1034,24 @@ void SemanticAnalyzer::visit(UseStmt& stmt) {
     // Debug statements removed UseStmt processing module '" << moduleName << "'" << std::endl;
 
     // Check if already loaded
-    if (std::find(loadedModules.begin(), loadedModules.end(), moduleName) != loadedModules.end()) {
-        // Debug statements removed Module '" << moduleName << "' already loaded" << std::endl;
-        return; // Already loaded
+    bool alreadyLoaded = std::find(loadedModules.begin(), loadedModules.end(), moduleName) != loadedModules.end();
+
+    if (!alreadyLoaded) {
+        // Check if this is a native module (implemented in C++ via NativeRegistry)
+        auto& registry = NativeRegistry::getInstance();
+        bool isNativeModule = registry.hasModule(moduleName);
+
+        // Try to load as a source file module (even for native modules - they can have .st implementations)
+        loadModule(moduleName);
+
+        // Register as loaded (loadModule already adds to loadedModules)
+        if (std::find(loadedModules.begin(), loadedModules.end(), moduleName) == loadedModules.end()) {
+            loadedModules.push_back(moduleName);
+        }
     }
 
-    // Check if this is a native module (implemented in C++ via NativeRegistry)
-    auto& registry = NativeRegistry::getInstance();
-    bool isNativeModule = registry.hasModule(moduleName);
-
-    // Try to load as a source file module (even for native modules - they can have .st implementations)
-    loadModule(moduleName);
-
-    // Register as loaded (loadModule already adds to loadedModules)
-    if (std::find(loadedModules.begin(), loadedModules.end(), moduleName) == loadedModules.end()) {
-        loadedModules.push_back(moduleName);
-    }
-
-    // Define the module name as a variable in the current scope
+    // ALWAYS define the module name as a variable in the current scope
+    // This is needed even if the module content was already loaded (e.g., from project src/ directory)
     symbolTable.define(Symbol::Variable(moduleName, "module", false, false, stmt.moduleName.line, stmt.moduleName.column, stmt.moduleName.file));
     // Debug statements removed UseStmt completed for module '" << moduleName << "'" << std::endl;
 }
@@ -1204,7 +1305,7 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
 
                 // Check for PackageDecl and process its contents
                 if (auto* pkgDecl = dynamic_cast<PackageDecl*>(statements[i].get())) {
-                    // Debug statements removed First pass - Processing PackageDecl '" << pkgDecl->name.lexeme << "' with " << pkgDecl->declarations.size() << " declarations" << std::endl;
+                    std::cerr << "DEBUG loadModule: First pass - Processing PackageDecl '" << pkgDecl->name.lexeme << "' with " << pkgDecl->declarations.size() << " declarations" << std::endl;
                     for (const auto& decl : pkgDecl->declarations) {
                         if (auto* funcDecl = dynamic_cast<FunctionDecl*>(decl.get())) {
                             std::vector<std::string> paramTypes;
@@ -1216,9 +1317,9 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
                                 // Ignore redefinitions for now or handle gracefully
                             }
                         } else if (auto* classDecl = dynamic_cast<ClassDecl*>(decl.get())) {
-                            // Debug statements removed Registering class '" << classDecl->name.lexeme << "' from file: " << filePath << std::endl;
+                            std::cerr << "DEBUG loadModule: Registering class '" << classDecl->name.lexeme << "' with " << classDecl->methods.size() << " members" << std::endl;
                             if (symbolTable.define(Symbol::Class(classDecl->name.lexeme, classDecl->name.lexeme, false, classDecl->name.line, classDecl->name.column, classDecl->name.file))) {
-                                // Debug statements removed Successfully registered class '" << classDecl->name.lexeme << "'" << std::endl;
+                                std::cerr << "DEBUG loadModule:   -> class symbol defined" << std::endl;
                             }
                             // Register members
                             for (const auto& member : classDecl->methods) {
@@ -1227,9 +1328,11 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
                                     for (const auto& p : func->parameters) pTypes.push_back(p.type);
                                     Symbol sym = Symbol::Function(func->name.lexeme, pTypes, func->returnType, func->isPublic, func->isAsync, func->name.line, func->name.column, func->name.file);
                                     classMembers[classDecl->name.lexeme][func->name.lexeme] = sym;
+                                    std::cerr << "DEBUG loadModule:   -> registered method " << classDecl->name.lexeme << "." << func->name.lexeme << std::endl;
                                 } else if (auto* var = dynamic_cast<VarDecl*>(member.get())) {
                                     Symbol sym = Symbol::Variable(var->name.lexeme, var->typeName, var->isMutable, var->isPublic, var->name.line, var->name.column, var->name.file);
                                     classMembers[classDecl->name.lexeme][var->name.lexeme] = sym;
+                                    std::cerr << "DEBUG loadModule:   -> registered field " << classDecl->name.lexeme << "." << var->name.lexeme << std::endl;
                                 }
                             }
                         } else if (auto* enumDecl = dynamic_cast<EnumDecl*>(decl.get())) {
@@ -1240,6 +1343,10 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
                                 std::string fullName = enumDecl->name.lexeme + "." + value.lexeme;
                                 symbolTable.define(Symbol::Variable(fullName, enumDecl->name.lexeme, false, false, value.line, value.column, filePath));
                             }
+                        } else if (auto* typeAlias = dynamic_cast<TypeAliasDecl*>(decl.get())) {
+                            // Register type alias as a class/type mapping
+                            symbolTable.define(Symbol::Class(typeAlias->name.lexeme, typeAlias->aliasedType, false,
+                                                            typeAlias->name.line, typeAlias->name.column, typeAlias->name.file));
                         }
                     }
                     continue;
@@ -1333,6 +1440,10 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
                         std::string fullName = enumDecl->name.lexeme + "." + value.lexeme;
                         symbolTable.define(Symbol::Variable(fullName, enumDecl->name.lexeme, false, false, value.line, value.column, filePath));
                     }
+                } else if (auto* typeAlias = dynamic_cast<TypeAliasDecl*>(statements[i].get())) {
+                    // Register type alias as a class/type mapping
+                    symbolTable.define(Symbol::Class(typeAlias->name.lexeme, typeAlias->aliasedType, false,
+                                                    typeAlias->name.line, typeAlias->name.column, typeAlias->name.file));
                 }
             }
 
@@ -1579,6 +1690,16 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
 
     if (auto* structExpr = dynamic_cast<StructInitExpr*>(expr)) {
         return structExpr->name.lexeme;
+    }
+
+    if (auto* structExpr = dynamic_cast<StructInitExpr*>(expr)) {
+        return structExpr->name.lexeme;
+    }
+
+    if (auto* whenExpr = dynamic_cast<WhenExpr*>(expr)) {
+        // Attempt to infer type from first case body if possible
+        // This is tricky without fully analyzing return paths
+        return "any";
     }
 
     return "unknown";

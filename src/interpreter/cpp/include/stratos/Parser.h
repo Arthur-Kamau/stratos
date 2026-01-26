@@ -26,13 +26,14 @@ private:
     std::unique_ptr<Stmt> classDeclaration();
     std::unique_ptr<Stmt> structDeclaration(); // New
     std::unique_ptr<Stmt> enumDeclaration();
+    std::unique_ptr<Stmt> typeAliasDeclaration();
     std::unique_ptr<Stmt> packageDeclaration();
     std::unique_ptr<Stmt> useStatement();
 
     // Statements
     std::unique_ptr<Stmt> statement();
     std::unique_ptr<Stmt> ifStatement();
-    std::unique_ptr<Stmt> whenStatement();
+    // std::unique_ptr<Stmt> whenStatement(); // Removed
     std::unique_ptr<Stmt> whileStatement();
     std::unique_ptr<Stmt> forStatement();
     std::unique_ptr<Stmt> returnStatement();
@@ -61,6 +62,7 @@ private:
     std::unique_ptr<Expr> finishCall(std::unique_ptr<Expr> callee);
     std::unique_ptr<Expr> primary();
     std::unique_ptr<Expr> cast(); // New: Parse cast expressions
+    std::unique_ptr<Expr> whenExpression(); // New: Parse when expressions
 
     // Type Parsing
     std::string parseType();

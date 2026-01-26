@@ -72,6 +72,7 @@ enum class TokenType {
     F32, F64,
     USIZE, ISIZE,
     CONSTRUCTOR, PUB,
+    TYPE, // for type aliases: type Handler = Function<...>
 
     // Documentation
     DOC_COMMENT,

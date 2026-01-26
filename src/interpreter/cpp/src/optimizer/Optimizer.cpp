@@ -113,6 +113,17 @@ void Optimizer::visit(StructInitExpr& expr) {
     lastConst.type = 0;
 }
 
+void Optimizer::visit(WhenExpr& expr) {
+    if (expr.condition) expr.condition->accept(*this);
+    for (auto& c : expr.cases) {
+        for (auto& cond : c.conditions) {
+            cond->accept(*this);
+        }
+        if (c.body) c.body->accept(*this);
+    }
+    lastConst.type = 0;
+}
+
 // --- Statements ---
 
 void Optimizer::visit(VarDecl& stmt) {
@@ -160,6 +171,7 @@ void Optimizer::visit(ReturnStmt& stmt) {
 
 void Optimizer::visit(ClassDecl& stmt) {} // No-op
 void Optimizer::visit(EnumDecl& stmt) {} // No-op
+void Optimizer::visit(TypeAliasDecl& stmt) {} // No-op
 void Optimizer::visit(PackageDecl& stmt) {} // No-op
 void Optimizer::visit(UseStmt& stmt) {} // No-op
 void Optimizer::visit(ExpressionStmt& stmt) {
