@@ -97,8 +97,8 @@ fn main() {
     val testData = "Monday\nTuesday\nWednesday\nThursday\nFriday\nSaturday\nSunday";
     io . writeFile("days.txt", testData);
     println("✓ Created days.txt with 7 days");
-    val fileContent = io . readFile("days.txt");
-    val days = fileContent . split("\n");
+    val fileContent = io.readFile("days.txt").unwrap();
+    val days = fileContent.split("\n");
     println("Days in the file: " + days . length());
     println("First day: " + days[0]);
     println("Midweek: " + days[2]);

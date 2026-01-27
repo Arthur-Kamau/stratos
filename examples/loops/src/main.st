@@ -104,7 +104,7 @@ fn nestedForLoops() void {
 
 // For loop over map keys
 fn forLoopOverMap() void {
-    val config = newMap<String, String>();
+    val config = collections.newMap<string, string>();
     config.put("host", "localhost");
     config.put("port", "8080");
     config.put("database", "mydb");
@@ -123,7 +123,7 @@ fn forLoopFileProcessing() void {
     val content = "line 1\nline 2\nline 3\nline 4\nline 5";
     io.writeFile("test_lines.txt", content);
 
-    val fileContent = io.readFile("test_lines.txt");
+    val fileContent = io.readFile("test_lines.txt").unwrap();
     val lines = fileContent.split("\n");
 
     println("File contents:");

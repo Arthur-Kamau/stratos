@@ -45,15 +45,14 @@ fn main() {
     log.info(yamlStr);
 
     log.info("Unmarshalling JSON to Struct:");
-    // Create a new JSON string to parse
-    val inputJson: string = "{\"id\": 2, \"name\": \"Akira\", \"active\": false, \"address\": {\"street\": \"456 Lunar Ave\", \"city\": \"Moon City\", \"zip\": 12345}}";
-    
-    // Unmarshal using 'user' instance as a prototype/template
-    val newUser = json.jsonUnmarshal(inputJson, user) as User;
-    
+    // Create a simple JSON string to parse
+    val inputJson: string = "{\"id\": 2, \"name\": \"Akira\", \"active\": false}";
+
+    // Unmarshal using prototype/template
+    val newUser = json.jsonUnmarshal(inputJson, user);
+
     log.info("Restored User Name: " + newUser.name);
-    log.info("Restored User City: " + newUser.address.city);
-    
+
     log.info("Re-serialized New User:");
     log.info(json.jsonMarshal(newUser));
 }

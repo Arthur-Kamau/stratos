@@ -22,6 +22,7 @@ void SemanticAnalyzer::defineNativeFunctions() {
     // Define standard types/constructors
     symbolTable.define(Symbol::Variable("Some", "constructor", false, true)); // Mock for now
     symbolTable.define(Symbol::Variable("None", "Optional", false, true));
+    symbolTable.define(Symbol::Variable("nil", "nil", false, true)); // nil literal
     symbolTable.define(Symbol::Function("Array", {}, "any", true)); // Generic array constructor
 
     // Define Result and Optional as types with static factory methods
@@ -46,7 +47,10 @@ void SemanticAnalyzer::defineNativeFunctions() {
     arrayMethods["indexOf"] = Symbol::Function("indexOf", {"any"}, "int");
     arrayMethods["reverse"] = Symbol::Function("reverse", {}, "Array");
     arrayMethods["clear"] = Symbol::Function("clear", {}, "Array");
-    
+    arrayMethods["forEach"] = Symbol::Function("forEach", {"Function"}, "void");
+    arrayMethods["map"] = Symbol::Function("map", {"Function"}, "Array");
+    arrayMethods["filter"] = Symbol::Function("filter", {"Function"}, "Array");
+
     // Alias "array" (lowercase) to "Array"
     classMembers["array"] = arrayMethods;
 
@@ -58,6 +62,7 @@ void SemanticAnalyzer::defineNativeFunctions() {
     mapMethods["get"] = Symbol::Function("get", {"any"}, "any");
     mapMethods["remove"] = Symbol::Function("remove", {"any"}, "map");
     mapMethods["has"] = Symbol::Function("has", {"any"}, "bool");
+    mapMethods["containsKey"] = Symbol::Function("containsKey", {"any"}, "bool"); // Alias for has
     mapMethods["size"] = Symbol::Function("size", {}, "int");
     mapMethods["length"] = Symbol::Function("length", {}, "int"); // Alias for size
     mapMethods["isEmpty"] = Symbol::Function("isEmpty", {}, "bool");
@@ -72,6 +77,7 @@ void SemanticAnalyzer::defineNativeFunctions() {
     mapMethods["entries"] = Symbol::Function("entries", {}, "Array");
     mapMethods["containsValue"] = Symbol::Function("containsValue", {"any"}, "bool");
     mapMethods["fromEntries"] = Symbol::Function("fromEntries", {"Array"}, "map");
+    mapMethods["forEach"] = Symbol::Function("forEach", {"Function"}, "void");
 
     // Alias "Map" (capitalized) to "map"
     classMembers["Map"] = mapMethods;
@@ -711,14 +717,21 @@ void SemanticAnalyzer::visit(CallExpr& expr) {
                     // Check if this is a method call on an object (e.g., router.get())
                     // First, check if the left side is a variable (not a module)
                     auto varSymbol = symbolTable.resolve(moduleName);
-                    std::cerr << "DEBUG: Checking method call " << moduleName << "." << functionName << std::endl;
-                    std::cerr << "DEBUG:   varSymbol=" << (varSymbol ? "found" : "null") << std::endl;
-                    if (varSymbol) {
-                        std::cerr << "DEBUG:   varSymbol->kind=" << static_cast<int>(varSymbol->kind) << " (VARIABLE=" << static_cast<int>(SymbolKind::VARIABLE) << ")" << std::endl;
-                        std::cerr << "DEBUG:   varSymbol->type=" << varSymbol->type << std::endl;
-                    }
                     if (varSymbol && varSymbol->kind == SymbolKind::VARIABLE) {
                         std::string objectType = varSymbol->type;
+
+                        // If the type is "module", this is a module function call (e.g., json.stringify)
+                        // Handle it like a native function call - allow it if the module is loaded
+                        if (objectType == "module") {
+                            bool isLoadedMod = std::find(loadedModules.begin(), loadedModules.end(), moduleName) != loadedModules.end();
+                            if (isLoadedMod) {
+                                // Allow module function calls from loaded modules
+                                for (const auto& arg : expr.arguments) {
+                                    arg->accept(*this);
+                                }
+                                return;
+                            }
+                        }
 
                         // Strip generics for lookup: "List<T>" -> "List"
                         std::string baseType = objectType;
@@ -726,10 +739,9 @@ void SemanticAnalyzer::visit(CallExpr& expr) {
                         if (paramStart != std::string::npos) {
                             baseType = baseType.substr(0, paramStart);
                         }
-                        std::cerr << "DEBUG:   baseType=" << baseType << std::endl;
 
-                        // Check if type is "any" - allow any method
-                        if (baseType == "any") {
+                        // Check if type is "any" or "unknown" - allow any method
+                        if (baseType == "any" || baseType == "unknown") {
                             for (const auto& arg : expr.arguments) {
                                 arg->accept(*this);
                             }
@@ -737,10 +749,8 @@ void SemanticAnalyzer::visit(CallExpr& expr) {
                         }
 
                         // Check class members for the method
-                        std::cerr << "DEBUG:   classMembers has " << baseType << "? " << (classMembers.find(baseType) != classMembers.end() ? "yes" : "no") << std::endl;
                         if (classMembers.find(baseType) != classMembers.end()) {
                             auto& members = classMembers[baseType];
-                            std::cerr << "DEBUG:   members has " << functionName << "? " << (members.find(functionName) != members.end() ? "yes" : "no") << std::endl;
                             if (members.find(functionName) != members.end()) {
                                 // Valid method call - analyze arguments
                                 for (const auto& arg : expr.arguments) {
@@ -753,9 +763,7 @@ void SemanticAnalyzer::visit(CallExpr& expr) {
                         // If the type is a known class, allow method calls even if method not found
                         // (might be a native method or defined elsewhere)
                         auto classSymbol = symbolTable.resolve(baseType);
-                        std::cerr << "DEBUG:   classSymbol=" << (classSymbol ? "found" : "null") << std::endl;
                         if (classSymbol && classSymbol->kind == SymbolKind::CLASS) {
-                            std::cerr << "DEBUG:   -> valid class, allowing method call" << std::endl;
                             for (const auto& arg : expr.arguments) {
                                 arg->accept(*this);
                             }

@@ -21,6 +21,7 @@ RUNTIME_SOURCES=(
     "src/runtime/FFI.cpp"
     "src/runtime/WebSocket.cpp"
     "src/runtime/Interpreter.cpp"
+    "src/runtime/HttpServer.cpp"
 )
 
 # Compile each runtime source to object file with -fPIC

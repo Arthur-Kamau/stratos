@@ -2,6 +2,7 @@
 #include "stratos/Logger.h"
 #include "stratos/FFI.h"
 #include "stratos/WebSocket.h"
+#include "stratos/HttpServer.h"
 #include <cmath>
 #include <random>
 #include <chrono>
@@ -118,6 +119,8 @@ void NativeRegistry::initializeStdlib() {
     initSQLite();    // SQLite database support
     initCollections(); // Collections module
     initConcurrent(); // Concurrency primitives
+    initHTTP();      // HTTP server and client
+    initAsync();     // Async/await primitives
 }
 
 // ============================================================================
@@ -837,6 +840,33 @@ void NativeRegistry::initStrings() {
         int index = std::any_cast<int>(args[1]);
         return std::string(1, s[index]);
     });
+
+    // Alias for charAt - used when string[index] or string.get(index) is called
+    registerFunction("strings", "get", [](const std::vector<std::any>& args) -> std::any {
+        if (args.size() < 2) {
+            return std::string("");
+        }
+        try {
+            std::string s = std::any_cast<std::string>(args[0]);
+            int index;
+            // Handle both int and double index types
+            try {
+                index = std::any_cast<int>(args[1]);
+            } catch (const std::bad_any_cast&) {
+                try {
+                    index = static_cast<int>(std::any_cast<double>(args[1]));
+                } catch (const std::bad_any_cast&) {
+                    return std::string("");
+                }
+            }
+            if (index >= 0 && index < static_cast<int>(s.length())) {
+                return std::string(1, s[index]);
+            }
+        } catch (const std::bad_any_cast&) {
+            // Return empty string on type mismatch
+        }
+        return std::string("");
+    }, FunctionSignature{{"string", "int"}, "string"});
 
     // Repetition and padding
     registerFunction("strings", "repeat", [](const std::vector<std::any>& args) -> std::any {
@@ -4069,4 +4099,85 @@ void NativeRegistry::initConcurrent() {
         return std::any();
     }, FunctionSignature{{"Channel", "array"}, "Channel"});
 }
+
+// ============================================================================
+// HTTP Module - HTTP Server and Client
+// ============================================================================
+
+void NativeRegistry::initAsync() {
+    // async.delay(ms) - pause execution for ms milliseconds
+    registerFunction("async", "delay", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) return std::any();
+        int ms = 0;
+        try {
+            ms = std::any_cast<int>(args[0]);
+        } catch (const std::bad_any_cast&) {
+            try {
+                ms = static_cast<int>(std::any_cast<double>(args[0]));
+            } catch (...) {}
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // async.sleep(ms) - alias for delay
+    registerFunction("async", "sleep", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) return std::any();
+        int ms = 0;
+        try {
+            ms = std::any_cast<int>(args[0]);
+        } catch (const std::bad_any_cast&) {
+            try {
+                ms = static_cast<int>(std::any_cast<double>(args[0]));
+            } catch (...) {}
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // async.spawn(action) - spawn an async task (stub - real implementation needs interpreter)
+    registerFunction("async", "spawn", [](const std::vector<std::any>& args) -> std::any {
+        // This requires interpreter support for callbacks
+        return std::any();
+    }, FunctionSignature{{"function"}, "void"});
+}
+
+void NativeRegistry::initHTTP() {
+    // http.newRouter() - Create a new HTTP router
+    registerFunction("http", "newRouter", [](const std::vector<std::any>& args) -> std::any {
+        auto& mgr = HttpServerManager::getInstance();
+        int routerId = mgr.createRouter();
+
+        auto router = std::make_shared<ClassInstance>();
+        router->className = "Router";
+        router->fields["__routerId"] = RuntimeValue(routerId);
+
+        return router;
+    }, FunctionSignature{{}, "Router"});
+
+    // http.newServer(router) - Create a new HTTP server
+    registerFunction("http", "newServer", [](const std::vector<std::any>& args) -> std::any {
+        if (args.empty()) {
+            throw std::runtime_error("http.newServer requires a router argument");
+        }
+
+        auto routerObj = std::any_cast<std::shared_ptr<ClassInstance>>(args[0]);
+        if (!routerObj || routerObj->className != "Router") {
+            throw std::runtime_error("http.newServer requires a Router argument");
+        }
+
+        int routerId = routerObj->fields["__routerId"].asInt();
+
+        auto& mgr = HttpServerManager::getInstance();
+        int serverId = mgr.createServer(routerId);
+
+        auto server = std::make_shared<ClassInstance>();
+        server->className = "Server";
+        server->fields["__serverId"] = RuntimeValue(serverId);
+        server->fields["__routerId"] = RuntimeValue(routerId);
+
+        return server;
+    }, FunctionSignature{{"Router"}, "Server"});
+}
+
 }  // namespace stratos

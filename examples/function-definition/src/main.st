@@ -44,7 +44,7 @@ fn printHelloNameAndReturnHeight(name: string) int {
 }
 
 
-fn jumbo(people: Map<string, int> = newMap<string, int>()) {
+fn jumbo(people: Map<string, int> = collections.newMap<string, int>()) {
    println("People:");
    people.forEach((name, age) => {
       println(name);

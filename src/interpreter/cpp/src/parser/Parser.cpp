@@ -148,7 +148,9 @@ std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind, bool isPubl
     consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
 
     std::string returnType = "void";
-    if (check(TokenType::IDENTIFIER) || check(TokenType::INT) || check(TokenType::DOUBLE) || check(TokenType::STRING) || check(TokenType::BOOL) || check(TokenType::VOID)) {
+    if (check(TokenType::IDENTIFIER) || check(TokenType::INT) || check(TokenType::DOUBLE) ||
+        check(TokenType::STRING) || check(TokenType::BOOL) || check(TokenType::VOID) ||
+        check(TokenType::ASYNC)) {
         // Optional return type parsing without colon if it's just the type
         if (!check(TokenType::LEFT_BRACE) && !check(TokenType::SEMICOLON)) {
              returnType = parseType();

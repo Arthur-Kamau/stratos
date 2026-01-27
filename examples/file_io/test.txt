@@ -1,3 +1,0 @@
-Hello, Stratos!
-This is a test file.
-Line 3

@@ -4,6 +4,7 @@
 #include "stratos/AST.h"
 #include "stratos/NativeRegistry.h"
 #include "stratos/GarbageCollector.h"
+#include "stratos/HttpServer.h"
 #include <any>
 #include <optional>
 #include <variant>
@@ -173,6 +174,9 @@ public:
 
     // Call a function by name
     RuntimeValue callFunction(const std::string& name, const std::vector<RuntimeValue>& args);
+
+    // HTTP handler execution (public for HttpServerManager access)
+    void executeHttpHandler(const RuntimeValue& handler, HttpRequestInternal& req, HttpResponseInternal& res);
 
     // Visitor Implementation
     void visit(BinaryExpr& expr) override;

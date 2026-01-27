@@ -2,6 +2,7 @@
 #include "stratos/Lexer.h"
 #include "stratos/Parser.h"
 #include "stratos/MemoryProfiler.h"
+#include "stratos/HttpServer.h"
 #include <iostream>
 #include <cmath>
 #include <fstream>
@@ -1353,6 +1354,181 @@ void Interpreter::visit(CallExpr& expr) {
                         }
                     }
 
+                    // Handle Router type methods
+                    if (instance->className == "Router") {
+                        auto& mgr = HttpServerManager::getInstance();
+                        int routerId = instance->fields["__routerId"].asInt();
+
+                        if (methodName == "get" || methodName == "post" || methodName == "put" ||
+                            methodName == "delete" || methodName == "patch") {
+                            if (args.size() >= 2) {
+                                std::string pattern = args[0].asString();
+                                RuntimeValue& handlerVal = args[1];
+
+                                // Store the handler and get an ID
+                                int handlerId = mgr.storeHandler(handlerVal);
+
+                                // Determine HTTP method
+                                HttpMethod httpMethod = HttpMethod::GET;
+                                if (methodName == "post") httpMethod = HttpMethod::POST;
+                                else if (methodName == "put") httpMethod = HttpMethod::PUT;
+                                else if (methodName == "delete") httpMethod = HttpMethod::DELETE_;
+                                else if (methodName == "patch") httpMethod = HttpMethod::PATCH;
+
+                                // Add route
+                                mgr.addRoute(routerId, httpMethod, pattern, handlerId);
+                            }
+                            lastValue = RuntimeValue(instance);  // Return self for chaining
+                            return;
+                        } else if (methodName == "use") {
+                            // Middleware
+                            if (!args.empty()) {
+                                int handlerId = mgr.storeHandler(args[0]);
+                                mgr.addMiddleware(routerId, handlerId);
+                            }
+                            lastValue = RuntimeValue(instance);
+                            return;
+                        } else if (methodName == "group") {
+                            // Router group with prefix
+                            if (!args.empty()) {
+                                std::string prefix = args[0].asString();
+                                int newRouterId = mgr.createRouterGroup(routerId, prefix);
+
+                                auto newRouter = std::make_shared<ClassInstance>();
+                                newRouter->className = "Router";
+                                newRouter->fields["__routerId"] = RuntimeValue(newRouterId);
+
+                                lastValue = RuntimeValue(newRouter);
+                                return;
+                            }
+                        }
+                    }
+
+                    // Handle Server type methods
+                    if (instance->className == "Server") {
+                        auto& mgr = HttpServerManager::getInstance();
+                        int serverId = instance->fields["__serverId"].asInt();
+
+                        if (methodName == "listen") {
+                            int port = 8080;  // Default port
+                            if (!args.empty()) {
+                                if (args[0].type == "int") {
+                                    port = args[0].asInt();
+                                } else if (args[0].type == "double") {
+                                    port = static_cast<int>(args[0].asDouble());
+                                }
+                            }
+
+                            std::cout << "Server listening on port " << port << std::endl;
+
+                            // Start server (this will block in current implementation)
+                            bool success = mgr.startServer(serverId, port, this);
+                            lastValue = RuntimeValue(success);
+                            return;
+                        } else if (methodName == "stop") {
+                            mgr.stopServer(serverId);
+                            lastValue = RuntimeValue();
+                            return;
+                        }
+                    }
+
+                    // Handle Response type methods
+                    if (instance->className == "Response") {
+                        if (methodName == "status") {
+                            if (!args.empty()) {
+                                instance->fields["statusCode"] = args[0];
+                            }
+                            lastValue = RuntimeValue(instance);  // Return self for chaining
+                            return;
+                        } else if (methodName == "json") {
+                            if (!args.empty()) {
+                                // TODO: Use JSON serialization
+                                instance->fields["body"] = args[0];
+                                // Set content type
+                                if (auto* anyPtr = std::get_if<std::any>(&instance->fields["headers"].value)) {
+                                    auto headers = std::any_cast<std::unordered_map<std::string, std::any>>(*anyPtr);
+                                    headers["Content-Type"] = std::string("application/json");
+                                    instance->fields["headers"] = RuntimeValue(std::any(headers), "map<string, string>");
+                                }
+                            }
+                            lastValue = RuntimeValue(instance);
+                            return;
+                        } else if (methodName == "text") {
+                            if (!args.empty()) {
+                                instance->fields["body"] = args[0];
+                            }
+                            lastValue = RuntimeValue(instance);
+                            return;
+                        } else if (methodName == "html") {
+                            if (!args.empty()) {
+                                instance->fields["body"] = args[0];
+                                if (auto* anyPtr = std::get_if<std::any>(&instance->fields["headers"].value)) {
+                                    auto headers = std::any_cast<std::unordered_map<std::string, std::any>>(*anyPtr);
+                                    headers["Content-Type"] = std::string("text/html");
+                                    instance->fields["headers"] = RuntimeValue(std::any(headers), "map<string, string>");
+                                }
+                            }
+                            lastValue = RuntimeValue(instance);
+                            return;
+                        } else if (methodName == "setHeader") {
+                            if (args.size() >= 2) {
+                                std::string key = args[0].asString();
+                                std::string value = args[1].asString();
+                                if (auto* anyPtr = std::get_if<std::any>(&instance->fields["headers"].value)) {
+                                    auto headers = std::any_cast<std::unordered_map<std::string, std::any>>(*anyPtr);
+                                    headers[key] = value;
+                                    instance->fields["headers"] = RuntimeValue(std::any(headers), "map<string, string>");
+                                }
+                            }
+                            lastValue = RuntimeValue(instance);
+                            return;
+                        }
+                    }
+
+                    // Handle Request type methods
+                    if (instance->className == "Request") {
+                        if (methodName == "getHeader") {
+                            if (!args.empty()) {
+                                std::string key = args[0].asString();
+                                if (auto* anyPtr = std::get_if<std::any>(&instance->fields["headers"].value)) {
+                                    auto headers = std::any_cast<std::unordered_map<std::string, std::any>>(*anyPtr);
+                                    if (headers.count(key)) {
+                                        lastValue = RuntimeValue(std::any_cast<std::string>(headers[key]));
+                                        return;
+                                    }
+                                }
+                            }
+                            lastValue = RuntimeValue(std::string(""));
+                            return;
+                        } else if (methodName == "getParam") {
+                            if (!args.empty()) {
+                                std::string key = args[0].asString();
+                                if (auto* anyPtr = std::get_if<std::any>(&instance->fields["params"].value)) {
+                                    auto params = std::any_cast<std::unordered_map<std::string, std::any>>(*anyPtr);
+                                    if (params.count(key)) {
+                                        lastValue = RuntimeValue(std::any_cast<std::string>(params[key]));
+                                        return;
+                                    }
+                                }
+                            }
+                            lastValue = RuntimeValue(std::string(""));
+                            return;
+                        } else if (methodName == "getQuery") {
+                            if (!args.empty()) {
+                                std::string key = args[0].asString();
+                                if (auto* anyPtr = std::get_if<std::any>(&instance->fields["queryParams"].value)) {
+                                    auto params = std::any_cast<std::unordered_map<std::string, std::any>>(*anyPtr);
+                                    if (params.count(key)) {
+                                        lastValue = RuntimeValue(std::any_cast<std::string>(params[key]));
+                                        return;
+                                    }
+                                }
+                            }
+                            lastValue = RuntimeValue(std::string(""));
+                            return;
+                        }
+                    }
+
                     // Find the method in the class definition
                     if (classes.count(instance->className)) {
                         Class& cls = classes[instance->className];
@@ -2612,7 +2788,9 @@ RuntimeValue Interpreter::evaluateNativeCall(const std::string& moduleName,
         if (resultType.starts_with("Result") || resultType == "Channel" ||
             resultType == "WaitGroup" || resultType == "Mutex" ||
             resultType == "Optional" || resultType == "File" ||
-            resultType == "WorkerPool") {
+            resultType == "WorkerPool" || resultType == "Router" ||
+            resultType == "Server" || resultType == "Request" ||
+            resultType == "Response") {
             resultType = "object";
         }
     } else {
@@ -2787,14 +2965,21 @@ RuntimeValue Interpreter::callModuleFunction(const std::string& moduleName,
     // Execute function body
     RuntimeValue result;
     try {
-        if (funcDecl->body) {
+        if (funcDecl->body && !funcDecl->body->empty()) {
             for (const auto& stmt : *funcDecl->body) {
                 if (stmt) {
                     stmt->accept(*this);
                 }
             }
+            result = RuntimeValue(std::any(), "void");
+        } else {
+            // Function has no body - it's a stub/declaration that should be native
+            exitScope();
+            currentExecutingModule = previousModule;
+            error("Function '" + moduleName + "::" + functionName + "' is declared but not implemented. "
+                  "This may be a native function that requires C++ implementation.");
+            return RuntimeValue(std::any(), "void");
         }
-        result = RuntimeValue(std::any(), "void");
     } catch (ReturnException& ret) {
         result = ret.value;
     }
@@ -3005,6 +3190,95 @@ RuntimeValue Interpreter::executeCallback(const RuntimeValue& closureValue, cons
     currentEnv = previousEnv;
 
     return result;
+}
+
+void Interpreter::executeHttpHandler(const RuntimeValue& handler, HttpRequestInternal& req, HttpResponseInternal& res) {
+    // Create Request object
+    auto reqObj = std::make_shared<ClassInstance>();
+    reqObj->className = "Request";
+    reqObj->fields["method"] = RuntimeValue(methodToString(req.method));
+    reqObj->fields["url"] = RuntimeValue(req.url);
+    reqObj->fields["path"] = RuntimeValue(req.path);
+    reqObj->fields["query"] = RuntimeValue(req.query);
+    reqObj->fields["body"] = RuntimeValue(req.body);
+    reqObj->fields["remoteAddr"] = RuntimeValue(req.remoteAddr);
+
+    // Convert headers to a map
+    std::unordered_map<std::string, std::any> headerMap;
+    for (const auto& [key, value] : req.headers) {
+        headerMap[key] = value;
+    }
+    reqObj->fields["headers"] = RuntimeValue(std::any(headerMap), "map<string, string>");
+
+    // Convert query params to a map
+    std::unordered_map<std::string, std::any> queryMap;
+    for (const auto& [key, value] : req.queryParams) {
+        queryMap[key] = value;
+    }
+    reqObj->fields["queryParams"] = RuntimeValue(std::any(queryMap), "map<string, string>");
+
+    // Convert path params to a map
+    std::unordered_map<std::string, std::any> pathMap;
+    for (const auto& [key, value] : req.pathParams) {
+        pathMap[key] = value;
+    }
+    reqObj->fields["pathParams"] = RuntimeValue(std::any(pathMap), "map<string, string>");
+    reqObj->fields["params"] = RuntimeValue(std::any(pathMap), "map<string, string>");
+
+    // Create Response object
+    auto resObj = std::make_shared<ClassInstance>();
+    resObj->className = "Response";
+    resObj->fields["statusCode"] = RuntimeValue(200);
+    resObj->fields["body"] = RuntimeValue(std::string(""));
+    std::unordered_map<std::string, std::any> resHeaders;
+    resHeaders["Content-Type"] = std::string("text/plain");
+    resObj->fields["headers"] = RuntimeValue(std::any(resHeaders), "map<string, string>");
+
+    // Call the handler
+    std::vector<RuntimeValue> args;
+    args.push_back(RuntimeValue(reqObj));
+    args.push_back(RuntimeValue(resObj));
+
+    try {
+        executeCallback(handler, args);
+    } catch (const std::exception& e) {
+        res.statusCode = 500;
+        res.body = "{\"error\": \"" + std::string(e.what()) + "\"}";
+        res.headers["Content-Type"] = "application/json";
+        return;
+    }
+
+    // Extract response data
+    if (resObj->fields.count("statusCode")) {
+        auto& statusVal = resObj->fields["statusCode"];
+        if (statusVal.type == "int") {
+            res.statusCode = statusVal.asInt();
+        }
+    }
+
+    if (resObj->fields.count("body")) {
+        auto& bodyVal = resObj->fields["body"];
+        if (bodyVal.type == "string") {
+            res.body = bodyVal.asString();
+        }
+    }
+
+    if (resObj->fields.count("headers")) {
+        auto& headersVal = resObj->fields["headers"];
+        if (headersVal.type.starts_with("map")) {
+            try {
+                auto* anyPtr = std::get_if<std::any>(&headersVal.value);
+                if (anyPtr) {
+                    auto headers = std::any_cast<std::unordered_map<std::string, std::any>>(*anyPtr);
+                    for (const auto& [key, value] : headers) {
+                        if (value.type() == typeid(std::string)) {
+                            res.headers[key] = std::any_cast<std::string>(value);
+                        }
+                    }
+                }
+            } catch (...) {}
+        }
+    }
 }
 
 void Interpreter::spawnGoroutine(const RuntimeValue& closureValue) {
