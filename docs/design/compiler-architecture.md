@@ -73,6 +73,22 @@ Smart pointers (`std::unique_ptr`) will handle ownership.
     - Range expression parsing (0..10)
     - Optional type parsing (Optional<T>)
 
-## 5. Build System
+## 5. Memory Management
+
+### Current Implementation (GC-Based)
+*   **Mark-and-sweep garbage collector** for automatic memory management
+*   **Cycle detection** for circular references
+*   **Reference counting** for objects
+
+### Future Plans (GC-Free Mode)
+*   **dfer<T>**: Unique ownership smart pointer
+*   **ref<T>**: Shared ownership smart pointer (reference counted)
+*   **weak<T>**: Weak references (non-owning)
+*   **stack<T>**: Stack-allocated objects
+*   **new** and **delete** keywords for manual management
+*   **Destructors**: `~ClassName()` syntax
+*   **--no-gc flag**: GC-free mode for performance-critical code
+
+## 6. Build System
 *   **CMake** targeting C++20.
 *   Source structure: `src/lexer`, `src/parser`, `src/ast`.
