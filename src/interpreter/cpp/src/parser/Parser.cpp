@@ -459,6 +459,78 @@ std::unique_ptr<Expr> Parser::whenExpression() {
     return std::make_unique<WhenExpr>(std::move(condition), std::move(cases));
 }
 
+std::unique_ptr<Expr> Parser::parseInterpolatedString(const std::string& template_str) {
+    std::vector<InterpolatedPart> parts;
+    std::string currentLiteral;
+    size_t i = 0;
+
+    while (i < template_str.size()) {
+        if (template_str[i] == '$' && i + 1 < template_str.size()) {
+            // Check for interpolation
+            if (template_str[i + 1] == '{') {
+                // ${expression} syntax
+                if (!currentLiteral.empty()) {
+                    parts.push_back(InterpolatedPart(currentLiteral));
+                    currentLiteral.clear();
+                }
+
+                i += 2; // Skip "${"
+                std::string exprStr;
+                int braceCount = 1;
+                while (i < template_str.size() && braceCount > 0) {
+                    if (template_str[i] == '{') braceCount++;
+                    else if (template_str[i] == '}') braceCount--;
+                    if (braceCount > 0) exprStr += template_str[i];
+                    i++;
+                }
+
+                // Parse the expression string
+                Lexer exprLexer(exprStr, "<interpolation>");
+                auto exprTokens = exprLexer.scanTokens();
+                Parser exprParser(exprTokens);
+                auto expr = exprParser.parseExpression();
+                if (expr) {
+                    parts.push_back(InterpolatedPart(std::move(expr)));
+                }
+            } else if (isalpha(template_str[i + 1]) || template_str[i + 1] == '_') {
+                // $identifier syntax
+                if (!currentLiteral.empty()) {
+                    parts.push_back(InterpolatedPart(currentLiteral));
+                    currentLiteral.clear();
+                }
+
+                i++; // Skip "$"
+                std::string identifier;
+                while (i < template_str.size() && (isalnum(template_str[i]) || template_str[i] == '_')) {
+                    identifier += template_str[i];
+                    i++;
+                }
+
+                // Create a VariableExpr for the identifier
+                Token varToken;
+                varToken.type = TokenType::IDENTIFIER;
+                varToken.lexeme = identifier;
+                varToken.line = previous().line;
+                varToken.column = previous().column;
+                varToken.file = previous().file;
+                parts.push_back(InterpolatedPart(std::make_unique<VariableExpr>(varToken)));
+            } else {
+                currentLiteral += template_str[i];
+                i++;
+            }
+        } else {
+            currentLiteral += template_str[i];
+            i++;
+        }
+    }
+
+    if (!currentLiteral.empty()) {
+        parts.push_back(InterpolatedPart(currentLiteral));
+    }
+
+    return std::make_unique<InterpolatedStringExpr>(std::move(parts));
+}
+
 std::unique_ptr<Stmt> Parser::ifStatement() {
     std::unique_ptr<Expr> condition = expression();
 
@@ -883,6 +955,11 @@ std::unique_ptr<Expr> Parser::primary() {
 
     if (match({TokenType::NUMBER, TokenType::STRING, TokenType::CHAR})) {
         return std::make_unique<LiteralExpr>(previous().lexeme, previous().type);
+    }
+
+    // Handle interpolated strings like "Hello $name" or "Value is ${x + 1}"
+    if (match({TokenType::INTERPOLATED_STRING})) {
+        return parseInterpolatedString(previous().lexeme);
     }
 
     if (match({TokenType::IDENTIFIER})) {

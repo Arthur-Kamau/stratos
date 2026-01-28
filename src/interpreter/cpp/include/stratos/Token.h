@@ -56,6 +56,7 @@ enum class TokenType {
 
     // Literals
     IDENTIFIER, STRING, NUMBER, CHAR,
+    INTERPOLATED_STRING, // String with $var or ${expr} interpolation
 
     // Keywords
     AND, OR, NOT,

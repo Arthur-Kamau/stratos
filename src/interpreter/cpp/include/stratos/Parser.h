@@ -63,6 +63,7 @@ private:
     std::unique_ptr<Expr> primary();
     std::unique_ptr<Expr> cast(); // New: Parse cast expressions
     std::unique_ptr<Expr> whenExpression(); // New: Parse when expressions
+    std::unique_ptr<Expr> parseInterpolatedString(const std::string& template_str); // Parse interpolated strings
 
     // Type Parsing
     std::string parseType();

@@ -214,6 +214,7 @@ void Lexer::scanToken() {
 void Lexer::string() {
     int tokenStartColumn = column;
     std::string value = "";
+    bool hasInterpolation = false;
 
     while (peek() != '"' && !isAtEnd()) {
         if (peek() == '\\') {
@@ -231,10 +232,35 @@ void Lexer::string() {
                 case '\\': value += '\\'; break;
                 case '"': value += '"'; break;
                 case '0': value += '\0'; break;
+                case '$': value += '$'; break; // Escape $ to prevent interpolation
                 default:
                     std::cerr << "Invalid escape sequence in string literal at line " << line << std::endl;
                     value += escaped; // Include the character anyway
                     break;
+            }
+        } else if (peek() == '$') {
+            // Check for interpolation: $identifier or ${expression}
+            char next = peekNext();
+            if (isAlpha(next) || next == '_' || next == '{') {
+                hasInterpolation = true;
+                value += advance(); // Add the $
+                if (peek() == '{') {
+                    // ${expression} - include everything until }
+                    value += advance(); // Add the {
+                    int braceCount = 1;
+                    while (braceCount > 0 && !isAtEnd() && peek() != '"') {
+                        if (peek() == '{') braceCount++;
+                        if (peek() == '}') braceCount--;
+                        value += advance();
+                    }
+                } else {
+                    // $identifier - include the identifier
+                    while ((isAlphaNumeric(peek()) || peek() == '_') && !isAtEnd()) {
+                        value += advance();
+                    }
+                }
+            } else {
+                value += advance(); // Just a $ with no interpolation
             }
         } else {
             if (peek() == '\n') {
@@ -251,7 +277,12 @@ void Lexer::string() {
     }
 
     advance(); // The closing "
-    addToken(TokenType::STRING, value, tokenStartColumn);
+
+    if (hasInterpolation) {
+        addToken(TokenType::INTERPOLATED_STRING, value, tokenStartColumn);
+    } else {
+        addToken(TokenType::STRING, value, tokenStartColumn);
+    }
 }
 
 void Lexer::character() {

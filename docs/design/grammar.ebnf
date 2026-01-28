@@ -9,29 +9,41 @@ declaration    ::= varDecl
                  | structDecl
                  | interfaceDecl
                  | enumDecl
+                 | typeAliasDecl
+                 | packageDecl
+                 | useStatement
                  | stmt
 
 // Declarations
 varDecl        ::= ("val" | "var") IDENTIFIER (":" type)? ("=" expression)? ";"
-fnDecl         ::= "fn" IDENTIFIER "(" paramList? ")" (type)? block
-classDecl      ::= "class" IDENTIFIER (":" IDENTIFIER)? "{" classMember* "}"
-structDecl     ::= "struct" IDENTIFIER "{" structMember* "}"
-interfaceDecl  ::= "interface" IDENTIFIER "{" fnSignature* "}"
+fnDecl         ::= ("async")? "fn" IDENTIFIER ("<" typeList ">")? "(" paramList? ")" (type)? block
+classDecl      ::= "class" IDENTIFIER ("<" typeList ">")? (":" IDENTIFIER)? "{" classMember* "}"
+structDecl     ::= "struct" IDENTIFIER ("<" typeList ">")? "{" structMember* "}"
+interfaceDecl  ::= "interface" IDENTIFIER ("<" typeList ">")? "{" fnSignature* "}"
 enumDecl       ::= "enum" IDENTIFIER "{" enumList "}"
+typeAliasDecl  ::= "type" IDENTIFIER "=" type ";"
 
 paramList      ::= param ("," param)*
-param          ::= IDENTIFIER ":" type
+param          ::= ("..."?) IDENTIFIER (":" type)? ("=" expression)?
 
 classMember    ::= varDecl | fnDecl | constructor
 structMember   ::= IDENTIFIER ":" type ("," | ";")?
-fnSignature    ::= "fn" IDENTIFIER "(" paramList? ")" (type)? ";"
+fnSignature    ::= "fn" IDENTIFIER ("<" typeList ">")? "(" paramList? ")" (type)? ";"
 constructor    ::= "constructor" "(" paramList? ")" block
 
 // Types
-type           ::= "int" | "double" | "string" | "bool" | "void" | "unit"
+type           ::= "int" | "double" | "string" | "bool" | "void" | "unit" | "char"
                  | "Optional" "<" type ">"
+                 | "Array" "<" type ">"
+                 | "map" "<" type "," type ">"
+                 | "Function" ("<" typeList ">")?
                  | IDENTIFIER // User defined types
-                 | type "[" "]" // Arrays
+                 | "i8" | "i16" | "i32" | "i64"
+                 | "u8" | "u16" | "u32" | "u64"
+                 | "f32" | "f64"
+                 | "usize" | "isize"
+
+typeList       ::= type ("," type)*
 
 // Statements
 stmt           ::= exprStmt
@@ -39,49 +51,80 @@ stmt           ::= exprStmt
                  | whileStmt
                  | forStmt
                  | returnStmt
+                 | breakStmt
+                 | continueStmt
                  | block
+                 | printStmt
 
 exprStmt       ::= expression ";"
 block          ::= "{" declaration* "}"
 ifStmt         ::= "if" expression stmt ("else" stmt)?
 whileStmt      ::= "while" expression stmt
+forStmt        ::= "for" ("val" | "var") IDENTIFIER (":" type)? "in" expression stmt
 returnStmt     ::= "return" expression? ";"
+breakStmt      ::= "break" ";"
+continueStmt   ::= "continue" ";"
+printStmt      ::= "print" "(" expression ")" ";"
 
 // Expressions (Precedence: lowest to highest)
 expression     ::= assignment
 
 assignment     ::= pipe (("=" | "+=" | "-=" | "*=" | "/=") expression)?
 
-pipe           ::= ternary ("|>" ternary)*
+pipe           ::= ternary ("|" ternary)*
 
 ternary        ::= "if" "(" expression ")" expression "else" expression  // If-Expression
                  | logicOr
 
 logicOr        ::= logicAnd ("||" logicAnd)*
 logicAnd       ::= equality ("&&" equality)*
+bitwiseOr      ::= bitwiseXor ("|" bitwiseXor)*
+bitwiseXor     ::= bitwiseAnd ("^" bitwiseAnd)*
+bitwiseAnd     ::= equality ("&" equality)*
 equality       ::= comparison (("==" | "!=") comparison)*
-comparison     ::= term (("<" | "<=" | ">" | ">=") term)*
+comparison     ::= bitwiseShift (("<" | "<=" | ">" | ">=") bitwiseShift)*
+bitwiseShift   ::= term (("<<" | ">>") term)*
 term           ::= factor (("+" | "-") factor)*
 factor         ::= unary (("*" | "/" | "%") unary)*
 
-unary          ::= ("!" | "-" | "not") unary
+unary          ::= ("!" | "-" | "not" | "async") unary
                  | primary
 
 primary        ::= NUMBER
                  | STRING
+                 | CHAR
                  | "true" | "false"
                  | "None"
                  | IDENTIFIER
                  | "(" expression ")"
                  | callOrAccess
                  | instantiation
+                 | lambda
+                 | arrayLiteral
+                 | mapLiteral
+                 | rangeExpr
+
+rangeExpr      ::= expression ".." expression
 
 callOrAccess   ::= IDENTIFIER (
                      "(" argList? ")" // Function call
                    | "." IDENTIFIER   // Member access
                    | "?." IDENTIFIER  // Safe access
+                   | "[" expression "]" // Index access
                    )*
 
 instantiation  ::= IDENTIFIER "(" argList? ")" // Simplified, overlaps with call
 
+lambda         ::= "(" paramList? ")" "=>" (expression | block)
+
+arrayLiteral   ::= "[" argList? "]"
+
+mapLiteral     ::= "map" "[" (mapEntry ("," mapEntry)*)? "]"
+mapEntry       ::= expression ":" expression
+
 argList        ::= expression ("," expression)*
+
+enumList       ::= IDENTIFIER ("," IDENTIFIER)*
+
+packageDecl    ::= "package" IDENTIFIER (";" | block)
+useStatement   ::= "use" IDENTIFIER ("as" IDENTIFIER)? ";"

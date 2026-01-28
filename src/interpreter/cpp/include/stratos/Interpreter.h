@@ -193,6 +193,7 @@ public:
     void visit(LambdaExpr& expr) override; // Visit method for LambdaExpr
     void visit(StructInitExpr& expr) override; // Visit method for StructInitExpr
     void visit(WhenExpr& expr) override; // Visit method for WhenExpr
+    void visit(InterpolatedStringExpr& expr) override; // Visit method for InterpolatedStringExpr
 
     void visit(VarDecl& stmt) override;
     void visit(FunctionDecl& stmt) override;

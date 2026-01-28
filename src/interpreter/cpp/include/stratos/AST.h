@@ -26,6 +26,7 @@ class ArrayLiteralExpr; // Forward declaration
 class LambdaExpr; // Forward declaration
 class StructInitExpr; // Forward declaration
 class WhenExpr; // Forward declaration
+class InterpolatedStringExpr; // Forward declaration
 class VarDecl;
 class FunctionDecl;
 class ClassDecl;
@@ -61,6 +62,7 @@ public:
     virtual void visit(LambdaExpr& expr) = 0; // Visit method for LambdaExpr
     virtual void visit(StructInitExpr& expr) = 0; // Visit method for StructInitExpr
     virtual void visit(WhenExpr& expr) = 0; // Visit method for WhenExpr
+    virtual void visit(InterpolatedStringExpr& expr) = 0; // Visit method for InterpolatedStringExpr
 
     virtual void visit(VarDecl& stmt) = 0;
     virtual void visit(FunctionDecl& stmt) = 0;
@@ -249,6 +251,30 @@ public:
 
     WhenExpr(std::unique_ptr<Expr> condition, std::vector<WhenCase> cases)
         : condition(std::move(condition)), cases(std::move(cases)) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+// Interpolated string part - either a literal string or an expression
+struct InterpolatedPart {
+    bool isExpression;
+    std::string literal; // For string literals
+    std::unique_ptr<Expr> expression; // For interpolated expressions
+
+    InterpolatedPart(const std::string& lit) : isExpression(false), literal(lit), expression(nullptr) {}
+    InterpolatedPart(std::unique_ptr<Expr> expr) : isExpression(true), expression(std::move(expr)) {}
+
+    // Move constructor
+    InterpolatedPart(InterpolatedPart&&) = default;
+    InterpolatedPart& operator=(InterpolatedPart&&) = default;
+};
+
+class InterpolatedStringExpr : public Expr {
+public:
+    std::vector<InterpolatedPart> parts;
+
+    InterpolatedStringExpr(std::vector<InterpolatedPart> parts)
+        : parts(std::move(parts)) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };
