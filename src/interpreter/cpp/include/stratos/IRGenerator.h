@@ -55,6 +55,7 @@ public:
     void visit(BreakStmt& stmt) override;
     void visit(ContinueStmt& stmt) override;
     void visit(DeferStmt& stmt) override;
+    void visit(DestructuringDecl& stmt) override;
 
 private:
     std::ofstream out;

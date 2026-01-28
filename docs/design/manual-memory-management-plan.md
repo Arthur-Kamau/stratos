@@ -24,7 +24,7 @@ This document provides a **complete plan and syntax mockup** for adding manual m
 
 ```stratos
 // Unique ownership pointer (exclusive, transferable)
-val ptr: dfer<Person> = new Person("Alice", 30);
+val ptr: own<Person> = new Person("Alice", 30);
 
 // Shared ownership pointer (reference counted)
 val shared: ref<Person> = new ref Person("Bob", 25);
@@ -96,7 +96,7 @@ fn main() {
 ### 4. Function Return Types
 
 ```stratos
-fn createPerson() dfer<Person> {
+fn createPerson() own<Person> {
     val person = new Person("Frank", 33);
     return person; // Ownership transferred
 }
@@ -153,7 +153,7 @@ fn main() {
    - Tokenize pointer operations (`->`)
 
 2. **Parser Updates**:
-   - Parse pointer types (`dfer<T>`, `ref<T>`, `weak<T>`, `stack<T>`)
+   - Parse pointer types (`own<T>`, `ref<T>`, `weak<T>`, `stack<T>`)
    - Parse `new` and `delete` keywords
    - Parse `->` operator for pointer dereference
 
@@ -164,7 +164,7 @@ fn main() {
 
 ### Phase 2: Runtime Implementation
 
-1. **dfer<T> (Unique Pointer)**:
+1. **own<T> (Unique Pointer)**:
    - Exclusive ownership semantics
    - Move-only type (no copying)
    - Automatic deletion when scope ends

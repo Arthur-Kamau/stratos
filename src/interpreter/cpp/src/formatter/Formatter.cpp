@@ -512,4 +512,26 @@ void Formatter::visit(DeferStmt& stmt) {
     }
 }
 
+void Formatter::visit(DestructuringDecl& stmt) {
+    write(stmt.isMutable ? "var" : "val");
+    space();
+    write("(");
+    for (size_t i = 0; i < stmt.names.size(); ++i) {
+        write(stmt.names[i].lexeme);
+        if (i < stmt.names.size() - 1) {
+            write(",");
+            space();
+        }
+    }
+    write(")");
+    space();
+    write("=");
+    space();
+    if (stmt.initializer) {
+        stmt.initializer->accept(*this);
+    }
+    write(";");
+    newline();
+}
+
 } // namespace stratos

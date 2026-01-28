@@ -2788,6 +2788,69 @@ void Interpreter::visit(DeferStmt& stmt) {
     }
 }
 
+void Interpreter::visit(DestructuringDecl& stmt) {
+    // Evaluate the initializer
+    stmt.initializer->accept(*this);
+    RuntimeValue value = lastValue;
+
+    // Handle array destructuring
+    if (value.type.starts_with("array")) {
+        auto& anyValue = std::get<std::any>(value.value);
+
+        // Handle array<int>
+        if (value.type == "array<int>") {
+            try {
+                auto& vec = std::any_cast<std::vector<int>&>(anyValue);
+                for (size_t i = 0; i < stmt.names.size(); ++i) {
+                    if (i < vec.size()) {
+                        currentEnv->define(stmt.names[i].lexeme, RuntimeValue(vec[i]));
+                    } else {
+                        currentEnv->define(stmt.names[i].lexeme, RuntimeValue(0));
+                    }
+                }
+            } catch (const std::bad_any_cast&) {
+                error("Failed to destructure array<int>");
+            }
+        }
+        // Handle array<string>
+        else if (value.type == "array<string>") {
+            try {
+                auto& vec = std::any_cast<std::vector<std::string>&>(anyValue);
+                for (size_t i = 0; i < stmt.names.size(); ++i) {
+                    if (i < vec.size()) {
+                        currentEnv->define(stmt.names[i].lexeme, RuntimeValue(vec[i]));
+                    } else {
+                        currentEnv->define(stmt.names[i].lexeme, RuntimeValue(std::string("")));
+                    }
+                }
+            } catch (const std::bad_any_cast&) {
+                error("Failed to destructure array<string>");
+            }
+        }
+        // Handle array<any> (generic arrays)
+        else if (value.type == "array<any>") {
+            try {
+                auto& vec = std::any_cast<std::vector<RuntimeValue>&>(anyValue);
+                for (size_t i = 0; i < stmt.names.size(); ++i) {
+                    if (i < vec.size()) {
+                        currentEnv->define(stmt.names[i].lexeme, vec[i]);
+                    } else {
+                        currentEnv->define(stmt.names[i].lexeme, RuntimeValue());
+                    }
+                }
+            } catch (const std::bad_any_cast&) {
+                error("Failed to destructure array<any>");
+            }
+        }
+        else {
+            error("Destructuring not supported for type: " + value.type);
+        }
+    }
+    else {
+        error("Cannot destructure non-array type: " + value.type);
+    }
+}
+
 // --- Helper Methods ---
 
 RuntimeValue Interpreter::evaluateNativeCall(const std::string& moduleName,

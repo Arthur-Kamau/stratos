@@ -25,7 +25,7 @@ This proposal introduces manual memory management for Stratos, providing an alte
 
 ```stratos
 // Allocate a single object
-val ptr: dfer<Person> = new Person("Alice", 30);
+val ptr: own<Person> = new Person("Alice", 30);
 ```
 
 ### 2. Memory Deallocation with `delete` Keyword
@@ -37,10 +37,10 @@ delete ptr;
 
 ### 3. Smart Pointer Types
 
-#### `dfer<T>` - Unique Pointer (Exclusive Ownership)
+#### `own<T>` - Unique Pointer (Exclusive Ownership)
 
 ```stratos
-fn createPerson() dfer<Person> {
+fn createPerson() own<Person> {
     val person = new Person("Bob", 25);
     return person; // Transfer ownership
 }
@@ -243,7 +243,7 @@ stratos compile --gc --allow-manual program.st
 
 ### New Types
 
-1. `dfer<T>` - Unique ownership pointer
+1. `own<T>` - Unique ownership pointer
 2. `ref<T>` - Shared ownership pointer (reference counted)
 3. `weak<T>` - Non-owning weak pointer
 4. `stack<T>` - Stack-allocated type

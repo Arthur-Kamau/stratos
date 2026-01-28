@@ -1168,6 +1168,17 @@ void SemanticAnalyzer::visit(DeferStmt& stmt) {
     }
 }
 
+void SemanticAnalyzer::visit(DestructuringDecl& stmt) {
+    // Analyze the initializer expression
+    if (stmt.initializer) {
+        stmt.initializer->accept(*this);
+    }
+    // Define each variable in the destructuring pattern
+    for (const auto& name : stmt.names) {
+        symbolTable.define(Symbol{name.lexeme, SymbolKind::VARIABLE, "any", stmt.isMutable, false, false});
+    }
+}
+
 void SemanticAnalyzer::loadModule(const std::string& moduleName) {
     namespace fs = std::filesystem;
 

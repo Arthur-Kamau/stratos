@@ -72,6 +72,27 @@ std::unique_ptr<Stmt> Parser::declaration() {
 
 std::unique_ptr<Stmt> Parser::varDeclaration(bool isPublic) {
     bool isMutable = (previous().type == TokenType::VAR);
+
+    // Check for destructuring declaration: val (a, b, c) = expr
+    if (match({TokenType::LEFT_PAREN})) {
+        std::vector<Token> names;
+
+        // Parse the list of names
+        do {
+            Token varName = consume(TokenType::IDENTIFIER, "Expect variable name in destructuring.");
+            names.push_back(varName);
+        } while (match({TokenType::COMMA}));
+
+        consume(TokenType::RIGHT_PAREN, "Expect ')' after destructuring names.");
+        consume(TokenType::EQUAL, "Expect '=' after destructuring declaration.");
+
+        std::unique_ptr<Expr> initializer = expression();
+        consume(TokenType::SEMICOLON, "Expect ';' after destructuring declaration.");
+
+        return std::make_unique<DestructuringDecl>(isMutable, std::move(names), std::move(initializer), isPublic);
+    }
+
+    // Regular variable declaration
     Token name = consume(TokenType::IDENTIFIER, "Expect variable name.");
 
     std::string typeName = "";

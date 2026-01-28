@@ -45,6 +45,7 @@ class UseStmt;
 class BreakStmt;
 class ContinueStmt;
 class DeferStmt;
+class DestructuringDecl;
 
 // Visitor Interface
 class ASTVisitor {
@@ -82,6 +83,7 @@ public:
     virtual void visit(BreakStmt& stmt) = 0;
     virtual void visit(ContinueStmt& stmt) = 0;
     virtual void visit(DeferStmt& stmt) = 0;
+    virtual void visit(DestructuringDecl& stmt) = 0;
 };
 
 // Base Node
@@ -496,6 +498,22 @@ public:
 
     DeferStmt(Token keyword, std::unique_ptr<Stmt> statement)
         : keyword(keyword), statement(std::move(statement)) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+// Destructuring declaration: val (a, b, c) = expr
+class DestructuringDecl : public Stmt {
+public:
+    bool isMutable;                  // var vs val
+    std::vector<Token> names;        // The variable names to bind
+    std::unique_ptr<Expr> initializer; // The expression to destructure
+    bool isPublic;
+
+    DestructuringDecl(bool isMutable, std::vector<Token> names,
+                      std::unique_ptr<Expr> initializer, bool isPublic = false)
+        : isMutable(isMutable), names(std::move(names)),
+          initializer(std::move(initializer)), isPublic(isPublic) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };

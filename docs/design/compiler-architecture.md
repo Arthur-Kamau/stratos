@@ -81,7 +81,7 @@ Smart pointers (`std::unique_ptr`) will handle ownership.
 *   **Reference counting** for objects
 
 ### Future Plans (GC-Free Mode)
-*   **dfer<T>**: Unique ownership smart pointer
+*   **own<T>**: Unique ownership smart pointer
 *   **ref<T>**: Shared ownership smart pointer (reference counted)
 *   **weak<T>**: Weak references (non-owning)
 *   **stack<T>**: Stack-allocated objects

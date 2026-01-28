@@ -64,7 +64,7 @@ enum class TokenType {
     BREAK, CONTINUE, DEFER,
     ELSE, FALSE, FN, FOR, IF, NONE,
     RETURN, SUPER, THIS, TRUE, VAR, VAL,
-    WHILE, WHEN,
+    WHILE, WHEN, SELECT,
     ASYNC, AWAIT,
     INT, DOUBLE, BOOL, VOID, UNIT, OPTIONAL,
     // Low-level numeric types (like Rust/Zig)

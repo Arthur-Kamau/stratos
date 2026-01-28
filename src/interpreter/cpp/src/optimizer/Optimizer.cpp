@@ -195,4 +195,8 @@ void Optimizer::visit(DeferStmt& stmt) {
     if (stmt.statement) stmt.statement->accept(*this);
 }
 
+void Optimizer::visit(DestructuringDecl& stmt) {
+    if (stmt.initializer) stmt.initializer->accept(*this);
+}
+
 } // namespace stratos
