@@ -6,6 +6,7 @@ package main;
 use http;
 use json;
 use log;
+use time;
 use collections;
 
 fn main() {
@@ -37,7 +38,7 @@ fn main() {
     router.get("/health", (req, res) => {
         res.json(json.jsonObject({
             status: json.jsonString("healthy"),
-            timestamp: json.jsonNumber(time.now().unix())
+            timestamp: json.jsonNumberInt(time.now().unix())
         }));
     });
 
@@ -58,7 +59,7 @@ fn main() {
 
         res.json(json.jsonObject({
             users: json.jsonArray(userList.items),
-            count: json.jsonNumber(users.length())
+            count: json.jsonNumberInt(users.length())
         }));
     });
 
@@ -93,10 +94,10 @@ fn main() {
         nextId = nextId + 1;
 
         val user = json.jsonObject({
-            id: json.jsonNumber(id),
+            id: json.jsonNumberInt(id),
             name: json.jsonString(name),
             email: json.jsonString(email),
-            createdAt: json.jsonNumber(time.now().unix())
+            createdAt: json.jsonNumberInt(time.now().unix())
         });
 
         users.put(id, user);

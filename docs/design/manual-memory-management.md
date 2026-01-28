@@ -165,20 +165,7 @@ fn main() {
 }
 ```
 
-### Error Handling
 
-```stratos
-fn main() {
-    try {
-        val ptr = new Person("Henry", 50);
-        // ... code that might throw
-        delete ptr;
-    } catch (e) {
-        println("Error: " + e.message);
-        // ptr is automatically deleted if it was allocated
-    }
-}
-```
 
 ### Classes for Manual Memory Management
 

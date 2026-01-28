@@ -1442,13 +1442,38 @@ void Interpreter::visit(CallExpr& expr) {
                             return;
                         } else if (methodName == "json") {
                             if (!args.empty()) {
-                                // TODO: Use JSON serialization
-                                instance->fields["body"] = args[0];
+                                // Serialize the argument to JSON string
+                                std::string jsonStr;
+                                if (args[0].type == "object") {
+                                    auto obj = args[0].asObject();
+                                    if (obj && obj->className == "JsonValue") {
+                                        // Use serializeJsonValue for JsonValue objects
+                                        extern std::string serializeJsonValue(const std::shared_ptr<ClassInstance>&);
+                                        jsonStr = serializeJsonValue(obj);
+                                    } else {
+                                        // Serialize regular object
+                                        extern std::string serializeRuntimeValue(const RuntimeValue&);
+                                        jsonStr = serializeRuntimeValue(args[0]);
+                                    }
+                                } else if (args[0].type == "string") {
+                                    jsonStr = args[0].asString();
+                                } else {
+                                    extern std::string serializeRuntimeValue(const RuntimeValue&);
+                                    jsonStr = serializeRuntimeValue(args[0]);
+                                }
+                                instance->fields["body"] = RuntimeValue(jsonStr);
                                 // Set content type
                                 if (auto* anyPtr = std::get_if<std::any>(&instance->fields["headers"].value)) {
-                                    auto headers = std::any_cast<std::unordered_map<std::string, std::any>>(*anyPtr);
-                                    headers["Content-Type"] = std::string("application/json");
-                                    instance->fields["headers"] = RuntimeValue(std::any(headers), "map<string, string>");
+                                    try {
+                                        auto headers = std::any_cast<std::unordered_map<std::string, std::any>>(*anyPtr);
+                                        headers["Content-Type"] = std::string("application/json");
+                                        instance->fields["headers"] = RuntimeValue(std::any(headers), "map<string, string>");
+                                    } catch (const std::bad_any_cast&) {
+                                        // Headers not in expected format, create new
+                                        std::unordered_map<std::string, std::any> headers;
+                                        headers["Content-Type"] = std::string("application/json");
+                                        instance->fields["headers"] = RuntimeValue(std::any(headers), "map<string, string>");
+                                    }
                                 }
                             }
                             lastValue = RuntimeValue(instance);

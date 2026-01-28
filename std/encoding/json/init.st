@@ -80,9 +80,10 @@ fn writeToFile(value: JsonValue, path: string) Result<void, Error>;
 fn jsonNull() JsonValue;
 fn jsonBool(value: bool) JsonValue;
 fn jsonNumber(value: double) JsonValue;
+fn jsonNumberInt(value: int) JsonValue;
 fn jsonString(value: string) JsonValue;
 fn jsonArray(values: Array<JsonValue>) JsonValue;
-fn jsonObject(entries: Map<string, JsonValue>) JsonValue;
+fn jsonObject(entries: any) JsonValue;
 
 // Encoder/Decoder creation
 fn newEncoder(indent: string, sortKeys: bool) JsonEncoder;

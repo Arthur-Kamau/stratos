@@ -1810,8 +1810,120 @@ void NativeRegistry::initTime() {
 // JSON Module Native Functions
 // ============================================================================
 
-// Forward declaration
+// Forward declarations
 std::string serializeAny(const std::any& val);
+std::string serializeRuntimeValue(const RuntimeValue& val);
+
+// Serialize a JsonValue object according to its type field
+std::string serializeJsonValue(const std::shared_ptr<ClassInstance>& jsonValue) {
+    if (!jsonValue || jsonValue->className != "JsonValue") {
+        return "null";
+    }
+
+    // Get the type field (enum index)
+    int typeIndex = 0;
+    if (jsonValue->fields.count("type")) {
+        typeIndex = jsonValue->fields.at("type").asInt();
+    }
+
+    // JsonType: NULL=0, BOOLEAN=1, NUMBER=2, STRING=3, ARRAY=4, OBJECT=5
+    switch (typeIndex) {
+        case 0: // NULL
+            return "null";
+        case 1: // BOOLEAN
+            if (jsonValue->fields.count("boolValue")) {
+                return jsonValue->fields.at("boolValue").asBool() ? "true" : "false";
+            }
+            return "false";
+        case 2: // NUMBER
+            if (jsonValue->fields.count("numberValue")) {
+                double num = jsonValue->fields.at("numberValue").asDouble();
+                // Output integers without decimal point
+                if (num == static_cast<int>(num)) {
+                    return std::to_string(static_cast<int>(num));
+                }
+                return std::to_string(num);
+            }
+            return "0";
+        case 3: // STRING
+            if (jsonValue->fields.count("stringValue")) {
+                return serializeRuntimeValue(RuntimeValue(jsonValue->fields.at("stringValue").asString()));
+            }
+            return "\"\"";
+        case 4: // ARRAY
+            if (jsonValue->fields.count("arrayValue")) {
+                const auto& arrVal = jsonValue->fields.at("arrayValue");
+                if (std::holds_alternative<std::any>(arrVal.value)) {
+                    const auto& anyVal = std::get<std::any>(arrVal.value);
+                    // Handle std::vector<RuntimeValue> (how Stratos stores object arrays)
+                    if (anyVal.type() == typeid(std::vector<RuntimeValue>)) {
+                        auto vec = std::any_cast<std::vector<RuntimeValue>>(anyVal);
+                        std::stringstream ss;
+                        ss << "[";
+                        for (size_t i = 0; i < vec.size(); ++i) {
+                            if (i > 0) ss << ", ";
+                            if (vec[i].type == "object") {
+                                auto elem = vec[i].asObject();
+                                if (elem && elem->className == "JsonValue") {
+                                    ss << serializeJsonValue(elem);
+                                } else {
+                                    ss << serializeRuntimeValue(vec[i]);
+                                }
+                            } else {
+                                ss << serializeRuntimeValue(vec[i]);
+                            }
+                        }
+                        ss << "]";
+                        return ss.str();
+                    }
+                    // Handle std::vector<std::shared_ptr<ClassInstance>> (alternative storage)
+                    if (anyVal.type() == typeid(std::vector<std::shared_ptr<ClassInstance>>)) {
+                        auto vec = std::any_cast<std::vector<std::shared_ptr<ClassInstance>>>(anyVal);
+                        std::stringstream ss;
+                        ss << "[";
+                        for (size_t i = 0; i < vec.size(); ++i) {
+                            if (i > 0) ss << ", ";
+                            ss << serializeJsonValue(vec[i]);
+                        }
+                        ss << "]";
+                        return ss.str();
+                    }
+                }
+            }
+            return "[]";
+        case 5: // OBJECT
+            if (jsonValue->fields.count("objectValue")) {
+                const auto& objVal = jsonValue->fields.at("objectValue");
+                if (objVal.type == "object") {
+                    auto obj = objVal.asObject();
+                    std::stringstream ss;
+                    ss << "{";
+                    bool first = true;
+                    for (const auto& [key, field] : obj->fields) {
+                        if (!first) ss << ", ";
+                        ss << "\"" << key << "\": ";
+                        // Check if field value is a JsonValue
+                        if (field.type == "object") {
+                            auto fieldObj = field.asObject();
+                            if (fieldObj && fieldObj->className == "JsonValue") {
+                                ss << serializeJsonValue(fieldObj);
+                            } else {
+                                ss << serializeRuntimeValue(field);
+                            }
+                        } else {
+                            ss << serializeRuntimeValue(field);
+                        }
+                        first = false;
+                    }
+                    ss << "}";
+                    return ss.str();
+                }
+            }
+            return "{}";
+        default:
+            return "null";
+    }
+}
 
 std::string serializeRuntimeValue(const RuntimeValue& val) {
     if (val.type == "int") {
@@ -1843,6 +1955,10 @@ std::string serializeRuntimeValue(const RuntimeValue& val) {
         return ss.str();
     } else if (val.type == "object") {
         auto instance = val.asObject();
+        // Check if this is a JsonValue - serialize it specially
+        if (instance && instance->className == "JsonValue") {
+            return serializeJsonValue(instance);
+        }
         std::stringstream ss;
         ss << "{";
         bool first = true;
@@ -1965,7 +2081,7 @@ void NativeRegistry::initJSON() {
 
         SimpleJsonParser parser(jsonStr);
         RuntimeValue result = parser.parse(prototype);
-        
+
         // Convert back to std::any
         if (result.type == "int") return result.asInt();
         if (result.type == "double") return result.asDouble();
@@ -1974,6 +2090,104 @@ void NativeRegistry::initJSON() {
         if (result.type == "object") return result.asObject();
         return std::shared_ptr<ClassInstance>();
     }, FunctionSignature{{"string", "any"}, "any"});
+
+    // JsonType enum indices: NULL=0, BOOLEAN=1, NUMBER=2, STRING=3, ARRAY=4, OBJECT=5
+
+    // jsonNull() JsonValue - creates a null JsonValue
+    registerFunction("json", "jsonNull", [](const std::vector<std::any>& args) -> std::any {
+        auto jsonValue = std::make_shared<ClassInstance>();
+        jsonValue->className = "JsonValue";
+        jsonValue->fields["type"] = RuntimeValue(0, "int");  // JsonType.NULL
+        jsonValue->fields["boolValue"] = RuntimeValue(false, "bool");
+        jsonValue->fields["numberValue"] = RuntimeValue(0.0, "double");
+        jsonValue->fields["stringValue"] = RuntimeValue(std::string(""), "string");
+        return jsonValue;
+    }, FunctionSignature{{}, "JsonValue"});
+
+    // jsonBool(value: bool) JsonValue - creates a boolean JsonValue
+    registerFunction("json", "jsonBool", [](const std::vector<std::any>& args) -> std::any {
+        bool value = std::any_cast<bool>(args[0]);
+        auto jsonValue = std::make_shared<ClassInstance>();
+        jsonValue->className = "JsonValue";
+        jsonValue->fields["type"] = RuntimeValue(1, "int");  // JsonType.BOOLEAN
+        jsonValue->fields["boolValue"] = RuntimeValue(value, "bool");
+        jsonValue->fields["numberValue"] = RuntimeValue(0.0, "double");
+        jsonValue->fields["stringValue"] = RuntimeValue(std::string(""), "string");
+        return jsonValue;
+    }, FunctionSignature{{"bool"}, "JsonValue"});
+
+    // jsonNumber(value: double) JsonValue - creates a number JsonValue
+    registerFunction("json", "jsonNumber", [](const std::vector<std::any>& args) -> std::any {
+        double value = 0.0;
+        if (args[0].type() == typeid(int)) {
+            value = static_cast<double>(std::any_cast<int>(args[0]));
+        } else if (args[0].type() == typeid(double)) {
+            value = std::any_cast<double>(args[0]);
+        }
+        auto jsonValue = std::make_shared<ClassInstance>();
+        jsonValue->className = "JsonValue";
+        jsonValue->fields["type"] = RuntimeValue(2, "int");  // JsonType.NUMBER
+        jsonValue->fields["boolValue"] = RuntimeValue(false, "bool");
+        jsonValue->fields["numberValue"] = RuntimeValue(value, "double");
+        jsonValue->fields["stringValue"] = RuntimeValue(std::string(""), "string");
+        return jsonValue;
+    }, FunctionSignature{{"double"}, "JsonValue"});
+
+    // jsonNumberInt(value: int) JsonValue - creates a number JsonValue from int
+    registerFunction("json", "jsonNumberInt", [](const std::vector<std::any>& args) -> std::any {
+        int intValue = std::any_cast<int>(args[0]);
+        double value = static_cast<double>(intValue);
+        auto jsonValue = std::make_shared<ClassInstance>();
+        jsonValue->className = "JsonValue";
+        jsonValue->fields["type"] = RuntimeValue(2, "int");  // JsonType.NUMBER
+        jsonValue->fields["boolValue"] = RuntimeValue(false, "bool");
+        jsonValue->fields["numberValue"] = RuntimeValue(value, "double");
+        jsonValue->fields["stringValue"] = RuntimeValue(std::string(""), "string");
+        return jsonValue;
+    }, FunctionSignature{{"int"}, "JsonValue"});
+
+    // jsonString(value: string) JsonValue - creates a string JsonValue
+    registerFunction("json", "jsonString", [](const std::vector<std::any>& args) -> std::any {
+        std::string value = std::any_cast<std::string>(args[0]);
+        auto jsonValue = std::make_shared<ClassInstance>();
+        jsonValue->className = "JsonValue";
+        jsonValue->fields["type"] = RuntimeValue(3, "int");  // JsonType.STRING
+        jsonValue->fields["boolValue"] = RuntimeValue(false, "bool");
+        jsonValue->fields["numberValue"] = RuntimeValue(0.0, "double");
+        jsonValue->fields["stringValue"] = RuntimeValue(value, "string");
+        return jsonValue;
+    }, FunctionSignature{{"string"}, "JsonValue"});
+
+    // jsonArray(values: Array<JsonValue>) JsonValue - creates an array JsonValue
+    registerFunction("json", "jsonArray", [](const std::vector<std::any>& args) -> std::any {
+        auto jsonValue = std::make_shared<ClassInstance>();
+        jsonValue->className = "JsonValue";
+        jsonValue->fields["type"] = RuntimeValue(4, "int");  // JsonType.ARRAY
+        jsonValue->fields["boolValue"] = RuntimeValue(false, "bool");
+        jsonValue->fields["numberValue"] = RuntimeValue(0.0, "double");
+        jsonValue->fields["stringValue"] = RuntimeValue(std::string(""), "string");
+        // Pass through the array value
+        if (!args.empty()) {
+            jsonValue->fields["arrayValue"] = RuntimeValue(args[0], "array<JsonValue>");
+        }
+        return jsonValue;
+    }, FunctionSignature{{"array<JsonValue>"}, "JsonValue"});
+
+    // jsonObject(entries: object) JsonValue - creates an object JsonValue from object literal
+    registerFunction("json", "jsonObject", [](const std::vector<std::any>& args) -> std::any {
+        auto jsonValue = std::make_shared<ClassInstance>();
+        jsonValue->className = "JsonValue";
+        jsonValue->fields["type"] = RuntimeValue(5, "int");  // JsonType.OBJECT
+        jsonValue->fields["boolValue"] = RuntimeValue(false, "bool");
+        jsonValue->fields["numberValue"] = RuntimeValue(0.0, "double");
+        jsonValue->fields["stringValue"] = RuntimeValue(std::string(""), "string");
+        // Handle object literal (ClassInstance) - copy fields to objectValue
+        if (!args.empty() && args[0].type() == typeid(std::shared_ptr<ClassInstance>)) {
+            auto inputObj = std::any_cast<std::shared_ptr<ClassInstance>>(args[0]);
+            jsonValue->fields["objectValue"] = RuntimeValue(inputObj, "object");
+        }
+        return jsonValue;
+    }, FunctionSignature{{"any"}, "JsonValue"});
 }
 
 

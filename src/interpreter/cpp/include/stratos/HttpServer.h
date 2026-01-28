@@ -170,6 +170,9 @@ public:
     int storeHandler(const RuntimeValue& handler);
     RuntimeValue* getHandler(int handlerId);
 
+    // Get all routes from all routers for matching
+    std::vector<std::pair<int, HttpRoute*>> getAllRoutes();
+
     // HTTP parsing utilities
     static HttpRequestInternal parseRequest(const std::string& rawRequest);
     static bool matchRoute(const std::string& pattern, const std::string& path,

@@ -108,6 +108,17 @@ ServerData* HttpServerManager::getServer(int serverId) {
     return nullptr;
 }
 
+std::vector<std::pair<int, HttpRoute*>> HttpServerManager::getAllRoutes() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::vector<std::pair<int, HttpRoute*>> allRoutes;
+    for (auto& [routerId, routerPtr] : routers_) {
+        for (auto& route : routerPtr->routes) {
+            allRoutes.push_back({routerId, &route});
+        }
+    }
+    return allRoutes;
+}
+
 bool HttpServerManager::startServer(int serverId, int port, Interpreter* interpreter) {
     ServerData* server = getServer(serverId);
     if (!server) {
@@ -398,16 +409,17 @@ void HttpServerManager::handleClient(int clientSocket, ServerData* server, Inter
         return;
     }
 
-    // Find matching route
+    // Find matching route - search all routers (including grouped routers)
     bool routeFound = false;
     HttpRoute* matchedRoute = nullptr;
 
-    for (auto& route : router->routes) {
-        if (route.method == req.method || route.pattern == "*") {
+    auto allRoutes = getAllRoutes();
+    for (auto& [routerId, routePtr] : allRoutes) {
+        if (routePtr->method == req.method || routePtr->pattern == "*") {
             std::unordered_map<std::string, std::string> params;
-            if (matchRoute(route.pattern, req.path, params)) {
+            if (matchRoute(routePtr->pattern, req.path, params)) {
                 req.pathParams = params;
-                matchedRoute = &route;
+                matchedRoute = routePtr;
                 routeFound = true;
                 break;
             }
