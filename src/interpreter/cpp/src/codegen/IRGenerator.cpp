@@ -691,6 +691,12 @@ void IRGenerator::visit(WhenExpr& expr) {
     lastVal = {"null", "i8*"};
 }
 
+void IRGenerator::visit(InterpolatedStringExpr& expr) {
+    // TODO: IR Gen for interpolated strings - concatenate parts
+    // For now, just return a placeholder string
+    lastVal = {"null", "i8*"};
+}
+
 void IRGenerator::visit(ClassDecl& stmt) {
     // Generate constructors and methods for this class
     currentClass = stmt.name.lexeme;

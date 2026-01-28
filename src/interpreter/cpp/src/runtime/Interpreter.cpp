@@ -2220,7 +2220,46 @@ void Interpreter::visit(WhenExpr& expr) {
     }
     
     // No match and no else
-    lastValue = RuntimeValue(); 
+    lastValue = RuntimeValue();
+}
+
+void Interpreter::visit(InterpolatedStringExpr& expr) {
+    std::string result;
+
+    for (auto& part : expr.parts) {
+        if (part.isExpression && part.expression) {
+            // Evaluate the expression
+            part.expression->accept(*this);
+
+            // Convert the result to string
+            if (lastValue.type == "string") {
+                result += lastValue.asString();
+            } else if (lastValue.type == "int") {
+                result += std::to_string(lastValue.asInt());
+            } else if (lastValue.type == "double") {
+                result += std::to_string(lastValue.asDouble());
+            } else if (lastValue.type == "bool") {
+                result += lastValue.asBool() ? "true" : "false";
+            } else if (lastValue.type == "char") {
+                result += lastValue.asChar();
+            } else if (lastValue.type == "object") {
+                // Try to get a string representation
+                auto* anyPtr = std::get_if<std::shared_ptr<ClassInstance>>(&lastValue.value);
+                if (anyPtr && *anyPtr) {
+                    result += "[" + (*anyPtr)->className + "]";
+                } else {
+                    result += "[object]";
+                }
+            } else {
+                result += "[" + lastValue.type + "]";
+            }
+        } else {
+            // Literal string part
+            result += part.literal;
+        }
+    }
+
+    lastValue = RuntimeValue(result);
 }
 
 void Interpreter::visit(AwaitExpr& expr) {

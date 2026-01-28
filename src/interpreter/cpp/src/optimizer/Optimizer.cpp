@@ -124,6 +124,15 @@ void Optimizer::visit(WhenExpr& expr) {
     lastConst.type = 0;
 }
 
+void Optimizer::visit(InterpolatedStringExpr& expr) {
+    for (auto& part : expr.parts) {
+        if (part.isExpression && part.expression) {
+            part.expression->accept(*this);
+        }
+    }
+    lastConst.type = 0; // Result is string, not a simple constant
+}
+
 // --- Statements ---
 
 void Optimizer::visit(VarDecl& stmt) {

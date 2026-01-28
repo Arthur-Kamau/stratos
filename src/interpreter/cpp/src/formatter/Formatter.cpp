@@ -263,6 +263,20 @@ void Formatter::visit(WhenExpr& expr) {
     write("}");
 }
 
+void Formatter::visit(InterpolatedStringExpr& expr) {
+    write("\"");
+    for (const auto& part : expr.parts) {
+        if (part.isExpression && part.expression) {
+            write("${");
+            part.expression->accept(*this);
+            write("}");
+        } else {
+            write(part.literal);
+        }
+    }
+    write("\"");
+}
+
 // Statement visitors
 void Formatter::visit(VarDecl& stmt) {
     write(stmt.isMutable ? "var" : "val");

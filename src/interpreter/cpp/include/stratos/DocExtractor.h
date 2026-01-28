@@ -40,6 +40,7 @@ public:
     void visit(LambdaExpr& expr) override {}
     void visit(StructInitExpr& expr) override {}
     void visit(WhenExpr& expr) override {}
+    void visit(InterpolatedStringExpr& expr) override {}
 
     // Statement visitors
     void visit(VarDecl& stmt) override;

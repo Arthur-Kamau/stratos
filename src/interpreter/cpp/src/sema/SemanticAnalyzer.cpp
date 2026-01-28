@@ -888,6 +888,16 @@ void SemanticAnalyzer::visit(WhenExpr& expr) {
     // For now, we assume implicit return or "any".
 }
 
+void SemanticAnalyzer::visit(InterpolatedStringExpr& expr) {
+    // Analyze each interpolated expression part
+    for (auto& part : expr.parts) {
+        if (part.isExpression && part.expression) {
+            part.expression->accept(*this);
+        }
+    }
+    // Result type is always string
+}
+
 // --- Statements ---
 
 void SemanticAnalyzer::visit(VarDecl& stmt) {

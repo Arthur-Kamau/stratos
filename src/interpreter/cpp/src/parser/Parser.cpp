@@ -1,4 +1,5 @@
 #include "stratos/Parser.h"
+#include "stratos/Lexer.h"
 #include <iostream>
 #include <sstream>
 
@@ -18,6 +19,10 @@ std::vector<std::unique_ptr<Stmt>> Parser::parse() {
         }
     }
     return statements;
+}
+
+std::unique_ptr<Expr> Parser::parseExpression() {
+    return expression();
 }
 
 // --- Declarations ---

@@ -13,6 +13,7 @@ class Parser {
 public:
     Parser(const std::vector<Token>& tokens);
     std::vector<std::unique_ptr<Stmt>> parse();
+    std::unique_ptr<Expr> parseExpression(); // Parse a single expression (for interpolation)
 
 private:
     const std::vector<Token>& tokens;

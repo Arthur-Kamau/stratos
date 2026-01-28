@@ -26,6 +26,7 @@ public:
     void visit(AwaitExpr& expr) override;
     void visit(StructInitExpr& expr) override;
     void visit(WhenExpr& expr) override;
+    void visit(InterpolatedStringExpr& expr) override;
 
     void visit(VarDecl& stmt) override;
     void visit(FunctionDecl& stmt) override;
