@@ -199,4 +199,12 @@ void Optimizer::visit(DestructuringDecl& stmt) {
     if (stmt.initializer) stmt.initializer->accept(*this);
 }
 
+void Optimizer::visit(SelectStmt& stmt) {
+    for (auto& selectCase : stmt.cases) {
+        if (selectCase.channel) selectCase.channel->accept(*this);
+        if (selectCase.sendValue) selectCase.sendValue->accept(*this);
+        if (selectCase.body) selectCase.body->accept(*this);
+    }
+}
+
 } // namespace stratos

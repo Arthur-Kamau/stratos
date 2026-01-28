@@ -2851,6 +2851,100 @@ void Interpreter::visit(DestructuringDecl& stmt) {
     }
 }
 
+void Interpreter::visit(SelectStmt& stmt) {
+    // Implement Go-style select with non-blocking checks
+    // Try each case in order, execute first one that's ready
+    // If no case is ready, execute default (else) case if present
+
+    bool caseExecuted = false;
+    SelectCase* defaultCase = nullptr;
+
+    // First pass: try to find a ready case
+    for (auto& selectCase : stmt.cases) {
+        if (selectCase.kind == SelectCase::Kind::DEFAULT) {
+            defaultCase = &selectCase;
+            continue;
+        }
+
+        if (selectCase.kind == SelectCase::Kind::RECEIVE) {
+            // Evaluate the channel expression
+            selectCase.channel->accept(*this);
+            RuntimeValue channelValue = lastValue;
+
+            if (channelValue.type == "Channel" || channelValue.type.find("Channel") != std::string::npos) {
+                auto channelObj = channelValue.asObject();
+                if (channelObj) {
+                    // Check if channel has data (non-blocking)
+                    auto queueIt = channelObj->fields.find("__queue");
+                    if (queueIt != channelObj->fields.end()) {
+                        if (auto* queuePtr = std::get_if<std::any>(&queueIt->second.value)) {
+                            try {
+                                auto& queue = std::any_cast<std::vector<RuntimeValue>&>(*queuePtr);
+                                if (!queue.empty()) {
+                                    // Receive value
+                                    RuntimeValue receivedValue = queue.front();
+                                    queue.erase(queue.begin());
+
+                                    // Store in variable if specified
+                                    if (!selectCase.variable.lexeme.empty()) {
+                                        currentEnv->define(selectCase.variable.lexeme, receivedValue);
+                                    }
+
+                                    // Execute case body
+                                    if (selectCase.body) {
+                                        selectCase.body->accept(*this);
+                                    }
+                                    caseExecuted = true;
+                                    break;
+                                }
+                            } catch (...) {}
+                        }
+                    }
+                }
+            }
+        }
+        else if (selectCase.kind == SelectCase::Kind::SEND) {
+            // Evaluate the channel expression
+            selectCase.channel->accept(*this);
+            RuntimeValue channelValue = lastValue;
+
+            if (channelValue.type == "Channel" || channelValue.type.find("Channel") != std::string::npos) {
+                auto channelObj = channelValue.asObject();
+                if (channelObj) {
+                    // Evaluate the value to send
+                    selectCase.sendValue->accept(*this);
+                    RuntimeValue sendValue = lastValue;
+
+                    // Add to channel queue
+                    auto queueIt = channelObj->fields.find("__queue");
+                    if (queueIt != channelObj->fields.end()) {
+                        if (auto* queuePtr = std::get_if<std::any>(&queueIt->second.value)) {
+                            try {
+                                auto& queue = std::any_cast<std::vector<RuntimeValue>&>(*queuePtr);
+                                queue.push_back(sendValue);
+
+                                // Execute case body
+                                if (selectCase.body) {
+                                    selectCase.body->accept(*this);
+                                }
+                                caseExecuted = true;
+                                break;
+                            } catch (...) {}
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // If no case executed, run default case
+    if (!caseExecuted && defaultCase != nullptr) {
+        if (defaultCase->body) {
+            defaultCase->body->accept(*this);
+        }
+    }
+}
+
 // --- Helper Methods ---
 
 RuntimeValue Interpreter::evaluateNativeCall(const std::string& moduleName,

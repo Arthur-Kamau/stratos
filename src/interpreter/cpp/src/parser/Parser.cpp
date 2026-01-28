@@ -418,6 +418,7 @@ std::unique_ptr<Stmt> Parser::statement() {
     if (match({TokenType::BREAK})) return breakStatement();
     if (match({TokenType::CONTINUE})) return continueStatement();
     if (match({TokenType::DEFER})) return deferStatement();
+    if (match({TokenType::SELECT})) return selectStatement();
     // if (match({TokenType::WHEN})) return whenStatement(); // Handled as expression statement now
     if (match({TokenType::LEFT_BRACE})) return block();
 
@@ -643,6 +644,80 @@ std::unique_ptr<Stmt> Parser::deferStatement() {
     // Parse the deferred statement (typically a function call)
     std::unique_ptr<Stmt> stmt = statement();
     return std::make_unique<DeferStmt>(keyword, std::move(stmt));
+}
+
+std::unique_ptr<Stmt> Parser::selectStatement() {
+    Token keyword = previous();
+    consume(TokenType::LEFT_BRACE, "Expect '{' after 'select'.");
+
+    std::vector<SelectCase> cases;
+
+    while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
+        // Parse case keyword or default
+        if (match({TokenType::CASE})) {
+            // Parse channel operation: var <- channel (receive) or channel <- value (send)
+            Token variable = Token{TokenType::IDENTIFIER, "", 0, 0, ""};
+            std::unique_ptr<Expr> channel = nullptr;
+            std::unique_ptr<Expr> sendValue = nullptr;
+            SelectCase::Kind kind;
+
+            // Try to parse: identifier <- expr (receive) or expr <- expr (send)
+            std::unique_ptr<Expr> leftExpr = expression();
+
+            if (match({TokenType::LEFT_ARROW})) {
+                // This could be either receive or send depending on left side
+                // If left is a simple identifier, it's receive: var <- channel
+                // Otherwise it's send: channel <- value
+                if (auto* varExpr = dynamic_cast<VariableExpr*>(leftExpr.get())) {
+                    // Receive: var <- channel
+                    kind = SelectCase::Kind::RECEIVE;
+                    variable = varExpr->name;
+                    channel = expression();
+                } else {
+                    // Send: channel <- value
+                    kind = SelectCase::Kind::SEND;
+                    channel = std::move(leftExpr);
+                    sendValue = expression();
+                }
+            } else {
+                // Just an expression (probably a method call like channel.receive())
+                kind = SelectCase::Kind::RECEIVE;
+                channel = std::move(leftExpr);
+            }
+
+            consume(TokenType::COLON, "Expect ':' after select case.");
+
+            // Parse case body - can be a block or a single statement
+            std::unique_ptr<Stmt> body;
+            if (check(TokenType::LEFT_BRACE)) {
+                advance();
+                body = block();
+            } else {
+                body = statement();
+            }
+
+            cases.push_back(SelectCase(kind, variable, std::move(channel), std::move(sendValue), std::move(body)));
+        } else if (match({TokenType::ELSE})) {
+            // Default case
+            consume(TokenType::COLON, "Expect ':' after 'else' in select.");
+
+            std::unique_ptr<Stmt> body;
+            if (check(TokenType::LEFT_BRACE)) {
+                advance();
+                body = block();
+            } else {
+                body = statement();
+            }
+
+            Token emptyVar{TokenType::IDENTIFIER, "", keyword.line, keyword.column, keyword.file};
+            cases.push_back(SelectCase(SelectCase::Kind::DEFAULT, emptyVar, nullptr, nullptr, std::move(body)));
+        } else {
+            throw ParseError("Expect 'case' or 'else' in select statement.", peek().line, peek().column);
+        }
+    }
+
+    consume(TokenType::RIGHT_BRACE, "Expect '}' after select cases.");
+    return std::make_unique<SelectStmt>(keyword, std::move(cases));
 }
 
 std::unique_ptr<Stmt> Parser::block() {

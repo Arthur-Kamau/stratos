@@ -46,6 +46,7 @@ class BreakStmt;
 class ContinueStmt;
 class DeferStmt;
 class DestructuringDecl;
+class SelectStmt;
 
 // Visitor Interface
 class ASTVisitor {
@@ -84,6 +85,7 @@ public:
     virtual void visit(ContinueStmt& stmt) = 0;
     virtual void visit(DeferStmt& stmt) = 0;
     virtual void visit(DestructuringDecl& stmt) = 0;
+    virtual void visit(SelectStmt& stmt) = 0;
 };
 
 // Base Node
@@ -514,6 +516,33 @@ public:
                       std::unique_ptr<Expr> initializer, bool isPublic = false)
         : isMutable(isMutable), names(std::move(names)),
           initializer(std::move(initializer)), isPublic(isPublic) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+// Select case for channel operations
+struct SelectCase {
+    enum class Kind { RECEIVE, SEND, DEFAULT };
+    Kind kind;
+    Token variable;                  // For receive: the variable to store received value
+    std::unique_ptr<Expr> channel;   // The channel expression
+    std::unique_ptr<Expr> sendValue; // For send: the value to send
+    std::unique_ptr<Stmt> body;      // The case body
+
+    SelectCase(Kind kind, Token variable, std::unique_ptr<Expr> channel,
+               std::unique_ptr<Expr> sendValue, std::unique_ptr<Stmt> body)
+        : kind(kind), variable(variable), channel(std::move(channel)),
+          sendValue(std::move(sendValue)), body(std::move(body)) {}
+};
+
+// Select statement for channel multiplexing (Go-style)
+class SelectStmt : public Stmt {
+public:
+    Token keyword;
+    std::vector<SelectCase> cases;
+
+    SelectStmt(Token keyword, std::vector<SelectCase> cases)
+        : keyword(keyword), cases(std::move(cases)) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };

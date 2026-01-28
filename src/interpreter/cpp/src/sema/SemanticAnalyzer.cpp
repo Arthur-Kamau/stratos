@@ -1179,6 +1179,18 @@ void SemanticAnalyzer::visit(DestructuringDecl& stmt) {
     }
 }
 
+void SemanticAnalyzer::visit(SelectStmt& stmt) {
+    for (auto& selectCase : stmt.cases) {
+        if (selectCase.channel) selectCase.channel->accept(*this);
+        if (selectCase.sendValue) selectCase.sendValue->accept(*this);
+        // Define the receive variable if present
+        if (!selectCase.variable.lexeme.empty() && selectCase.kind == SelectCase::Kind::RECEIVE) {
+            symbolTable.define(Symbol{selectCase.variable.lexeme, SymbolKind::VARIABLE, "any", false, false, false});
+        }
+        if (selectCase.body) selectCase.body->accept(*this);
+    }
+}
+
 void SemanticAnalyzer::loadModule(const std::string& moduleName) {
     namespace fs = std::filesystem;
 

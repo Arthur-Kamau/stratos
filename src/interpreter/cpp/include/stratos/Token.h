@@ -40,6 +40,7 @@ enum class TokenType {
     PIPE, // |>
     PLUS_EQUAL, MINUS_EQUAL, STAR_EQUAL, SLASH_EQUAL,
     ARROW, // ->
+    LEFT_ARROW, // <-
     QUESTION, // ?
     QUESTION_DOT, // ?.
     ELVIS, // ?:
@@ -61,7 +62,7 @@ enum class TokenType {
     // Keywords
     AND, OR, NOT,
     CLASS, STRUCT, INTERFACE, ENUM, PACKAGE, USE, AS,
-    BREAK, CONTINUE, DEFER,
+    BREAK, CONTINUE, DEFER, CASE,
     ELSE, FALSE, FN, FOR, IF, NONE,
     RETURN, SUPER, THIS, TRUE, VAR, VAL,
     WHILE, WHEN, SELECT,

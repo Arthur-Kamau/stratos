@@ -534,4 +534,50 @@ void Formatter::visit(DestructuringDecl& stmt) {
     newline();
 }
 
+void Formatter::visit(SelectStmt& stmt) {
+    write("select");
+    space();
+    write("{");
+    newline();
+    indentLevel_++;
+
+    for (const auto& selectCase : stmt.cases) {
+        indent();
+        if (selectCase.kind == SelectCase::Kind::DEFAULT) {
+            write("else:");
+        } else {
+            write("case");
+            space();
+            if (selectCase.kind == SelectCase::Kind::RECEIVE && !selectCase.variable.lexeme.empty()) {
+                write(selectCase.variable.lexeme);
+                space();
+                write("<-");
+                space();
+            }
+            if (selectCase.channel) {
+                selectCase.channel->accept(*this);
+            }
+            if (selectCase.kind == SelectCase::Kind::SEND && selectCase.sendValue) {
+                space();
+                write("<-");
+                space();
+                selectCase.sendValue->accept(*this);
+            }
+            write(":");
+        }
+        newline();
+        indentLevel_++;
+        if (selectCase.body) {
+            indent();
+            selectCase.body->accept(*this);
+        }
+        indentLevel_--;
+    }
+
+    indentLevel_--;
+    indent();
+    write("}");
+    newline();
+}
+
 } // namespace stratos

@@ -61,6 +61,7 @@ public:
     void visit(ContinueStmt& stmt) override;
     void visit(DeferStmt& stmt) override {}
     void visit(DestructuringDecl& stmt) override {}
+    void visit(SelectStmt& stmt) override {}
 
 private:
     std::string sourceFile_;

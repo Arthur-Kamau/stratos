@@ -1056,4 +1056,8 @@ void IRGenerator::visit(DestructuringDecl& stmt) {
     // TODO: IR generation for destructuring
 }
 
+void IRGenerator::visit(SelectStmt& stmt) {
+    // TODO: IR generation for select statement
+}
+
 } // namespace stratos

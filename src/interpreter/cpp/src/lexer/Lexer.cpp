@@ -16,6 +16,7 @@ std::unordered_map<std::string, TokenType> Lexer::keywords = {
     {"async", TokenType::ASYNC},
     {"await", TokenType::AWAIT},
     {"break", TokenType::BREAK},
+    {"case", TokenType::CASE},
     {"class", TokenType::CLASS},
     {"continue", TokenType::CONTINUE},
     {"defer", TokenType::DEFER},
@@ -34,6 +35,7 @@ std::unordered_map<std::string, TokenType> Lexer::keywords = {
     {"val", TokenType::VAL},
     {"while", TokenType::WHILE},
     {"when", TokenType::WHEN},
+    {"select", TokenType::SELECT},
     {"int", TokenType::INT},
     {"double", TokenType::DOUBLE},
     {"bool", TokenType::BOOL},
@@ -153,6 +155,7 @@ void Lexer::scanToken() {
         case '<':
             if (match('=')) addToken(TokenType::LESS_EQUAL);
             else if (match('<')) addToken(TokenType::LEFT_SHIFT);
+            else if (match('-')) addToken(TokenType::LEFT_ARROW);
             else addToken(TokenType::LESS);
             break;
         case '>':
