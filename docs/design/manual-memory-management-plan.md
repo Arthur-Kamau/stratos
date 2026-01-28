@@ -33,7 +33,7 @@ val shared: ref<Person> = new ref Person("Bob", 25);
 val weak: weak<Person> = shared;
 
 // Stack allocation (automatic cleanup)
-val stackObj: stack Person = Person("Charlie", 35);
+val stackObj: stack<Person> = Person("Charlie", 35);
 ```
 
 ### 2. Memory Operations
