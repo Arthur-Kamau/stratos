@@ -40,6 +40,7 @@ private:
     std::unique_ptr<Stmt> returnStatement();
     std::unique_ptr<Stmt> breakStatement();
     std::unique_ptr<Stmt> continueStatement();
+    std::unique_ptr<Stmt> deferStatement();
     std::unique_ptr<Stmt> block();
     std::unique_ptr<Stmt> expressionStatement();
 

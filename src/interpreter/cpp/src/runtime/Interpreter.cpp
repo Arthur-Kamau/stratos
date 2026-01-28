@@ -2760,6 +2760,15 @@ void Interpreter::visit(ReturnStmt& stmt) {
         value = RuntimeValue(std::any(), "void");
     }
 
+    // Execute deferred statements in LIFO order (Go-style defer)
+    while (!deferredStatements.empty()) {
+        Stmt* deferred = deferredStatements.back();
+        deferredStatements.pop_back();
+        if (deferred) {
+            deferred->accept(*this);
+        }
+    }
+
     throw ReturnException(value);
 }
 
@@ -2769,6 +2778,14 @@ void Interpreter::visit(BreakStmt& stmt) {
 
 void Interpreter::visit(ContinueStmt& stmt) {
     throw ContinueException();
+}
+
+void Interpreter::visit(DeferStmt& stmt) {
+    // Store the deferred statement for later execution
+    // The deferred statement will be executed when the current function returns
+    if (stmt.statement) {
+        deferredStatements.push_back(stmt.statement.get());
+    }
 }
 
 // --- Helper Methods ---

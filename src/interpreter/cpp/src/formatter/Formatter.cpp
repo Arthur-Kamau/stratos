@@ -505,4 +505,11 @@ void Formatter::visit(ContinueStmt& stmt) {
     newline();
 }
 
+void Formatter::visit(DeferStmt& stmt) {
+    write("defer ");
+    if (stmt.statement) {
+        stmt.statement->accept(*this);
+    }
+}
+
 } // namespace stratos

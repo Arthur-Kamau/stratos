@@ -396,6 +396,7 @@ std::unique_ptr<Stmt> Parser::statement() {
     if (match({TokenType::RETURN})) return returnStatement();
     if (match({TokenType::BREAK})) return breakStatement();
     if (match({TokenType::CONTINUE})) return continueStatement();
+    if (match({TokenType::DEFER})) return deferStatement();
     // if (match({TokenType::WHEN})) return whenStatement(); // Handled as expression statement now
     if (match({TokenType::LEFT_BRACE})) return block();
 
@@ -614,6 +615,13 @@ std::unique_ptr<Stmt> Parser::continueStatement() {
     Token keyword = previous();
     consume(TokenType::SEMICOLON, "Expect ';' after 'continue'.");
     return std::make_unique<ContinueStmt>(keyword);
+}
+
+std::unique_ptr<Stmt> Parser::deferStatement() {
+    Token keyword = previous();
+    // Parse the deferred statement (typically a function call)
+    std::unique_ptr<Stmt> stmt = statement();
+    return std::make_unique<DeferStmt>(keyword, std::move(stmt));
 }
 
 std::unique_ptr<Stmt> Parser::block() {

@@ -18,6 +18,7 @@ std::unordered_map<std::string, TokenType> Lexer::keywords = {
     {"break", TokenType::BREAK},
     {"class", TokenType::CLASS},
     {"continue", TokenType::CONTINUE},
+    {"defer", TokenType::DEFER},
     {"else", TokenType::ELSE},
     {"false", TokenType::FALSE},
     {"for", TokenType::FOR},

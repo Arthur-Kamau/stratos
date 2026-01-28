@@ -59,6 +59,7 @@ public:
     void visit(ReturnStmt& stmt) override;
     void visit(BreakStmt& stmt) override;
     void visit(ContinueStmt& stmt) override;
+    void visit(DeferStmt& stmt) override {}
 
 private:
     std::string sourceFile_;

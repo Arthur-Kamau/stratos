@@ -211,6 +211,7 @@ public:
     void visit(ReturnStmt& stmt) override;
     void visit(BreakStmt& stmt) override;
     void visit(ContinueStmt& stmt) override;
+    void visit(DeferStmt& stmt) override;
 
 private:
     // Forward declaration
@@ -319,6 +320,9 @@ private:
 
     // Garbage collector for cycle detection
     GarbageCollector gc;
+
+    // Deferred statements (Go-style defer)
+    std::vector<Stmt*> deferredStatements;
 
     // Thread management for concurrent.go()
     mutable std::mutex interpreterMutex;

@@ -191,5 +191,8 @@ void Optimizer::visit(PrintStmt& stmt) { stmt.expression->accept(*this); }
 
 void Optimizer::visit(BreakStmt& stmt) {}
 void Optimizer::visit(ContinueStmt& stmt) {}
+void Optimizer::visit(DeferStmt& stmt) {
+    if (stmt.statement) stmt.statement->accept(*this);
+}
 
 } // namespace stratos

@@ -1161,6 +1161,13 @@ void SemanticAnalyzer::visit(ContinueStmt& stmt) {
     }
 }
 
+void SemanticAnalyzer::visit(DeferStmt& stmt) {
+    // Analyze the deferred statement
+    if (stmt.statement) {
+        stmt.statement->accept(*this);
+    }
+}
+
 void SemanticAnalyzer::loadModule(const std::string& moduleName) {
     namespace fs = std::filesystem;
 

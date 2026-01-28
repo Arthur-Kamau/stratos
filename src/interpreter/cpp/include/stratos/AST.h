@@ -44,6 +44,7 @@ class PackageDecl;
 class UseStmt;
 class BreakStmt;
 class ContinueStmt;
+class DeferStmt;
 
 // Visitor Interface
 class ASTVisitor {
@@ -80,6 +81,7 @@ public:
     virtual void visit(ReturnStmt& stmt) = 0;
     virtual void visit(BreakStmt& stmt) = 0;
     virtual void visit(ContinueStmt& stmt) = 0;
+    virtual void visit(DeferStmt& stmt) = 0;
 };
 
 // Base Node
@@ -483,6 +485,17 @@ public:
     Token keyword;
 
     ContinueStmt(Token keyword) : keyword(keyword) {}
+
+    void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
+};
+
+class DeferStmt : public Stmt {
+public:
+    Token keyword;
+    std::unique_ptr<Stmt> statement; // The statement to defer (usually a call expression)
+
+    DeferStmt(Token keyword, std::unique_ptr<Stmt> statement)
+        : keyword(keyword), statement(std::move(statement)) {}
 
     void accept(ASTVisitor& visitor) override { visitor.visit(*this); }
 };
