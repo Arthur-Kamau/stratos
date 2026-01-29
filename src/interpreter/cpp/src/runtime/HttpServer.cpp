@@ -412,6 +412,7 @@ void HttpServerManager::handleClient(int clientSocket, ServerData* server, Inter
     // Find matching route - search all routers (including grouped routers)
     bool routeFound = false;
     HttpRoute* matchedRoute = nullptr;
+    int matchedRouterId = -1;
 
     auto allRoutes = getAllRoutes();
     for (auto& [routerId, routePtr] : allRoutes) {
@@ -420,6 +421,7 @@ void HttpServerManager::handleClient(int clientSocket, ServerData* server, Inter
             if (matchRoute(routePtr->pattern, req.path, params)) {
                 req.pathParams = params;
                 matchedRoute = routePtr;
+                matchedRouterId = routerId;
                 routeFound = true;
                 break;
             }
@@ -435,13 +437,63 @@ void HttpServerManager::handleClient(int clientSocket, ServerData* server, Inter
         return;
     }
 
-    // Execute handler through interpreter
+    // Execute middleware chain and then route handler
     if (interpreter && matchedRoute) {
-        RuntimeValue* handler = getHandler(matchedRoute->handlerId);
-        if (handler) {
-            // Create Request and Response RuntimeValues and call the handler
-            // This is done through the interpreter's executeHttpHandler method
-            interpreter->executeHttpHandler(*handler, req, res);
+        // Collect all middleware to execute
+        std::vector<int> middlewareChain;
+
+        // Get middleware from the main router
+        if (router->middlewareIds.size() > 0) {
+            middlewareChain.insert(middlewareChain.end(),
+                router->middlewareIds.begin(),
+                router->middlewareIds.end());
+        }
+
+        // If the matched route is in a different router (group), get its middleware too
+        if (matchedRouterId != server->routerId) {
+            RouterData* matchedRouter = getRouter(matchedRouterId);
+            if (matchedRouter && matchedRouter->middlewareIds.size() > 0) {
+                // Add middleware that isn't already in the chain (avoid duplicates from parent)
+                for (int mwId : matchedRouter->middlewareIds) {
+                    bool alreadyAdded = false;
+                    for (int existing : middlewareChain) {
+                        if (existing == mwId) {
+                            alreadyAdded = true;
+                            break;
+                        }
+                    }
+                    if (!alreadyAdded) {
+                        middlewareChain.push_back(mwId);
+                    }
+                }
+            }
+        }
+
+        // Execute middleware chain
+        bool shouldContinue = true;
+        for (int middlewareId : middlewareChain) {
+            RuntimeValue* middleware = getHandler(middlewareId);
+            if (middleware) {
+                // Execute middleware - it can modify req/res and optionally stop the chain
+                // The middleware should call next() to continue; if it doesn't, we stop
+                bool middlewareCalledNext = interpreter->executeHttpMiddleware(*middleware, req, res);
+
+                // Check if response was already sent (e.g., auth failure)
+                if (res.statusCode >= 400 || !middlewareCalledNext) {
+                    shouldContinue = false;
+                    break;
+                }
+            }
+        }
+
+        // Execute route handler if middleware chain completed successfully
+        if (shouldContinue) {
+            RuntimeValue* handler = getHandler(matchedRoute->handlerId);
+            if (handler) {
+                // Create Request and Response RuntimeValues and call the handler
+                // This is done through the interpreter's executeHttpHandler method
+                interpreter->executeHttpHandler(*handler, req, res);
+            }
         }
     }
 

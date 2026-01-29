@@ -89,6 +89,11 @@ private:
     void initRegex();
     void initYAML();
     void initSQLite();
+    void initPostgreSQL();
+    void initMySQL();
+    void initRedis();
+    void initXML();
+    void initTemplate();
 
 };
 

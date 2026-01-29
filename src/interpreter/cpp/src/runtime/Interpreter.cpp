@@ -3674,6 +3674,148 @@ void Interpreter::executeHttpHandler(const RuntimeValue& handler, HttpRequestInt
     }
 }
 
+bool Interpreter::executeHttpMiddleware(const RuntimeValue& middleware, HttpRequestInternal& req, HttpResponseInternal& res) {
+    // Create Request object (same as handler)
+    auto reqObj = std::make_shared<ClassInstance>();
+    reqObj->className = "Request";
+    reqObj->fields["method"] = RuntimeValue(methodToString(req.method));
+    reqObj->fields["url"] = RuntimeValue(req.url);
+    reqObj->fields["path"] = RuntimeValue(req.path);
+    reqObj->fields["query"] = RuntimeValue(req.query);
+    reqObj->fields["body"] = RuntimeValue(req.body);
+    reqObj->fields["remoteAddr"] = RuntimeValue(req.remoteAddr);
+
+    // Convert headers to a map
+    std::unordered_map<std::string, std::any> headerMap;
+    for (const auto& [key, value] : req.headers) {
+        headerMap[key] = value;
+    }
+    reqObj->fields["headers"] = RuntimeValue(std::any(headerMap), "map<string, string>");
+
+    // Convert query params to a map
+    std::unordered_map<std::string, std::any> queryMap;
+    for (const auto& [key, value] : req.queryParams) {
+        queryMap[key] = value;
+    }
+    reqObj->fields["queryParams"] = RuntimeValue(std::any(queryMap), "map<string, string>");
+
+    // Convert path params to a map
+    std::unordered_map<std::string, std::any> pathMap;
+    for (const auto& [key, value] : req.pathParams) {
+        pathMap[key] = value;
+    }
+    reqObj->fields["pathParams"] = RuntimeValue(std::any(pathMap), "map<string, string>");
+    reqObj->fields["params"] = RuntimeValue(std::any(pathMap), "map<string, string>");
+
+    // Create Response object
+    auto resObj = std::make_shared<ClassInstance>();
+    resObj->className = "Response";
+    resObj->fields["statusCode"] = RuntimeValue(res.statusCode);  // Preserve existing status
+    resObj->fields["body"] = RuntimeValue(res.body);
+    std::unordered_map<std::string, std::any> resHeaders;
+    for (const auto& [key, value] : res.headers) {
+        resHeaders[key] = value;
+    }
+    if (resHeaders.empty()) {
+        resHeaders["Content-Type"] = std::string("text/plain");
+    }
+    resObj->fields["headers"] = RuntimeValue(std::any(resHeaders), "map<string, string>");
+
+    // Create a "next called" flag
+    bool nextCalled = false;
+
+    // Create the "next" function that sets the flag
+    auto nextClosure = std::make_shared<Closure>();
+    nextClosure->parameters = {};
+    nextClosure->body = nullptr;
+    nextClosure->env = currentEnv;
+    nextClosure->isAsync = false;
+
+    // We need to track whether next() was called
+    // Create a special flag field on the response object
+    reqObj->fields["__nextCalled"] = RuntimeValue(false);
+
+    // Call the middleware with (req, res, next)
+    // The next function is a no-op callback - middleware behavior signals continuation
+    std::vector<RuntimeValue> args;
+    args.push_back(RuntimeValue(reqObj));
+    args.push_back(RuntimeValue(resObj));
+
+    // Create a simple next function that sets a flag
+    // For now, middleware returns to indicate continuation
+    // A more sophisticated implementation would use a callback
+
+    try {
+        RuntimeValue result = executeCallback(middleware, args);
+
+        // Check if middleware explicitly returned false to stop chain
+        if (result.type == "bool" && !result.asBool()) {
+            nextCalled = false;
+        } else {
+            // By default, continue the chain unless response was sent with error
+            nextCalled = true;
+        }
+    } catch (const std::exception& e) {
+        res.statusCode = 500;
+        res.body = "{\"error\": \"Middleware error: " + std::string(e.what()) + "\"}";
+        res.headers["Content-Type"] = "application/json";
+        return false;
+    }
+
+    // Extract any modifications made to the response
+    if (resObj->fields.count("statusCode")) {
+        auto& statusVal = resObj->fields["statusCode"];
+        if (statusVal.type == "int") {
+            res.statusCode = statusVal.asInt();
+        }
+    }
+
+    if (resObj->fields.count("body")) {
+        auto& bodyVal = resObj->fields["body"];
+        if (bodyVal.type == "string") {
+            res.body = bodyVal.asString();
+        }
+    }
+
+    if (resObj->fields.count("headers")) {
+        auto& headersVal = resObj->fields["headers"];
+        if (headersVal.type.starts_with("map")) {
+            try {
+                auto* anyPtr = std::get_if<std::any>(&headersVal.value);
+                if (anyPtr) {
+                    auto headers = std::any_cast<std::unordered_map<std::string, std::any>>(*anyPtr);
+                    for (const auto& [key, value] : headers) {
+                        if (value.type() == typeid(std::string)) {
+                            res.headers[key] = std::any_cast<std::string>(value);
+                        }
+                    }
+                }
+            } catch (...) {}
+        }
+    }
+
+    // Also update request modifications back (e.g., middleware might add auth info)
+    if (reqObj->fields.count("headers")) {
+        auto& headersVal = reqObj->fields["headers"];
+        if (headersVal.type.starts_with("map")) {
+            try {
+                auto* anyPtr = std::get_if<std::any>(&headersVal.value);
+                if (anyPtr) {
+                    auto headers = std::any_cast<std::unordered_map<std::string, std::any>>(*anyPtr);
+                    req.headers.clear();
+                    for (const auto& [key, value] : headers) {
+                        if (value.type() == typeid(std::string)) {
+                            req.headers[key] = std::any_cast<std::string>(value);
+                        }
+                    }
+                }
+            } catch (...) {}
+        }
+    }
+
+    return nextCalled;
+}
+
 void Interpreter::spawnGoroutine(const RuntimeValue& closureValue) {
     if (closureValue.type != "function") {
         error("concurrent.go() requires a function argument");

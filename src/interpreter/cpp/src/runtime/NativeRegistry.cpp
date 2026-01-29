@@ -16,6 +16,9 @@
 #include <cstring>
 #include <regex>
 #include <sqlite3.h>
+#include <libpq-fe.h>
+#include <mysql/mysql.h>
+#include <hiredis/hiredis.h>
 #include "stratos/Interpreter.h"
 #include <mutex>
 #include <condition_variable>
@@ -117,6 +120,11 @@ void NativeRegistry::initializeStdlib() {
     initTerminal();
     initRegex();
     initSQLite();    // SQLite database support
+    initPostgreSQL(); // PostgreSQL database support
+    initMySQL();     // MySQL/MariaDB database support
+    initRedis();     // Redis support
+    initXML();       // XML parsing support
+    initTemplate();  // HTML templating support
     initCollections(); // Collections module
     initConcurrent(); // Concurrency primitives
     initHTTP();      // HTTP server and client
@@ -4647,6 +4655,2293 @@ void NativeRegistry::initHTTP() {
 
         return server;
     }, FunctionSignature{{"Router"}, "Server"});
+}
+
+// ============================================================================
+// PostgreSQL Module - Database Support
+// ============================================================================
+
+// Thread-safe storage for PostgreSQL result sets
+static std::mutex g_psql_mutex;
+static std::unordered_map<int, PGresult*> g_psql_results;
+static std::unordered_map<int, int> g_psql_result_row;  // Current row index per result
+static int g_psql_result_counter = 0;
+
+void NativeRegistry::initPostgreSQL() {
+    // __psql_connect(connectionString: string): any
+    registerFunction("psql", "__psql_connect", [](const std::vector<std::any>& args) -> std::any {
+        auto connStr = std::any_cast<std::string>(args[0]);
+        PGconn* conn = PQconnectdb(connStr.c_str());
+
+        if (PQstatus(conn) != CONNECTION_OK) {
+            std::string error = "Failed to connect to PostgreSQL: " + std::string(PQerrorMessage(conn));
+            PQfinish(conn);
+            throw std::runtime_error(error);
+        }
+
+        return std::any(reinterpret_cast<void*>(conn));
+    }, FunctionSignature{{"string"}, "any"});
+
+    // __psql_close(handle: any): void
+    registerFunction("psql", "__psql_close", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        PGconn* conn = reinterpret_cast<PGconn*>(handle);
+        PQfinish(conn);
+        return std::any();
+    }, FunctionSignature{{"any"}, "void"});
+
+    // __psql_exec(handle: any, sql: string): int
+    // Executes SQL that doesn't return rows, returns affected row count
+    registerFunction("psql", "__psql_exec", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto sql = std::any_cast<std::string>(args[1]);
+        PGconn* conn = reinterpret_cast<PGconn*>(handle);
+
+        PGresult* result = PQexec(conn, sql.c_str());
+        ExecStatusType status = PQresultStatus(result);
+
+        if (status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {
+            std::string error = "PostgreSQL error: " + std::string(PQerrorMessage(conn));
+            PQclear(result);
+            throw std::runtime_error(error);
+        }
+
+        // Get affected rows count
+        const char* affected = PQcmdTuples(result);
+        int count = (affected && affected[0]) ? std::stoi(affected) : 0;
+        PQclear(result);
+
+        return std::any(count);
+    }, FunctionSignature{{"any", "string"}, "int"});
+
+    // __psql_query(handle: any, sql: string): any
+    // Executes SQL and returns a result handle for iteration
+    registerFunction("psql", "__psql_query", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto sql = std::any_cast<std::string>(args[1]);
+        PGconn* conn = reinterpret_cast<PGconn*>(handle);
+
+        PGresult* result = PQexec(conn, sql.c_str());
+        ExecStatusType status = PQresultStatus(result);
+
+        if (status != PGRES_TUPLES_OK && status != PGRES_COMMAND_OK) {
+            std::string error = "PostgreSQL query error: " + std::string(PQerrorMessage(conn));
+            PQclear(result);
+            throw std::runtime_error(error);
+        }
+
+        // Store result in global map and return handle ID
+        std::lock_guard<std::mutex> lock(g_psql_mutex);
+        int resultId = ++g_psql_result_counter;
+        g_psql_results[resultId] = result;
+        g_psql_result_row[resultId] = -1;  // Before first row
+
+        return std::any(resultId);
+    }, FunctionSignature{{"any", "string"}, "any"});
+
+    // __psql_query_params(handle: any, sql: string, params: array<string>): any
+    // Executes parameterized SQL query
+    registerFunction("psql", "__psql_query_params", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto sql = std::any_cast<std::string>(args[1]);
+        auto params = std::any_cast<std::vector<std::string>>(args[2]);
+        PGconn* conn = reinterpret_cast<PGconn*>(handle);
+
+        // Convert params to C-style array
+        std::vector<const char*> paramValues;
+        for (const auto& p : params) {
+            paramValues.push_back(p.c_str());
+        }
+
+        PGresult* result = PQexecParams(conn, sql.c_str(),
+            static_cast<int>(params.size()),
+            nullptr,  // Let PostgreSQL infer types
+            paramValues.data(),
+            nullptr,  // Text format for all params
+            nullptr,
+            0);  // Text format for results
+
+        ExecStatusType status = PQresultStatus(result);
+        if (status != PGRES_TUPLES_OK && status != PGRES_COMMAND_OK) {
+            std::string error = "PostgreSQL query error: " + std::string(PQerrorMessage(conn));
+            PQclear(result);
+            throw std::runtime_error(error);
+        }
+
+        std::lock_guard<std::mutex> lock(g_psql_mutex);
+        int resultId = ++g_psql_result_counter;
+        g_psql_results[resultId] = result;
+        g_psql_result_row[resultId] = -1;
+
+        return std::any(resultId);
+    }, FunctionSignature{{"any", "string", "array<string>"}, "any"});
+
+    // __psql_exec_params(handle: any, sql: string, params: array<string>): int
+    // Executes parameterized SQL that doesn't return rows
+    registerFunction("psql", "__psql_exec_params", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto sql = std::any_cast<std::string>(args[1]);
+        auto params = std::any_cast<std::vector<std::string>>(args[2]);
+        PGconn* conn = reinterpret_cast<PGconn*>(handle);
+
+        std::vector<const char*> paramValues;
+        for (const auto& p : params) {
+            paramValues.push_back(p.c_str());
+        }
+
+        PGresult* result = PQexecParams(conn, sql.c_str(),
+            static_cast<int>(params.size()),
+            nullptr, paramValues.data(), nullptr, nullptr, 0);
+
+        ExecStatusType status = PQresultStatus(result);
+        if (status != PGRES_COMMAND_OK && status != PGRES_TUPLES_OK) {
+            std::string error = "PostgreSQL error: " + std::string(PQerrorMessage(conn));
+            PQclear(result);
+            throw std::runtime_error(error);
+        }
+
+        const char* affected = PQcmdTuples(result);
+        int count = (affected && affected[0]) ? std::stoi(affected) : 0;
+        PQclear(result);
+
+        return std::any(count);
+    }, FunctionSignature{{"any", "string", "array<string>"}, "int"});
+
+    // __psql_prepare(handle: any, name: string, sql: string): bool
+    // Creates a prepared statement
+    registerFunction("psql", "__psql_prepare", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto name = std::any_cast<std::string>(args[1]);
+        auto sql = std::any_cast<std::string>(args[2]);
+        PGconn* conn = reinterpret_cast<PGconn*>(handle);
+
+        PGresult* result = PQprepare(conn, name.c_str(), sql.c_str(), 0, nullptr);
+        ExecStatusType status = PQresultStatus(result);
+
+        if (status != PGRES_COMMAND_OK) {
+            std::string error = "PostgreSQL prepare error: " + std::string(PQerrorMessage(conn));
+            PQclear(result);
+            throw std::runtime_error(error);
+        }
+
+        PQclear(result);
+        return std::any(true);
+    }, FunctionSignature{{"any", "string", "string"}, "bool"});
+
+    // __psql_exec_prepared(handle: any, name: string, params: array<string>): any
+    // Executes a prepared statement
+    registerFunction("psql", "__psql_exec_prepared", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto name = std::any_cast<std::string>(args[1]);
+        auto params = std::any_cast<std::vector<std::string>>(args[2]);
+        PGconn* conn = reinterpret_cast<PGconn*>(handle);
+
+        std::vector<const char*> paramValues;
+        for (const auto& p : params) {
+            paramValues.push_back(p.c_str());
+        }
+
+        PGresult* result = PQexecPrepared(conn, name.c_str(),
+            static_cast<int>(params.size()),
+            paramValues.data(), nullptr, nullptr, 0);
+
+        ExecStatusType status = PQresultStatus(result);
+        if (status != PGRES_TUPLES_OK && status != PGRES_COMMAND_OK) {
+            std::string error = "PostgreSQL exec prepared error: " + std::string(PQerrorMessage(conn));
+            PQclear(result);
+            throw std::runtime_error(error);
+        }
+
+        std::lock_guard<std::mutex> lock(g_psql_mutex);
+        int resultId = ++g_psql_result_counter;
+        g_psql_results[resultId] = result;
+        g_psql_result_row[resultId] = -1;
+
+        return std::any(resultId);
+    }, FunctionSignature{{"any", "string", "array<string>"}, "any"});
+
+    // __psql_begin(handle: any): bool
+    // Begins a transaction
+    registerFunction("psql", "__psql_begin", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        PGconn* conn = reinterpret_cast<PGconn*>(handle);
+
+        PGresult* result = PQexec(conn, "BEGIN");
+        ExecStatusType status = PQresultStatus(result);
+        PQclear(result);
+
+        if (status != PGRES_COMMAND_OK) {
+            throw std::runtime_error("Failed to begin transaction: " + std::string(PQerrorMessage(conn)));
+        }
+
+        return std::any(true);
+    }, FunctionSignature{{"any"}, "bool"});
+
+    // __psql_commit(handle: any): bool
+    registerFunction("psql", "__psql_commit", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        PGconn* conn = reinterpret_cast<PGconn*>(handle);
+
+        PGresult* result = PQexec(conn, "COMMIT");
+        ExecStatusType status = PQresultStatus(result);
+        PQclear(result);
+
+        if (status != PGRES_COMMAND_OK) {
+            throw std::runtime_error("Failed to commit transaction: " + std::string(PQerrorMessage(conn)));
+        }
+
+        return std::any(true);
+    }, FunctionSignature{{"any"}, "bool"});
+
+    // __psql_rollback(handle: any): bool
+    registerFunction("psql", "__psql_rollback", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        PGconn* conn = reinterpret_cast<PGconn*>(handle);
+
+        PGresult* result = PQexec(conn, "ROLLBACK");
+        ExecStatusType status = PQresultStatus(result);
+        PQclear(result);
+
+        if (status != PGRES_COMMAND_OK) {
+            throw std::runtime_error("Failed to rollback transaction: " + std::string(PQerrorMessage(conn)));
+        }
+
+        return std::any(true);
+    }, FunctionSignature{{"any"}, "bool"});
+
+    // __psql_next(resultId: int): bool
+    // Moves to next row in result set
+    registerFunction("psql", "__psql_next", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+
+        std::lock_guard<std::mutex> lock(g_psql_mutex);
+        auto it = g_psql_results.find(resultId);
+        if (it == g_psql_results.end()) {
+            throw std::runtime_error("Invalid PostgreSQL result handle");
+        }
+
+        PGresult* result = it->second;
+        int& currentRow = g_psql_result_row[resultId];
+        currentRow++;
+
+        return std::any(currentRow < PQntuples(result));
+    }, FunctionSignature{{"int"}, "bool"});
+
+    // __psql_get_int(resultId: int, col: int): int
+    registerFunction("psql", "__psql_get_int", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+        auto col = std::any_cast<int>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_psql_mutex);
+        auto it = g_psql_results.find(resultId);
+        if (it == g_psql_results.end()) {
+            throw std::runtime_error("Invalid PostgreSQL result handle");
+        }
+
+        PGresult* result = it->second;
+        int row = g_psql_result_row[resultId];
+
+        if (PQgetisnull(result, row, col)) {
+            return std::any(0);
+        }
+
+        const char* val = PQgetvalue(result, row, col);
+        return std::any(std::stoi(val));
+    }, FunctionSignature{{"int", "int"}, "int"});
+
+    // __psql_get_double(resultId: int, col: int): double
+    registerFunction("psql", "__psql_get_double", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+        auto col = std::any_cast<int>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_psql_mutex);
+        auto it = g_psql_results.find(resultId);
+        if (it == g_psql_results.end()) {
+            throw std::runtime_error("Invalid PostgreSQL result handle");
+        }
+
+        PGresult* result = it->second;
+        int row = g_psql_result_row[resultId];
+
+        if (PQgetisnull(result, row, col)) {
+            return std::any(0.0);
+        }
+
+        const char* val = PQgetvalue(result, row, col);
+        return std::any(std::stod(val));
+    }, FunctionSignature{{"int", "int"}, "double"});
+
+    // __psql_get_string(resultId: int, col: int): string
+    registerFunction("psql", "__psql_get_string", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+        auto col = std::any_cast<int>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_psql_mutex);
+        auto it = g_psql_results.find(resultId);
+        if (it == g_psql_results.end()) {
+            throw std::runtime_error("Invalid PostgreSQL result handle");
+        }
+
+        PGresult* result = it->second;
+        int row = g_psql_result_row[resultId];
+
+        if (PQgetisnull(result, row, col)) {
+            return std::any(std::string(""));
+        }
+
+        const char* val = PQgetvalue(result, row, col);
+        return std::any(std::string(val));
+    }, FunctionSignature{{"int", "int"}, "string"});
+
+    // __psql_get_bool(resultId: int, col: int): bool
+    registerFunction("psql", "__psql_get_bool", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+        auto col = std::any_cast<int>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_psql_mutex);
+        auto it = g_psql_results.find(resultId);
+        if (it == g_psql_results.end()) {
+            throw std::runtime_error("Invalid PostgreSQL result handle");
+        }
+
+        PGresult* result = it->second;
+        int row = g_psql_result_row[resultId];
+
+        if (PQgetisnull(result, row, col)) {
+            return std::any(false);
+        }
+
+        const char* val = PQgetvalue(result, row, col);
+        // PostgreSQL returns 't' for true, 'f' for false
+        return std::any(val[0] == 't' || val[0] == 'T' || val[0] == '1');
+    }, FunctionSignature{{"int", "int"}, "bool"});
+
+    // __psql_is_null(resultId: int, col: int): bool
+    registerFunction("psql", "__psql_is_null", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+        auto col = std::any_cast<int>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_psql_mutex);
+        auto it = g_psql_results.find(resultId);
+        if (it == g_psql_results.end()) {
+            throw std::runtime_error("Invalid PostgreSQL result handle");
+        }
+
+        PGresult* result = it->second;
+        int row = g_psql_result_row[resultId];
+
+        return std::any(PQgetisnull(result, row, col) == 1);
+    }, FunctionSignature{{"int", "int"}, "bool"});
+
+    // __psql_column_count(resultId: int): int
+    registerFunction("psql", "__psql_column_count", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+
+        std::lock_guard<std::mutex> lock(g_psql_mutex);
+        auto it = g_psql_results.find(resultId);
+        if (it == g_psql_results.end()) {
+            throw std::runtime_error("Invalid PostgreSQL result handle");
+        }
+
+        return std::any(PQnfields(it->second));
+    }, FunctionSignature{{"int"}, "int"});
+
+    // __psql_column_name(resultId: int, col: int): string
+    registerFunction("psql", "__psql_column_name", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+        auto col = std::any_cast<int>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_psql_mutex);
+        auto it = g_psql_results.find(resultId);
+        if (it == g_psql_results.end()) {
+            throw std::runtime_error("Invalid PostgreSQL result handle");
+        }
+
+        const char* name = PQfname(it->second, col);
+        return std::any(std::string(name ? name : ""));
+    }, FunctionSignature{{"int", "int"}, "string"});
+
+    // __psql_column_index(resultId: int, name: string): int
+    registerFunction("psql", "__psql_column_index", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+        auto name = std::any_cast<std::string>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_psql_mutex);
+        auto it = g_psql_results.find(resultId);
+        if (it == g_psql_results.end()) {
+            throw std::runtime_error("Invalid PostgreSQL result handle");
+        }
+
+        int index = PQfnumber(it->second, name.c_str());
+        if (index < 0) {
+            throw std::runtime_error("Column not found: " + name);
+        }
+
+        return std::any(index);
+    }, FunctionSignature{{"int", "string"}, "int"});
+
+    // __psql_row_count(resultId: int): int
+    registerFunction("psql", "__psql_row_count", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+
+        std::lock_guard<std::mutex> lock(g_psql_mutex);
+        auto it = g_psql_results.find(resultId);
+        if (it == g_psql_results.end()) {
+            throw std::runtime_error("Invalid PostgreSQL result handle");
+        }
+
+        return std::any(PQntuples(it->second));
+    }, FunctionSignature{{"int"}, "int"});
+
+    // __psql_rows_close(resultId: int): void
+    registerFunction("psql", "__psql_rows_close", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+
+        std::lock_guard<std::mutex> lock(g_psql_mutex);
+        auto it = g_psql_results.find(resultId);
+        if (it != g_psql_results.end()) {
+            PQclear(it->second);
+            g_psql_results.erase(it);
+            g_psql_result_row.erase(resultId);
+        }
+
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // __psql_escape_string(handle: any, str: string): string
+    registerFunction("psql", "__psql_escape_string", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto str = std::any_cast<std::string>(args[1]);
+        PGconn* conn = reinterpret_cast<PGconn*>(handle);
+
+        char* escaped = PQescapeLiteral(conn, str.c_str(), str.length());
+        if (!escaped) {
+            throw std::runtime_error("Failed to escape string: " + std::string(PQerrorMessage(conn)));
+        }
+
+        std::string result(escaped);
+        PQfreemem(escaped);
+        return std::any(result);
+    }, FunctionSignature{{"any", "string"}, "string"});
+
+    // __psql_escape_identifier(handle: any, str: string): string
+    registerFunction("psql", "__psql_escape_identifier", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto str = std::any_cast<std::string>(args[1]);
+        PGconn* conn = reinterpret_cast<PGconn*>(handle);
+
+        char* escaped = PQescapeIdentifier(conn, str.c_str(), str.length());
+        if (!escaped) {
+            throw std::runtime_error("Failed to escape identifier: " + std::string(PQerrorMessage(conn)));
+        }
+
+        std::string result(escaped);
+        PQfreemem(escaped);
+        return std::any(result);
+    }, FunctionSignature{{"any", "string"}, "string"});
+
+    // __psql_status(handle: any): string
+    registerFunction("psql", "__psql_status", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        PGconn* conn = reinterpret_cast<PGconn*>(handle);
+
+        ConnStatusType status = PQstatus(conn);
+        switch (status) {
+            case CONNECTION_OK: return std::any(std::string("connected"));
+            case CONNECTION_BAD: return std::any(std::string("disconnected"));
+            default: return std::any(std::string("unknown"));
+        }
+    }, FunctionSignature{{"any"}, "string"});
+}
+
+// ============================================================================
+// MySQL/MariaDB Module - Database Support
+// ============================================================================
+
+// Thread-safe storage for MySQL result sets
+static std::mutex g_mysql_mutex;
+static std::unordered_map<int, MYSQL_RES*> g_mysql_results;
+static std::unordered_map<int, MYSQL_ROW> g_mysql_current_row;
+static int g_mysql_result_counter = 0;
+
+void NativeRegistry::initMySQL() {
+    // __mysql_connect(host: string, user: string, password: string, database: string, port: int): any
+    registerFunction("mysql", "__mysql_connect", [](const std::vector<std::any>& args) -> std::any {
+        auto host = std::any_cast<std::string>(args[0]);
+        auto user = std::any_cast<std::string>(args[1]);
+        auto password = std::any_cast<std::string>(args[2]);
+        auto database = std::any_cast<std::string>(args[3]);
+        auto port = std::any_cast<int>(args[4]);
+
+        MYSQL* conn = mysql_init(nullptr);
+        if (!conn) {
+            throw std::runtime_error("Failed to initialize MySQL connection");
+        }
+
+        if (!mysql_real_connect(conn, host.c_str(), user.c_str(), password.c_str(),
+                               database.c_str(), static_cast<unsigned int>(port), nullptr, 0)) {
+            std::string error = "Failed to connect to MySQL: " + std::string(mysql_error(conn));
+            mysql_close(conn);
+            throw std::runtime_error(error);
+        }
+
+        // Set UTF-8 charset
+        mysql_set_character_set(conn, "utf8mb4");
+
+        return std::any(reinterpret_cast<void*>(conn));
+    }, FunctionSignature{{"string", "string", "string", "string", "int"}, "any"});
+
+    // __mysql_close(handle: any): void
+    registerFunction("mysql", "__mysql_close", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        MYSQL* conn = reinterpret_cast<MYSQL*>(handle);
+        mysql_close(conn);
+        return std::any();
+    }, FunctionSignature{{"any"}, "void"});
+
+    // __mysql_exec(handle: any, sql: string): int
+    registerFunction("mysql", "__mysql_exec", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto sql = std::any_cast<std::string>(args[1]);
+        MYSQL* conn = reinterpret_cast<MYSQL*>(handle);
+
+        if (mysql_query(conn, sql.c_str()) != 0) {
+            throw std::runtime_error("MySQL error: " + std::string(mysql_error(conn)));
+        }
+
+        return std::any(static_cast<int>(mysql_affected_rows(conn)));
+    }, FunctionSignature{{"any", "string"}, "int"});
+
+    // __mysql_query(handle: any, sql: string): int
+    registerFunction("mysql", "__mysql_query", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto sql = std::any_cast<std::string>(args[1]);
+        MYSQL* conn = reinterpret_cast<MYSQL*>(handle);
+
+        if (mysql_query(conn, sql.c_str()) != 0) {
+            throw std::runtime_error("MySQL query error: " + std::string(mysql_error(conn)));
+        }
+
+        MYSQL_RES* result = mysql_store_result(conn);
+        if (!result && mysql_field_count(conn) > 0) {
+            throw std::runtime_error("MySQL error retrieving result: " + std::string(mysql_error(conn)));
+        }
+
+        std::lock_guard<std::mutex> lock(g_mysql_mutex);
+        int resultId = ++g_mysql_result_counter;
+        g_mysql_results[resultId] = result;
+        g_mysql_current_row[resultId] = nullptr;
+
+        return std::any(resultId);
+    }, FunctionSignature{{"any", "string"}, "int"});
+
+    // __mysql_prepare(handle: any, sql: string): any
+    registerFunction("mysql", "__mysql_prepare", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto sql = std::any_cast<std::string>(args[1]);
+        MYSQL* conn = reinterpret_cast<MYSQL*>(handle);
+
+        MYSQL_STMT* stmt = mysql_stmt_init(conn);
+        if (!stmt) {
+            throw std::runtime_error("Failed to initialize MySQL statement");
+        }
+
+        if (mysql_stmt_prepare(stmt, sql.c_str(), static_cast<unsigned long>(sql.length())) != 0) {
+            std::string error = "MySQL prepare error: " + std::string(mysql_stmt_error(stmt));
+            mysql_stmt_close(stmt);
+            throw std::runtime_error(error);
+        }
+
+        return std::any(reinterpret_cast<void*>(stmt));
+    }, FunctionSignature{{"any", "string"}, "any"});
+
+    // __mysql_stmt_close(handle: any): void
+    registerFunction("mysql", "__mysql_stmt_close", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        MYSQL_STMT* stmt = reinterpret_cast<MYSQL_STMT*>(handle);
+        mysql_stmt_close(stmt);
+        return std::any();
+    }, FunctionSignature{{"any"}, "void"});
+
+    // __mysql_begin(handle: any): bool
+    registerFunction("mysql", "__mysql_begin", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        MYSQL* conn = reinterpret_cast<MYSQL*>(handle);
+
+        if (mysql_query(conn, "START TRANSACTION") != 0) {
+            throw std::runtime_error("Failed to begin transaction: " + std::string(mysql_error(conn)));
+        }
+
+        return std::any(true);
+    }, FunctionSignature{{"any"}, "bool"});
+
+    // __mysql_commit(handle: any): bool
+    registerFunction("mysql", "__mysql_commit", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        MYSQL* conn = reinterpret_cast<MYSQL*>(handle);
+
+        if (mysql_commit(conn) != 0) {
+            throw std::runtime_error("Failed to commit transaction: " + std::string(mysql_error(conn)));
+        }
+
+        return std::any(true);
+    }, FunctionSignature{{"any"}, "bool"});
+
+    // __mysql_rollback(handle: any): bool
+    registerFunction("mysql", "__mysql_rollback", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        MYSQL* conn = reinterpret_cast<MYSQL*>(handle);
+
+        if (mysql_rollback(conn) != 0) {
+            throw std::runtime_error("Failed to rollback transaction: " + std::string(mysql_error(conn)));
+        }
+
+        return std::any(true);
+    }, FunctionSignature{{"any"}, "bool"});
+
+    // __mysql_next(resultId: int): bool
+    registerFunction("mysql", "__mysql_next", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+
+        std::lock_guard<std::mutex> lock(g_mysql_mutex);
+        auto it = g_mysql_results.find(resultId);
+        if (it == g_mysql_results.end() || !it->second) {
+            return std::any(false);
+        }
+
+        MYSQL_ROW row = mysql_fetch_row(it->second);
+        g_mysql_current_row[resultId] = row;
+
+        return std::any(row != nullptr);
+    }, FunctionSignature{{"int"}, "bool"});
+
+    // __mysql_get_int(resultId: int, col: int): int
+    registerFunction("mysql", "__mysql_get_int", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+        auto col = std::any_cast<int>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_mysql_mutex);
+        auto row = g_mysql_current_row[resultId];
+        if (!row || !row[col]) {
+            return std::any(0);
+        }
+
+        return std::any(std::stoi(row[col]));
+    }, FunctionSignature{{"int", "int"}, "int"});
+
+    // __mysql_get_double(resultId: int, col: int): double
+    registerFunction("mysql", "__mysql_get_double", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+        auto col = std::any_cast<int>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_mysql_mutex);
+        auto row = g_mysql_current_row[resultId];
+        if (!row || !row[col]) {
+            return std::any(0.0);
+        }
+
+        return std::any(std::stod(row[col]));
+    }, FunctionSignature{{"int", "int"}, "double"});
+
+    // __mysql_get_string(resultId: int, col: int): string
+    registerFunction("mysql", "__mysql_get_string", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+        auto col = std::any_cast<int>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_mysql_mutex);
+        auto row = g_mysql_current_row[resultId];
+        if (!row || !row[col]) {
+            return std::any(std::string(""));
+        }
+
+        return std::any(std::string(row[col]));
+    }, FunctionSignature{{"int", "int"}, "string"});
+
+    // __mysql_get_bool(resultId: int, col: int): bool
+    registerFunction("mysql", "__mysql_get_bool", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+        auto col = std::any_cast<int>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_mysql_mutex);
+        auto row = g_mysql_current_row[resultId];
+        if (!row || !row[col]) {
+            return std::any(false);
+        }
+
+        return std::any(row[col][0] == '1' || row[col][0] == 't' || row[col][0] == 'T');
+    }, FunctionSignature{{"int", "int"}, "bool"});
+
+    // __mysql_is_null(resultId: int, col: int): bool
+    registerFunction("mysql", "__mysql_is_null", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+        auto col = std::any_cast<int>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_mysql_mutex);
+        auto row = g_mysql_current_row[resultId];
+        return std::any(!row || !row[col]);
+    }, FunctionSignature{{"int", "int"}, "bool"});
+
+    // __mysql_column_count(resultId: int): int
+    registerFunction("mysql", "__mysql_column_count", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+
+        std::lock_guard<std::mutex> lock(g_mysql_mutex);
+        auto it = g_mysql_results.find(resultId);
+        if (it == g_mysql_results.end() || !it->second) {
+            return std::any(0);
+        }
+
+        return std::any(static_cast<int>(mysql_num_fields(it->second)));
+    }, FunctionSignature{{"int"}, "int"});
+
+    // __mysql_column_name(resultId: int, col: int): string
+    registerFunction("mysql", "__mysql_column_name", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+        auto col = std::any_cast<int>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_mysql_mutex);
+        auto it = g_mysql_results.find(resultId);
+        if (it == g_mysql_results.end() || !it->second) {
+            return std::any(std::string(""));
+        }
+
+        MYSQL_FIELD* fields = mysql_fetch_fields(it->second);
+        unsigned int numFields = mysql_num_fields(it->second);
+
+        if (col < 0 || col >= static_cast<int>(numFields)) {
+            return std::any(std::string(""));
+        }
+
+        return std::any(std::string(fields[col].name));
+    }, FunctionSignature{{"int", "int"}, "string"});
+
+    // __mysql_rows_close(resultId: int): void
+    registerFunction("mysql", "__mysql_rows_close", [](const std::vector<std::any>& args) -> std::any {
+        auto resultId = std::any_cast<int>(args[0]);
+
+        std::lock_guard<std::mutex> lock(g_mysql_mutex);
+        auto it = g_mysql_results.find(resultId);
+        if (it != g_mysql_results.end()) {
+            if (it->second) {
+                mysql_free_result(it->second);
+            }
+            g_mysql_results.erase(it);
+            g_mysql_current_row.erase(resultId);
+        }
+
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // __mysql_last_insert_id(handle: any): int
+    registerFunction("mysql", "__mysql_last_insert_id", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        MYSQL* conn = reinterpret_cast<MYSQL*>(handle);
+
+        return std::any(static_cast<int>(mysql_insert_id(conn)));
+    }, FunctionSignature{{"any"}, "int"});
+
+    // __mysql_escape_string(handle: any, str: string): string
+    registerFunction("mysql", "__mysql_escape_string", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto str = std::any_cast<std::string>(args[1]);
+        MYSQL* conn = reinterpret_cast<MYSQL*>(handle);
+
+        std::vector<char> escaped(str.length() * 2 + 1);
+        unsigned long len = mysql_real_escape_string(conn, escaped.data(), str.c_str(),
+                                                      static_cast<unsigned long>(str.length()));
+
+        return std::any(std::string(escaped.data(), len));
+    }, FunctionSignature{{"any", "string"}, "string"});
+}
+
+// ============================================================================
+// Redis Module - Key-Value Store Support
+// ============================================================================
+
+void NativeRegistry::initRedis() {
+    // __redis_connect(host: string, port: int): any
+    registerFunction("redis", "__redis_connect", [](const std::vector<std::any>& args) -> std::any {
+        auto host = std::any_cast<std::string>(args[0]);
+        auto port = std::any_cast<int>(args[1]);
+
+        redisContext* ctx = redisConnect(host.c_str(), port);
+        if (!ctx) {
+            throw std::runtime_error("Failed to allocate Redis context");
+        }
+
+        if (ctx->err) {
+            std::string error = "Redis connection error: " + std::string(ctx->errstr);
+            redisFree(ctx);
+            throw std::runtime_error(error);
+        }
+
+        return std::any(reinterpret_cast<void*>(ctx));
+    }, FunctionSignature{{"string", "int"}, "any"});
+
+    // __redis_connect_auth(host: string, port: int, password: string): any
+    registerFunction("redis", "__redis_connect_auth", [](const std::vector<std::any>& args) -> std::any {
+        auto host = std::any_cast<std::string>(args[0]);
+        auto port = std::any_cast<int>(args[1]);
+        auto password = std::any_cast<std::string>(args[2]);
+
+        redisContext* ctx = redisConnect(host.c_str(), port);
+        if (!ctx) {
+            throw std::runtime_error("Failed to allocate Redis context");
+        }
+
+        if (ctx->err) {
+            std::string error = "Redis connection error: " + std::string(ctx->errstr);
+            redisFree(ctx);
+            throw std::runtime_error(error);
+        }
+
+        // Authenticate
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "AUTH %s", password.c_str()));
+        if (!reply) {
+            std::string error = "Redis auth error: " + std::string(ctx->errstr);
+            redisFree(ctx);
+            throw std::runtime_error(error);
+        }
+
+        if (reply->type == REDIS_REPLY_ERROR) {
+            std::string error = "Redis auth failed: " + std::string(reply->str);
+            freeReplyObject(reply);
+            redisFree(ctx);
+            throw std::runtime_error(error);
+        }
+
+        freeReplyObject(reply);
+        return std::any(reinterpret_cast<void*>(ctx));
+    }, FunctionSignature{{"string", "int", "string"}, "any"});
+
+    // __redis_close(handle: any): void
+    registerFunction("redis", "__redis_close", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+        redisFree(ctx);
+        return std::any();
+    }, FunctionSignature{{"any"}, "void"});
+
+    // __redis_get(handle: any, key: string): string
+    registerFunction("redis", "__redis_get", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "GET %s", key.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis GET error: " + std::string(ctx->errstr));
+        }
+
+        std::string result;
+        if (reply->type == REDIS_REPLY_STRING) {
+            result = std::string(reply->str, reply->len);
+        }
+
+        freeReplyObject(reply);
+        return std::any(result);
+    }, FunctionSignature{{"any", "string"}, "string"});
+
+    // __redis_set(handle: any, key: string, value: string): bool
+    registerFunction("redis", "__redis_set", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto value = std::any_cast<std::string>(args[2]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "SET %s %s", key.c_str(), value.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis SET error: " + std::string(ctx->errstr));
+        }
+
+        bool success = (reply->type == REDIS_REPLY_STATUS && strcmp(reply->str, "OK") == 0);
+        freeReplyObject(reply);
+        return std::any(success);
+    }, FunctionSignature{{"any", "string", "string"}, "bool"});
+
+    // __redis_setex(handle: any, key: string, value: string, seconds: int): bool
+    registerFunction("redis", "__redis_setex", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto value = std::any_cast<std::string>(args[2]);
+        auto seconds = std::any_cast<int>(args[3]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "SETEX %s %d %s",
+            key.c_str(), seconds, value.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis SETEX error: " + std::string(ctx->errstr));
+        }
+
+        bool success = (reply->type == REDIS_REPLY_STATUS && strcmp(reply->str, "OK") == 0);
+        freeReplyObject(reply);
+        return std::any(success);
+    }, FunctionSignature{{"any", "string", "string", "int"}, "bool"});
+
+    // __redis_del(handle: any, key: string): int
+    registerFunction("redis", "__redis_del", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "DEL %s", key.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis DEL error: " + std::string(ctx->errstr));
+        }
+
+        int deleted = (reply->type == REDIS_REPLY_INTEGER) ? static_cast<int>(reply->integer) : 0;
+        freeReplyObject(reply);
+        return std::any(deleted);
+    }, FunctionSignature{{"any", "string"}, "int"});
+
+    // __redis_exists(handle: any, key: string): bool
+    registerFunction("redis", "__redis_exists", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "EXISTS %s", key.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis EXISTS error: " + std::string(ctx->errstr));
+        }
+
+        bool exists = (reply->type == REDIS_REPLY_INTEGER && reply->integer > 0);
+        freeReplyObject(reply);
+        return std::any(exists);
+    }, FunctionSignature{{"any", "string"}, "bool"});
+
+    // __redis_expire(handle: any, key: string, seconds: int): bool
+    registerFunction("redis", "__redis_expire", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto seconds = std::any_cast<int>(args[2]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "EXPIRE %s %d", key.c_str(), seconds));
+        if (!reply) {
+            throw std::runtime_error("Redis EXPIRE error: " + std::string(ctx->errstr));
+        }
+
+        bool success = (reply->type == REDIS_REPLY_INTEGER && reply->integer == 1);
+        freeReplyObject(reply);
+        return std::any(success);
+    }, FunctionSignature{{"any", "string", "int"}, "bool"});
+
+    // __redis_ttl(handle: any, key: string): int
+    registerFunction("redis", "__redis_ttl", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "TTL %s", key.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis TTL error: " + std::string(ctx->errstr));
+        }
+
+        int ttl = (reply->type == REDIS_REPLY_INTEGER) ? static_cast<int>(reply->integer) : -2;
+        freeReplyObject(reply);
+        return std::any(ttl);
+    }, FunctionSignature{{"any", "string"}, "int"});
+
+    // __redis_incr(handle: any, key: string): int
+    registerFunction("redis", "__redis_incr", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "INCR %s", key.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis INCR error: " + std::string(ctx->errstr));
+        }
+
+        if (reply->type == REDIS_REPLY_ERROR) {
+            std::string error = "Redis INCR error: " + std::string(reply->str);
+            freeReplyObject(reply);
+            throw std::runtime_error(error);
+        }
+
+        int value = (reply->type == REDIS_REPLY_INTEGER) ? static_cast<int>(reply->integer) : 0;
+        freeReplyObject(reply);
+        return std::any(value);
+    }, FunctionSignature{{"any", "string"}, "int"});
+
+    // __redis_decr(handle: any, key: string): int
+    registerFunction("redis", "__redis_decr", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "DECR %s", key.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis DECR error: " + std::string(ctx->errstr));
+        }
+
+        if (reply->type == REDIS_REPLY_ERROR) {
+            std::string error = "Redis DECR error: " + std::string(reply->str);
+            freeReplyObject(reply);
+            throw std::runtime_error(error);
+        }
+
+        int value = (reply->type == REDIS_REPLY_INTEGER) ? static_cast<int>(reply->integer) : 0;
+        freeReplyObject(reply);
+        return std::any(value);
+    }, FunctionSignature{{"any", "string"}, "int"});
+
+    // Hash operations
+
+    // __redis_hget(handle: any, key: string, field: string): string
+    registerFunction("redis", "__redis_hget", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto field = std::any_cast<std::string>(args[2]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "HGET %s %s", key.c_str(), field.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis HGET error: " + std::string(ctx->errstr));
+        }
+
+        std::string result;
+        if (reply->type == REDIS_REPLY_STRING) {
+            result = std::string(reply->str, reply->len);
+        }
+
+        freeReplyObject(reply);
+        return std::any(result);
+    }, FunctionSignature{{"any", "string", "string"}, "string"});
+
+    // __redis_hset(handle: any, key: string, field: string, value: string): bool
+    registerFunction("redis", "__redis_hset", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto field = std::any_cast<std::string>(args[2]);
+        auto value = std::any_cast<std::string>(args[3]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "HSET %s %s %s",
+            key.c_str(), field.c_str(), value.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis HSET error: " + std::string(ctx->errstr));
+        }
+
+        freeReplyObject(reply);
+        return std::any(true);
+    }, FunctionSignature{{"any", "string", "string", "string"}, "bool"});
+
+    // __redis_hdel(handle: any, key: string, field: string): int
+    registerFunction("redis", "__redis_hdel", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto field = std::any_cast<std::string>(args[2]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "HDEL %s %s", key.c_str(), field.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis HDEL error: " + std::string(ctx->errstr));
+        }
+
+        int deleted = (reply->type == REDIS_REPLY_INTEGER) ? static_cast<int>(reply->integer) : 0;
+        freeReplyObject(reply);
+        return std::any(deleted);
+    }, FunctionSignature{{"any", "string", "string"}, "int"});
+
+    // __redis_hexists(handle: any, key: string, field: string): bool
+    registerFunction("redis", "__redis_hexists", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto field = std::any_cast<std::string>(args[2]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "HEXISTS %s %s", key.c_str(), field.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis HEXISTS error: " + std::string(ctx->errstr));
+        }
+
+        bool exists = (reply->type == REDIS_REPLY_INTEGER && reply->integer == 1);
+        freeReplyObject(reply);
+        return std::any(exists);
+    }, FunctionSignature{{"any", "string", "string"}, "bool"});
+
+    // __redis_hgetall(handle: any, key: string): array<string>
+    // Returns alternating field/value pairs: [field1, value1, field2, value2, ...]
+    registerFunction("redis", "__redis_hgetall", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "HGETALL %s", key.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis HGETALL error: " + std::string(ctx->errstr));
+        }
+
+        std::vector<std::string> result;
+        if (reply->type == REDIS_REPLY_ARRAY) {
+            for (size_t i = 0; i < reply->elements; i++) {
+                if (reply->element[i]->type == REDIS_REPLY_STRING) {
+                    result.push_back(std::string(reply->element[i]->str, reply->element[i]->len));
+                }
+            }
+        }
+
+        freeReplyObject(reply);
+        return std::any(result);
+    }, FunctionSignature{{"any", "string"}, "array<string>"});
+
+    // __redis_hkeys(handle: any, key: string): array<string>
+    registerFunction("redis", "__redis_hkeys", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "HKEYS %s", key.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis HKEYS error: " + std::string(ctx->errstr));
+        }
+
+        std::vector<std::string> result;
+        if (reply->type == REDIS_REPLY_ARRAY) {
+            for (size_t i = 0; i < reply->elements; i++) {
+                if (reply->element[i]->type == REDIS_REPLY_STRING) {
+                    result.push_back(std::string(reply->element[i]->str, reply->element[i]->len));
+                }
+            }
+        }
+
+        freeReplyObject(reply);
+        return std::any(result);
+    }, FunctionSignature{{"any", "string"}, "array<string>"});
+
+    // List operations
+
+    // __redis_lpush(handle: any, key: string, value: string): int
+    registerFunction("redis", "__redis_lpush", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto value = std::any_cast<std::string>(args[2]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "LPUSH %s %s", key.c_str(), value.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis LPUSH error: " + std::string(ctx->errstr));
+        }
+
+        int len = (reply->type == REDIS_REPLY_INTEGER) ? static_cast<int>(reply->integer) : 0;
+        freeReplyObject(reply);
+        return std::any(len);
+    }, FunctionSignature{{"any", "string", "string"}, "int"});
+
+    // __redis_rpush(handle: any, key: string, value: string): int
+    registerFunction("redis", "__redis_rpush", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto value = std::any_cast<std::string>(args[2]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "RPUSH %s %s", key.c_str(), value.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis RPUSH error: " + std::string(ctx->errstr));
+        }
+
+        int len = (reply->type == REDIS_REPLY_INTEGER) ? static_cast<int>(reply->integer) : 0;
+        freeReplyObject(reply);
+        return std::any(len);
+    }, FunctionSignature{{"any", "string", "string"}, "int"});
+
+    // __redis_lpop(handle: any, key: string): string
+    registerFunction("redis", "__redis_lpop", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "LPOP %s", key.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis LPOP error: " + std::string(ctx->errstr));
+        }
+
+        std::string result;
+        if (reply->type == REDIS_REPLY_STRING) {
+            result = std::string(reply->str, reply->len);
+        }
+
+        freeReplyObject(reply);
+        return std::any(result);
+    }, FunctionSignature{{"any", "string"}, "string"});
+
+    // __redis_rpop(handle: any, key: string): string
+    registerFunction("redis", "__redis_rpop", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "RPOP %s", key.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis RPOP error: " + std::string(ctx->errstr));
+        }
+
+        std::string result;
+        if (reply->type == REDIS_REPLY_STRING) {
+            result = std::string(reply->str, reply->len);
+        }
+
+        freeReplyObject(reply);
+        return std::any(result);
+    }, FunctionSignature{{"any", "string"}, "string"});
+
+    // __redis_lrange(handle: any, key: string, start: int, stop: int): array<string>
+    registerFunction("redis", "__redis_lrange", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto start = std::any_cast<int>(args[2]);
+        auto stop = std::any_cast<int>(args[3]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "LRANGE %s %d %d",
+            key.c_str(), start, stop));
+        if (!reply) {
+            throw std::runtime_error("Redis LRANGE error: " + std::string(ctx->errstr));
+        }
+
+        std::vector<std::string> result;
+        if (reply->type == REDIS_REPLY_ARRAY) {
+            for (size_t i = 0; i < reply->elements; i++) {
+                if (reply->element[i]->type == REDIS_REPLY_STRING) {
+                    result.push_back(std::string(reply->element[i]->str, reply->element[i]->len));
+                }
+            }
+        }
+
+        freeReplyObject(reply);
+        return std::any(result);
+    }, FunctionSignature{{"any", "string", "int", "int"}, "array<string>"});
+
+    // __redis_llen(handle: any, key: string): int
+    registerFunction("redis", "__redis_llen", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "LLEN %s", key.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis LLEN error: " + std::string(ctx->errstr));
+        }
+
+        int len = (reply->type == REDIS_REPLY_INTEGER) ? static_cast<int>(reply->integer) : 0;
+        freeReplyObject(reply);
+        return std::any(len);
+    }, FunctionSignature{{"any", "string"}, "int"});
+
+    // Set operations
+
+    // __redis_sadd(handle: any, key: string, member: string): int
+    registerFunction("redis", "__redis_sadd", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto member = std::any_cast<std::string>(args[2]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "SADD %s %s", key.c_str(), member.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis SADD error: " + std::string(ctx->errstr));
+        }
+
+        int added = (reply->type == REDIS_REPLY_INTEGER) ? static_cast<int>(reply->integer) : 0;
+        freeReplyObject(reply);
+        return std::any(added);
+    }, FunctionSignature{{"any", "string", "string"}, "int"});
+
+    // __redis_srem(handle: any, key: string, member: string): int
+    registerFunction("redis", "__redis_srem", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto member = std::any_cast<std::string>(args[2]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "SREM %s %s", key.c_str(), member.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis SREM error: " + std::string(ctx->errstr));
+        }
+
+        int removed = (reply->type == REDIS_REPLY_INTEGER) ? static_cast<int>(reply->integer) : 0;
+        freeReplyObject(reply);
+        return std::any(removed);
+    }, FunctionSignature{{"any", "string", "string"}, "int"});
+
+    // __redis_sismember(handle: any, key: string, member: string): bool
+    registerFunction("redis", "__redis_sismember", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto member = std::any_cast<std::string>(args[2]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "SISMEMBER %s %s", key.c_str(), member.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis SISMEMBER error: " + std::string(ctx->errstr));
+        }
+
+        bool isMember = (reply->type == REDIS_REPLY_INTEGER && reply->integer == 1);
+        freeReplyObject(reply);
+        return std::any(isMember);
+    }, FunctionSignature{{"any", "string", "string"}, "bool"});
+
+    // __redis_smembers(handle: any, key: string): array<string>
+    registerFunction("redis", "__redis_smembers", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "SMEMBERS %s", key.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis SMEMBERS error: " + std::string(ctx->errstr));
+        }
+
+        std::vector<std::string> result;
+        if (reply->type == REDIS_REPLY_ARRAY) {
+            for (size_t i = 0; i < reply->elements; i++) {
+                if (reply->element[i]->type == REDIS_REPLY_STRING) {
+                    result.push_back(std::string(reply->element[i]->str, reply->element[i]->len));
+                }
+            }
+        }
+
+        freeReplyObject(reply);
+        return std::any(result);
+    }, FunctionSignature{{"any", "string"}, "array<string>"});
+
+    // Pub/Sub operations
+
+    // __redis_publish(handle: any, channel: string, message: string): int
+    registerFunction("redis", "__redis_publish", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto channel = std::any_cast<std::string>(args[1]);
+        auto message = std::any_cast<std::string>(args[2]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "PUBLISH %s %s",
+            channel.c_str(), message.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis PUBLISH error: " + std::string(ctx->errstr));
+        }
+
+        int subscribers = (reply->type == REDIS_REPLY_INTEGER) ? static_cast<int>(reply->integer) : 0;
+        freeReplyObject(reply);
+        return std::any(subscribers);
+    }, FunctionSignature{{"any", "string", "string"}, "int"});
+
+    // __redis_ping(handle: any): bool
+    registerFunction("redis", "__redis_ping", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "PING"));
+        if (!reply) {
+            return std::any(false);
+        }
+
+        bool success = (reply->type == REDIS_REPLY_STATUS && strcmp(reply->str, "PONG") == 0);
+        freeReplyObject(reply);
+        return std::any(success);
+    }, FunctionSignature{{"any"}, "bool"});
+
+    // __redis_select(handle: any, db: int): bool
+    registerFunction("redis", "__redis_select", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto db = std::any_cast<int>(args[1]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "SELECT %d", db));
+        if (!reply) {
+            throw std::runtime_error("Redis SELECT error: " + std::string(ctx->errstr));
+        }
+
+        bool success = (reply->type == REDIS_REPLY_STATUS && strcmp(reply->str, "OK") == 0);
+        freeReplyObject(reply);
+        return std::any(success);
+    }, FunctionSignature{{"any", "int"}, "bool"});
+
+    // __redis_flushdb(handle: any): bool
+    registerFunction("redis", "__redis_flushdb", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "FLUSHDB"));
+        if (!reply) {
+            throw std::runtime_error("Redis FLUSHDB error: " + std::string(ctx->errstr));
+        }
+
+        bool success = (reply->type == REDIS_REPLY_STATUS && strcmp(reply->str, "OK") == 0);
+        freeReplyObject(reply);
+        return std::any(success);
+    }, FunctionSignature{{"any"}, "bool"});
+
+    // __redis_keys(handle: any, pattern: string): array<string>
+    registerFunction("redis", "__redis_keys", [](const std::vector<std::any>& args) -> std::any {
+        auto handle = std::any_cast<void*>(args[0]);
+        auto pattern = std::any_cast<std::string>(args[1]);
+        redisContext* ctx = reinterpret_cast<redisContext*>(handle);
+
+        redisReply* reply = static_cast<redisReply*>(redisCommand(ctx, "KEYS %s", pattern.c_str()));
+        if (!reply) {
+            throw std::runtime_error("Redis KEYS error: " + std::string(ctx->errstr));
+        }
+
+        std::vector<std::string> result;
+        if (reply->type == REDIS_REPLY_ARRAY) {
+            for (size_t i = 0; i < reply->elements; i++) {
+                if (reply->element[i]->type == REDIS_REPLY_STRING) {
+                    result.push_back(std::string(reply->element[i]->str, reply->element[i]->len));
+                }
+            }
+        }
+
+        freeReplyObject(reply);
+        return std::any(result);
+    }, FunctionSignature{{"any", "string"}, "array<string>"});
+}
+
+// ============================================================================
+// XML Module - XML Parsing Support
+// ============================================================================
+
+// Simple recursive descent XML parser (no external dependencies)
+struct XmlNode {
+    std::string tag;
+    std::string text;
+    std::unordered_map<std::string, std::string> attributes;
+    std::vector<std::shared_ptr<XmlNode>> children;
+};
+
+static std::mutex g_xml_mutex;
+static std::unordered_map<int, std::shared_ptr<XmlNode>> g_xml_nodes;
+static int g_xml_node_counter = 0;
+
+static std::string xmlTrim(const std::string& str) {
+    size_t start = str.find_first_not_of(" \t\n\r");
+    if (start == std::string::npos) return "";
+    size_t end = str.find_last_not_of(" \t\n\r");
+    return str.substr(start, end - start + 1);
+}
+
+static std::shared_ptr<XmlNode> parseXmlElement(const std::string& xml, size_t& pos);
+
+static void skipWhitespace(const std::string& xml, size_t& pos) {
+    while (pos < xml.length() && std::isspace(xml[pos])) {
+        pos++;
+    }
+}
+
+static std::string parseXmlName(const std::string& xml, size_t& pos) {
+    std::string name;
+    while (pos < xml.length() && (std::isalnum(xml[pos]) || xml[pos] == '_' || xml[pos] == '-' || xml[pos] == ':')) {
+        name += xml[pos++];
+    }
+    return name;
+}
+
+static std::string parseXmlAttributeValue(const std::string& xml, size_t& pos) {
+    if (pos >= xml.length() || (xml[pos] != '"' && xml[pos] != '\'')) {
+        return "";
+    }
+    char quote = xml[pos++];
+    std::string value;
+    while (pos < xml.length() && xml[pos] != quote) {
+        if (xml[pos] == '&') {
+            // Handle basic XML entities
+            if (xml.substr(pos, 4) == "&lt;") { value += '<'; pos += 4; }
+            else if (xml.substr(pos, 4) == "&gt;") { value += '>'; pos += 4; }
+            else if (xml.substr(pos, 5) == "&amp;") { value += '&'; pos += 5; }
+            else if (xml.substr(pos, 6) == "&quot;") { value += '"'; pos += 6; }
+            else if (xml.substr(pos, 6) == "&apos;") { value += '\''; pos += 6; }
+            else { value += xml[pos++]; }
+        } else {
+            value += xml[pos++];
+        }
+    }
+    if (pos < xml.length()) pos++;  // Skip closing quote
+    return value;
+}
+
+static std::shared_ptr<XmlNode> parseXmlElement(const std::string& xml, size_t& pos) {
+    skipWhitespace(xml, pos);
+
+    // Skip XML declaration and comments
+    while (pos < xml.length() && xml[pos] == '<') {
+        if (xml.substr(pos, 4) == "<!--") {
+            size_t end = xml.find("-->", pos);
+            if (end != std::string::npos) { pos = end + 3; skipWhitespace(xml, pos); continue; }
+        }
+        if (xml.substr(pos, 5) == "<?xml") {
+            size_t end = xml.find("?>", pos);
+            if (end != std::string::npos) { pos = end + 2; skipWhitespace(xml, pos); continue; }
+        }
+        break;
+    }
+
+    if (pos >= xml.length() || xml[pos] != '<') {
+        return nullptr;
+    }
+    pos++;  // Skip <
+
+    auto node = std::make_shared<XmlNode>();
+    node->tag = parseXmlName(xml, pos);
+    if (node->tag.empty()) return nullptr;
+
+    // Parse attributes
+    while (pos < xml.length()) {
+        skipWhitespace(xml, pos);
+        if (xml[pos] == '/' || xml[pos] == '>') break;
+
+        std::string attrName = parseXmlName(xml, pos);
+        if (attrName.empty()) break;
+
+        skipWhitespace(xml, pos);
+        if (pos < xml.length() && xml[pos] == '=') {
+            pos++;
+            skipWhitespace(xml, pos);
+            node->attributes[attrName] = parseXmlAttributeValue(xml, pos);
+        } else {
+            node->attributes[attrName] = "";
+        }
+    }
+
+    skipWhitespace(xml, pos);
+
+    // Self-closing tag
+    if (pos < xml.length() && xml[pos] == '/') {
+        pos++;
+        if (pos < xml.length() && xml[pos] == '>') pos++;
+        return node;
+    }
+
+    if (pos >= xml.length() || xml[pos] != '>') return nullptr;
+    pos++;  // Skip >
+
+    // Parse content
+    std::string textContent;
+    while (pos < xml.length()) {
+        if (xml[pos] == '<') {
+            if (xml.substr(pos, 2) == "</") {
+                // Closing tag
+                pos += 2;
+                std::string closeTag = parseXmlName(xml, pos);
+                skipWhitespace(xml, pos);
+                if (pos < xml.length() && xml[pos] == '>') pos++;
+                break;
+            } else if (xml.substr(pos, 4) == "<!--") {
+                // Skip comment
+                size_t end = xml.find("-->", pos);
+                if (end != std::string::npos) { pos = end + 3; continue; }
+            } else {
+                // Child element
+                if (!textContent.empty()) {
+                    node->text = xmlTrim(textContent);
+                    textContent.clear();
+                }
+                auto child = parseXmlElement(xml, pos);
+                if (child) {
+                    node->children.push_back(child);
+                }
+            }
+        } else {
+            // Handle entities in text content
+            if (xml[pos] == '&') {
+                if (xml.substr(pos, 4) == "&lt;") { textContent += '<'; pos += 4; }
+                else if (xml.substr(pos, 4) == "&gt;") { textContent += '>'; pos += 4; }
+                else if (xml.substr(pos, 5) == "&amp;") { textContent += '&'; pos += 5; }
+                else if (xml.substr(pos, 6) == "&quot;") { textContent += '"'; pos += 6; }
+                else if (xml.substr(pos, 6) == "&apos;") { textContent += '\''; pos += 6; }
+                else { textContent += xml[pos++]; }
+            } else {
+                textContent += xml[pos++];
+            }
+        }
+    }
+
+    if (!textContent.empty()) {
+        node->text = xmlTrim(textContent);
+    }
+
+    return node;
+}
+
+static std::string xmlNodeToString(const std::shared_ptr<XmlNode>& node, int indent = 0) {
+    if (!node) return "";
+
+    std::string result;
+    std::string indentStr(indent * 2, ' ');
+
+    result += indentStr + "<" + node->tag;
+
+    for (const auto& [key, value] : node->attributes) {
+        result += " " + key + "=\"" + value + "\"";
+    }
+
+    if (node->children.empty() && node->text.empty()) {
+        result += "/>\n";
+    } else {
+        result += ">";
+        if (!node->text.empty()) {
+            result += node->text;
+        }
+        if (!node->children.empty()) {
+            result += "\n";
+            for (const auto& child : node->children) {
+                result += xmlNodeToString(child, indent + 1);
+            }
+            result += indentStr;
+        }
+        result += "</" + node->tag + ">\n";
+    }
+
+    return result;
+}
+
+void NativeRegistry::initXML() {
+    // __xml_parse(xmlString: string): int
+    // Parses XML and returns node handle
+    registerFunction("xml", "__xml_parse", [](const std::vector<std::any>& args) -> std::any {
+        auto xmlStr = std::any_cast<std::string>(args[0]);
+
+        size_t pos = 0;
+        auto node = parseXmlElement(xmlStr, pos);
+
+        if (!node) {
+            throw std::runtime_error("Failed to parse XML");
+        }
+
+        std::lock_guard<std::mutex> lock(g_xml_mutex);
+        int nodeId = ++g_xml_node_counter;
+        g_xml_nodes[nodeId] = node;
+
+        return std::any(nodeId);
+    }, FunctionSignature{{"string"}, "int"});
+
+    // __xml_stringify(nodeId: int): string
+    registerFunction("xml", "__xml_stringify", [](const std::vector<std::any>& args) -> std::any {
+        auto nodeId = std::any_cast<int>(args[0]);
+
+        std::lock_guard<std::mutex> lock(g_xml_mutex);
+        auto it = g_xml_nodes.find(nodeId);
+        if (it == g_xml_nodes.end()) {
+            throw std::runtime_error("Invalid XML node handle");
+        }
+
+        return std::any(xmlNodeToString(it->second));
+    }, FunctionSignature{{"int"}, "string"});
+
+    // __xml_get_tag(nodeId: int): string
+    registerFunction("xml", "__xml_get_tag", [](const std::vector<std::any>& args) -> std::any {
+        auto nodeId = std::any_cast<int>(args[0]);
+
+        std::lock_guard<std::mutex> lock(g_xml_mutex);
+        auto it = g_xml_nodes.find(nodeId);
+        if (it == g_xml_nodes.end()) {
+            throw std::runtime_error("Invalid XML node handle");
+        }
+
+        return std::any(it->second->tag);
+    }, FunctionSignature{{"int"}, "string"});
+
+    // __xml_get_text(nodeId: int): string
+    registerFunction("xml", "__xml_get_text", [](const std::vector<std::any>& args) -> std::any {
+        auto nodeId = std::any_cast<int>(args[0]);
+
+        std::lock_guard<std::mutex> lock(g_xml_mutex);
+        auto it = g_xml_nodes.find(nodeId);
+        if (it == g_xml_nodes.end()) {
+            throw std::runtime_error("Invalid XML node handle");
+        }
+
+        return std::any(it->second->text);
+    }, FunctionSignature{{"int"}, "string"});
+
+    // __xml_get_attr(nodeId: int, name: string): string
+    registerFunction("xml", "__xml_get_attr", [](const std::vector<std::any>& args) -> std::any {
+        auto nodeId = std::any_cast<int>(args[0]);
+        auto name = std::any_cast<std::string>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_xml_mutex);
+        auto it = g_xml_nodes.find(nodeId);
+        if (it == g_xml_nodes.end()) {
+            throw std::runtime_error("Invalid XML node handle");
+        }
+
+        auto attrIt = it->second->attributes.find(name);
+        if (attrIt != it->second->attributes.end()) {
+            return std::any(attrIt->second);
+        }
+        return std::any(std::string(""));
+    }, FunctionSignature{{"int", "string"}, "string"});
+
+    // __xml_has_attr(nodeId: int, name: string): bool
+    registerFunction("xml", "__xml_has_attr", [](const std::vector<std::any>& args) -> std::any {
+        auto nodeId = std::any_cast<int>(args[0]);
+        auto name = std::any_cast<std::string>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_xml_mutex);
+        auto it = g_xml_nodes.find(nodeId);
+        if (it == g_xml_nodes.end()) {
+            throw std::runtime_error("Invalid XML node handle");
+        }
+
+        return std::any(it->second->attributes.find(name) != it->second->attributes.end());
+    }, FunctionSignature{{"int", "string"}, "bool"});
+
+    // __xml_get_attr_names(nodeId: int): array<string>
+    registerFunction("xml", "__xml_get_attr_names", [](const std::vector<std::any>& args) -> std::any {
+        auto nodeId = std::any_cast<int>(args[0]);
+
+        std::lock_guard<std::mutex> lock(g_xml_mutex);
+        auto it = g_xml_nodes.find(nodeId);
+        if (it == g_xml_nodes.end()) {
+            throw std::runtime_error("Invalid XML node handle");
+        }
+
+        std::vector<std::string> names;
+        for (const auto& [key, _] : it->second->attributes) {
+            names.push_back(key);
+        }
+        return std::any(names);
+    }, FunctionSignature{{"int"}, "array<string>"});
+
+    // __xml_child_count(nodeId: int): int
+    registerFunction("xml", "__xml_child_count", [](const std::vector<std::any>& args) -> std::any {
+        auto nodeId = std::any_cast<int>(args[0]);
+
+        std::lock_guard<std::mutex> lock(g_xml_mutex);
+        auto it = g_xml_nodes.find(nodeId);
+        if (it == g_xml_nodes.end()) {
+            throw std::runtime_error("Invalid XML node handle");
+        }
+
+        return std::any(static_cast<int>(it->second->children.size()));
+    }, FunctionSignature{{"int"}, "int"});
+
+    // __xml_get_child(nodeId: int, index: int): int
+    registerFunction("xml", "__xml_get_child", [](const std::vector<std::any>& args) -> std::any {
+        auto nodeId = std::any_cast<int>(args[0]);
+        auto index = std::any_cast<int>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_xml_mutex);
+        auto it = g_xml_nodes.find(nodeId);
+        if (it == g_xml_nodes.end()) {
+            throw std::runtime_error("Invalid XML node handle");
+        }
+
+        if (index < 0 || index >= static_cast<int>(it->second->children.size())) {
+            throw std::runtime_error("XML child index out of bounds");
+        }
+
+        auto child = it->second->children[index];
+        int childId = ++g_xml_node_counter;
+        g_xml_nodes[childId] = child;
+
+        return std::any(childId);
+    }, FunctionSignature{{"int", "int"}, "int"});
+
+    // __xml_find_by_tag(nodeId: int, tag: string): array<int>
+    // Finds all child elements with matching tag (non-recursive)
+    registerFunction("xml", "__xml_find_by_tag", [](const std::vector<std::any>& args) -> std::any {
+        auto nodeId = std::any_cast<int>(args[0]);
+        auto tag = std::any_cast<std::string>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_xml_mutex);
+        auto it = g_xml_nodes.find(nodeId);
+        if (it == g_xml_nodes.end()) {
+            throw std::runtime_error("Invalid XML node handle");
+        }
+
+        std::vector<int> result;
+        for (const auto& child : it->second->children) {
+            if (child->tag == tag) {
+                int childId = ++g_xml_node_counter;
+                g_xml_nodes[childId] = child;
+                result.push_back(childId);
+            }
+        }
+
+        return std::any(result);
+    }, FunctionSignature{{"int", "string"}, "array<int>"});
+
+    // __xml_find_all_by_tag(nodeId: int, tag: string): array<int>
+    // Finds all descendant elements with matching tag (recursive)
+    registerFunction("xml", "__xml_find_all_by_tag", [](const std::vector<std::any>& args) -> std::any {
+        auto nodeId = std::any_cast<int>(args[0]);
+        auto tag = std::any_cast<std::string>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_xml_mutex);
+        auto it = g_xml_nodes.find(nodeId);
+        if (it == g_xml_nodes.end()) {
+            throw std::runtime_error("Invalid XML node handle");
+        }
+
+        std::vector<int> result;
+        std::function<void(const std::shared_ptr<XmlNode>&)> findRecursive =
+            [&](const std::shared_ptr<XmlNode>& node) {
+                for (const auto& child : node->children) {
+                    if (child->tag == tag) {
+                        int childId = ++g_xml_node_counter;
+                        g_xml_nodes[childId] = child;
+                        result.push_back(childId);
+                    }
+                    findRecursive(child);
+                }
+            };
+
+        findRecursive(it->second);
+        return std::any(result);
+    }, FunctionSignature{{"int", "string"}, "array<int>"});
+
+    // __xml_free(nodeId: int): void
+    registerFunction("xml", "__xml_free", [](const std::vector<std::any>& args) -> std::any {
+        auto nodeId = std::any_cast<int>(args[0]);
+
+        std::lock_guard<std::mutex> lock(g_xml_mutex);
+        g_xml_nodes.erase(nodeId);
+
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // __xml_create(tag: string): int
+    registerFunction("xml", "__xml_create", [](const std::vector<std::any>& args) -> std::any {
+        auto tag = std::any_cast<std::string>(args[0]);
+
+        auto node = std::make_shared<XmlNode>();
+        node->tag = tag;
+
+        std::lock_guard<std::mutex> lock(g_xml_mutex);
+        int nodeId = ++g_xml_node_counter;
+        g_xml_nodes[nodeId] = node;
+
+        return std::any(nodeId);
+    }, FunctionSignature{{"string"}, "int"});
+
+    // __xml_set_text(nodeId: int, text: string): void
+    registerFunction("xml", "__xml_set_text", [](const std::vector<std::any>& args) -> std::any {
+        auto nodeId = std::any_cast<int>(args[0]);
+        auto text = std::any_cast<std::string>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_xml_mutex);
+        auto it = g_xml_nodes.find(nodeId);
+        if (it == g_xml_nodes.end()) {
+            throw std::runtime_error("Invalid XML node handle");
+        }
+
+        it->second->text = text;
+        return std::any();
+    }, FunctionSignature{{"int", "string"}, "void"});
+
+    // __xml_set_attr(nodeId: int, name: string, value: string): void
+    registerFunction("xml", "__xml_set_attr", [](const std::vector<std::any>& args) -> std::any {
+        auto nodeId = std::any_cast<int>(args[0]);
+        auto name = std::any_cast<std::string>(args[1]);
+        auto value = std::any_cast<std::string>(args[2]);
+
+        std::lock_guard<std::mutex> lock(g_xml_mutex);
+        auto it = g_xml_nodes.find(nodeId);
+        if (it == g_xml_nodes.end()) {
+            throw std::runtime_error("Invalid XML node handle");
+        }
+
+        it->second->attributes[name] = value;
+        return std::any();
+    }, FunctionSignature{{"int", "string", "string"}, "void"});
+
+    // __xml_add_child(parentId: int, childId: int): void
+    registerFunction("xml", "__xml_add_child", [](const std::vector<std::any>& args) -> std::any {
+        auto parentId = std::any_cast<int>(args[0]);
+        auto childId = std::any_cast<int>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_xml_mutex);
+        auto parentIt = g_xml_nodes.find(parentId);
+        auto childIt = g_xml_nodes.find(childId);
+
+        if (parentIt == g_xml_nodes.end() || childIt == g_xml_nodes.end()) {
+            throw std::runtime_error("Invalid XML node handle");
+        }
+
+        parentIt->second->children.push_back(childIt->second);
+        return std::any();
+    }, FunctionSignature{{"int", "int"}, "void"});
+}
+
+// ============================================================================
+// Template Module - HTML Templating Support
+// ============================================================================
+
+static std::string templateEscapeHtml(const std::string& str) {
+    std::string result;
+    result.reserve(str.length() * 1.1);
+    for (char c : str) {
+        switch (c) {
+            case '&': result += "&amp;"; break;
+            case '<': result += "&lt;"; break;
+            case '>': result += "&gt;"; break;
+            case '"': result += "&quot;"; break;
+            case '\'': result += "&#39;"; break;
+            default: result += c;
+        }
+    }
+    return result;
+}
+
+// Simple template data context using nested maps
+struct TemplateContext {
+    std::unordered_map<std::string, std::string> strings;
+    std::unordered_map<std::string, int> integers;
+    std::unordered_map<std::string, double> doubles;
+    std::unordered_map<std::string, bool> booleans;
+    std::unordered_map<std::string, std::vector<std::string>> arrays;
+};
+
+static std::mutex g_template_mutex;
+static std::unordered_map<int, TemplateContext> g_template_contexts;
+static int g_template_context_counter = 0;
+
+static std::string templateGetValue(const TemplateContext& ctx, const std::string& key) {
+    auto strIt = ctx.strings.find(key);
+    if (strIt != ctx.strings.end()) return strIt->second;
+
+    auto intIt = ctx.integers.find(key);
+    if (intIt != ctx.integers.end()) return std::to_string(intIt->second);
+
+    auto dblIt = ctx.doubles.find(key);
+    if (dblIt != ctx.doubles.end()) return std::to_string(dblIt->second);
+
+    auto boolIt = ctx.booleans.find(key);
+    if (boolIt != ctx.booleans.end()) return boolIt->second ? "true" : "false";
+
+    return "";
+}
+
+static bool templateGetBool(const TemplateContext& ctx, const std::string& key) {
+    auto boolIt = ctx.booleans.find(key);
+    if (boolIt != ctx.booleans.end()) return boolIt->second;
+
+    auto strIt = ctx.strings.find(key);
+    if (strIt != ctx.strings.end()) return !strIt->second.empty();
+
+    auto intIt = ctx.integers.find(key);
+    if (intIt != ctx.integers.end()) return intIt->second != 0;
+
+    auto arrIt = ctx.arrays.find(key);
+    if (arrIt != ctx.arrays.end()) return !arrIt->second.empty();
+
+    return false;
+}
+
+static std::string templateRender(const std::string& tmpl, const TemplateContext& ctx);
+
+static std::string templateRender(const std::string& tmpl, const TemplateContext& ctx) {
+    std::string result;
+    size_t pos = 0;
+
+    while (pos < tmpl.length()) {
+        // Check for {{ variable }}
+        if (tmpl.substr(pos, 2) == "{{") {
+            size_t endPos = tmpl.find("}}", pos + 2);
+            if (endPos != std::string::npos) {
+                std::string expr = xmlTrim(tmpl.substr(pos + 2, endPos - pos - 2));
+
+                // Check for raw output (triple braces or |raw filter)
+                bool escapeHtml = true;
+                if (expr.length() > 0 && expr[0] == '{') {
+                    // Triple brace - raw output
+                    size_t tripleEnd = tmpl.find("}}}", pos + 2);
+                    if (tripleEnd != std::string::npos) {
+                        expr = xmlTrim(tmpl.substr(pos + 3, tripleEnd - pos - 3));
+                        escapeHtml = false;
+                        endPos = tripleEnd + 1;
+                    }
+                } else if (expr.find("|raw") != std::string::npos) {
+                    expr = xmlTrim(expr.substr(0, expr.find("|raw")));
+                    escapeHtml = false;
+                }
+
+                std::string value = templateGetValue(ctx, expr);
+                result += escapeHtml ? templateEscapeHtml(value) : value;
+                pos = endPos + 2;
+                continue;
+            }
+        }
+
+        // Check for {% if condition %}
+        if (tmpl.substr(pos, 2) == "{%") {
+            size_t endPos = tmpl.find("%}", pos + 2);
+            if (endPos != std::string::npos) {
+                std::string tag = xmlTrim(tmpl.substr(pos + 2, endPos - pos - 2));
+
+                if (tag.substr(0, 3) == "if ") {
+                    std::string condition = xmlTrim(tag.substr(3));
+                    bool negate = false;
+                    if (condition.substr(0, 4) == "not ") {
+                        negate = true;
+                        condition = xmlTrim(condition.substr(4));
+                    }
+
+                    // Find matching endif
+                    size_t ifDepth = 1;
+                    size_t searchPos = endPos + 2;
+                    size_t elsePos = std::string::npos;
+                    size_t endifPos = std::string::npos;
+
+                    while (searchPos < tmpl.length() && ifDepth > 0) {
+                        size_t nextTag = tmpl.find("{%", searchPos);
+                        if (nextTag == std::string::npos) break;
+
+                        size_t tagEnd = tmpl.find("%}", nextTag + 2);
+                        if (tagEnd == std::string::npos) break;
+
+                        std::string innerTag = xmlTrim(tmpl.substr(nextTag + 2, tagEnd - nextTag - 2));
+
+                        if (innerTag.substr(0, 3) == "if ") {
+                            ifDepth++;
+                        } else if (innerTag == "endif") {
+                            ifDepth--;
+                            if (ifDepth == 0) {
+                                endifPos = nextTag;
+                            }
+                        } else if (innerTag == "else" && ifDepth == 1) {
+                            elsePos = nextTag;
+                        }
+
+                        searchPos = tagEnd + 2;
+                    }
+
+                    if (endifPos != std::string::npos) {
+                        bool conditionTrue = templateGetBool(ctx, condition);
+                        if (negate) conditionTrue = !conditionTrue;
+
+                        std::string block;
+                        if (conditionTrue) {
+                            if (elsePos != std::string::npos) {
+                                block = tmpl.substr(endPos + 2, elsePos - endPos - 2);
+                            } else {
+                                block = tmpl.substr(endPos + 2, endifPos - endPos - 2);
+                            }
+                        } else if (elsePos != std::string::npos) {
+                            size_t elseEnd = tmpl.find("%}", elsePos + 2);
+                            block = tmpl.substr(elseEnd + 2, endifPos - elseEnd - 2);
+                        }
+
+                        result += templateRender(block, ctx);
+
+                        // Skip to after endif
+                        size_t endifEnd = tmpl.find("%}", endifPos + 2);
+                        pos = endifEnd + 2;
+                        continue;
+                    }
+                }
+
+                // Check for {% for item in list %}
+                if (tag.substr(0, 4) == "for ") {
+                    std::string forExpr = tag.substr(4);
+                    size_t inPos = forExpr.find(" in ");
+                    if (inPos != std::string::npos) {
+                        std::string itemVar = xmlTrim(forExpr.substr(0, inPos));
+                        std::string listVar = xmlTrim(forExpr.substr(inPos + 4));
+
+                        // Find matching endfor
+                        size_t forDepth = 1;
+                        size_t searchPos = endPos + 2;
+                        size_t endforPos = std::string::npos;
+
+                        while (searchPos < tmpl.length() && forDepth > 0) {
+                            size_t nextTag = tmpl.find("{%", searchPos);
+                            if (nextTag == std::string::npos) break;
+
+                            size_t tagEnd = tmpl.find("%}", nextTag + 2);
+                            if (tagEnd == std::string::npos) break;
+
+                            std::string innerTag = xmlTrim(tmpl.substr(nextTag + 2, tagEnd - nextTag - 2));
+
+                            if (innerTag.substr(0, 4) == "for ") {
+                                forDepth++;
+                            } else if (innerTag == "endfor") {
+                                forDepth--;
+                                if (forDepth == 0) {
+                                    endforPos = nextTag;
+                                }
+                            }
+
+                            searchPos = tagEnd + 2;
+                        }
+
+                        if (endforPos != std::string::npos) {
+                            std::string loopBody = tmpl.substr(endPos + 2, endforPos - endPos - 2);
+
+                            auto arrIt = ctx.arrays.find(listVar);
+                            if (arrIt != ctx.arrays.end()) {
+                                for (size_t i = 0; i < arrIt->second.size(); i++) {
+                                    TemplateContext loopCtx = ctx;
+                                    loopCtx.strings[itemVar] = arrIt->second[i];
+                                    loopCtx.integers["loop.index"] = static_cast<int>(i);
+                                    loopCtx.integers["loop.index1"] = static_cast<int>(i + 1);
+                                    loopCtx.booleans["loop.first"] = (i == 0);
+                                    loopCtx.booleans["loop.last"] = (i == arrIt->second.size() - 1);
+                                    result += templateRender(loopBody, loopCtx);
+                                }
+                            }
+
+                            size_t endforEnd = tmpl.find("%}", endforPos + 2);
+                            pos = endforEnd + 2;
+                            continue;
+                        }
+                    }
+                }
+
+                pos = endPos + 2;
+                continue;
+            }
+        }
+
+        result += tmpl[pos++];
+    }
+
+    return result;
+}
+
+void NativeRegistry::initTemplate() {
+    // __template_create_context(): int
+    registerFunction("template", "__template_create_context", [](const std::vector<std::any>& args) -> std::any {
+        std::lock_guard<std::mutex> lock(g_template_mutex);
+        int ctxId = ++g_template_context_counter;
+        g_template_contexts[ctxId] = TemplateContext();
+        return std::any(ctxId);
+    }, FunctionSignature{{}, "int"});
+
+    // __template_set_string(ctxId: int, key: string, value: string): void
+    registerFunction("template", "__template_set_string", [](const std::vector<std::any>& args) -> std::any {
+        auto ctxId = std::any_cast<int>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto value = std::any_cast<std::string>(args[2]);
+
+        std::lock_guard<std::mutex> lock(g_template_mutex);
+        auto it = g_template_contexts.find(ctxId);
+        if (it == g_template_contexts.end()) {
+            throw std::runtime_error("Invalid template context");
+        }
+
+        it->second.strings[key] = value;
+        return std::any();
+    }, FunctionSignature{{"int", "string", "string"}, "void"});
+
+    // __template_set_int(ctxId: int, key: string, value: int): void
+    registerFunction("template", "__template_set_int", [](const std::vector<std::any>& args) -> std::any {
+        auto ctxId = std::any_cast<int>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto value = std::any_cast<int>(args[2]);
+
+        std::lock_guard<std::mutex> lock(g_template_mutex);
+        auto it = g_template_contexts.find(ctxId);
+        if (it == g_template_contexts.end()) {
+            throw std::runtime_error("Invalid template context");
+        }
+
+        it->second.integers[key] = value;
+        return std::any();
+    }, FunctionSignature{{"int", "string", "int"}, "void"});
+
+    // __template_set_double(ctxId: int, key: string, value: double): void
+    registerFunction("template", "__template_set_double", [](const std::vector<std::any>& args) -> std::any {
+        auto ctxId = std::any_cast<int>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto value = std::any_cast<double>(args[2]);
+
+        std::lock_guard<std::mutex> lock(g_template_mutex);
+        auto it = g_template_contexts.find(ctxId);
+        if (it == g_template_contexts.end()) {
+            throw std::runtime_error("Invalid template context");
+        }
+
+        it->second.doubles[key] = value;
+        return std::any();
+    }, FunctionSignature{{"int", "string", "double"}, "void"});
+
+    // __template_set_bool(ctxId: int, key: string, value: bool): void
+    registerFunction("template", "__template_set_bool", [](const std::vector<std::any>& args) -> std::any {
+        auto ctxId = std::any_cast<int>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto value = std::any_cast<bool>(args[2]);
+
+        std::lock_guard<std::mutex> lock(g_template_mutex);
+        auto it = g_template_contexts.find(ctxId);
+        if (it == g_template_contexts.end()) {
+            throw std::runtime_error("Invalid template context");
+        }
+
+        it->second.booleans[key] = value;
+        return std::any();
+    }, FunctionSignature{{"int", "string", "bool"}, "void"});
+
+    // __template_set_array(ctxId: int, key: string, values: array<string>): void
+    registerFunction("template", "__template_set_array", [](const std::vector<std::any>& args) -> std::any {
+        auto ctxId = std::any_cast<int>(args[0]);
+        auto key = std::any_cast<std::string>(args[1]);
+        auto values = std::any_cast<std::vector<std::string>>(args[2]);
+
+        std::lock_guard<std::mutex> lock(g_template_mutex);
+        auto it = g_template_contexts.find(ctxId);
+        if (it == g_template_contexts.end()) {
+            throw std::runtime_error("Invalid template context");
+        }
+
+        it->second.arrays[key] = values;
+        return std::any();
+    }, FunctionSignature{{"int", "string", "array<string>"}, "void"});
+
+    // __template_render(templateString: string, ctxId: int): string
+    registerFunction("template", "__template_render", [](const std::vector<std::any>& args) -> std::any {
+        auto tmpl = std::any_cast<std::string>(args[0]);
+        auto ctxId = std::any_cast<int>(args[1]);
+
+        std::lock_guard<std::mutex> lock(g_template_mutex);
+        auto it = g_template_contexts.find(ctxId);
+        if (it == g_template_contexts.end()) {
+            throw std::runtime_error("Invalid template context");
+        }
+
+        return std::any(templateRender(tmpl, it->second));
+    }, FunctionSignature{{"string", "int"}, "string"});
+
+    // __template_render_file(filePath: string, ctxId: int): string
+    registerFunction("template", "__template_render_file", [](const std::vector<std::any>& args) -> std::any {
+        auto filePath = std::any_cast<std::string>(args[0]);
+        auto ctxId = std::any_cast<int>(args[1]);
+
+        // Read file
+        std::ifstream file(filePath);
+        if (!file.is_open()) {
+            throw std::runtime_error("Failed to open template file: " + filePath);
+        }
+
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        std::string tmpl = buffer.str();
+
+        std::lock_guard<std::mutex> lock(g_template_mutex);
+        auto it = g_template_contexts.find(ctxId);
+        if (it == g_template_contexts.end()) {
+            throw std::runtime_error("Invalid template context");
+        }
+
+        return std::any(templateRender(tmpl, it->second));
+    }, FunctionSignature{{"string", "int"}, "string"});
+
+    // __template_free_context(ctxId: int): void
+    registerFunction("template", "__template_free_context", [](const std::vector<std::any>& args) -> std::any {
+        auto ctxId = std::any_cast<int>(args[0]);
+
+        std::lock_guard<std::mutex> lock(g_template_mutex);
+        g_template_contexts.erase(ctxId);
+
+        return std::any();
+    }, FunctionSignature{{"int"}, "void"});
+
+    // __template_escape_html(str: string): string
+    registerFunction("template", "__template_escape_html", [](const std::vector<std::any>& args) -> std::any {
+        auto str = std::any_cast<std::string>(args[0]);
+        return std::any(templateEscapeHtml(str));
+    }, FunctionSignature{{"string"}, "string"});
 }
 
 }  // namespace stratos

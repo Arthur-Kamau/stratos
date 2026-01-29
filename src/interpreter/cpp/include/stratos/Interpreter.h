@@ -177,6 +177,7 @@ public:
 
     // HTTP handler execution (public for HttpServerManager access)
     void executeHttpHandler(const RuntimeValue& handler, HttpRequestInternal& req, HttpResponseInternal& res);
+    bool executeHttpMiddleware(const RuntimeValue& middleware, HttpRequestInternal& req, HttpResponseInternal& res);
 
     // Visitor Implementation
     void visit(BinaryExpr& expr) override;
