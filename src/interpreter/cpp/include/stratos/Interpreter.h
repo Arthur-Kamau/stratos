@@ -248,6 +248,17 @@ private:
             throw std::runtime_error("Undefined variable: " + name);
         }
 
+        // Get a reference to a variable for in-place modification
+        RuntimeValue& getRef(const std::string& name) {
+            if (variables.count(name)) {
+                return variables[name];
+            }
+            if (parent) {
+                return parent->getRef(name);
+            }
+            throw std::runtime_error("Undefined variable: " + name);
+        }
+
         void assign(const std::string& name, RuntimeValue value) {
             if (variables.count(name)) {
                 variables[name] = value;

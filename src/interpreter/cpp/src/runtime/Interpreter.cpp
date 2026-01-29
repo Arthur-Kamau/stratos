@@ -831,7 +831,44 @@ void Interpreter::visit(CallExpr& expr) {
                                 error("Internal error: Failed to cast int array value");
                             }
                         }
-                        // Add more array types here as needed
+
+                        // Handle std::vector<std::any> (returned by maps.values() for generic maps)
+                        try {
+                            auto& vec = std::any_cast<std::vector<std::any>&>(*anyPtr);
+
+                            if (methodName == "length") {
+                                lastValue = RuntimeValue(static_cast<int>(vec.size()));
+                                return;
+                            } else if (methodName == "isEmpty") {
+                                lastValue = RuntimeValue(vec.empty());
+                                return;
+                            } else if (methodName == "forEach") {
+                                if (args.empty()) error("forEach requires a callback");
+                                auto callback = args[0];
+                                for (const auto& item : vec) {
+                                    std::vector<RuntimeValue> cbArgs;
+                                    // Convert std::any to RuntimeValue
+                                    if (item.type() == typeid(int)) {
+                                        cbArgs.push_back(RuntimeValue(std::any_cast<int>(item)));
+                                    } else if (item.type() == typeid(double)) {
+                                        cbArgs.push_back(RuntimeValue(std::any_cast<double>(item)));
+                                    } else if (item.type() == typeid(std::string)) {
+                                        cbArgs.push_back(RuntimeValue(std::any_cast<std::string>(item)));
+                                    } else if (item.type() == typeid(bool)) {
+                                        cbArgs.push_back(RuntimeValue(std::any_cast<bool>(item)));
+                                    } else if (item.type() == typeid(std::shared_ptr<ClassInstance>)) {
+                                        cbArgs.push_back(RuntimeValue(std::any_cast<std::shared_ptr<ClassInstance>>(item)));
+                                    } else {
+                                        cbArgs.push_back(RuntimeValue(item, "any"));
+                                    }
+                                    executeCallback(callback, cbArgs);
+                                }
+                                lastValue = RuntimeValue(std::any(), "void");
+                                return;
+                            }
+                        } catch (const std::bad_any_cast&) {
+                            // Not a vector<any>, continue
+                        }
                     }
                     error("Unknown array method: " + methodName);
                 }
@@ -1022,41 +1059,75 @@ void Interpreter::visit(CallExpr& expr) {
                          if (args.size() < 2) error("put() requires key and value arguments");
                          auto key = args[0];
                          auto val = args[1];
-                         
+
                          if (auto* anyPtr = std::get_if<std::any>(&leftValue.value)) {
                              bool handled = false;
+                             std::any updatedMap;
+
                              try {
                                  // Try map<string, any>
-                                 auto& map = std::any_cast<std::unordered_map<std::string, std::any>&>(*anyPtr);
+                                 auto map = std::any_cast<std::unordered_map<std::string, std::any>>(*anyPtr);
                                  // Convert key to string if needed
-                                 std::string keyStr = key.asString();
-                                 // Store value. For now, store raw native value if possible, or wrapping RuntimeValue?
-                                 // The map stores std::any.
-                                 // If val is RuntimeValue, we should unwrap it?
-                                 // Or just store the inner std::any?
-                                 // RuntimeValue wraps std::any value.
-                                 map[keyStr] = val.value; 
+                                 std::string keyStr;
+                                 if (key.type == "string") {
+                                     keyStr = key.asString();
+                                 } else if (key.type == "int") {
+                                     keyStr = std::to_string(key.asInt());
+                                 } else {
+                                     keyStr = key.asString();
+                                 }
+                                 // Convert RuntimeValue to std::any for storage
+                                 std::any anyValue;
+                                 if (val.type == "int") {
+                                     anyValue = val.asInt();
+                                 } else if (val.type == "double") {
+                                     anyValue = val.asDouble();
+                                 } else if (val.type == "string") {
+                                     anyValue = val.asString();
+                                 } else if (val.type == "bool") {
+                                     anyValue = val.asBool();
+                                 } else if (val.type == "object") {
+                                     anyValue = val.asObject();
+                                 } else if (std::holds_alternative<std::any>(val.value)) {
+                                     anyValue = std::get<std::any>(val.value);
+                                 }
+                                 map[keyStr] = anyValue;
+                                 updatedMap = map;
                                  handled = true;
                              } catch (...) {
                                  // Try map<string, string>
                                  try {
-                                     auto& map = std::any_cast<std::unordered_map<std::string, std::string>&>(*anyPtr);
+                                     auto map = std::any_cast<std::unordered_map<std::string, std::string>>(*anyPtr);
                                      map[key.asString()] = val.asString();
+                                     updatedMap = map;
                                      handled = true;
                                  } catch(...) {
                                       // Try map<string, int>
                                       try {
-                                         auto& map = std::any_cast<std::unordered_map<std::string, int>&>(*anyPtr);
+                                         auto map = std::any_cast<std::unordered_map<std::string, int>>(*anyPtr);
                                          map[key.asString()] = val.asInt();
+                                         updatedMap = map;
                                          handled = true;
                                       } catch(...) {}
                                  }
                              }
-                             
+
                              if (!handled) {
                                  error("Failed to put into map: incompatible types");
                              }
-                             
+
+                             // Update the original variable if the left side was a variable
+                             if (auto* leftVarExpr = dynamic_cast<VariableExpr*>(binExpr->left.get())) {
+                                 // Get a reference to the original variable and update it in place
+                                 try {
+                                     RuntimeValue& originalVar = currentEnv->getRef(leftVarExpr->name.lexeme);
+                                     originalVar = RuntimeValue(updatedMap, leftValue.type);
+                                 } catch (...) {
+                                     // Fallback to assign if getRef fails
+                                     currentEnv->assign(leftVarExpr->name.lexeme, RuntimeValue(updatedMap, leftValue.type));
+                                 }
+                             }
+
                              lastValue = RuntimeValue(std::any(), "void");
                              return;
                          }
@@ -1444,21 +1515,32 @@ void Interpreter::visit(CallExpr& expr) {
                             if (!args.empty()) {
                                 // Serialize the argument to JSON string
                                 std::string jsonStr;
+                                extern std::string serializeJsonValue(const std::shared_ptr<ClassInstance>&);
+                                extern std::string serializeRuntimeValue(const RuntimeValue&);
+
+                                // Try to get an object (ClassInstance) from various sources
+                                std::shared_ptr<ClassInstance> obj = nullptr;
+
                                 if (args[0].type == "object") {
-                                    auto obj = args[0].asObject();
-                                    if (obj && obj->className == "JsonValue") {
-                                        // Use serializeJsonValue for JsonValue objects
-                                        extern std::string serializeJsonValue(const std::shared_ptr<ClassInstance>&);
+                                    obj = args[0].asObject();
+                                } else if (args[0].type == "any" || args[0].type.starts_with("any")) {
+                                    // The value might be stored as std::any containing ClassInstance
+                                    if (auto* anyPtr = std::get_if<std::any>(&args[0].value)) {
+                                        if (anyPtr->type() == typeid(std::shared_ptr<ClassInstance>)) {
+                                            obj = std::any_cast<std::shared_ptr<ClassInstance>>(*anyPtr);
+                                        }
+                                    }
+                                }
+
+                                if (obj) {
+                                    if (obj->className == "JsonValue") {
                                         jsonStr = serializeJsonValue(obj);
                                     } else {
-                                        // Serialize regular object
-                                        extern std::string serializeRuntimeValue(const RuntimeValue&);
                                         jsonStr = serializeRuntimeValue(args[0]);
                                     }
                                 } else if (args[0].type == "string") {
                                     jsonStr = args[0].asString();
                                 } else {
-                                    extern std::string serializeRuntimeValue(const RuntimeValue&);
                                     jsonStr = serializeRuntimeValue(args[0]);
                                 }
                                 instance->fields["body"] = RuntimeValue(jsonStr);
@@ -1512,7 +1594,45 @@ void Interpreter::visit(CallExpr& expr) {
 
                     // Handle Request type methods
                     if (instance->className == "Request") {
-                        if (methodName == "getHeader") {
+                        if (methodName == "json") {
+                            // Parse the request body as JSON and return Result<JsonValue, Error>
+                            std::string body = "";
+                            if (instance->fields.count("body")) {
+                                body = instance->fields["body"].asString();
+                            }
+
+                            // Create a Result object
+                            auto result = std::make_shared<ClassInstance>();
+                            result->className = "Result";
+
+                            if (body.empty()) {
+                                // Return error result
+                                result->fields["isOk"] = RuntimeValue(false);
+                                auto errorObj = std::make_shared<ClassInstance>();
+                                errorObj->fields["message"] = RuntimeValue(std::string("Empty request body"));
+                                result->fields["error"] = RuntimeValue(errorObj);
+                            } else {
+                                // Try to parse JSON using SimpleJsonParser
+                                try {
+                                    // Use the json module's parse function
+                                    auto& registry = NativeRegistry::getInstance();
+                                    std::vector<std::any> parseArgs = {body};
+                                    auto parseResult = registry.getFunction("json", "jsonParse")(parseArgs);
+
+                                    result->fields["isOk"] = RuntimeValue(true);
+                                    result->fields["value"] = RuntimeValue(parseResult, "any");
+                                    result->fields["error"] = RuntimeValue(std::make_shared<ClassInstance>());
+                                } catch (const std::exception& e) {
+                                    result->fields["isOk"] = RuntimeValue(false);
+                                    auto errorObj = std::make_shared<ClassInstance>();
+                                    errorObj->fields["message"] = RuntimeValue(std::string(e.what()));
+                                    result->fields["error"] = RuntimeValue(errorObj);
+                                }
+                            }
+
+                            lastValue = RuntimeValue(result);
+                            return;
+                        } else if (methodName == "getHeader") {
                             if (!args.empty()) {
                                 std::string key = args[0].asString();
                                 if (auto* anyPtr = std::get_if<std::any>(&instance->fields["headers"].value)) {
@@ -1525,15 +1645,35 @@ void Interpreter::visit(CallExpr& expr) {
                             }
                             lastValue = RuntimeValue(std::string(""));
                             return;
-                        } else if (methodName == "getParam") {
+                        } else if (methodName == "getParam" || methodName == "param") {
                             if (!args.empty()) {
                                 std::string key = args[0].asString();
                                 if (auto* anyPtr = std::get_if<std::any>(&instance->fields["params"].value)) {
-                                    auto params = std::any_cast<std::unordered_map<std::string, std::any>>(*anyPtr);
-                                    if (params.count(key)) {
-                                        lastValue = RuntimeValue(std::any_cast<std::string>(params[key]));
-                                        return;
-                                    }
+                                    try {
+                                        auto params = std::any_cast<std::unordered_map<std::string, std::any>>(*anyPtr);
+                                        if (params.count(key)) {
+                                            if (params[key].type() == typeid(std::string)) {
+                                                lastValue = RuntimeValue(std::any_cast<std::string>(params[key]));
+                                            } else {
+                                                lastValue = RuntimeValue(std::string(""));
+                                            }
+                                            return;
+                                        }
+                                    } catch (...) {}
+                                }
+                                // Also check pathParams field
+                                if (auto* anyPtr = std::get_if<std::any>(&instance->fields["pathParams"].value)) {
+                                    try {
+                                        auto params = std::any_cast<std::unordered_map<std::string, std::any>>(*anyPtr);
+                                        if (params.count(key)) {
+                                            if (params[key].type() == typeid(std::string)) {
+                                                lastValue = RuntimeValue(std::any_cast<std::string>(params[key]));
+                                            } else {
+                                                lastValue = RuntimeValue(std::string(""));
+                                            }
+                                            return;
+                                        }
+                                    } catch (...) {}
                                 }
                             }
                             lastValue = RuntimeValue(std::string(""));
@@ -1550,6 +1690,20 @@ void Interpreter::visit(CallExpr& expr) {
                                 }
                             }
                             lastValue = RuntimeValue(std::string(""));
+                            return;
+                        }
+                    }
+
+                    // Handle Time type methods
+                    if (instance->className == "Time") {
+                        if (methodName == "unix") {
+                            // Return timestamp in seconds
+                            if (instance->fields.count("timestamp")) {
+                                int secs = instance->fields["timestamp"].asInt();
+                                lastValue = RuntimeValue(secs);
+                            } else {
+                                lastValue = RuntimeValue(0);
+                            }
                             return;
                         }
                     }
@@ -3028,7 +3182,8 @@ RuntimeValue Interpreter::evaluateNativeCall(const std::string& moduleName,
             resultType == "Optional" || resultType == "File" ||
             resultType == "WorkerPool" || resultType == "Router" ||
             resultType == "Server" || resultType == "Request" ||
-            resultType == "Response") {
+            resultType == "Response" || resultType == "JsonValue" ||
+            resultType == "Time" || resultType == "Duration") {
             resultType = "object";
         }
     } else {

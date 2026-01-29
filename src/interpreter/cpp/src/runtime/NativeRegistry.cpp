@@ -1785,9 +1785,13 @@ void NativeRegistry::initTime() {
 
     registerFunction("time", "now", [](const std::vector<std::any>& args) -> std::any {
         auto now = system_clock::now();
-        auto millis = duration_cast<milliseconds>(now.time_since_epoch()).count();
-        return static_cast<int64_t>(millis);
-    });
+        auto secs = duration_cast<seconds>(now.time_since_epoch()).count();
+        // Return a Time object with timestamp field (in seconds to avoid overflow)
+        auto timeObj = std::make_shared<ClassInstance>();
+        timeObj->className = "Time";
+        timeObj->fields["timestamp"] = RuntimeValue(static_cast<int>(secs), "int");
+        return timeObj;
+    }, FunctionSignature{{}, "Time"});
 
     registerFunction("time", "unix", [](const std::vector<std::any>& args) -> std::any {
         int64_t seconds = std::any_cast<int64_t>(args[0]);
@@ -2051,12 +2055,47 @@ std::string serializeAny(const std::any& val) {
 }
 
 void NativeRegistry::initJSON() {
-    // Simple JSON parsing (basic implementation - would use nlohmann/json in production)
+    // JSON parsing using SimpleJsonParser
     registerFunction("json", "jsonParse", [](const std::vector<std::any>& args) -> std::any {
         std::string jsonStr = std::any_cast<std::string>(args[0]);
-        // Simplified: Return the string as-is (real impl would parse to JsonValue)
-        return jsonStr;
-    });
+
+        // Parse the JSON string
+        SimpleJsonParser parser(jsonStr);
+        RuntimeValue parsed = parser.parse(RuntimeValue());
+
+        // Convert the parsed RuntimeValue to a JsonValue
+        auto jsonValue = std::make_shared<ClassInstance>();
+        jsonValue->className = "JsonValue";
+
+        if (parsed.type == "object") {
+            jsonValue->fields["type"] = RuntimeValue(5, "int");  // OBJECT
+            jsonValue->fields["objectValue"] = RuntimeValue(parsed.asObject());
+        } else if (parsed.type == "string") {
+            jsonValue->fields["type"] = RuntimeValue(3, "int");  // STRING
+            jsonValue->fields["stringValue"] = RuntimeValue(parsed.asString());
+        } else if (parsed.type == "int") {
+            jsonValue->fields["type"] = RuntimeValue(2, "int");  // NUMBER
+            jsonValue->fields["numberValue"] = RuntimeValue(static_cast<double>(parsed.asInt()));
+        } else if (parsed.type == "double") {
+            jsonValue->fields["type"] = RuntimeValue(2, "int");  // NUMBER
+            jsonValue->fields["numberValue"] = RuntimeValue(parsed.asDouble());
+        } else if (parsed.type == "bool") {
+            jsonValue->fields["type"] = RuntimeValue(1, "int");  // BOOLEAN
+            jsonValue->fields["boolValue"] = RuntimeValue(parsed.asBool());
+        } else {
+            jsonValue->fields["type"] = RuntimeValue(0, "int");  // NULL
+        }
+
+        // Initialize other fields with defaults
+        if (!jsonValue->fields.count("boolValue"))
+            jsonValue->fields["boolValue"] = RuntimeValue(false, "bool");
+        if (!jsonValue->fields.count("numberValue"))
+            jsonValue->fields["numberValue"] = RuntimeValue(0.0, "double");
+        if (!jsonValue->fields.count("stringValue"))
+            jsonValue->fields["stringValue"] = RuntimeValue(std::string(""), "string");
+
+        return jsonValue;
+    }, FunctionSignature{{"string"}, "JsonValue"});
 
     registerFunction("json", "jsonStringify", [](const std::vector<std::any>& args) -> std::any {
         if (args.empty()) return std::string("{}");
@@ -2090,6 +2129,57 @@ void NativeRegistry::initJSON() {
         if (result.type == "object") return result.asObject();
         return std::shared_ptr<ClassInstance>();
     }, FunctionSignature{{"string", "any"}, "any"});
+
+    // getStringPath - Get a string value from a JsonValue by key/path
+    registerFunction("json", "getStringPath", [](const std::vector<std::any>& args) -> std::any {
+        if (args.size() < 2) return std::string("");
+
+        // First arg is the JsonValue, second is the key/path
+        std::string key;
+        if (args[1].type() == typeid(std::string)) {
+            key = std::any_cast<std::string>(args[1]);
+        } else {
+            return std::string("");
+        }
+
+        // Handle JsonValue (ClassInstance with className "JsonValue")
+        if (args[0].type() == typeid(std::shared_ptr<ClassInstance>)) {
+            auto jsonValue = std::any_cast<std::shared_ptr<ClassInstance>>(args[0]);
+
+            if (jsonValue && jsonValue->className == "JsonValue") {
+                // Check if it's an OBJECT type (type == 5)
+                if (jsonValue->fields.count("type") && jsonValue->fields["type"].asInt() == 5) {
+                    // Get the objectValue field
+                    if (jsonValue->fields.count("objectValue")) {
+                        auto& objVal = jsonValue->fields["objectValue"];
+                        if (objVal.type == "object") {
+                            auto obj = objVal.asObject();
+                            if (obj && obj->fields.count(key)) {
+                                auto& fieldVal = obj->fields[key];
+                                // If it's a string, return it directly
+                                if (fieldVal.type == "string") {
+                                    return fieldVal.asString();
+                                }
+                                // If it's a JsonValue with STRING type
+                                if (fieldVal.type == "object") {
+                                    auto fieldObj = fieldVal.asObject();
+                                    if (fieldObj && fieldObj->className == "JsonValue") {
+                                        if (fieldObj->fields.count("type") && fieldObj->fields["type"].asInt() == 3) {
+                                            if (fieldObj->fields.count("stringValue")) {
+                                                return fieldObj->fields["stringValue"].asString();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return std::string("");
+    }, FunctionSignature{{"JsonValue", "string"}, "string"});
 
     // JsonType enum indices: NULL=0, BOOLEAN=1, NUMBER=2, STRING=3, ARRAY=4, OBJECT=5
 
@@ -2181,10 +2271,36 @@ void NativeRegistry::initJSON() {
         jsonValue->fields["boolValue"] = RuntimeValue(false, "bool");
         jsonValue->fields["numberValue"] = RuntimeValue(0.0, "double");
         jsonValue->fields["stringValue"] = RuntimeValue(std::string(""), "string");
-        // Handle object literal (ClassInstance) - copy fields to objectValue
-        if (!args.empty() && args[0].type() == typeid(std::shared_ptr<ClassInstance>)) {
-            auto inputObj = std::any_cast<std::shared_ptr<ClassInstance>>(args[0]);
-            jsonValue->fields["objectValue"] = RuntimeValue(inputObj, "object");
+
+        if (!args.empty()) {
+            // Handle ClassInstance (object literal)
+            if (args[0].type() == typeid(std::shared_ptr<ClassInstance>)) {
+                auto inputObj = std::any_cast<std::shared_ptr<ClassInstance>>(args[0]);
+                jsonValue->fields["objectValue"] = RuntimeValue(inputObj);
+            }
+            // Handle unordered_map<string, any> (how object literals are sometimes passed)
+            else if (args[0].type() == typeid(std::unordered_map<std::string, std::any>)) {
+                auto inputMap = std::any_cast<std::unordered_map<std::string, std::any>>(args[0]);
+                // Convert to ClassInstance
+                auto objInstance = std::make_shared<ClassInstance>();
+                for (const auto& [key, value] : inputMap) {
+                    // Convert std::any values to RuntimeValue
+                    if (value.type() == typeid(std::shared_ptr<ClassInstance>)) {
+                        objInstance->fields[key] = RuntimeValue(std::any_cast<std::shared_ptr<ClassInstance>>(value));
+                    } else if (value.type() == typeid(std::string)) {
+                        objInstance->fields[key] = RuntimeValue(std::any_cast<std::string>(value));
+                    } else if (value.type() == typeid(int)) {
+                        objInstance->fields[key] = RuntimeValue(std::any_cast<int>(value));
+                    } else if (value.type() == typeid(double)) {
+                        objInstance->fields[key] = RuntimeValue(std::any_cast<double>(value));
+                    } else if (value.type() == typeid(bool)) {
+                        objInstance->fields[key] = RuntimeValue(std::any_cast<bool>(value));
+                    } else {
+                        objInstance->fields[key] = RuntimeValue(value, "any");
+                    }
+                }
+                jsonValue->fields["objectValue"] = RuntimeValue(objInstance);
+            }
         }
         return jsonValue;
     }, FunctionSignature{{"any"}, "JsonValue"});
@@ -3706,16 +3822,72 @@ void NativeRegistry::initRegex() {
         return map;
     }, FunctionSignature{{"map<string,string>", "string", "string"}, "map<string,string>"});
 
-    // maps.get - Get a value by key (returns empty string if not found)
-    registerFunction("maps", "get", [](const std::vector<std::any>& args) -> std::any {
-        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
-        std::string key = std::any_cast<std::string>(args[1]);
-        auto it = map.find(key);
-        if (it != map.end()) {
-            return it->second;
+    // maps.put - Put a key-value pair in the map (supports any value type)
+    registerFunction("maps", "put", [](const std::vector<std::any>& args) -> std::any {
+        if (args.size() < 3) return args[0];
+
+        // Get the key (convert int to string if needed)
+        std::string key;
+        if (args[1].type() == typeid(std::string)) {
+            key = std::any_cast<std::string>(args[1]);
+        } else if (args[1].type() == typeid(int)) {
+            key = std::to_string(std::any_cast<int>(args[1]));
+        } else {
+            return args[0];
         }
-        return std::string("");
-    }, FunctionSignature{{"map<string,string>", "string"}, "string"});
+
+        // Try map<string, string>
+        try {
+            auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+            std::string value = std::any_cast<std::string>(args[2]);
+            map[key] = value;
+            return map;
+        } catch (const std::bad_any_cast&) {}
+
+        // Try map<string, any>
+        try {
+            auto map = std::any_cast<std::unordered_map<std::string, std::any>>(args[0]);
+            map[key] = args[2];
+            return map;
+        } catch (const std::bad_any_cast&) {}
+
+        return args[0];
+    }, FunctionSignature{{"any", "any", "any"}, "any"});
+
+    // maps.get - Get a value by key (returns empty/null if not found)
+    registerFunction("maps", "get", [](const std::vector<std::any>& args) -> std::any {
+        if (args.size() < 2) return std::any();
+
+        // Get the key as string
+        std::string keyStr;
+        if (args[1].type() == typeid(std::string)) {
+            keyStr = std::any_cast<std::string>(args[1]);
+        } else if (args[1].type() == typeid(int)) {
+            keyStr = std::to_string(std::any_cast<int>(args[1]));
+        }
+
+        // Try map<string, string>
+        try {
+            auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+            auto it = map.find(keyStr);
+            if (it != map.end()) {
+                return it->second;
+            }
+            return std::string("");
+        } catch (const std::bad_any_cast&) {}
+
+        // Try map<string, any>
+        try {
+            auto map = std::any_cast<std::unordered_map<std::string, std::any>>(args[0]);
+            auto it = map.find(keyStr);
+            if (it != map.end()) {
+                return it->second;
+            }
+            return std::any();
+        } catch (const std::bad_any_cast&) {}
+
+        return std::any();
+    }, FunctionSignature{{"any", "any"}, "any"});
 
     // maps.has - Check if a key exists in the map
     registerFunction("maps", "has", [](const std::vector<std::any>& args) -> std::any {
@@ -3723,6 +3895,48 @@ void NativeRegistry::initRegex() {
         std::string key = std::any_cast<std::string>(args[1]);
         return map.find(key) != map.end();
     }, FunctionSignature{{"map<string,string>", "string"}, "bool"});
+
+    // maps.containsKey - Check if a key exists in the map (works with any map type)
+    registerFunction("maps", "containsKey", [](const std::vector<std::any>& args) -> std::any {
+        if (args.size() < 2) return false;
+
+        // Get the key as string
+        std::string keyStr;
+        if (args[1].type() == typeid(std::string)) {
+            keyStr = std::any_cast<std::string>(args[1]);
+        } else if (args[1].type() == typeid(int)) {
+            keyStr = std::to_string(std::any_cast<int>(args[1]));
+        }
+
+        // Try different map types
+        try {
+            auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+            return map.find(keyStr) != map.end();
+        } catch (const std::bad_any_cast&) {}
+        try {
+            auto map = std::any_cast<std::unordered_map<std::string, std::any>>(args[0]);
+            return map.find(keyStr) != map.end();
+        } catch (const std::bad_any_cast&) {}
+        try {
+            // For Map<string, JsonValue> which is stored as ClassInstance
+            auto mapObj = std::any_cast<std::shared_ptr<ClassInstance>>(args[0]);
+            if (mapObj && mapObj->fields.count("__data")) {
+                auto& dataVal = mapObj->fields["__data"];
+                if (std::holds_alternative<std::any>(dataVal.value)) {
+                    auto& anyData = std::get<std::any>(dataVal.value);
+                    auto data = std::any_cast<std::unordered_map<std::string, std::any>>(anyData);
+                    std::string key;
+                    if (args[1].type() == typeid(std::string)) {
+                        key = std::any_cast<std::string>(args[1]);
+                    } else if (args[1].type() == typeid(int)) {
+                        key = std::to_string(std::any_cast<int>(args[1]));
+                    }
+                    return data.find(key) != data.end();
+                }
+            }
+        } catch (const std::bad_any_cast&) {}
+        return false;
+    }, FunctionSignature{{"any", "any"}, "bool"});
 
     // maps.remove - Remove a key from the map
     registerFunction("maps", "remove", [](const std::vector<std::any>& args) -> std::any {
@@ -3734,29 +3948,70 @@ void NativeRegistry::initRegex() {
 
     // maps.size - Get the number of entries in the map
     registerFunction("maps", "size", [](const std::vector<std::any>& args) -> std::any {
-        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
-        return static_cast<int>(map.size());
-    }, FunctionSignature{{"map<string,string>"}, "int"});
+        try {
+            auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+            return static_cast<int>(map.size());
+        } catch (const std::bad_any_cast&) {}
+        try {
+            auto map = std::any_cast<std::unordered_map<std::string, std::any>>(args[0]);
+            return static_cast<int>(map.size());
+        } catch (const std::bad_any_cast&) {}
+        return 0;
+    }, FunctionSignature{{"any"}, "int"});
+
+    // maps.length - Alias for size
+    registerFunction("maps", "length", [](const std::vector<std::any>& args) -> std::any {
+        try {
+            auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+            return static_cast<int>(map.size());
+        } catch (const std::bad_any_cast&) {}
+        try {
+            auto map = std::any_cast<std::unordered_map<std::string, std::any>>(args[0]);
+            return static_cast<int>(map.size());
+        } catch (const std::bad_any_cast&) {}
+        return 0;
+    }, FunctionSignature{{"any"}, "int"});
 
     // maps.keys - Get all keys as an array
     registerFunction("maps", "keys", [](const std::vector<std::any>& args) -> std::any {
-        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
         std::vector<std::string> keys;
-        for (const auto& pair : map) {
-            keys.push_back(pair.first);
-        }
+        try {
+            auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+            for (const auto& pair : map) {
+                keys.push_back(pair.first);
+            }
+            return keys;
+        } catch (const std::bad_any_cast&) {}
+        try {
+            auto map = std::any_cast<std::unordered_map<std::string, std::any>>(args[0]);
+            for (const auto& pair : map) {
+                keys.push_back(pair.first);
+            }
+            return keys;
+        } catch (const std::bad_any_cast&) {}
         return keys;
-    }, FunctionSignature{{"map<string,string>"}, "array<string>"});
+    }, FunctionSignature{{"any"}, "array<string>"});
 
     // maps.values - Get all values as an array
     registerFunction("maps", "values", [](const std::vector<std::any>& args) -> std::any {
-        auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
-        std::vector<std::string> values;
-        for (const auto& pair : map) {
-            values.push_back(pair.second);
-        }
-        return values;
-    }, FunctionSignature{{"map<string,string>"}, "array<string>"});
+        try {
+            auto map = std::any_cast<std::unordered_map<std::string, std::string>>(args[0]);
+            std::vector<std::string> values;
+            for (const auto& pair : map) {
+                values.push_back(pair.second);
+            }
+            return values;
+        } catch (const std::bad_any_cast&) {}
+        try {
+            auto map = std::any_cast<std::unordered_map<std::string, std::any>>(args[0]);
+            std::vector<std::any> values;
+            for (const auto& pair : map) {
+                values.push_back(pair.second);
+            }
+            return values;
+        } catch (const std::bad_any_cast&) {}
+        return std::vector<std::any>();
+    }, FunctionSignature{{"any"}, "array<any>"});
 
     // maps.clear - Remove all entries from the map
     registerFunction("maps", "clear", [](const std::vector<std::any>& args) -> std::any {
