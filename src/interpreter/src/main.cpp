@@ -161,7 +161,7 @@ struct CompileResult {
 
 // Forward declarations
 CompileResult compileFile(const std::string& path, const std::string& outputPath = "", bool verbose = false, bool run = false);
-CompileResult compileMultipleFiles(const std::vector<std::string>& files, const std::string& outputPath, bool verbose, const std::string& projectRoot);
+CompileResult compileMultipleFiles(const std::vector<std::string>& files, const std::string& outputPath, bool verbose, const std::string& projectRoot, MemoryModeConfig memConfig = {});
 
 CompileResult compileFile(const std::string& path, const std::string& outputPath, bool verbose, bool run) {
     CompileResult result;
@@ -516,8 +516,16 @@ int handleCompile(int argc, char* argv[]) {
         // Generate IR for all source files
         std::string intermediateLL = (buildDir / (config.name + ".ll")).string();
 
+        // Extract memory configuration
+        MemoryModeConfig memConfig;
+        memConfig.gcEnabled = config.memory.gc;
+        memConfig.allowManualMemory = config.memory.allowManual;
+        if (verbose && !memConfig.gcEnabled) {
+            std::cout << "  [Memory]    GC disabled (manual memory management mode)\n";
+        }
+
         if (verbose) std::cout << "Compiling " << sourceFiles.size() << " file(s)...\n";
-        CompileResult result = compileMultipleFiles(sourceFiles, intermediateLL, verbose, projectRoot);
+        CompileResult result = compileMultipleFiles(sourceFiles, intermediateLL, verbose, projectRoot, memConfig);
 
         if (!result.success) {
             std::cerr << "Compilation failed: " << result.errorMessage << std::endl;
@@ -1031,8 +1039,22 @@ int handleRun(int argc, char* argv[]) {
 
     if (compilationSuccess) {
         try {
+            // Load memory configuration from stratos.conf if available
+            MemoryModeConfig memConfig;
+            fs::path configPath = projectRoot / "stratos.conf";
+            if (fs::exists(configPath)) {
+                auto configOpt = ProjectConfigParser::parse(configPath.string());
+                if (configOpt) {
+                    memConfig.gcEnabled = configOpt->memory.gc;
+                    memConfig.allowManualMemory = configOpt->memory.allowManual;
+                    if (verbose && !memConfig.gcEnabled) {
+                        std::cout << "  [Memory]    GC disabled (manual memory management mode)" << std::endl;
+                    }
+                }
+            }
+
             // Semantic Analysis on all statements
-            SemanticAnalyzer analyzer(projectRoot.string());
+            SemanticAnalyzer analyzer(projectRoot.string(), memConfig);
             if (!analyzer.analyze(allStatements)) {
                 compilationSuccess = false;
                 compilationErrorMessage = "Semantic analysis failed";
@@ -1190,7 +1212,7 @@ int handleTest(int argc, char* argv[]) {
 // PROJECT BUILD
 // ============================================================================
 
-CompileResult compileMultipleFiles(const std::vector<std::string>& files, const std::string& outputPath, bool verbose, const std::string& projectRoot = ".") {
+CompileResult compileMultipleFiles(const std::vector<std::string>& files, const std::string& outputPath, bool verbose, const std::string& projectRoot, MemoryModeConfig memConfig) {
     CompileResult result;
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -1231,7 +1253,7 @@ CompileResult compileMultipleFiles(const std::vector<std::string>& files, const 
 
     try {
         // Semantic Analysis on all statements
-        SemanticAnalyzer analyzer(projectRoot);
+        SemanticAnalyzer analyzer(projectRoot, memConfig);
         if (!analyzer.analyze(allStatements)) {
             result.success = false;
             result.errorMessage = "Semantic analysis failed";
@@ -1403,9 +1425,17 @@ int handleBuild(int argc, char* argv[]) {
     fs::path outPath(outputPath);
     fs::create_directories(outPath.parent_path());
 
+    // Extract memory configuration
+    MemoryModeConfig memConfig;
+    memConfig.gcEnabled = config.memory.gc;
+    memConfig.allowManualMemory = config.memory.allowManual;
+    if (verbose && !memConfig.gcEnabled) {
+        std::cout << "Memory mode: GC disabled (manual memory management)\n";
+    }
+
     // Compile
     std::cout << "Compiling " << sourceFiles.size() << " file(s)...\n";
-    CompileResult result = compileMultipleFiles(sourceFiles, outputPath, verbose, projectRoot);
+    CompileResult result = compileMultipleFiles(sourceFiles, outputPath, verbose, projectRoot, memConfig);
 
     if (result.success) {
         std::cout << "✓ Build successful in " << result.compilationTime << "ms\n";
@@ -1478,6 +1508,10 @@ int handleNew(int argc, char* argv[]) {
         confFile << "build {\n";
         confFile << "  entry = src/main.st\n";
         confFile << "  output = build/" << projectName << "\n";
+        confFile << "}\n\n";
+        confFile << "memory {\n";
+        confFile << "  # gc = true           # Enable garbage collection (default: true)\n";
+        confFile << "  # allow_manual = false # Allow manual memory management alongside GC\n";
         confFile << "}\n\n";
         confFile << "dependencies = [\n";
         confFile << "  # {\n";

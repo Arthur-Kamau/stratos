@@ -16,6 +16,11 @@ struct DependencyEntry {
     std::string hash;     // optional - git commit hash
 };
 
+struct MemoryConfig {
+    bool gc = true;           // Enable garbage collection (default: true)
+    bool allowManual = false; // Allow manual memory management alongside GC
+};
+
 struct ProjectConfig {
     // project section
     std::string name;
@@ -29,6 +34,9 @@ struct ProjectConfig {
     std::string source_dir; // Source directory
     std::string output;     // Output file path
 
+    // memory section
+    MemoryConfig memory;    // Memory management configuration
+
     // dependencies array
     std::vector<DependencyEntry> dependencies;
 
@@ -41,6 +49,8 @@ struct ProjectConfig {
     // Helper methods
     bool isLibrary() const { return type == "library"; }
     bool isExecutable() const { return type == "executable" || type.empty(); }
+    bool isGCEnabled() const { return memory.gc; }
+    bool isManualMemoryAllowed() const { return memory.allowManual || !memory.gc; }
 };
 
 class ProjectConfigParser {

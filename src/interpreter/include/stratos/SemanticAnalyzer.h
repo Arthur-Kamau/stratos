@@ -8,9 +8,15 @@
 
 namespace stratos {
 
+// Memory management configuration for semantic analysis
+struct MemoryModeConfig {
+    bool gcEnabled = true;        // GC is enabled by default
+    bool allowManualMemory = false; // Allow manual memory management alongside GC
+};
+
 class SemanticAnalyzer : public ASTVisitor {
 public:
-    SemanticAnalyzer(std::string projectRoot = ".");
+    SemanticAnalyzer(std::string projectRoot = ".", MemoryModeConfig memConfig = {});
     
     // Returns true if no errors were found
     bool analyze(const std::vector<std::unique_ptr<Stmt>>& statements);
@@ -62,13 +68,16 @@ private:
     int loopDepth = 0; // Track if we are inside a loop
 
     std::string projectRoot;
-    std::unordered_map<std::string, std::unordered_map<std::string, Symbol>> classMembers; // Store members of classes for access control 
+    MemoryModeConfig memoryConfig; // Memory management configuration
+    std::unordered_map<std::string, std::unordered_map<std::string, Symbol>> classMembers; // Store members of classes for access control
 
     void error(const std::string& message); // Generic (no loc)
     void error(Token token, const std::string& message); // With loc
+    void errorWithSuggestion(Token token, const std::string& message, const std::string& suggestion); // With suggestion (Rust-style)
     void defineNativeFunctions(); // define print, etc.
     void loadModule(const std::string& moduleName); // Load module definitions
     std::string inferType(Expr* expr); // Infer the type of an expression
+    void checkGCSyntax(Token token, const std::string& className); // Check for GC syntax when GC is disabled
 };
 
 } // namespace stratos

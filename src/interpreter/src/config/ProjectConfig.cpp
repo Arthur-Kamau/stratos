@@ -200,6 +200,17 @@ public:
                     if (obj.count("source_dir")) config.source_dir = obj["source_dir"];
                     if (obj.count("output")) config.output = obj["output"];
                 }
+                else if (key == "memory") {
+                    // Parse memory configuration
+                    if (obj.count("gc")) {
+                        std::string gcVal = obj["gc"];
+                        config.memory.gc = (gcVal == "true" || gcVal == "1" || gcVal == "yes" || gcVal == "on");
+                    }
+                    if (obj.count("allow_manual")) {
+                        std::string amVal = obj["allow_manual"];
+                        config.memory.allowManual = (amVal == "true" || amVal == "1" || amVal == "yes" || amVal == "on");
+                    }
+                }
                 else if (key == "exports") {
                     config.exports = obj;
                 }
@@ -378,6 +389,14 @@ std::optional<ProjectConfig> ProjectConfigParser::parse(const std::string& confi
         }
         else if (currentSection == "exports") {
             config.exports[key] = value;
+        }
+        else if (currentSection == "memory") {
+            if (key == "gc") {
+                config.memory.gc = (value == "true" || value == "1" || value == "yes" || value == "on");
+            }
+            else if (key == "allow_manual") {
+                config.memory.allowManual = (value == "true" || value == "1" || value == "yes" || value == "on");
+            }
         }
     }
 

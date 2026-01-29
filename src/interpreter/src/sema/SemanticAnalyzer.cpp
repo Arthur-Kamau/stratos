@@ -10,7 +10,8 @@
 
 namespace stratos {
 
-SemanticAnalyzer::SemanticAnalyzer(std::string root) : projectRoot(root) {
+SemanticAnalyzer::SemanticAnalyzer(std::string root, MemoryModeConfig memConfig)
+    : projectRoot(root), memoryConfig(memConfig) {
     defineNativeFunctions();
 }
 
@@ -494,6 +495,35 @@ void SemanticAnalyzer::error(Token token, const std::string& message) {
     hadError = true;
 }
 
+void SemanticAnalyzer::errorWithSuggestion(Token token, const std::string& message, const std::string& suggestion) {
+    std::string location = "[Error] ";
+    if (!token.file.empty()) {
+        std::filesystem::path p(token.file);
+        location += p.filename().string() + ":";
+    }
+    location += std::to_string(token.line) + ":" + std::to_string(token.column) + ": ";
+    std::cerr << location << message << std::endl;
+
+    // Print suggestion in Rust-style formatting
+    std::cerr << "       |" << std::endl;
+    std::cerr << "       = help: " << suggestion << std::endl;
+    std::cerr << "       |" << std::endl;
+    std::cerr << "       = note: GC is disabled in stratos.conf. Use manual memory management syntax." << std::endl;
+    std::cerr << "       = see:  https://stratos-lang.org/guide/memory-management" << std::endl;
+    hadError = true;
+}
+
+void SemanticAnalyzer::checkGCSyntax(Token token, const std::string& className) {
+    // If GC is disabled and we're seeing GC-style object construction,
+    // emit an error with a helpful suggestion
+    if (!memoryConfig.gcEnabled && !memoryConfig.allowManualMemory) {
+        std::string message = "GC-style object instantiation is not allowed when GC is disabled.";
+        std::string suggestion = "Use 'new' for heap allocation:\n"
+                                "              val obj: own<" + className + "> = new " + className + "(...);";
+        errorWithSuggestion(token, message, suggestion);
+    }
+}
+
 // --- Expressions ---
 
 void SemanticAnalyzer::visit(BinaryExpr& expr) {
@@ -787,6 +817,26 @@ void SemanticAnalyzer::visit(CallExpr& expr) {
                 arg->accept(*this);
             }
             return;  // Valid prelude function call
+        }
+
+        // Check if this is a GC-style class constructor call (e.g., Person("Alice", 30))
+        // when GC is disabled, this should produce an error
+        if (!memoryConfig.gcEnabled) {
+            auto symbol = symbolTable.resolve(functionName);
+            if (symbol && symbol->kind == SymbolKind::CLASS) {
+                // This is a direct class instantiation without 'new' keyword
+                checkGCSyntax(varExpr->name, functionName);
+                return; // Don't continue processing - error was emitted
+            }
+
+            // Also check if the function name looks like a class (starts with uppercase)
+            // and we have class members for it (indicating it's a user-defined class)
+            if (!functionName.empty() && std::isupper(functionName[0])) {
+                if (classMembers.find(functionName) != classMembers.end()) {
+                    checkGCSyntax(varExpr->name, functionName);
+                    return;
+                }
+            }
         }
     }
 
@@ -1748,17 +1798,23 @@ std::string SemanticAnalyzer::inferType(Expr* expr) {
 }
 
 void SemanticAnalyzer::visit(StructInitExpr& expr) {
+    // Check for GC-style struct instantiation when GC is disabled
+    if (!memoryConfig.gcEnabled) {
+        checkGCSyntax(expr.name, expr.name.lexeme);
+        return; // Don't continue processing - error was emitted
+    }
+
     // 1. Verify struct existence
     // Since we don't have full type checking on structs yet, we just check if it's available in symbol table if possible
-    // But struct definitions are treated as ClassDecl which might be in classes map in Interpreter, 
+    // But struct definitions are treated as ClassDecl which might be in classes map in Interpreter,
     // Here in SemanticAnalyzer we track symbols.
-    
+
     // 2. Analyze fields
     for (const auto& field : expr.fields) {
         field.second->accept(*this);
         // lastExprType is set by visit
     }
-    
+
     lastExprType = expr.name.lexeme; // Tentative type name
 }
 

@@ -193,6 +193,7 @@ Futures, async/await, and concurrent operations
 - [Control Flow](/guide/control-flow) - Conditionals and loops
 - [Object-Oriented Programming](/guide/oop) - Classes and interfaces
 - [Asynchronous Programming](/guide/async) - Async/await and Futures
+- [Memory Management](/guide/memory-management) - GC vs manual memory control
 - [Testing](/guide/testing) - Write tests for your code
 - [Strings Module](/guide/strings) - String manipulation and formatting
 - [CLI Reference](/reference/cli) - Master the command-line tools
@@ -215,9 +216,10 @@ Here's a recommended path for learning Stratos:
 3. **Explore Functions** - Function definitions, lambdas, and composition
 4. **Dive into OOP** - Classes, interfaces, and inheritance
 5. **Master Async** - Asynchronous programming with Futures
-6. **Write Tests** - Test your code with the built-in testing framework
-7. **Organize Code** - Packages and module system
-8. **Build Projects** - Apply your knowledge to real applications
+6. **Understand Memory** - GC mode vs manual memory management
+7. **Write Tests** - Test your code with the built-in testing framework
+8. **Organize Code** - Packages and module system
+9. **Build Projects** - Apply your knowledge to real applications
 
 ## Community and Support
 
