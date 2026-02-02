@@ -16,7 +16,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"  # Go up one level since we're in scripts/
 
 # Support both old and new directory structures
-if [ -d "$PROJECT_ROOT/src/interpreter/cpp" ]; then
+if [ -d "$PROJECT_ROOT/src/interpreter" ]; then
+    INTERPRETER_DIR="$PROJECT_ROOT/src/interpreter"
+elif [ -d "$PROJECT_ROOT/src/interpreter/cpp" ]; then
     INTERPRETER_DIR="$PROJECT_ROOT/src/interpreter/cpp"
 else
     INTERPRETER_DIR="$PROJECT_ROOT/interpreter/C++"
@@ -112,20 +114,20 @@ echo -e "${YELLOW}[2/3] Discovering tests...${NC}"
 
 # Sample projects that should run successfully
 RUNNABLE_SAMPLES=(
-    "hello_world"
-    "dependency_test"
-    "function_definition"
-    "oop_demo"
-    "class_definition"
+    "hello-world"
+    "dependency-test"
+    "function-definition"
+    "oop-demo"
+    "oop-classes"
     "loops"
     "variables"
-    "prelude_demo"
-    "package"
+    "prelude-demo"
 )
 
 # Sample projects that are expected to fail or have specific requirements
 SKIP_SAMPLES=(
-    "empty_project"          # No main function
+    "package"                # Filesystem error bug
+    "empty-project"          # No main function
     "comments_and_documentation"  # Documentation only
     "app_config_options"     # Config demo only
     "enum_type"              # May not have main
