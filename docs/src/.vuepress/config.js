@@ -66,8 +66,13 @@ export default defineUserConfig({
         {
           text: 'Advanced Topics',
           children: [
+            '/guide/advanced-features.md',
+            '/guide/concurrency.md',
             '/guide/async.md',
             '/guide/error-handling.md',
+            '/guide/strings.md',
+            '/guide/testing.md',
+            '/guide/memory-management.md',
             '/guide/dependency-management.md',
           ],
         },
@@ -113,6 +118,7 @@ export default defineUserConfig({
             '/stdlib/io.md',
             '/stdlib/json.md',
             '/stdlib/log.md',
+            '/stdlib/maps.md',
             '/stdlib/math.md',
             '/stdlib/net.md',
             '/stdlib/os.md',

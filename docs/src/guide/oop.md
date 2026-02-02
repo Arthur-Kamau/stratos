@@ -349,7 +349,7 @@ class Triangle : Drawable {
 }
 
 fn renderShapes(shapes: Array<Drawable>) {
-    for (shape in shapes) {
+    for val shape in shapes {
         shape.draw();
     }
 }
@@ -569,19 +569,19 @@ class Library {
     }
 
     fn listAvailable() {
-        print("\nAvailable items in " + this.name + ":");
-        for (item in this.items) {
+        print("\nAvailable items in ${this.name}:");
+        for val item in this.items {
             if (item.isAvailable()) {
-                print("  - " + item.title + " [" + item.id + "]");
+                print("  - ${item.title} [${item.id}]");
             }
         }
     }
 
     fn listBorrowed() {
         print("\nBorrowed items:");
-        for (item in this.items) {
+        for val item in this.items {
             if (!item.isAvailable()) {
-                print("  - " + item.title + " (" + item.getStatus() + ")");
+                print("  - ${item.title} (${item.getStatus()})");
             }
         }
     }

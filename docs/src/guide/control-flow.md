@@ -144,7 +144,7 @@ package main;
 fn main() {
     val fruits = ["apple", "banana", "orange"];
 
-    for (fruit in fruits) {
+    for val fruit in fruits {
         print(fruit);
     }
 }
@@ -162,8 +162,8 @@ package main;
 fn main() {
     val numbers = [10, 20, 30, 40, 50];
 
-    for (i, num in numbers) {
-        print("Index " + i + ": " + num);
+    for val i in 0..numbers.length() {
+        print("Index $i: ${numbers[i]}");
     }
 }
 // Output:
@@ -180,17 +180,17 @@ fn main() {
 package main;
 
 fn main() {
-    // Loop from 0 to 4 (exclusive end)
-    for (i in 0..5) {
+    // Loop from 0 to 5 (inclusive)
+    for val i in 0..5 {
         print(i);
     }
-    // Prints: 0, 1, 2, 3, 4
+    // Prints: 0, 1, 2, 3, 4, 5
 
-    // Loop from 1 to 10 (inclusive end)
-    for (i in 1..=10) {
-        print(i);
+    // Use with array length
+    val items = ["a", "b", "c"];
+    for val i in 0..items.length() {
+        print("Item $i: ${items[i]}");
     }
-    // Prints: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
 }
 ```
 
@@ -391,14 +391,14 @@ fn main() {
     // Test classification
     val numbers = [-5, 0, 7, 42, 150];
 
-    for (num in numbers) {
+    for val num in numbers {
         val classification = classifyNumber(num);
-        print(num + " is " + classification);
+        print("$num is $classification");
     }
 
     // Check for primes
     print("\nPrime numbers from 1 to 20:");
-    for (i in 1..=20) {
+    for val i in 1..20 {
         if (isPrime(i)) {
             print(i);
         }
@@ -407,7 +407,7 @@ fn main() {
     // User type access control
     val users = ["admin", "editor", "viewer", "guest"];
 
-    for (user in users) {
+    for val user in users {
         val access = when (user) {
             "admin" -> "full"
             "editor" -> "write"
@@ -415,7 +415,7 @@ fn main() {
             else -> "none"
         };
 
-        print(user + " has " + access + " access");
+        print("$user has $access access");
     }
 }
 ```
@@ -452,12 +452,12 @@ A classic programming exercise demonstrating control flow:
 package main;
 
 fn main() {
-    for (i in 1..=100) {
+    for val i in 1..100 {
         val output = when {
             i % 15 == 0 -> "FizzBuzz"
             i % 3 == 0 -> "Fizz"
             i % 5 == 0 -> "Buzz"
-            else -> i.toString()
+            else -> "$i"
         };
 
         print(output);
@@ -512,12 +512,12 @@ fn parseAge(input: string) Result<int, Error> {
 fn main() {
     val inputs = ["25", "-5", "200", "abc"];
 
-    for (input in inputs) {
+    for val input in inputs {
         val result = parseAge(input);
 
         match (result) {
-            Ok(age) -> print(input + " is valid: " + age + " years")
-            Err(error) -> print(input + " is invalid: " + error.message)
+            Ok(age) -> print("$input is valid: $age years")
+            Err(error) -> print("$input is invalid: ${error.message}")
         }
     }
 }
@@ -560,10 +560,8 @@ When patterns need additional conditions, use guards (`_ if condition`) to keep 
 | `if-else` | Conditional execution | `if (x > 0) { ... } else { ... }` |
 | `if` expression | Conditional value | `val result = if (x > 0) "pos" else "neg"` |
 | `while` | Loop while condition is true | `while (i < 10) { i++; }` |
-| `for-in` | Iterate over collection | `for (x in array) { ... }` |
-| `for-in` (indexed) | Iterate with index | `for (i, x in array) { ... }` |
-| `range` (exclusive) | Numeric range | `for (i in 0..5) { ... }` |
-| `range` (inclusive) | Numeric range | `for (i in 1..=10) { ... }` |
+| `for-in` | Iterate over collection | `for val x in array { ... }` |
+| `range` | Numeric range (inclusive) | `for val i in 0..5 { ... }` |
 | `when` | Pattern matching | `when (x) { 1 -> ..., else -> ... }` |
 | `when` expression | Pattern matching value | `val result = when (x) { ... }` |
 | `when` with guards | Conditional patterns | `_ if condition -> ...` |
@@ -571,6 +569,7 @@ When patterns need additional conditions, use guards (`_ if condition`) to keep 
 | `break` | Exit loop early | `break;` |
 | `continue` | Skip to next iteration | `continue;` |
 | `return` | Exit function | `return value;` |
+| `defer` | Execute on function exit | `defer cleanup();` |
 
 ## Advanced Pattern Matching
 
@@ -609,9 +608,9 @@ fn main() {
         Point(-1, -3)
     ];
 
-    for (point in points) {
+    for val point in points {
         val location = classifyPoint(point);
-        print("(" + point.x + ", " + point.y + ") is at: " + location);
+        print("(${point.x}, ${point.y}) is at: $location");
     }
 }
 ```

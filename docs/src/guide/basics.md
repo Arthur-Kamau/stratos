@@ -160,6 +160,29 @@ fn main() {
 }
 ```
 
+### String Interpolation
+
+Stratos supports string interpolation using `$` for variables and `${...}` for expressions:
+
+```stratos
+package main;
+
+fn main() {
+    val name = "Alice";
+    val age = 30;
+    val x = 10;
+    val y = 20;
+
+    // Simple variable interpolation
+    print("Hello, $name!");           // "Hello, Alice!"
+    print("Age: $age years");         // "Age: 30 years"
+
+    // Expression interpolation
+    print("Sum: ${x + y}");           // "Sum: 30"
+    print("Next year: ${age + 1}");   // "Next year: 31"
+}
+```
+
 ### String Methods
 
 ```stratos
@@ -461,8 +484,27 @@ Positive and odd: true
 | Numeric | `int`, `double` | Whole and decimal numbers |
 | Text | `string`, `char` | Text and single characters |
 | Boolean | `bool` | True/false values |
-| Collections | `Array<T>` | Ordered collection of elements |
-| Special | `void` | Absence of value (similar to null) |
+| Collections | `Array<T>`, `Map<K,V>` | Ordered and key-value collections |
+| Special | `void`, `Unit` | Absence of value |
+| Optional | `Optional<T>` | Value that may or may not be present |
+| Result | `Result<T, E>` | Success or error value |
+
+### Low-Level Numeric Types
+
+For performance-critical code, Stratos provides fixed-size numeric types:
+
+| Type | Description | Range |
+|------|-------------|-------|
+| `i8`, `i16`, `i32`, `i64` | Signed integers | Various bit sizes |
+| `u8`, `u16`, `u32`, `u64` | Unsigned integers | Various bit sizes |
+| `f32`, `f64` | Floating point | Single/double precision |
+| `isize`, `usize` | Platform-sized integers | Architecture dependent |
+
+```stratos
+val byte: u8 = 255;
+val bigInt: i64 = 9223372036854775807;
+val precise: f64 = 3.14159265358979;
+```
 
 ## Operator Precedence
 

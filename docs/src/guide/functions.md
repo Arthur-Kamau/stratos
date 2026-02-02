@@ -324,16 +324,16 @@ fn main() {
 package main;
 
 fn forEach(arr: Array<int>, action: Function) {
-    for val i in 0..arr.length() {
-        action(arr[i]);
+    for val item in arr {
+        action(item);
     }
 }
 
 fn filter(arr: Array<int>, predicate: Function) Array<int> {
     val result = [];
-    for val i in 0..arr.length() {
-        if (predicate(arr[i])) {
-            result.push(arr[i]);
+    for val item in arr {
+        if (predicate(item)) {
+            result.push(item);
         }
     }
     return result;
@@ -341,8 +341,7 @@ fn filter(arr: Array<int>, predicate: Function) Array<int> {
 
 fn map(arr: Array<int>, transform: Function) Array<int> {
     val result = [];
-    for val i in 0..arr.length() {
-        val item = arr[i];
+    for val item in arr {
         val transformed = transform(item);
         result.push(transformed);
     }
@@ -418,13 +417,13 @@ fn fibonacci(n: int) int {
 
 fn main() {
     print("Factorials:");
-    for (i in 1..=5) {
-        print(i + "! = " + factorial(i));
+    for val i in 1..5 {
+        print("$i! = ${factorial(i)}");
     }
 
     print("\nFibonacci:");
-    for (i in 0..=10) {
-        print("fib(" + i + ") = " + fibonacci(i));
+    for val i in 0..10 {
+        print("fib($i) = ${fibonacci(i)}");
     }
 }
 ```
@@ -485,7 +484,7 @@ package main;
 
 fn sum(...numbers: int) int {
     var total = 0;
-    for (num in numbers) {
+    for val num in numbers {
         total += num;
     }
     return total;
@@ -507,8 +506,8 @@ You can mix regular parameters with variadic parameters:
 package main;
 
 fn printWithPrefix(prefix: string, ...messages: string) {
-    for (msg in messages) {
-        print(prefix + ": " + msg);
+    for val msg in messages {
+        print("$prefix: $msg");
     }
 }
 
@@ -516,10 +515,10 @@ fn average(label: string, ...values: double) double {
     if (values.length() == 0) {
         return 0.0;
     }
-    
+
     var sum = 0.0;
-    for (val in values) {
-        sum += val;
+    for val v in values {
+        sum += v;
     }
     return sum / values.length();
 }
@@ -571,9 +570,9 @@ fn max(...numbers: int) int {
     if (numbers.length() == 0) {
         return 0;
     }
-    
+
     var maximum = numbers[0];
-    for (num in numbers) {
+    for val num in numbers {
         if (num > maximum) {
             maximum = num;
         }
@@ -585,9 +584,9 @@ fn min(...numbers: int) int {
     if (numbers.length() == 0) {
         return 0;
     }
-    
+
     var minimum = numbers[0];
-    for (num in numbers) {
+    for val num in numbers {
         if (num < minimum) {
             minimum = num;
         }
@@ -667,26 +666,26 @@ fn processNumber(x: int) int {
 
 fn main() {
     // Test basic functions
-    print("5 + 3 = " + add(5, 3));
-    print("10 - 4 = " + subtract(10, 4));
-    print("6 * 7 = " + multiply(6, 7));
-    print("20 / 4 = " + divide(20, 4));
+    print("5 + 3 = ${add(5, 3)}");
+    print("10 - 4 = ${subtract(10, 4)}");
+    print("6 * 7 = ${multiply(6, 7)}");
+    print("20 / 4 = ${divide(20, 4)}");
 
     // Test utility functions
     print("\nSquares:");
-    for (i in 1..=5) {
-        print(i + "^2 = " + square(i));
+    for val i in 1..5 {
+        print("$i^2 = ${square(i)}");
     }
 
     // Test pipe operator
     print("\nPipe operator:");
     val result = processNumber(3);
     // 3 -> 4 -> 8 -> 64
-    print("processNumber(3) = " + result);
+    print("processNumber(3) = $result");
 
     // Test prime checking
     print("\nPrime numbers from 1 to 20:");
-    for (i in 1..=20) {
+    for val i in 1..20 {
         if (isPrime(i)) {
             print(i);
         }
@@ -694,9 +693,9 @@ fn main() {
 
     // Even/Odd classification
     print("\nEven/Odd:");
-    for (i in 1..=10) {
+    for val i in 1..10 {
         val type = if (isEven(i)) "even" else "odd";
-        print(i + " is " + type);
+        print("$i is $type");
     }
 }
 ```

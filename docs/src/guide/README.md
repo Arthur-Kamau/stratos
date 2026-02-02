@@ -192,6 +192,8 @@ Futures, async/await, and concurrent operations
 - [Functions](/guide/functions) - Master function declarations and lambdas
 - [Control Flow](/guide/control-flow) - Conditionals and loops
 - [Object-Oriented Programming](/guide/oop) - Classes and interfaces
+- [Advanced Features](/guide/advanced-features) - Defer, destructuring, structs, string interpolation
+- [Concurrency](/guide/concurrency) - Goroutines, channels, and parallel programming
 - [Asynchronous Programming](/guide/async) - Async/await and Futures
 - [Memory Management](/guide/memory-management) - GC vs manual memory control
 - [Testing](/guide/testing) - Write tests for your code
@@ -215,11 +217,13 @@ Here's a recommended path for learning Stratos:
 2. **Learn Control Flow** - Master conditionals, loops, and pattern matching
 3. **Explore Functions** - Function definitions, lambdas, and composition
 4. **Dive into OOP** - Classes, interfaces, and inheritance
-5. **Master Async** - Asynchronous programming with Futures
-6. **Understand Memory** - GC mode vs manual memory management
-7. **Write Tests** - Test your code with the built-in testing framework
-8. **Organize Code** - Packages and module system
-9. **Build Projects** - Apply your knowledge to real applications
+5. **Advanced Features** - Defer statements, destructuring, structs, string interpolation
+6. **Concurrency** - Goroutines, channels, and synchronization
+7. **Master Async** - Asynchronous programming with Futures
+8. **Understand Memory** - GC mode vs manual memory management
+9. **Write Tests** - Test your code with the built-in testing framework
+10. **Organize Code** - Packages and module system
+11. **Build Projects** - Apply your knowledge to real applications
 
 ## Community and Support
 
