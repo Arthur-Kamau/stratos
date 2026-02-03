@@ -1,0 +1,12 @@
+[submodule "external/stratos-cli-args"]
+	path = external/stratos-cli-args
+	url = ./external/stratos-cli-args
+[submodule "external/stratos-colors"]
+	path = external/stratos-colors
+	url = ./external/stratos-colors
+[submodule "external/stratos-valid"]
+	path = external/stratos-valid
+	url = ./external/stratos-valid
+[submodule "external/stratos-linq"]
+	path = external/stratos-linq
+	url = ./external/stratos-linq
