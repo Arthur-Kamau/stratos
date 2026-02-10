@@ -31,5 +31,16 @@
 	},
 	"overrides": {
 		"cookie": "0.7.2"
+	},
+	"pnpm": {
+		"overrides": {
+			"cookie": "0.7.2",
+			"devalue": ">=5.6.2",
+			"@sveltejs/kit": ">=2.50.0",
+			"svelte": ">=5.48.0"
+		}
+	},
+	"resolutions": {
+		"cookie": "0.7.2"
 	}
 }

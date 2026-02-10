@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      hocon-parser:
+        specifier: ^1.0.1
+        version: 1.0.1
       vscode-languageclient:
         specifier: ^8.1.0
         version: 8.1.0
@@ -41,6 +44,9 @@ packages:
 
   brace-expansion@2.0.2:
     resolution: {integrity: sha512-Jt0vHyM+jmUBqojB7E1NIYadt0vI0Qxjxd2TErW94wDz+E2LAm5vKMXXwg6ZZBTHPuUlDgQHKXvjGBdfcF1ZDQ==}
+
+  hocon-parser@1.0.1:
+    resolution: {integrity: sha512-qMKuQh6pLPQc0gXsl91hAJEjD4JghV1VukO5gKOzjolCnupCbGHpERzMCkZLwVDLq7sL8xR6P4iWhcM1my3HtA==}
 
   minimatch@5.1.6:
     resolution: {integrity: sha512-lKwV/1brpG6mBUFHtb7NUmtABCb2WZZmm2wNiOA5hAb8VdCS4B3dtMWyvcoViccwAW/COERjXLt0zP1zXUN26g==}
@@ -88,6 +94,8 @@ snapshots:
   brace-expansion@2.0.2:
     dependencies:
       balanced-match: 1.0.2
+
+  hocon-parser@1.0.1: {}
 
   minimatch@5.1.6:
     dependencies:
