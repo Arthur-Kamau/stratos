@@ -1638,6 +1638,245 @@ fn main() {
     },
     {
         id: 42,
+        title: "DevTools - Logging",
+        content: `
+            <h3 class="text-lg font-semibold mb-2">DevTools: Structured Logging</h3>
+            <p class="mb-4">Stratos includes built-in DevTools for debugging and profiling. Run any program with <code>--devtools</code> and open <code>http://localhost:9222</code> in your browser.</p>
+            <p class="mb-4">The <strong>Logging</strong> view shows real-time structured logs from your program:</p>
+            <ul class="list-disc list-inside ml-2 mb-4 space-y-2">
+                <li>Use <code>log.debug()</code>, <code>log.info()</code>, <code>log.warn()</code>, <code>log.error()</code></li>
+                <li>Filter logs by severity level</li>
+                <li>Search across all log messages</li>
+                <li>Click any entry to see full details</li>
+                <li>Export logs to a text file</li>
+            </ul>
+            <p class="mb-4">Try running this with: <code>stratos run --devtools program.st</code></p>
+        `,
+        initialCode: `package main;
+
+use log;
+
+fn processOrder(orderId: int, amount: int) {
+    log.info("Processing order $orderId");
+    log.debug("Amount: $amount");
+
+    if amount < 0 {
+        log.error("Invalid amount: negative value");
+        return;
+    }
+
+    if amount > 10000 {
+        log.warn("Large order amount detected");
+    }
+
+    log.info("Order $orderId processed");
+}
+
+fn main() {
+    log.info("Application starting");
+
+    processOrder(1001, 250);
+    processOrder(1002, 15000);
+    processOrder(1003, -50);
+
+    log.info("Application completed");
+}`
+    },
+    {
+        id: 43,
+        title: "DevTools - Memory Profiling",
+        content: `
+            <h3 class="text-lg font-semibold mb-2">DevTools: Memory View</h3>
+            <p class="mb-4">The <strong>Memory</strong> tab in DevTools monitors memory usage and garbage collection.</p>
+            <ul class="list-disc list-inside ml-2 mb-4 space-y-2">
+                <li><strong>Stats dashboard:</strong> Current memory usage, object count, GC collections</li>
+                <li><strong>GC history:</strong> Table of every garbage collection event with pause times</li>
+                <li><strong>Visual bar:</strong> See memory usage at a glance</li>
+                <li>Pause times are color-coded: green (&lt;5ms), yellow (&lt;20ms), red (&gt;20ms)</li>
+            </ul>
+            <p class="mb-4">Stratos uses a mark-and-sweep garbage collector that can detect and break circular references.</p>
+        `,
+        initialCode: `package main;
+
+use log;
+
+class Node {
+    var value: int;
+    var next: Optional<Node>;
+
+    fn init(v: int) {
+        val this.value = v;
+        val this.next = None;
+    }
+}
+
+fn main() {
+    log.info("Memory profiling demo");
+
+    // Create many objects to trigger GC
+    var count = 0;
+    while count < 200 {
+        val node = Node(count);
+
+        if count % 10 == 0 {
+            val node2 = Node(count + 1);
+            val node.next = node2;
+            log.debug("Created circular reference");
+        }
+
+        count = count + 1;
+    }
+
+    log.info("Check Memory tab for GC stats");
+}`
+    },
+    {
+        id: 44,
+        title: "DevTools - Debugger",
+        content: `
+            <h3 class="text-lg font-semibold mb-2">DevTools: Step Debugger</h3>
+            <p class="mb-4">The <strong>Debugger</strong> tab provides a full step-through debugging experience, similar to VS Code.</p>
+            <ul class="list-disc list-inside ml-2 mb-4 space-y-2">
+                <li><strong>Breakpoints:</strong> Click the gutter (left of line numbers) to set breakpoints</li>
+                <li><strong>Step Over (F10):</strong> Execute the current line, skip into function calls</li>
+                <li><strong>Step Into (F11):</strong> Step into function calls</li>
+                <li><strong>Step Out (Shift+F11):</strong> Run until the current function returns</li>
+                <li><strong>Resume (F5):</strong> Continue running until the next breakpoint</li>
+                <li><strong>Call Stack:</strong> See the full chain of function calls</li>
+                <li><strong>Variables:</strong> Inspect all local and global variables at any pause point</li>
+                <li><strong>Watch:</strong> Add custom expressions to evaluate at each step</li>
+            </ul>
+        `,
+        initialCode: `package main;
+
+use log;
+
+fn fibonacci(n: int) int {
+    if n <= 1 {
+        return n;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+fn factorial(n: int) int {
+    var result = 1;
+    var i = 2;
+    while i <= n {
+        result = result * i;
+        i = i + 1;
+    }
+    return result;
+}
+
+fn main() {
+    log.info("Debugger demo - set breakpoints!");
+
+    // Try breakpointing here and stepping through
+    var i = 1;
+    while i <= 5 {
+        val fib = fibonacci(i);
+        val fact = factorial(i);
+        println("fib($i) = $fib, $i! = $fact");
+        i = i + 1;
+    }
+}`
+    },
+    {
+        id: 45,
+        title: "DevTools - Network Monitor",
+        content: `
+            <h3 class="text-lg font-semibold mb-2">DevTools: Network View</h3>
+            <p class="mb-4">The <strong>Network</strong> tab monitors HTTP requests made by your Stratos program.</p>
+            <ul class="list-disc list-inside ml-2 mb-4 space-y-2">
+                <li><strong>Request table:</strong> See every HTTP request with method, URL, status, size, and duration</li>
+                <li><strong>Filtering:</strong> Filter by HTTP method or search by URL</li>
+                <li><strong>Detail panel:</strong> Click a request to see headers, response body, and timing</li>
+                <li><strong>Timing waterfall:</strong> Visual breakdown of DNS, connect, send, wait, and receive times</li>
+                <li>Status codes are color-coded: green (2xx), yellow (3xx), red (4xx/5xx)</li>
+            </ul>
+        `,
+        initialCode: `package main;
+
+use log;
+use http;
+
+fn main() {
+    log.info("Network demo - watch the Network tab");
+
+    val router = http.newRouter();
+
+    router.get("/api/status", (req, res) => {
+        log.debug("Status endpoint hit");
+        res.json({"status": "ok", "uptime": 42});
+    });
+
+    router.get("/api/users", (req, res) => {
+        res.json([
+            {"name": "Alice", "role": "admin"},
+            {"name": "Bob", "role": "user"}
+        ]);
+    });
+
+    log.info("Server on port 3000");
+    val server = http.newServer(router);
+    server.listen(3000);
+}`
+    },
+    {
+        id: 46,
+        title: "DevTools - Performance Profiling",
+        content: `
+            <h3 class="text-lg font-semibold mb-2">DevTools: Performance View</h3>
+            <p class="mb-4">The <strong>Performance</strong> tab records CPU profiles to find bottlenecks in your code.</p>
+            <ul class="list-disc list-inside ml-2 mb-4 space-y-2">
+                <li><strong>Recording:</strong> Click Record, run your code, then click Stop</li>
+                <li><strong>Flame Graph:</strong> Visual stack trace showing where time is spent</li>
+                <li><strong>Functions Table:</strong> Self time vs total time per function, sortable by any column</li>
+                <li><strong>Call Tree:</strong> Hierarchical view of function call relationships</li>
+            </ul>
+            <p class="mb-4">The profiler hooks into every function call. Self time is time spent in the function itself; total time includes time in called functions.</p>
+        `,
+        initialCode: `package main;
+
+use log;
+
+fn bubbleSort(size: int) {
+    var i = 0;
+    while i < size {
+        var j = 0;
+        while j < size - i - 1 {
+            j = j + 1;
+        }
+        i = i + 1;
+    }
+}
+
+fn computeFib(n: int) int {
+    if n <= 1 { return n; }
+    return computeFib(n - 1) + computeFib(n - 2);
+}
+
+fn heavyWork() {
+    bubbleSort(100);
+    val fib = computeFib(20);
+    println("fib(20) = $fib");
+}
+
+fn main() {
+    log.info("Record a profile in the Performance tab");
+
+    var round = 1;
+    while round <= 3 {
+        println("--- Round $round ---");
+        heavyWork();
+        round = round + 1;
+    }
+
+    log.info("Check the flame graph!");
+}`
+    },
+    {
+        id: 47,
         title: "Congratulations!",
         content: `
             <h3 class="text-lg font-semibold mb-2">You're Ready!</h3>
@@ -1652,6 +1891,7 @@ fn main() {
                 <li>Concurrency: Goroutines, channels, WaitGroups</li>
                 <li>Async/await for asynchronous programming</li>
                 <li>Standard library modules</li>
+                <li>DevTools: Logging, Memory, Debugger, Network, and Performance profiling</li>
             </ul>
             <p class="mb-4">Continue learning by building your own projects!</p>
         `,
@@ -1670,7 +1910,8 @@ fn main() {
         "Error Handling",
         "OOP & Structs",
         "Concurrency",
-        "Async/Await"
+        "Async/Await",
+        "DevTools & Profiling"
     ];
 
     print("\\nYou've learned:");

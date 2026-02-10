@@ -5,6 +5,7 @@
 #include "stratos/NativeRegistry.h"
 #include "stratos/GarbageCollector.h"
 #include "stratos/HttpServer.h"
+#include "stratos/DebugEngine.h"
 #include <any>
 #include <optional>
 #include <variant>
@@ -178,6 +179,10 @@ public:
     // HTTP handler execution (public for HttpServerManager access)
     void executeHttpHandler(const RuntimeValue& handler, HttpRequestInternal& req, HttpResponseInternal& res);
     bool executeHttpMiddleware(const RuntimeValue& middleware, HttpRequestInternal& req, HttpResponseInternal& res);
+
+    // Debug engine integration
+    void setDebugEngine(DebugEngine* engine);
+    DebugEngine* getDebugEngine() const;
 
     // Visitor Implementation
     void visit(BinaryExpr& expr) override;
@@ -382,6 +387,12 @@ private:
     bool isTruthy(const RuntimeValue& value);
 
     void error(const std::string& message);
+
+    // Debug engine (non-owning, managed by main.cpp)
+    DebugEngine* debugEngine_ = nullptr;
+
+    // Check debug breakpoint before executing a statement
+    void checkDebugBreak(const std::string& file, int line);
 };
 
 } // namespace stratos

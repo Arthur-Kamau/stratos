@@ -1,0 +1,137 @@
+/* Stratos DevTools - Performance View */
+
+.perf-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.record-btn {
+    position: relative;
+}
+
+.record-btn.recording {
+    background: var(--error);
+    color: white;
+    border-color: var(--error);
+}
+
+.perf-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.perf-tabs {
+    display: flex;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.perf-tab {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: var(--font-ui);
+    border-bottom: 2px solid transparent;
+}
+
+.perf-tab:hover { color: var(--text-primary); }
+.perf-tab.active {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent);
+}
+
+.perf-view {
+    flex: 1;
+    overflow: auto;
+}
+
+/* Flame Graph */
+.flamegraph-container {
+    padding: 16px;
+    overflow-x: auto;
+    min-height: 300px;
+}
+
+.flame-chart {
+    position: relative;
+    width: 100%;
+}
+
+.flame-bar {
+    position: absolute;
+    height: 20px;
+    border-radius: 2px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    line-height: 20px;
+    padding: 0 4px;
+    color: white;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    box-sizing: border-box;
+    border: 1px solid rgba(0,0,0,0.2);
+}
+
+.flame-bar:hover {
+    filter: brightness(1.2);
+    z-index: 10;
+}
+
+/* Color palette for flame bars */
+.flame-d0 { background: #e24d42; }
+.flame-d1 { background: #e8703a; }
+.flame-d2 { background: #f0a23c; }
+.flame-d3 { background: #f2c94c; }
+.flame-d4 { background: #27ae60; }
+.flame-d5 { background: #2980b9; }
+.flame-d6 { background: #8e44ad; }
+.flame-d7 { background: #c0392b; }
+
+/* Perf tables */
+.perf-table {
+    font-size: 12px;
+}
+
+.perf-table th {
+    cursor: pointer;
+}
+
+.perf-table th:hover {
+    background: var(--bg-hover);
+}
+
+.perf-table .bar-cell {
+    position: relative;
+}
+
+.perf-bar-bg {
+    position: absolute;
+    top: 2px;
+    left: 0;
+    height: calc(100% - 4px);
+    background: rgba(0, 122, 204, 0.15);
+    border-radius: 2px;
+}
+
+.perf-table td.fn-name {
+    color: var(--info);
+    font-family: var(--font-mono);
+}
+
+.perf-table td.time-val {
+    font-family: var(--font-mono);
+    text-align: right;
+}

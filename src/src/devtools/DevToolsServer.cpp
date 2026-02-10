@@ -1,9 +1,15 @@
 #include "stratos/DevToolsServer.h"
 #include "stratos/MemoryProfiler.h"
+#include "stratos/DebugEngine.h"
+#include "stratos/NetworkMonitor.h"
+#include "stratos/Profiler.h"
 #include <iostream>
 #include <sstream>
 #include <cstring>
 #include <chrono>
+#include <fstream>
+#include <filesystem>
+#include <algorithm>
 
 #ifdef _WIN32
     #include <winsock2.h>
@@ -28,6 +34,51 @@
 #endif
 
 namespace stratos {
+
+// Simple JSON value extractor helpers
+static std::string jsonGetString(const std::string& json, const std::string& key) {
+    std::string search = "\"" + key + "\":";
+    size_t pos = json.find(search);
+    if (pos == std::string::npos) return "";
+    pos += search.size();
+    while (pos < json.size() && json[pos] == ' ') pos++;
+    if (pos >= json.size() || json[pos] != '"') return "";
+    pos++; // skip opening quote
+    std::string result;
+    while (pos < json.size() && json[pos] != '"') {
+        if (json[pos] == '\\' && pos + 1 < json.size()) { pos++; }
+        result += json[pos++];
+    }
+    return result;
+}
+
+static int jsonGetInt(const std::string& json, const std::string& key, int defaultVal = 0) {
+    std::string search = "\"" + key + "\":";
+    size_t pos = json.find(search);
+    if (pos == std::string::npos) return defaultVal;
+    pos += search.size();
+    while (pos < json.size() && json[pos] == ' ') pos++;
+    size_t end = json.find_first_of(",}", pos);
+    if (end == std::string::npos) return defaultVal;
+    try { return std::stoi(json.substr(pos, end - pos)); } catch (...) { return defaultVal; }
+}
+
+// Escape a string for JSON output
+static std::string jsonEscape(const std::string& str) {
+    std::string result;
+    result.reserve(str.size() + 10);
+    for (char c : str) {
+        switch (c) {
+            case '"':  result += "\\\""; break;
+            case '\\': result += "\\\\"; break;
+            case '\n': result += "\\n"; break;
+            case '\r': result += "\\r"; break;
+            case '\t': result += "\\t"; break;
+            default:   result += c; break;
+        }
+    }
+    return result;
+}
 
 // ============================================================================
 // DevToolsSink Implementation
@@ -287,14 +338,67 @@ void DevToolsServer::handleClient(int clientSocket) {
         std::string result = handleRequest(body);
         response = createHttpResponse(result);
     }
-    // Return API info for GET /
-    else if (request.find("GET / ") != std::string::npos) {
-        std::string info = "{\"name\":\"Stratos DevTools\",\"version\":\"1.0.0\",\"protocol\":\"1.0.0\"}";
-        response = createHttpResponse(info);
+    // Handle CORS preflight
+    else if (request.find("OPTIONS ") != std::string::npos) {
+        response = createHttpResponse("", "text/plain");
+    }
+    // Serve UI files for GET requests
+    else if (request.find("GET /") != std::string::npos) {
+        // Extract the path from GET /path HTTP/1.1
+        size_t pathStart = request.find("GET ") + 4;
+        size_t pathEnd = request.find(" HTTP/", pathStart);
+        std::string urlPath = request.substr(pathStart, pathEnd - pathStart);
+
+        // Default to index.html for root
+        if (urlPath == "/" || urlPath.empty()) urlPath = "/index.html";
+
+        // Try to serve from devtools/ui/ directory
+        // Look for the UI directory relative to common locations
+        std::vector<std::string> searchDirs = {
+            "devtools/ui",
+            "../devtools/ui",
+            "../../devtools/ui",
+            "../../../devtools/ui",
+        };
+
+        bool fileServed = false;
+        for (const auto& dir : searchDirs) {
+            std::string filePath = dir + urlPath;
+            if (std::filesystem::exists(filePath) && std::filesystem::is_regular_file(filePath)) {
+                std::ifstream file(filePath, std::ios::binary);
+                if (file.is_open()) {
+                    std::string content((std::istreambuf_iterator<char>(file)),
+                                         std::istreambuf_iterator<char>());
+
+                    // Determine content type
+                    std::string contentType = "text/plain";
+                    if (urlPath.ends_with(".html")) contentType = "text/html";
+                    else if (urlPath.ends_with(".css")) contentType = "text/css";
+                    else if (urlPath.ends_with(".js")) contentType = "application/javascript";
+                    else if (urlPath.ends_with(".json")) contentType = "application/json";
+                    else if (urlPath.ends_with(".svg")) contentType = "image/svg+xml";
+                    else if (urlPath.ends_with(".png")) contentType = "image/png";
+
+                    response = createHttpResponse(content, contentType);
+                    fileServed = true;
+                    break;
+                }
+            }
+        }
+
+        if (!fileServed) {
+            // Fallback: API info
+            if (urlPath == "/index.html" || urlPath == "/") {
+                std::string info = "{\"name\":\"Stratos DevTools\",\"version\":\"1.0.0\",\"protocol\":\"1.0.0\",\"message\":\"DevTools UI not found. Place UI files in devtools/ui/\"}";
+                response = createHttpResponse(info);
+            } else {
+                response = "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+            }
+        }
     }
     else {
-        std::string error = "{\"error\":\"Invalid request\"}";
-        response = createHttpResponse(error);
+        std::string errorMsg = "{\"error\":\"Invalid request\"}";
+        response = createHttpResponse(errorMsg);
     }
 
     // Send response
@@ -328,7 +432,7 @@ std::string DevToolsServer::createHttpResponse(const std::string& content, const
 
 std::string DevToolsServer::handleRequest(const std::string& request) {
     // Simple JSON-RPC parsing
-    // Extract method and params
+    // Extract method, params, and id
     std::string method;
     std::string params = "{}";
     int id = 1;
@@ -346,7 +450,25 @@ std::string DevToolsServer::handleRequest(const std::string& request) {
         size_t idStart = idPos + 5;
         size_t idEnd = request.find_first_of(",}", idStart);
         std::string idStr = request.substr(idStart, idEnd - idStart);
-        id = std::stoi(idStr);
+        try { id = std::stoi(idStr); } catch (...) {}
+    }
+
+    // Extract params object
+    size_t paramsPos = request.find("\"params\":");
+    if (paramsPos != std::string::npos) {
+        size_t paramsStart = paramsPos + 9;
+        // Skip whitespace
+        while (paramsStart < request.size() && request[paramsStart] == ' ') paramsStart++;
+        if (paramsStart < request.size() && request[paramsStart] == '{') {
+            // Find matching closing brace
+            int depth = 0;
+            size_t paramsEnd = paramsStart;
+            for (size_t i = paramsStart; i < request.size(); ++i) {
+                if (request[i] == '{') depth++;
+                else if (request[i] == '}') { depth--; if (depth == 0) { paramsEnd = i + 1; break; } }
+            }
+            params = request.substr(paramsStart, paramsEnd - paramsStart);
+        }
     }
 
     // Handle request
@@ -484,6 +606,303 @@ void DevToolsServer::initializeHandlers() {
             oss << "\"freedObjects\":" << history[i].freedObjects << ",";
             oss << "\"cyclesBroken\":" << history[i].cyclesBroken;
             oss << "}";
+        }
+        oss << "]}";
+        return oss.str();
+    });
+
+    // ========================================================================
+    // Debugger Domain
+    // ========================================================================
+
+    // Debugger.enable
+    registerHandler("Debugger.enable", [](const std::string&) -> std::string {
+        DebugEngine::instance().enable();
+        return "{}";
+    });
+
+    // Debugger.disable
+    registerHandler("Debugger.disable", [](const std::string&) -> std::string {
+        DebugEngine::instance().disable();
+        return "{}";
+    });
+
+    // Debugger.setBreakpoint - params: {"file":"...", "line":N}
+    registerHandler("Debugger.setBreakpoint", [](const std::string& params) -> std::string {
+        std::string file = jsonGetString(params, "file");
+        int line = jsonGetInt(params, "line");
+        std::string condition = jsonGetString(params, "condition");
+        int bpId = DebugEngine::instance().setBreakpoint(file, line, condition);
+        return "{\"breakpointId\":" + std::to_string(bpId) + "}";
+    });
+
+    // Debugger.removeBreakpoint - params: {"breakpointId":N}
+    registerHandler("Debugger.removeBreakpoint", [](const std::string& params) -> std::string {
+        int bpId = jsonGetInt(params, "breakpointId");
+        bool ok = DebugEngine::instance().removeBreakpoint(bpId);
+        return ok ? "{\"removed\":true}" : "{\"removed\":false}";
+    });
+
+    // Debugger.getBreakpoints
+    registerHandler("Debugger.getBreakpoints", [](const std::string&) -> std::string {
+        auto bps = DebugEngine::instance().getBreakpoints();
+        std::ostringstream oss;
+        oss << "{\"breakpoints\":[";
+        for (size_t i = 0; i < bps.size(); ++i) {
+            if (i > 0) oss << ",";
+            oss << "{\"id\":" << bps[i].id;
+            oss << ",\"file\":\"" << jsonEscape(bps[i].file) << "\"";
+            oss << ",\"line\":" << bps[i].line;
+            oss << ",\"enabled\":" << (bps[i].enabled ? "true" : "false");
+            oss << ",\"hitCount\":" << bps[i].hitCount << "}";
+        }
+        oss << "]}";
+        return oss.str();
+    });
+
+    // Debugger.pause
+    registerHandler("Debugger.pause", [](const std::string&) -> std::string {
+        DebugEngine::instance().pause();
+        return "{}";
+    });
+
+    // Debugger.resume
+    registerHandler("Debugger.resume", [](const std::string&) -> std::string {
+        DebugEngine::instance().resume();
+        return "{}";
+    });
+
+    // Debugger.stepOver
+    registerHandler("Debugger.stepOver", [](const std::string&) -> std::string {
+        DebugEngine::instance().stepOver();
+        return "{}";
+    });
+
+    // Debugger.stepInto
+    registerHandler("Debugger.stepInto", [](const std::string&) -> std::string {
+        DebugEngine::instance().stepInto();
+        return "{}";
+    });
+
+    // Debugger.stepOut
+    registerHandler("Debugger.stepOut", [](const std::string&) -> std::string {
+        DebugEngine::instance().stepOut();
+        return "{}";
+    });
+
+    // Debugger.getCallStack
+    registerHandler("Debugger.getCallStack", [](const std::string&) -> std::string {
+        auto stack = DebugEngine::instance().getCallStack();
+        std::ostringstream oss;
+        oss << "{\"callFrames\":[";
+        for (size_t i = 0; i < stack.size(); ++i) {
+            if (i > 0) oss << ",";
+            oss << "{\"frameId\":" << stack[i].frameId;
+            oss << ",\"functionName\":\"" << jsonEscape(stack[i].functionName) << "\"";
+            oss << ",\"file\":\"" << jsonEscape(stack[i].file) << "\"";
+            oss << ",\"line\":" << stack[i].line << "}";
+        }
+        oss << "]}";
+        return oss.str();
+    });
+
+    // Debugger.getVariables - params: {"frameId":N}
+    registerHandler("Debugger.getVariables", [](const std::string& params) -> std::string {
+        int frameId = jsonGetInt(params, "frameId");
+        auto vars = DebugEngine::instance().getVariables(frameId);
+        std::ostringstream oss;
+        oss << "{\"variables\":[";
+        for (size_t i = 0; i < vars.size(); ++i) {
+            if (i > 0) oss << ",";
+            oss << "{\"name\":\"" << jsonEscape(vars[i].name) << "\"";
+            oss << ",\"value\":\"" << jsonEscape(vars[i].value) << "\"";
+            oss << ",\"type\":\"" << jsonEscape(vars[i].type) << "\"}";
+        }
+        oss << "]}";
+        return oss.str();
+    });
+
+    // Debugger.evaluateOnFrame - params: {"expression":"...", "frameId":N}
+    registerHandler("Debugger.evaluateOnFrame", [](const std::string& params) -> std::string {
+        std::string expr = jsonGetString(params, "expression");
+        int frameId = jsonGetInt(params, "frameId");
+        std::string result = DebugEngine::instance().evaluateExpression(expr, frameId);
+        return "{\"result\":" + result + "}";
+    });
+
+    // Debugger.getSource - params: {"file":"..."}
+    registerHandler("Debugger.getSource", [](const std::string& params) -> std::string {
+        std::string file = jsonGetString(params, "file");
+        std::string content = DebugEngine::instance().getSourceContent(file);
+        return "{\"source\":\"" + jsonEscape(content) + "\"}";
+    });
+
+    // Debugger.getSourceFiles
+    registerHandler("Debugger.getSourceFiles", [](const std::string&) -> std::string {
+        auto files = DebugEngine::instance().getSourceFiles();
+        std::ostringstream oss;
+        oss << "{\"files\":[";
+        for (size_t i = 0; i < files.size(); ++i) {
+            if (i > 0) oss << ",";
+            oss << "\"" << jsonEscape(files[i]) << "\"";
+        }
+        oss << "]}";
+        return oss.str();
+    });
+
+    // Debugger.getState
+    registerHandler("Debugger.getState", [](const std::string&) -> std::string {
+        auto& engine = DebugEngine::instance();
+        std::string stateStr;
+        switch (engine.getState()) {
+            case DebugState::Running: stateStr = "running"; break;
+            case DebugState::Paused: stateStr = "paused"; break;
+            case DebugState::Stepping: stateStr = "stepping"; break;
+        }
+        std::ostringstream oss;
+        oss << "{\"state\":\"" << stateStr << "\"";
+        oss << ",\"file\":\"" << jsonEscape(engine.getCurrentFile()) << "\"";
+        oss << ",\"line\":" << engine.getCurrentLine();
+        oss << ",\"enabled\":" << (engine.isEnabled() ? "true" : "false") << "}";
+        return oss.str();
+    });
+
+    // ========================================================================
+    // Network Domain
+    // ========================================================================
+
+    registerHandler("Network.enable", [](const std::string&) -> std::string {
+        NetworkMonitor::instance().enable();
+        return "{}";
+    });
+
+    registerHandler("Network.disable", [](const std::string&) -> std::string {
+        NetworkMonitor::instance().disable();
+        return "{}";
+    });
+
+    registerHandler("Network.getRequests", [](const std::string&) -> std::string {
+        auto requests = NetworkMonitor::instance().getRequests();
+        std::ostringstream oss;
+        oss << "{\"requests\":[";
+        for (size_t i = 0; i < requests.size(); ++i) {
+            if (i > 0) oss << ",";
+            const auto& req = requests[i];
+            oss << "{\"id\":" << req.id;
+            oss << ",\"url\":\"" << jsonEscape(req.url) << "\"";
+            oss << ",\"method\":\"" << req.method << "\"";
+            oss << ",\"status\":" << req.responseStatus;
+            oss << ",\"statusText\":\"" << jsonEscape(req.responseStatusText) << "\"";
+            oss << ",\"size\":" << req.responseSize;
+            oss << ",\"startTime\":" << req.startTimeMs;
+            oss << ",\"duration\":" << req.durationMs;
+            oss << ",\"type\":\"" << req.contentType << "\"";
+            oss << ",\"completed\":" << (req.completed ? "true" : "false") << "}";
+        }
+        oss << "]}";
+        return oss.str();
+    });
+
+    registerHandler("Network.getRequestDetail", [](const std::string& params) -> std::string {
+        int reqId = jsonGetInt(params, "id");
+        auto detail = NetworkMonitor::instance().getRequestDetail(reqId);
+        if (!detail) return "{\"error\":\"Request not found\"}";
+
+        std::ostringstream oss;
+        oss << "{\"id\":" << detail->id;
+        oss << ",\"url\":\"" << jsonEscape(detail->url) << "\"";
+        oss << ",\"method\":\"" << detail->method << "\"";
+        oss << ",\"status\":" << detail->responseStatus;
+
+        // Request headers
+        oss << ",\"requestHeaders\":{";
+        bool first = true;
+        for (const auto& [k, v] : detail->requestHeaders) {
+            if (!first) oss << ",";
+            oss << "\"" << jsonEscape(k) << "\":\"" << jsonEscape(v) << "\"";
+            first = false;
+        }
+        oss << "}";
+
+        // Response headers
+        oss << ",\"responseHeaders\":{";
+        first = true;
+        for (const auto& [k, v] : detail->responseHeaders) {
+            if (!first) oss << ",";
+            oss << "\"" << jsonEscape(k) << "\":\"" << jsonEscape(v) << "\"";
+            first = false;
+        }
+        oss << "}";
+
+        oss << ",\"responseBody\":\"" << jsonEscape(detail->responseBody) << "\"";
+        oss << ",\"duration\":" << detail->durationMs;
+        oss << ",\"size\":" << detail->responseSize << "}";
+        return oss.str();
+    });
+
+    registerHandler("Network.clear", [](const std::string&) -> std::string {
+        NetworkMonitor::instance().clear();
+        return "{}";
+    });
+
+    // ========================================================================
+    // Profiler Domain
+    // ========================================================================
+
+    registerHandler("Profiler.enable", [](const std::string&) -> std::string {
+        Profiler::instance().enable();
+        return "{}";
+    });
+
+    registerHandler("Profiler.disable", [](const std::string&) -> std::string {
+        Profiler::instance().disable();
+        return "{}";
+    });
+
+    registerHandler("Profiler.start", [](const std::string&) -> std::string {
+        Profiler::instance().startProfiling();
+        return "{}";
+    });
+
+    registerHandler("Profiler.stop", [](const std::string&) -> std::string {
+        Profiler::instance().stopProfiling();
+        return "{}";
+    });
+
+    registerHandler("Profiler.getProfile", [](const std::string&) -> std::string {
+        auto profile = Profiler::instance().getProfile();
+        std::ostringstream oss;
+        oss << "{\"duration\":" << profile.durationMs;
+        oss << ",\"totalSamples\":" << profile.totalSamples;
+
+        // Functions table
+        oss << ",\"functions\":[";
+        for (size_t i = 0; i < profile.functions.size(); ++i) {
+            if (i > 0) oss << ",";
+            const auto& fn = profile.functions[i];
+            oss << "{\"name\":\"" << jsonEscape(fn.name) << "\"";
+            oss << ",\"file\":\"" << jsonEscape(fn.file) << "\"";
+            oss << ",\"selfTime\":" << fn.selfTimeMs;
+            oss << ",\"totalTime\":" << fn.totalTimeMs;
+            oss << ",\"calls\":" << fn.callCount;
+            oss << ",\"selfPercent\":" << fn.selfPercent << "}";
+        }
+        oss << "]";
+
+        // Flame graph nodes
+        oss << ",\"flameGraph\":[";
+        for (size_t i = 0; i < profile.flameNodes.size(); ++i) {
+            if (i > 0) oss << ",";
+            const auto& node = profile.flameNodes[i];
+            oss << "{\"name\":\"" << jsonEscape(node.name) << "\"";
+            oss << ",\"value\":" << node.value;
+            oss << ",\"depth\":" << node.depth;
+            oss << ",\"children\":[";
+            for (size_t j = 0; j < node.children.size(); ++j) {
+                if (j > 0) oss << ",";
+                oss << node.children[j];
+            }
+            oss << "]}";
         }
         oss << "]}";
         return oss.str();

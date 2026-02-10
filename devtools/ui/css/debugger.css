@@ -1,0 +1,286 @@
+/* Stratos DevTools - Debugger View */
+
+.debugger-layout {
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+}
+
+.debugger-source-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border-right: 1px solid var(--border);
+}
+
+.source-toolbar {
+    display: flex;
+    align-items: center;
+    padding: 4px 12px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.source-filename {
+    font-family: var(--font-mono);
+}
+
+.source-container {
+    flex: 1;
+    display: flex;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 20px;
+}
+
+.source-gutter {
+    flex-shrink: 0;
+    width: 60px;
+    background: var(--bg-secondary);
+    text-align: right;
+    user-select: none;
+}
+
+.gutter-line {
+    height: 20px;
+    padding-right: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+.gutter-line:hover {
+    background: var(--bg-hover);
+}
+
+.gutter-line .bp-marker {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: none;
+}
+
+.gutter-line.has-breakpoint .bp-marker {
+    display: block;
+    background: var(--error);
+}
+
+.gutter-line.has-breakpoint.bp-disabled .bp-marker {
+    background: var(--text-muted);
+    border: 1px solid var(--error);
+}
+
+.source-code {
+    flex: 1;
+    padding: 0;
+    margin: 0;
+    overflow-x: auto;
+}
+
+.source-code code {
+    display: block;
+    padding: 0 12px;
+}
+
+.code-line {
+    height: 20px;
+    white-space: pre;
+}
+
+.code-line.current-line {
+    background: rgba(255, 255, 0, 0.1);
+    border-left: 3px solid var(--warning);
+    padding-left: 9px;
+}
+
+/* Syntax highlighting */
+.kw { color: #569cd6; }     /* keywords */
+.str { color: #ce9178; }    /* strings */
+.num { color: #b5cea8; }    /* numbers */
+.cmt { color: #6a9955; }    /* comments */
+.fn { color: #dcdcaa; }     /* function names */
+.type { color: #4ec9b0; }   /* types */
+.op { color: #d4d4d4; }     /* operators */
+
+/* Debugger Side Pane */
+.debugger-side-pane {
+    width: 320px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.debug-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 8px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.debug-btn {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    width: 32px;
+    height: 28px;
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.debug-btn:hover {
+    background: var(--bg-hover);
+}
+
+.debug-btn:active {
+    background: var(--accent);
+}
+
+/* Debug Section Panels */
+.debug-panel-group {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.debug-section {
+    border-bottom: 1px solid var(--border);
+}
+
+.debug-section summary {
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    user-select: none;
+}
+
+.debug-section summary:hover {
+    background: var(--bg-hover);
+}
+
+.debug-section-body {
+    padding: 4px 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+/* Call stack items */
+.callstack-item {
+    padding: 3px 12px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+}
+
+.callstack-item:hover {
+    background: var(--bg-hover);
+}
+
+.callstack-item.active {
+    background: var(--bg-active);
+    color: var(--accent);
+}
+
+.callstack-fn {
+    color: var(--text-primary);
+}
+
+.callstack-loc {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+/* Variable items */
+.var-item {
+    padding: 2px 12px;
+    display: flex;
+    gap: 8px;
+}
+
+.var-name {
+    color: var(--info);
+}
+
+.var-value {
+    color: var(--text-primary);
+}
+
+.var-type {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+/* Watch panel */
+.watch-input-row {
+    display: flex;
+    padding: 4px 8px;
+    gap: 4px;
+}
+
+.watch-input-row input {
+    flex: 1;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 3px 6px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    border-radius: 2px;
+    outline: none;
+}
+
+.watch-input-row button {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    width: 24px;
+    cursor: pointer;
+    border-radius: 2px;
+}
+
+.watch-item {
+    padding: 2px 12px;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* Breakpoint list items */
+.bp-item {
+    padding: 3px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.bp-item:hover {
+    background: var(--bg-hover);
+}
+
+.bp-item input[type="checkbox"] {
+    cursor: pointer;
+}
+
+.bp-item .bp-location {
+    color: var(--text-secondary);
+    font-size: 12px;
+}

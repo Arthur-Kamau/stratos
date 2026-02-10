@@ -1,0 +1,152 @@
+/* Stratos DevTools - Network View */
+
+.network-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.network-content {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+.network-table-container {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.network-table td.status-ok { color: var(--success); }
+.network-table td.status-redirect { color: var(--warning); }
+.network-table td.status-error { color: var(--error); }
+
+.network-table tr.selected {
+    background: var(--bg-active);
+}
+
+/* Timeline bar in table */
+.timeline-bar {
+    display: inline-block;
+    height: 8px;
+    border-radius: 2px;
+    min-width: 2px;
+    max-width: 200px;
+}
+
+.timeline-bar.fast { background: var(--success); }
+.timeline-bar.medium { background: var(--warning); }
+.timeline-bar.slow { background: var(--error); }
+
+/* Network Detail Panel */
+.network-detail {
+    width: 400px;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.network-detail-tabs {
+    display: flex;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.net-detail-tab {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: var(--font-ui);
+    border-bottom: 2px solid transparent;
+}
+
+.net-detail-tab:hover { color: var(--text-primary); }
+.net-detail-tab.active {
+    color: var(--text-primary);
+    border-bottom-color: var(--accent);
+}
+
+.network-detail-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.header-group {
+    margin-bottom: 16px;
+}
+
+.header-group h4 {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    font-weight: 500;
+}
+
+.header-row {
+    display: flex;
+    gap: 8px;
+    padding: 2px 0;
+}
+
+.header-key { color: var(--info); }
+.header-val { color: var(--text-primary); }
+
+/* Timing waterfall */
+.timing-bar-container {
+    margin: 12px 0;
+}
+
+.timing-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0;
+}
+
+.timing-label {
+    width: 80px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-align: right;
+}
+
+.timing-bar-bg {
+    flex: 1;
+    height: 16px;
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.timing-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--accent);
+    transition: width 0.3s;
+}
+
+.timing-value {
+    min-width: 60px;
+    font-size: 11px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+}
+
+/* Copy cURL button */
+.copy-curl-btn {
+    margin-top: 12px;
+}

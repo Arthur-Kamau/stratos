@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stratos DevTools</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/logging.css">
+    <link rel="stylesheet" href="css/memory.css">
+    <link rel="stylesheet" href="css/debugger.css">
+    <link rel="stylesheet" href="css/network.css">
+    <link rel="stylesheet" href="css/performance.css">
+</head>
+<body>
+    <!-- Top Bar -->
+    <header id="topbar">
+        <div class="topbar-left">
+            <span class="logo">Stratos DevTools</span>
+            <nav id="tab-nav">
+                <button class="tab-btn" data-tab="debugger">Debugger</button>
+                <button class="tab-btn" data-tab="memory">Memory</button>
+                <button class="tab-btn" data-tab="network">Network</button>
+                <button class="tab-btn active" data-tab="logging">Logging</button>
+                <button class="tab-btn" data-tab="performance">Performance</button>
+            </nav>
+        </div>
+        <div class="topbar-right">
+            <span id="connection-status" class="status disconnected">Disconnected</span>
+            <button id="theme-toggle" title="Toggle theme">&#9681;</button>
+        </div>
+    </header>
+
+    <!-- Tab Panels -->
+    <main id="panels">
+        <!-- Debugger Panel -->
+        <section id="panel-debugger" class="panel" style="display:none;">
+            <div class="debugger-layout">
+                <div class="debugger-source-pane">
+                    <div class="source-toolbar">
+                        <span class="source-filename" id="debug-filename">No file loaded</span>
+                    </div>
+                    <div class="source-container" id="source-container">
+                        <div class="source-gutter" id="source-gutter"></div>
+                        <pre class="source-code" id="source-code"><code>No source loaded. Set a breakpoint or pause execution to view source.</code></pre>
+                    </div>
+                </div>
+                <div class="debugger-side-pane">
+                    <div class="debug-controls" id="debug-controls">
+                        <button class="debug-btn" id="btn-resume" title="Resume (F5)">&#9654;</button>
+                        <button class="debug-btn" id="btn-pause" title="Pause (F6)">&#10074;&#10074;</button>
+                        <button class="debug-btn" id="btn-step-over" title="Step Over (F10)">&#10230;</button>
+                        <button class="debug-btn" id="btn-step-into" title="Step Into (F11)">&#8627;</button>
+                        <button class="debug-btn" id="btn-step-out" title="Step Out (Shift+F11)">&#8624;</button>
+                    </div>
+                    <div class="debug-panel-group">
+                        <details class="debug-section" open>
+                            <summary>Call Stack</summary>
+                            <div class="debug-section-body" id="callstack-list"></div>
+                        </details>
+                        <details class="debug-section" open>
+                            <summary>Variables</summary>
+                            <div class="debug-section-body" id="variables-list"></div>
+                        </details>
+                        <details class="debug-section">
+                            <summary>Watch</summary>
+                            <div class="debug-section-body" id="watch-list">
+                                <div class="watch-input-row">
+                                    <input type="text" id="watch-input" placeholder="Add expression...">
+                                    <button id="watch-add-btn">+</button>
+                                </div>
+                                <div id="watch-items"></div>
+                            </div>
+                        </details>
+                        <details class="debug-section">
+                            <summary>Breakpoints</summary>
+                            <div class="debug-section-body" id="breakpoints-list"></div>
+                        </details>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Memory Panel -->
+        <section id="panel-memory" class="panel" style="display:none;">
+            <div class="memory-toolbar">
+                <button id="memory-enable-btn" class="toolbar-btn">Enable Profiling</button>
+                <button id="memory-refresh-btn" class="toolbar-btn">Refresh</button>
+                <span id="memory-status" class="toolbar-status">Disabled</span>
+            </div>
+            <div class="memory-dashboard">
+                <div class="stat-card" id="stat-current-usage">
+                    <div class="stat-label">Current Usage</div>
+                    <div class="stat-value">--</div>
+                </div>
+                <div class="stat-card" id="stat-object-count">
+                    <div class="stat-label">Object Count</div>
+                    <div class="stat-value">--</div>
+                </div>
+                <div class="stat-card" id="stat-gc-collections">
+                    <div class="stat-label">GC Collections</div>
+                    <div class="stat-value">--</div>
+                </div>
+                <div class="stat-card" id="stat-avg-pause">
+                    <div class="stat-label">Avg GC Pause</div>
+                    <div class="stat-value">--</div>
+                </div>
+            </div>
+            <div class="memory-content">
+                <div class="memory-usage-bar-container">
+                    <div class="memory-usage-label">Memory Usage</div>
+                    <div class="memory-usage-bar">
+                        <div class="memory-usage-fill" id="memory-usage-fill" style="width:0%"></div>
+                    </div>
+                    <span class="memory-usage-text" id="memory-usage-text">0 B / 0 B</span>
+                </div>
+                <h3>GC History</h3>
+                <div class="gc-history-table-container">
+                    <table class="gc-history-table" id="gc-history-table">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Pause (ms)</th>
+                                <th>Freed Objects</th>
+                                <th>Freed Bytes</th>
+                                <th>Cycles Broken</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gc-history-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Network Panel -->
+        <section id="panel-network" class="panel" style="display:none;">
+            <div class="network-toolbar">
+                <button id="network-clear-btn" class="toolbar-btn">Clear</button>
+                <input type="text" id="network-filter" class="toolbar-input" placeholder="Filter by URL...">
+                <select id="network-method-filter" class="toolbar-select">
+                    <option value="">All Methods</option>
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
+            </div>
+            <div class="network-content">
+                <div class="network-table-container">
+                    <table class="network-table" id="network-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Method</th>
+                                <th>Status</th>
+                                <th>Type</th>
+                                <th>Size</th>
+                                <th>Time</th>
+                                <th>Timeline</th>
+                            </tr>
+                        </thead>
+                        <tbody id="network-body"></tbody>
+                    </table>
+                </div>
+                <div class="network-detail" id="network-detail" style="display:none;">
+                    <div class="network-detail-tabs">
+                        <button class="net-detail-tab active" data-detail="headers">Headers</button>
+                        <button class="net-detail-tab" data-detail="response">Response</button>
+                        <button class="net-detail-tab" data-detail="timing">Timing</button>
+                    </div>
+                    <div class="network-detail-body" id="network-detail-body"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Logging Panel -->
+        <section id="panel-logging" class="panel">
+            <div class="logging-toolbar">
+                <button id="log-clear-btn" class="toolbar-btn">Clear</button>
+                <select id="log-level-filter" class="toolbar-select">
+                    <option value="">All Levels</option>
+                    <option value="DEBUG">Debug</option>
+                    <option value="INFO">Info</option>
+                    <option value="WARN">Warn</option>
+                    <option value="ERROR">Error</option>
+                    <option value="FATAL">Fatal</option>
+                </select>
+                <input type="text" id="log-search" class="toolbar-input" placeholder="Search logs...">
+                <button id="log-export-btn" class="toolbar-btn">Export</button>
+                <label class="toolbar-toggle">
+                    <input type="checkbox" id="log-autoscroll" checked> Auto-scroll
+                </label>
+            </div>
+            <div class="logging-content">
+                <div class="log-entries" id="log-entries"></div>
+                <div class="log-detail" id="log-detail" style="display:none;">
+                    <div class="log-detail-header">
+                        <span>Log Detail</span>
+                        <button id="log-detail-close">&times;</button>
+                    </div>
+                    <pre class="log-detail-body" id="log-detail-body"></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Performance Panel -->
+        <section id="panel-performance" class="panel" style="display:none;">
+            <div class="perf-toolbar">
+                <button id="perf-record-btn" class="toolbar-btn record-btn">Record</button>
+                <button id="perf-stop-btn" class="toolbar-btn" disabled>Stop</button>
+                <button id="perf-clear-btn" class="toolbar-btn">Clear</button>
+                <span id="perf-status" class="toolbar-status">Idle</span>
+                <span id="perf-duration" class="toolbar-status"></span>
+            </div>
+            <div class="perf-content">
+                <div class="perf-tabs">
+                    <button class="perf-tab active" data-perf="flamegraph">Flame Graph</button>
+                    <button class="perf-tab" data-perf="calltree">Call Tree</button>
+                    <button class="perf-tab" data-perf="functions">Functions</button>
+                </div>
+                <div class="perf-view" id="perf-flamegraph">
+                    <div class="flamegraph-container" id="flamegraph-container">
+                        <p class="empty-state">Record a profile to see the flame graph.</p>
+                    </div>
+                </div>
+                <div class="perf-view" id="perf-calltree" style="display:none;">
+                    <table class="perf-table" id="calltree-table">
+                        <thead>
+                            <tr>
+                                <th>Function</th>
+                                <th>Self Time</th>
+                                <th>Total Time</th>
+                                <th>Calls</th>
+                            </tr>
+                        </thead>
+                        <tbody id="calltree-body"></tbody>
+                    </table>
+                </div>
+                <div class="perf-view" id="perf-functions" style="display:none;">
+                    <table class="perf-table" id="functions-table">
+                        <thead>
+                            <tr>
+                                <th>Function</th>
+                                <th>Self Time (ms)</th>
+                                <th>Total Time (ms)</th>
+                                <th>Self %</th>
+                                <th>Calls</th>
+                            </tr>
+                        </thead>
+                        <tbody id="functions-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Scripts (order matters) -->
+    <script src="js/main.js"></script>
+    <script src="js/logging.js"></script>
+    <script src="js/memory.js"></script>
+    <script src="js/debugger.js"></script>
+    <script src="js/network.js"></script>
+    <script src="js/performance.js"></script>
+</body>
+</html>

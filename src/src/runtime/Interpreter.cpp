@@ -3,6 +3,8 @@
 #include "stratos/Parser.h"
 #include "stratos/MemoryProfiler.h"
 #include "stratos/HttpServer.h"
+#include "stratos/DebugEngine.h"
+#include "stratos/Profiler.h"
 #include <iostream>
 #include <cmath>
 #include <fstream>
@@ -116,6 +118,78 @@ void Interpreter::exitScope() {
 
 void Interpreter::error(const std::string& message) {
     throw std::runtime_error("Runtime error: " + message);
+}
+
+// --- Debug Engine Integration ---
+
+void Interpreter::setDebugEngine(DebugEngine* engine) {
+    debugEngine_ = engine;
+    if (debugEngine_) {
+        // Set up variable provider
+        debugEngine_->setVariableProvider([this](int frameDepth) -> std::vector<VariableInfo> {
+            std::vector<VariableInfo> vars;
+            auto env = currentEnv;
+            // Walk up the environment chain by frameDepth
+            for (int i = 0; i < frameDepth && env && env->parent; ++i) {
+                env = env->parent;
+            }
+            if (env) {
+                for (const auto& [name, val] : env->variables) {
+                    VariableInfo vi;
+                    vi.name = name;
+                    vi.type = val.type;
+                    // Convert value to string representation
+                    if (val.type == "int") {
+                        try { vi.value = std::to_string(val.asInt()); } catch (...) { vi.value = "?"; }
+                    } else if (val.type == "double") {
+                        try { vi.value = std::to_string(val.asDouble()); } catch (...) { vi.value = "?"; }
+                    } else if (val.type == "string") {
+                        try { vi.value = "\"" + val.asString() + "\""; } catch (...) { vi.value = "?"; }
+                    } else if (val.type == "bool") {
+                        try { vi.value = val.asBool() ? "true" : "false"; } catch (...) { vi.value = "?"; }
+                    } else if (val.type == "char") {
+                        try { vi.value = std::string("'") + val.asChar() + "'"; } catch (...) { vi.value = "?"; }
+                    } else if (val.type == "void") {
+                        vi.value = "void";
+                    } else if (val.type == "object") {
+                        try {
+                            auto obj = val.asObject();
+                            vi.value = "<" + obj->className + ">";
+                        } catch (...) { vi.value = "<object>"; }
+                    } else {
+                        vi.value = "<" + val.type + ">";
+                    }
+                    vars.push_back(vi);
+                }
+            }
+            return vars;
+        });
+
+        // Set up expression evaluator
+        debugEngine_->setExpressionEvaluator([this](const std::string& expr, int) -> std::string {
+            try {
+                // Simple variable lookup
+                auto val = currentEnv->get(expr);
+                if (val.type == "int") return std::to_string(val.asInt());
+                if (val.type == "double") return std::to_string(val.asDouble());
+                if (val.type == "string") return "\"" + val.asString() + "\"";
+                if (val.type == "bool") return val.asBool() ? "true" : "false";
+                return "<" + val.type + ">";
+            } catch (...) {
+                return "\"<could not evaluate>\"";
+            }
+        });
+    }
+}
+
+DebugEngine* Interpreter::getDebugEngine() const {
+    return debugEngine_;
+}
+
+void Interpreter::checkDebugBreak(const std::string& file, int line) {
+    if (debugEngine_ && debugEngine_->isEnabled()) {
+        debugEngine_->checkBreak(file, line);
+    }
 }
 
 // --- Expression Visitors ---
@@ -2445,6 +2519,7 @@ void Interpreter::visit(AwaitExpr& expr) {
 // --- Statement Visitors ---
 
 void Interpreter::visit(VarDecl& stmt) {
+    checkDebugBreak(stmt.name.file, stmt.name.line);
     //std::cerr << "[DEBUG] VarDecl: declaring variable '" << stmt.name.lexeme << "'" << std::endl;
     RuntimeValue value;
 
@@ -2651,6 +2726,11 @@ void Interpreter::visit(BlockStmt& stmt) {
 }
 
 void Interpreter::visit(ExpressionStmt& stmt) {
+    // Debug break - use expression position if available
+    if (debugEngine_ && debugEngine_->isEnabled()) {
+        // ExpressionStmt doesn't have its own token, but the expression might
+        // We'll rely on statement-level breaks in other visitors
+    }
     // Just evaluate the expression and discard the result
     stmt.expression->accept(*this);
 }
@@ -2710,6 +2790,7 @@ void Interpreter::visit(WhileStmt& stmt) {
 }
 
 void Interpreter::visit(ForStmt& stmt) {
+    checkDebugBreak(stmt.variable.file, stmt.variable.line);
     // Evaluate the iterable expression
     stmt.iterable->accept(*this);
     RuntimeValue iterableValue = lastValue;
@@ -2921,6 +3002,7 @@ void Interpreter::visit(ForStmt& stmt) {
 }
 
 void Interpreter::visit(ReturnStmt& stmt) {
+    checkDebugBreak(stmt.keyword.file, stmt.keyword.line);
     RuntimeValue value;
 
     if (stmt.value) {
@@ -3228,6 +3310,14 @@ RuntimeValue Interpreter::callFunction(const std::string& name,
 
     Function& func = functions[name];
 
+    // Push debug call frame
+    if (debugEngine_ && debugEngine_->isEnabled()) {
+        debugEngine_->pushFrame(name, "", 0);
+    }
+
+    // Profiler hook
+    Profiler::instance().enterFunction(name, "");
+
     // Check if this is "main" function - special case
     if (name == "main") {
         enterScope();
@@ -3240,10 +3330,14 @@ RuntimeValue Interpreter::callFunction(const std::string& name,
             }
         } catch (ReturnException& ret) {
             exitScope();
+            if (debugEngine_ && debugEngine_->isEnabled()) debugEngine_->popFrame();
+            Profiler::instance().exitFunction(name);
             return ret.value;
         }
 
         exitScope();
+        if (debugEngine_ && debugEngine_->isEnabled()) debugEngine_->popFrame();
+        Profiler::instance().exitFunction(name);
         return RuntimeValue(std::any(0), "int");
     }
 
@@ -3307,6 +3401,8 @@ RuntimeValue Interpreter::callFunction(const std::string& name,
     }
 
     exitScope();
+    if (debugEngine_ && debugEngine_->isEnabled()) debugEngine_->popFrame();
+    Profiler::instance().exitFunction(name);
     return result;
 }
 
@@ -3317,6 +3413,13 @@ RuntimeValue Interpreter::callModuleFunction(const std::string& moduleName,
     // Save previous executing module context
     std::string previousModule = currentExecutingModule;
     currentExecutingModule = moduleName;
+
+    // Push debug frame
+    if (debugEngine_ && debugEngine_->isEnabled()) {
+        debugEngine_->pushFrame(moduleName + "::" + functionName,
+                                funcDecl->name.file, funcDecl->name.line);
+    }
+    Profiler::instance().enterFunction(moduleName + "::" + functionName, funcDecl->name.file);
 
     // Create new scope for function execution
     enterScope();
@@ -3359,6 +3462,8 @@ RuntimeValue Interpreter::callModuleFunction(const std::string& moduleName,
         } else {
             // Function has no body - it's a stub/declaration that should be native
             exitScope();
+            if (debugEngine_ && debugEngine_->isEnabled()) debugEngine_->popFrame();
+            Profiler::instance().exitFunction(moduleName + "::" + functionName);
             currentExecutingModule = previousModule;
             error("Function '" + moduleName + "::" + functionName + "' is declared but not implemented. "
                   "This may be a native function that requires C++ implementation.");
@@ -3369,6 +3474,10 @@ RuntimeValue Interpreter::callModuleFunction(const std::string& moduleName,
     }
 
     exitScope();
+
+    // Pop debug frame
+    if (debugEngine_ && debugEngine_->isEnabled()) debugEngine_->popFrame();
+    Profiler::instance().exitFunction(moduleName + "::" + functionName);
 
     // Restore previous executing module context
     currentExecutingModule = previousModule;
