@@ -129,6 +129,7 @@ void NativeRegistry::initializeStdlib() {
     initConcurrent(); // Concurrency primitives
     initHTTP();      // HTTP server and client
     initAsync();     // Async/await primitives
+    initGui();       // GUI widget system (SDL2/Skia)
 }
 
 // ============================================================================

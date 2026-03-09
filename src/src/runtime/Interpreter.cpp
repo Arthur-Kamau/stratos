@@ -2562,6 +2562,18 @@ void Interpreter::visit(FunctionDecl& stmt) {
     // If we're loading a module, register function in module namespace
     if (!currentModuleName.empty()) {
         moduleFunctions[currentModuleName].emplace(stmt.name.lexeme, std::ref(stmt));  // Safe reference
+
+        // Also register in global scope for unqualified access (e.g. Text() instead of gui.Text())
+        // Skip internal/native declarations (prefixed with __) to avoid polluting global namespace
+        if (stmt.name.lexeme.find("__") != 0) {
+            Function func;
+            for (const auto& param : stmt.parameters) {
+                func.parameters.push_back(&param);
+            }
+            func.returnType = stmt.returnType;
+            func.body = std::ref(stmt.body);
+            functions[stmt.name.lexeme] = func;
+        }
     } else {
         // Store function for later execution in global scope
         Function func;
@@ -3296,6 +3308,15 @@ RuntimeValue Interpreter::evaluateNativeCall(const std::string& moduleName,
             }
         } else if (moduleName == "log") {
             resultType = "void";
+        } else {
+            // Generic fallback: infer type from the actual std::any result
+            if (result.has_value()) {
+                if (result.type() == typeid(int)) resultType = "int";
+                else if (result.type() == typeid(double)) resultType = "double";
+                else if (result.type() == typeid(std::string)) resultType = "string";
+                else if (result.type() == typeid(bool)) resultType = "bool";
+                else if (result.type() == typeid(float)) resultType = "double";
+            }
         }
     }
 
@@ -3305,6 +3326,13 @@ RuntimeValue Interpreter::evaluateNativeCall(const std::string& moduleName,
 RuntimeValue Interpreter::callFunction(const std::string& name,
                                        const std::vector<RuntimeValue>& args) {
     if (functions.find(name) == functions.end()) {
+        // Check if this is a native function from a loaded module (supports unqualified calls)
+        auto& registry = NativeRegistry::getInstance();
+        for (const auto& [modName, _] : moduleFunctions) {
+            if (registry.isNative(modName, name)) {
+                return evaluateNativeCall(modName, name, args);
+            }
+        }
         error("Undefined function: " + name);
     }
 
@@ -3378,21 +3406,32 @@ RuntimeValue Interpreter::callFunction(const std::string& name,
             result = RuntimeValue(std::any(), "void");
         } else {
             // Native function fallback
-            // Try to find the function in NativeRegistry in common modules
+            // Try to find the function in NativeRegistry across all loaded modules
             auto& registry = NativeRegistry::getInstance();
-            std::vector<std::string> modules = {"collections", "math", "io", "strings", "prelude"};
             bool found = false;
-            
-            for (const auto& mod : modules) {
-                if (registry.isNative(mod, name)) {
-                    result = evaluateNativeCall(mod, name, args);
+
+            // Check all loaded modules (covers gui, collections, math, etc.)
+            for (const auto& [modName, _] : moduleFunctions) {
+                if (registry.isNative(modName, name)) {
+                    result = evaluateNativeCall(modName, name, args);
                     found = true;
                     break;
                 }
             }
-            
+
+            // Fallback: check common built-in modules
             if (!found) {
-                // If not found in common modules, just return void (or logic error?)
+                std::vector<std::string> builtins = {"collections", "math", "io", "strings", "prelude"};
+                for (const auto& mod : builtins) {
+                    if (registry.isNative(mod, name)) {
+                        result = evaluateNativeCall(mod, name, args);
+                        found = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!found) {
                  result = RuntimeValue(std::any(), "void");
             }
         }

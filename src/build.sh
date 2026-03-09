@@ -22,6 +22,10 @@ RUNTIME_SOURCES=(
     "src/runtime/WebSocket.cpp"
     "src/runtime/Interpreter.cpp"
     "src/runtime/HttpServer.cpp"
+    "src/runtime/gui/SDL2Renderer.cpp"
+    "src/runtime/gui/Widget.cpp"
+    "src/runtime/gui/App.cpp"
+    "src/runtime/gui/GuiNatives.cpp"
 )
 
 # Compile each runtime source to object file with -fPIC
@@ -29,7 +33,7 @@ RUNTIME_OBJS=""
 for src in "${RUNTIME_SOURCES[@]}"; do
     obj_name="build/runtime/$(basename $src .cpp).o"
     echo "  Compiling $src..."
-    g++ -std=c++20 -O2 -fPIC -I include -I libs/sqlite -I/usr/include/postgresql -c $src -o $obj_name
+    g++ -std=c++20 -O2 -fPIC -I include -I libs/sqlite -I/usr/include/postgresql $(pkg-config --cflags sdl2 SDL2_ttf SDL2_image 2>/dev/null) -c $src -o $obj_name
 
     if [ $? -ne 0 ]; then
         echo "[FAILED] Runtime compilation failed: $src"
@@ -70,7 +74,7 @@ echo "=============================================="
 
 # Compile the main Stratos compiler, linking against the runtime library
 # Note: AsyncRuntime.cpp excluded due to template compilation issues
-g++ -std=c++20 -I include -I libs/sqlite -I/usr/include/postgresql \
+g++ -std=c++20 -I include -I libs/sqlite -I/usr/include/postgresql $(pkg-config --cflags sdl2 SDL2_ttf SDL2_image 2>/dev/null) \
   src/main.cpp \
   src/lexer/Lexer.cpp \
   src/parser/Parser.cpp \
@@ -94,7 +98,8 @@ g++ -std=c++20 -I include -I libs/sqlite -I/usr/include/postgresql \
   src/doc/MarkdownDocGenerator.cpp \
   src/doc/JSONDocGenerator.cpp \
   build/libstratos_runtime.a \
-  -o build/stratos -lpthread -ldl -lssl -lcrypto -lpq -lmysqlclient -lhiredis
+  -o build/stratos -lpthread -ldl -lssl -lcrypto -lpq -lmysqlclient -lhiredis \
+  $(pkg-config --libs sdl2 SDL2_ttf SDL2_image 2>/dev/null)
 
 if [ $? -eq 0 ]; then
     echo ""
