@@ -3272,44 +3272,21 @@ RuntimeValue Interpreter::evaluateNativeCall(const std::string& moduleName,
             resultType = "object";
         }
     } else {
-        // Fallback: Determine type based on module and function for legacy functions
-        if (moduleName == "math") {
-            if (functionName == "randomInt" || functionName == "sign") {
-                resultType = "int";
-            } else {
-                resultType = "double";
+        // Look up the declared return type from the FunctionDecl in moduleFunctions.
+        // This uses the return type written in the .st file (e.g. `fn __gui_text_create(...) int;`)
+        // so new modules work automatically without hardcoding.
+        bool foundDecl = false;
+        if (moduleFunctions.count(moduleName) &&
+            moduleFunctions.at(moduleName).count(functionName)) {
+            const FunctionDecl& decl = moduleFunctions.at(moduleName).at(functionName).get();
+            if (!decl.returnType.empty()) {
+                resultType = decl.returnType;
+                foundDecl = true;
             }
-        } else if (moduleName == "strings") {
-            if (functionName == "length" || functionName == "indexOf") {
-                resultType = "int";
-            } else if (functionName == "contains" || functionName == "isEmpty") {
-                resultType = "bool";
-            } else {
-                resultType = "string";
-            }
-        } else if (moduleName == "io") {
-            // File info functions that return bool
-            if (functionName == "exists" || functionName == "isFile" || functionName == "isDirectory") {
-                resultType = "bool";
-            }
-            // Functions that return int
-            else if (functionName == "fileSize") {
-                resultType = "int";
-            }
-            // Functions that return string
-            else if (functionName == "readFile" || functionName == "join" ||
-                     functionName == "basename" || functionName == "dirname" ||
-                     functionName == "extension" || functionName == "absolute") {
-                resultType = "string";
-            }
-            // Everything else defaults to void (writeFile, remove, mkdir, etc.)
-            else {
-                resultType = "void";
-            }
-        } else if (moduleName == "log") {
-            resultType = "void";
-        } else {
-            // Generic fallback: infer type from the actual std::any result
+        }
+
+        if (!foundDecl) {
+            // Last resort: infer type from the actual std::any result
             if (result.has_value()) {
                 if (result.type() == typeid(int)) resultType = "int";
                 else if (result.type() == typeid(double)) resultType = "double";

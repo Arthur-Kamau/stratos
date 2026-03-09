@@ -37,12 +37,12 @@ fn main() {
 
     // Working with doubles
     val x = 10.5;
-    val y = 2.0;
-    println("x = 10.5, y = 2.0");
-    println("x + y =");
-    println(x + y);
-    println("x * y =");
-    println(x * y);
+    val y2 = 2.0;
+    println("x = 10.5, y2 = 2.0");
+    println("x + y2 =");
+    println(x + y2);
+    println("x * y2 =");
+    println(x * y2);
     println("");
 
     // Factorial calculation
