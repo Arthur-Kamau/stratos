@@ -52,16 +52,16 @@ cd stratos
 ### Build the Interpreter/Compiler
 
 ```bash
-cd interpreter/C++
+cd src
 bash build.sh
 ```
 
-This creates the `stratos` binary at `interpreter/C++/build/stratos`.
+This creates the `stratos` binary at `src/build/stratos`.
 
 ### Verify the Build
 
 ```bash
-./interpreter/C++/build/stratos --version
+./src/build/stratos --version
 ```
 
 You should see output like:
@@ -73,7 +73,7 @@ Built: Dec 28 2025 17:57:24
 
 ## Making the Binary Globally Available
 
-During development, you'll want to use the `stratos` command from anywhere without typing the full path `./interpreter/C++/build/stratos` every time.
+During development, you'll want to use the `stratos` command from anywhere without typing the full path `./src/build/stratos` every time.
 
 ### Recommended: Create a Symlink
 
@@ -84,7 +84,7 @@ This approach ensures you always use the latest build automatically:
 mkdir -p ~/bin
 
 # Create a symlink to the build directory
-ln -sf "$(pwd)/interpreter/C++/build/stratos" ~/bin/stratos
+ln -sf "$(pwd)/src/build/stratos" ~/bin/stratos
 ```
 
 ### Add ~/bin to PATH
@@ -123,7 +123,7 @@ stratos --version
 Whenever you make changes and rebuild:
 
 ```bash
-cd interpreter/C++
+cd src
 bash build.sh
 
 # The new binary is immediately available globally:
@@ -305,12 +305,12 @@ git commit --no-verify -m "Emergency fix"
    ```
 
 2. **Make your changes**:
-   - Edit code in `interpreter/C++/src/` or `interpreter/C++/include/`
+   - Edit code in `src/src/` or `src/include/`
    - Add tests if needed
 
 3. **Build and test**:
    ```bash
-   cd interpreter/C++
+   cd src
    bash build.sh
    cd ../..
    ./test-all.sh
@@ -349,15 +349,15 @@ git commit --no-verify -m "Emergency fix"
 #### Updating the Lexer/Parser
 
 Files to modify:
-- Lexer: `interpreter/C++/src/lexer/Lexer.cpp`
-- Parser: `interpreter/C++/src/parser/Parser.cpp`
-- AST: `interpreter/C++/include/stratos/AST.h`
+- Lexer: `src/src/lexer/Lexer.cpp`
+- Parser: `src/src/parser/Parser.cpp`
+- AST: `src/include/stratos/AST.h`
 
 #### Updating the Interpreter
 
 Files to modify:
-- Interpreter: `interpreter/C++/src/runtime/Interpreter.cpp`
-- Native functions: `interpreter/C++/src/runtime/NativeRegistry.cpp`
+- Interpreter: `src/src/runtime/Interpreter.cpp`
+- Native functions: `src/src/runtime/NativeRegistry.cpp`
 
 ## Submitting Changes
 
@@ -428,7 +428,7 @@ For sample code and tests:
 
 ```
 stratos/
-├── interpreter/C++/          # C++ interpreter/compiler
+├── src/                      # C++ interpreter/compiler
 │   ├── include/stratos/      # Header files
 │   │   ├── AST.h             # Abstract Syntax Tree definitions
 │   │   ├── Lexer.h           # Lexer interface
@@ -442,7 +442,7 @@ stratos/
 │   │   └── main.cpp          # Entry point
 │   ├── build/                # Build output (gitignored)
 │   └── build.sh              # Build script
-├── samples/                  # Test projects and examples
+├── examples/                 # Example projects and tests
 │   ├── hello_world/
 │   ├── dependency_test/
 │   ├── oop_demo/
@@ -463,8 +463,8 @@ Key Files:
 
 ### Important Directories
 
-- **interpreter/C++/src/**: All C++ source code
-- **interpreter/C++/include/stratos/**: All header files
+- **src/src/**: All C++ source code
+- **src/include/stratos/**: All header files
 - **samples/**: Example programs and test cases
 - **docs/**: User-facing documentation
 
@@ -483,7 +483,7 @@ If you need help or have questions:
 
 ```bash
 # Clean build and try again
-cd interpreter/C++
+cd src
 rm -rf build/
 bash build.sh
 ```
@@ -503,7 +503,7 @@ ls -lh ~/bin/stratos
 
 # Recreate if needed
 rm ~/bin/stratos
-ln -sf "$(pwd)/interpreter/C++/build/stratos" ~/bin/stratos
+ln -sf "$(pwd)/src/build/stratos" ~/bin/stratos
 
 # Ensure ~/bin is in PATH
 echo $PATH | grep "$HOME/bin"
