@@ -3,7 +3,8 @@
 
 namespace stratos {
 
-IRGenerator::IRGenerator(const std::string& filename) : out(filename) {
+IRGenerator::IRGenerator(const std::string& filename, CompileTarget target)
+    : out(filename), target_(target) {
     if (!out.is_open()) {
         std::cerr << "Failed to open output file: " << filename << std::endl;
     }
@@ -14,21 +15,23 @@ void IRGenerator::generate(const std::vector<std::unique_ptr<Stmt>>& statements)
     emitRaw("; ModuleID = 'stratos_module'");
     emitRaw("source_filename = \"stratos_source\"");
 
-    // Platform-specific target triple and datalayout
+    if (target_ == CompileTarget::WASM || target_ == CompileTarget::WASM_EMSCRIPTEN) {
+        emitWasmHeader();
+    } else {
+        // Platform-specific target triple and datalayout (native)
 #ifdef _WIN32
-    emitRaw("target datalayout = \"e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"");
-    emitRaw("target triple = \"x86_64-pc-windows-msvc\"\n");
+        emitRaw("target datalayout = \"e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"");
+        emitRaw("target triple = \"x86_64-pc-windows-msvc\"\n");
 #elif __APPLE__
-    emitRaw("target datalayout = \"e-m:o-i64:64-f80:128-n8:16:32:64-S128\"");
-    emitRaw("target triple = \"x86_64-apple-darwin\"\n");
+        emitRaw("target datalayout = \"e-m:o-i64:64-f80:128-n8:16:32:64-S128\"");
+        emitRaw("target triple = \"x86_64-apple-darwin\"\n");
 #else
-    // Linux and other Unix-like systems
-    emitRaw("target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"");
-    emitRaw("target triple = \"x86_64-pc-linux-gnu\"\n");
+        emitRaw("target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"");
+        emitRaw("target triple = \"x86_64-pc-linux-gnu\"\n");
 #endif
-
-    emitRaw("declare i32 @printf(i8*, ...)\n");
-    emitRaw("declare i8* @malloc(i64)\n");
+        emitRaw("declare i32 @printf(i8*, ...)\n");
+        emitRaw("declare i8* @malloc(i64)\n");
+    }
 
     // Define common format specifiers
     emitRaw("; Format specifiers for print");
@@ -1058,6 +1061,54 @@ void IRGenerator::visit(DestructuringDecl& stmt) {
 
 void IRGenerator::visit(SelectStmt& stmt) {
     // TODO: IR generation for select statement
+}
+
+// ============================================================================
+// WASM Target Support
+// ============================================================================
+
+void IRGenerator::emitWasmHeader() {
+    if (target_ == CompileTarget::WASM_EMSCRIPTEN) {
+        // Emscripten target — uses wasi-like ABI
+        emitRaw("target datalayout = \"e-m:e-p:32:32-p10:8:8-p20:8:8-i64:64-n32:64-S128-ni:1:10:20\"");
+        emitRaw("target triple = \"wasm32-unknown-emscripten\"\n");
+    } else {
+        // Standalone WASM — wasm32-unknown-unknown (WASI compatible)
+        emitRaw("target datalayout = \"e-m:e-p:32:32-p10:8:8-p20:8:8-i64:64-n32:64-S128-ni:1:10:20\"");
+        emitRaw("target triple = \"wasm32-unknown-wasi\"\n");
+    }
+
+    emitWasmImports();
+}
+
+void IRGenerator::emitWasmImports() {
+    // Import printf-like function from JS environment
+    // In WASM, printf is provided by the host (JS runtime or WASI)
+    if (target_ == CompileTarget::WASM_EMSCRIPTEN) {
+        // Emscripten provides printf via musl libc
+        emitRaw("declare i32 @printf(i8*, ...)\n");
+        emitRaw("declare i8* @malloc(i64)\n");
+    } else {
+        // Standalone WASM — import from host
+        // WASI fd_write for stdout output
+        emitRaw("; WASI imports for standalone WASM");
+        emitRaw("declare i32 @__wasi_fd_write(i32, i32, i32, i32)\n");
+        // Memory allocation — provided by runtime
+        emitRaw("declare i8* @malloc(i64)\n");
+        // Bridge function: print_str(ptr, len) — imported from JS host
+        emitRaw("; Host-imported functions");
+        emitRaw("declare void @__stratos_print_str(i8*, i32)");
+        emitRaw("declare void @__stratos_print_int(i32)");
+        emitRaw("declare void @__stratos_print_float(double)\n");
+        // printf shim that routes through host
+        emitRaw("declare i32 @printf(i8*, ...)\n");
+    }
+}
+
+void IRGenerator::emitWasmExports() {
+    // Export main and memory for the host to access
+    // This is handled via attributes in the IR, but we note it here
+    // The actual export happens via linker flags (--export=main, --export=memory)
 }
 
 } // namespace stratos

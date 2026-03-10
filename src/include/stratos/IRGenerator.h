@@ -16,10 +16,17 @@ struct IRValue {
     std::string type; // The LLVM type (e.g., "i32", "double")
 };
 
+enum class CompileTarget {
+    NATIVE,     // x86_64 (default)
+    WASM,       // wasm32-unknown-unknown (standalone)
+    WASM_EMSCRIPTEN  // wasm32-unknown-emscripten
+};
+
 class IRGenerator : public ASTVisitor {
 public:
-    IRGenerator(const std::string& filename);
+    IRGenerator(const std::string& filename, CompileTarget target = CompileTarget::NATIVE);
     void generate(const std::vector<std::unique_ptr<Stmt>>& statements);
+    CompileTarget getTarget() const { return target_; }
 
     // Visitor Implementation
     void visit(BinaryExpr& expr) override;
@@ -137,6 +144,12 @@ private:
                            const std::vector<IRValue>& args);
 
     std::string currentModule; // Track current module/package context
+    CompileTarget target_ = CompileTarget::NATIVE;
+
+    // WASM-specific helpers
+    void emitWasmHeader();
+    void emitWasmImports();
+    void emitWasmExports();
 };
 
 } // namespace stratos

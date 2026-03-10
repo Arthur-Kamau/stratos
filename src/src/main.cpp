@@ -50,6 +50,7 @@
 #include "stratos/STUILexer.h"
 #include "stratos/STUIParser.h"
 #include "stratos/STUITranspiler.h"
+#include "stratos/WasmCompiler.h"
 
 using namespace stratos;
 namespace fs = std::filesystem;
@@ -119,8 +120,14 @@ void printHelp() {
     std::cout << "  stratos doc generate -f html   Generate HTML documentation\n";
     std::cout << "  stratos doc generate -f md     Generate Markdown documentation\n";
     std::cout << "  stratos doc generate -f json   Generate JSON documentation\n";
+    std::cout << "  stratos compile --target wasm   Compile to WebAssembly (output in dist/)\n";
+    std::cout << "  stratos compile -t wasm -v     Compile to WASM with verbose output\n";
     std::cout << "  stratos --help                 Show this help\n";
     std::cout << "  stratos --version              Show version\n\n";
+    std::cout << "Compile targets:\n";
+    std::cout << "  native            Default: compile to native binary\n";
+    std::cout << "  wasm              WebAssembly (clang + wasm-ld)\n";
+    std::cout << "  wasm-emscripten   WebAssembly via Emscripten\n\n";
     std::cout << "Dependency URL formats:\n";
     std::cout << "  github.com/user/repo@v1.0.0    GitHub with version tag\n";
     std::cout << "  github.com/user/repo@main      GitHub with branch\n";
@@ -170,6 +177,7 @@ struct CompileResult {
 // Forward declarations
 CompileResult compileFile(const std::string& path, const std::string& outputPath = "", bool verbose = false, bool run = false);
 CompileResult compileMultipleFiles(const std::vector<std::string>& files, const std::string& outputPath, bool verbose, const std::string& projectRoot, MemoryModeConfig memConfig = {});
+std::optional<std::string> resolveEntryPoint(const std::string& inputPath);
 
 CompileResult compileFile(const std::string& path, const std::string& outputPath, bool verbose, bool run) {
     CompileResult result;
@@ -584,6 +592,7 @@ int handleCompile(int argc, char* argv[]) {
     std::string outputPath;
     bool verbose = false;
     bool runBinary = false;
+    std::string targetStr = "native"; // "native", "wasm", "wasm-emscripten"
     OptimizationLevel optLevel = OptimizationLevel::O2; // Default to -O2
 
     std::string command = argv[1];
@@ -594,16 +603,8 @@ int handleCompile(int argc, char* argv[]) {
         runBinary = true;
     }
 
-    if (argc <= argStart) {
-        std::cerr << "Error: No input file specified\n\n";
-        printHelp();
-        return 1;
-    }
-
-    inputPath = argv[argStart];
-
-    // Parse options
-    for (int i = argStart + 1; i < argc; i++) {
+    // Parse all arguments — flags can appear before or after input path
+    for (int i = argStart; i < argc; i++) {
         std::string arg = argv[i];
         if (arg == "-o" || arg == "--output") {
             if (i + 1 < argc) {
@@ -613,6 +614,15 @@ int handleCompile(int argc, char* argv[]) {
             verbose = true;
         } else if (arg == "-r" || arg == "--run") {
             runBinary = true;
+        } else if (arg == "--target" || arg == "-t") {
+            if (i + 1 < argc) {
+                targetStr = argv[++i];
+                if (targetStr != "native" && targetStr != "wasm" && targetStr != "wasm-emscripten") {
+                    std::cerr << "Error: Invalid target: " << targetStr << std::endl;
+                    std::cerr << "Valid targets: native, wasm, wasm-emscripten" << std::endl;
+                    return 1;
+                }
+            }
         }
         // Optimization flags
         else if (arg == "-O0") {
@@ -642,6 +652,100 @@ int handleCompile(int argc, char* argv[]) {
                     return 1;
                 }
             }
+        } else if (inputPath.empty() && arg[0] != '-') {
+            inputPath = arg;
+        }
+    }
+
+    if (inputPath.empty()) {
+        std::cerr << "Error: No input file specified\n\n";
+        printHelp();
+        return 1;
+    }
+
+    // Handle WASM target
+    if (targetStr == "wasm" || targetStr == "wasm-emscripten") {
+        bool useEmscripten = (targetStr == "wasm-emscripten");
+        CompileTarget wasmTarget = useEmscripten ? CompileTarget::WASM_EMSCRIPTEN : CompileTarget::WASM;
+
+        std::cout << "Compiling to WebAssembly (" << targetStr << ")...\n";
+
+        // Resolve input path
+        std::string resolvedPath;
+        if (fs::is_directory(inputPath)) {
+            auto resolved = resolveEntryPoint(inputPath);
+            if (!resolved) {
+                std::cerr << "Error: Could not find entry point in: " << inputPath << "\n";
+                return 1;
+            }
+            resolvedPath = *resolved;
+        } else {
+            resolvedPath = inputPath;
+        }
+
+        // Read and compile source to IR
+        std::ifstream file(resolvedPath);
+        if (!file.is_open()) {
+            std::cerr << "Error: Could not open file: " << resolvedPath << "\n";
+            return 1;
+        }
+
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        std::string source = buffer.str();
+
+        try {
+            Lexer lexer(source, resolvedPath);
+            auto tokens = lexer.scanTokens();
+            if (verbose) std::cout << "  [Lexer]      OK (" << tokens.size() << " tokens)\n";
+
+            Parser parser(tokens);
+            auto statements = parser.parse();
+            if (verbose) std::cout << "  [Parser]     OK (" << statements.size() << " statements)\n";
+
+            SemanticAnalyzer analyzer;
+            if (!analyzer.analyze(statements)) {
+                std::cerr << "Error: Semantic analysis failed\n";
+                return 1;
+            }
+            if (verbose) std::cout << "  [Semantics]  OK\n";
+
+            Optimizer optimizer;
+            optimizer.optimize(statements);
+
+            // Generate WASM-targeted IR
+            std::string wasmOutputDir = outputPath.empty() ? "dist" : outputPath;
+            fs::create_directories(wasmOutputDir);
+            std::string irPath = wasmOutputDir + "/app.ll";
+
+            IRGenerator generator(irPath, wasmTarget);
+            generator.generate(statements);
+            if (verbose) std::cout << "  [IR Gen]     OK → " << irPath << "\n";
+
+            // Run WASM compiler pipeline
+            WasmCompiler wasmCompiler;
+            std::string title = fs::path(resolvedPath).stem().string();
+            auto result = wasmCompiler.compile(irPath, wasmOutputDir, title, useEmscripten);
+
+            if (!result.success) {
+                std::cerr << "Error: " << result.errorMessage << "\n";
+                return 1;
+            }
+
+            std::cout << "\n[SUCCESS] WASM compilation complete!\n";
+            std::cout << "  Output directory: " << wasmOutputDir << "/\n";
+            if (!result.wasmPath.empty()) std::cout << "  WASM:    " << result.wasmPath << "\n";
+            if (!result.jsPath.empty())   std::cout << "  Runtime: " << result.jsPath << "\n";
+            if (!result.htmlPath.empty()) std::cout << "  HTML:    " << result.htmlPath << "\n";
+            std::cout << "  Time:    " << result.compilationTime << "ms\n";
+            std::cout << "\nTo run: serve the output directory and open index.html in a browser.\n";
+            std::cout << "  e.g.: cd " << wasmOutputDir << " && python3 -m http.server 8080\n";
+
+            return 0;
+
+        } catch (const std::exception& e) {
+            std::cerr << "Error: " << e.what() << "\n";
+            return 1;
         }
     }
 

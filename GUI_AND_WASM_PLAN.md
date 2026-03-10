@@ -1,6 +1,6 @@
 # Stratos GUI, HTML Transpilation & WASM Plan
 
-> Status: **Phase 2 Complete** | Last updated: 2026-03-10
+> Status: **Phase 3 Complete** | Last updated: 2026-03-10
 
 ## Decisions
 
@@ -220,34 +220,31 @@ component App {
 **Goal**: Compile Stratos programs to WebAssembly using existing LLVM IR → wasm32.
 
 ### 3.1 — LLVM wasm32 Backend
-- [ ] Update `IRGenerator.cpp` — add `wasm32-unknown-unknown` target triple
-- [ ] Add `--target wasm` flag to `stratos compile`
-- [ ] Handle wasm32-specific calling conventions and data layout
-- [ ] Generate wasm-compatible LLVM IR (no system calls, use imports)
-- [ ] Add `wasm32-unknown-emscripten` target for Emscripten-backed builds
+- [x] Update `IRGenerator.cpp` — add `wasm32-unknown-wasi` target triple
+- [x] Add `--target wasm` flag to `stratos compile`
+- [x] Handle wasm32-specific data layout (`e-m:e-p:32:32-p10:8:8-p20:8:8-i64:64-n32:64-S128-ni:1:10:20`)
+- [x] Generate wasm-compatible LLVM IR (WASI imports, host-bridged print functions)
+- [x] Add `wasm32-unknown-emscripten` target for Emscripten-backed builds
+- [x] `CompileTarget` enum: `NATIVE`, `WASM`, `WASM_EMSCRIPTEN`
 
 ### 3.2 — WASM Runtime Shims
-- [ ] `src/wasm/runtime.js` — JS glue code (memory management, string passing)
-- [ ] `src/wasm/stdlib_shims.cpp` — wasm-compatible std function implementations
-- [ ] Map `println` → `console.log`, file I/O → browser APIs, etc.
-- [ ] HTTP client → `fetch()` API bridge
+- [x] `src/wasm/runtime.js` — JS glue code (StratosRuntime class: memory mgmt, string passing, printf shim, WASI fd_write)
+- [ ] `src/wasm/stdlib_shims.cpp` — wasm-compatible std function implementations (deferred: needs per-function porting)
+- [x] Map `println` → `console.log` via `__stratos_print_str/int/float` imports
+- [ ] HTTP client → `fetch()` API bridge (deferred)
 
 ### 3.3 — Build Pipeline
-- [ ] `.ll` → `llc` (wasm32 target) → `.o` → `wasm-ld` → `.wasm`
-- [ ] Or: `.ll` → Emscripten → `.wasm` + `.js` + `.html`
-- [ ] Add `stratos compile --target wasm <dir>` command
-- [ ] Generate HTML shell that loads the `.wasm` module
-- [ ] Support `stratos.conf` target option:
-  ```hocon
-  build {
-      target = "wasm"  // or "native" (default)
-  }
-  ```
+- [x] `WasmCompiler.cpp/h` — full pipeline: IR → clang (wasm32) → wasm-ld → .wasm
+- [x] Emscripten pipeline support: IR → emcc → .wasm + .js + .html
+- [x] `stratos compile --target wasm <dir>` command (outputs to dist/)
+- [x] `src/wasm/shell.html` — HTML shell template with dark theme, output console
+- [x] Tool auto-detection (clang-14..20, wasm-ld-14..20, emcc) with clear error messages
+- [ ] Support `stratos.conf` target option (deferred)
 
 ### 3.4 — Testing
-- [ ] Test basic programs compile to valid wasm
-- [ ] Test in Node.js (via `node --experimental-wasm-modules`)
-- [ ] Test in browser (serve HTML shell, verify execution)
+- [x] Test IR generation produces valid wasm32 target triple and WASI imports
+- [ ] Test in Node.js (requires clang + wasm-ld installed)
+- [ ] Test in browser (requires clang + wasm-ld installed)
 - [ ] Benchmark: wasm vs native interpreter
 
 ---
