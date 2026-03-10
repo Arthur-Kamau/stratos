@@ -33,9 +33,13 @@ private:
 
     // Widget tree → std/gui calls
     std::unique_ptr<Expr> transpileWidget(const WidgetNode& widget);
+    std::unique_ptr<Expr> transpileWidget(const WidgetNode& widget, std::vector<std::unique_ptr<Stmt>>& setupStmts);
     std::unique_ptr<Expr> transpileWidgetArgs(const WidgetNode& widget);
     std::unique_ptr<Expr> transpileWidgetProps(const WidgetNode& widget);
     std::unique_ptr<Expr> transpileWidgetChildren(const WidgetNode& widget);
+
+    int tempVarCounter_ = 0;
+    std::string nextTempVar();
 
     // Expression conversion: STUI expr → Stratos expr
     std::unique_ptr<Expr> transpileExpr(const STUIExpr& expr);

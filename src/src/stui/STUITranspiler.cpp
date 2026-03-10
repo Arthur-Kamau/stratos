@@ -202,7 +202,9 @@ std::unique_ptr<Stmt> STUITranspiler::transpileComponent(const ComponentDecl& co
 
     // Build the widget tree
     if (component.viewRoot) {
-        auto widgetExpr = transpileWidget(*component.viewRoot);
+        std::vector<std::unique_ptr<Stmt>> widgetSetup;
+        auto widgetExpr = transpileWidget(*component.viewRoot, widgetSetup);
+        for (auto& s : widgetSetup) bodyStmts.push_back(std::move(s));
         bodyStmts.push_back(makeVarDecl("__root__", std::move(widgetExpr)));
 
         // Return the root widget
@@ -254,64 +256,194 @@ std::unique_ptr<Stmt> STUITranspiler::transpileStateDecl(const StateDecl& state)
 // Widget Tree → Widget() calls
 // ============================================================================
 
+std::string STUITranspiler::nextTempVar() {
+    return "__w" + std::to_string(tempVarCounter_++);
+}
+
+// Simple version (no setup statements) — used by callers that don't need styling
 std::unique_ptr<Expr> STUITranspiler::transpileWidget(const WidgetNode& widget) {
+    std::vector<std::unique_ptr<Stmt>> unused;
+    return transpileWidget(widget, unused);
+}
+
+std::unique_ptr<Expr> STUITranspiler::transpileWidget(const WidgetNode& widget,
+                                                       std::vector<std::unique_ptr<Stmt>>& setupStmts) {
     // Window is a STUI-only concept — skip it and transpile children directly
     if (widget.widgetType == "Window") {
         if (widget.children.size() == 1) {
-            return transpileWidget(*widget.children[0]);
+            return transpileWidget(*widget.children[0], setupStmts);
         } else if (widget.children.size() > 1) {
             std::vector<std::unique_ptr<Expr>> childExprs;
             for (const auto& child : widget.children) {
-                childExprs.push_back(transpileWidget(*child));
+                childExprs.push_back(transpileWidget(*child, setupStmts));
             }
             std::vector<std::unique_ptr<Expr>> colArgs;
             colArgs.push_back(makeArrayLiteral(std::move(childExprs)));
             return makeCall("Column", std::move(colArgs));
         }
-        // Empty Window → return a placeholder
         return makeCall("Center", {});
     }
 
-    // Build: WidgetType(args..., propsMap, childrenArray)
-    //
-    // The exact mapping depends on the widget type.
-    // For most widgets: Text("content", { fontSize: 24 })
-    // For containers: Column({ spacing: 8 }, [child1, child2])
-
-    std::string guiCall = widget.widgetType;
+    // Separate properties into constructor args vs post-creation styling
     std::vector<std::unique_ptr<Expr>> callArgs;
+    std::vector<const Property*> styleProps;
 
-    // Positional arguments
+    // Positional arguments first
     for (const auto& arg : widget.arguments) {
         callArgs.push_back(transpileExpr(*arg));
     }
 
-    // Properties → map literal
-    if (!widget.properties.empty() || !widget.events.empty()) {
-        std::vector<std::pair<std::string, std::unique_ptr<Expr>>> mapEntries;
-
-        for (const auto& prop : widget.properties) {
-            mapEntries.push_back({prop.name, transpileExpr(*prop.value)});
+    // Determine which properties are constructor args vs style props
+    for (const auto& prop : widget.properties) {
+        // Constructor args: spacing (Row/Column), columns (Grid), min/max (Slider)
+        if ((prop.name == "spacing" && (widget.widgetType == "Row" || widget.widgetType == "Column" || widget.widgetType == "Grid")) ||
+            (prop.name == "columns" && widget.widgetType == "Grid") ||
+            ((prop.name == "min" || prop.name == "max") && widget.widgetType == "Slider") ||
+            (prop.name == "group" && widget.widgetType == "RadioButton") ||
+            (prop.name == "width" && widget.widgetType == "Drawer")) {
+            // These are constructor args — handled by the widget function signature
+            // For spacing: Row(spacing, children) / Column(spacing, children)
+            if (prop.name == "spacing" && callArgs.empty()) {
+                // Ensure spacing is a float literal for Column/Row/Grid
+                auto* lit = dynamic_cast<const stui::LiteralExpr*>(prop.value.get());
+                if (lit) {
+                    std::string val = lit->token.lexeme;
+                    if (val.find('.') == std::string::npos) val += ".0";
+                    callArgs.push_back(std::make_unique<SLiteralExpr>(val, TokenType::NUMBER));
+                } else {
+                    callArgs.push_back(transpileExpr(*prop.value));
+                }
+            }
+        } else {
+            styleProps.push_back(&prop);
         }
-
-        // Events → lambda entries in the map
-        for (const auto& event : widget.events) {
-            mapEntries.push_back({event.eventName, transpileExpr(*event.handler)});
-        }
-
-        callArgs.push_back(makeMapLiteral(std::move(mapEntries)));
     }
 
     // Children → array literal
     if (!widget.children.empty()) {
         std::vector<std::unique_ptr<Expr>> childExprs;
         for (const auto& child : widget.children) {
-            childExprs.push_back(transpileWidget(*child));
+            childExprs.push_back(transpileWidget(*child, setupStmts));
         }
         callArgs.push_back(makeArrayLiteral(std::move(childExprs)));
     }
 
-    return makeCall(guiCall, std::move(callArgs));
+    // If no styling needed, return the call directly
+    if (styleProps.empty() && widget.events.empty()) {
+        return makeCall(widget.widgetType, std::move(callArgs));
+    }
+
+    // Need styling: create temp var, apply styles, return var reference
+    std::string tmpVar = nextTempVar();
+    setupStmts.push_back(makeVarDecl(tmpVar, makeCall(widget.widgetType, std::move(callArgs))));
+
+    // Generate style calls
+    for (const auto* prop : styleProps) {
+        std::string propName = prop->name;
+        if (propName == "fontSize") {
+            std::vector<std::unique_ptr<Expr>> args;
+            args.push_back(makeVar(tmpVar));
+            // Ensure fontSize is a float
+            auto* lit = dynamic_cast<const stui::LiteralExpr*>(prop->value.get());
+            if (lit) {
+                std::string val = lit->token.lexeme;
+                if (val.find('.') == std::string::npos) val += ".0";
+                args.push_back(std::make_unique<SLiteralExpr>(val, TokenType::NUMBER));
+            } else {
+                args.push_back(transpileExpr(*prop->value));
+            }
+            setupStmts.push_back(makeExprStmt(makeCall("setFontSize", std::move(args))));
+        } else if (propName == "color") {
+            // Parse color string to RGB
+            auto* lit = dynamic_cast<const stui::LiteralExpr*>(prop->value.get());
+            std::string colorStr = lit ? lit->token.lexeme : "";
+            int r = 255, g = 255, b = 255;
+            if (colorStr == "white") { r = 255; g = 255; b = 255; }
+            else if (colorStr == "black") { r = 0; g = 0; b = 0; }
+            else if (colorStr == "red") { r = 255; g = 0; b = 0; }
+            else if (colorStr == "green") { r = 0; g = 255; b = 0; }
+            else if (colorStr == "blue") { r = 0; g = 0; b = 255; }
+            else if (colorStr == "gray" || colorStr == "grey") { r = 128; g = 128; b = 128; }
+            else if (colorStr == "yellow") { r = 255; g = 255; b = 0; }
+            else if (colorStr == "cyan") { r = 0; g = 255; b = 255; }
+            else if (colorStr == "magenta") { r = 255; g = 0; b = 255; }
+            else if (colorStr == "orange") { r = 255; g = 165; b = 0; }
+            std::vector<std::unique_ptr<Expr>> args;
+            args.push_back(makeVar(tmpVar));
+            args.push_back(makeNumber(r));
+            args.push_back(makeNumber(g));
+            args.push_back(makeNumber(b));
+            setupStmts.push_back(makeExprStmt(makeCall("setTextColor", std::move(args))));
+        } else if (propName == "backgroundColor") {
+            auto* lit = dynamic_cast<const stui::LiteralExpr*>(prop->value.get());
+            std::string colorStr = lit ? lit->token.lexeme : "";
+            int r = 30, g = 30, b = 50;
+            if (colorStr == "white") { r = 255; g = 255; b = 255; }
+            else if (colorStr == "black") { r = 0; g = 0; b = 0; }
+            else if (colorStr == "gray" || colorStr == "grey") { r = 128; g = 128; b = 128; }
+            std::vector<std::unique_ptr<Expr>> args;
+            args.push_back(makeVar(tmpVar));
+            args.push_back(makeNumber(r));
+            args.push_back(makeNumber(g));
+            args.push_back(makeNumber(b));
+            setupStmts.push_back(makeExprStmt(makeCall("setBackground", std::move(args))));
+        } else if (propName == "fontWeight") {
+            std::vector<std::unique_ptr<Expr>> args;
+            args.push_back(makeVar(tmpVar));
+            args.push_back(transpileExpr(*prop->value));
+            setupStmts.push_back(makeExprStmt(makeCall("setFontWeight", std::move(args))));
+        } else if (propName == "fontFamily") {
+            std::vector<std::unique_ptr<Expr>> args;
+            args.push_back(makeVar(tmpVar));
+            args.push_back(transpileExpr(*prop->value));
+            setupStmts.push_back(makeExprStmt(makeCall("setFontFamily", std::move(args))));
+        } else if (propName == "padding") {
+            std::vector<std::unique_ptr<Expr>> args;
+            args.push_back(makeVar(tmpVar));
+            args.push_back(transpileExpr(*prop->value));
+            setupStmts.push_back(makeExprStmt(makeCall("setPadding", std::move(args))));
+        } else if (propName == "margin") {
+            std::vector<std::unique_ptr<Expr>> args;
+            args.push_back(makeVar(tmpVar));
+            args.push_back(transpileExpr(*prop->value));
+            setupStmts.push_back(makeExprStmt(makeCall("setMargin", std::move(args))));
+        } else if (propName == "borderRadius") {
+            std::vector<std::unique_ptr<Expr>> args;
+            args.push_back(makeVar(tmpVar));
+            args.push_back(transpileExpr(*prop->value));
+            setupStmts.push_back(makeExprStmt(makeCall("setBorderRadius", std::move(args))));
+        } else if (propName == "opacity") {
+            std::vector<std::unique_ptr<Expr>> args;
+            args.push_back(makeVar(tmpVar));
+            args.push_back(transpileExpr(*prop->value));
+            setupStmts.push_back(makeExprStmt(makeCall("setOpacity", std::move(args))));
+        } else if (propName == "width" || propName == "height") {
+            // Need both width and height for setSize — skip individual for now
+        } else if (propName == "visible") {
+            std::vector<std::unique_ptr<Expr>> args;
+            args.push_back(makeVar(tmpVar));
+            args.push_back(transpileExpr(*prop->value));
+            setupStmts.push_back(makeExprStmt(makeCall("setVisible", std::move(args))));
+        } else if (propName == "flex") {
+            std::vector<std::unique_ptr<Expr>> args;
+            args.push_back(makeVar(tmpVar));
+            args.push_back(transpileExpr(*prop->value));
+            setupStmts.push_back(makeExprStmt(makeCall("setFlex", std::move(args))));
+        } else if (propName == "italic") {
+            std::vector<std::unique_ptr<Expr>> args;
+            args.push_back(makeVar(tmpVar));
+            args.push_back(transpileExpr(*prop->value));
+            setupStmts.push_back(makeExprStmt(makeCall("setItalic", std::move(args))));
+        } else if (propName == "textAlign") {
+            std::vector<std::unique_ptr<Expr>> args;
+            args.push_back(makeVar(tmpVar));
+            args.push_back(transpileExpr(*prop->value));
+            setupStmts.push_back(makeExprStmt(makeCall("setTextAlign", std::move(args))));
+        }
+        // Other properties silently ignored for now
+    }
+
+    return makeVar(tmpVar);
 }
 
 // ============================================================================
@@ -555,18 +687,21 @@ std::unique_ptr<Stmt> STUITranspiler::generateMain(const STUIFile& file) {
         if (windowWidget && !windowWidget->children.empty()) {
             // If Window has children, wrap them
             if (windowWidget->children.size() == 1) {
-                auto widgetExpr = transpileWidget(*windowWidget->children[0]);
-                // app.root(widgetExpr);
+                std::vector<std::unique_ptr<Stmt>> widgetSetup;
+                auto widgetExpr = transpileWidget(*windowWidget->children[0], widgetSetup);
+                for (auto& s : widgetSetup) mainBody.push_back(std::move(s));
                 std::vector<std::unique_ptr<Expr>> rootArgs;
                 rootArgs.push_back(std::move(widgetExpr));
                 mainBody.push_back(makeExprStmt(
                     makeMemberCall("app", "root", std::move(rootArgs))));
             } else {
                 // Multiple children → wrap in Column
+                std::vector<std::unique_ptr<Stmt>> widgetSetup;
                 std::vector<std::unique_ptr<Expr>> childExprs;
                 for (const auto& child : windowWidget->children) {
-                    childExprs.push_back(transpileWidget(*child));
+                    childExprs.push_back(transpileWidget(*child, widgetSetup));
                 }
+                for (auto& s : widgetSetup) mainBody.push_back(std::move(s));
                 std::vector<std::unique_ptr<Expr>> colArgs;
                 colArgs.push_back(makeArrayLiteral(std::move(childExprs)));
                 auto columnExpr = makeCall("Column", std::move(colArgs));
@@ -578,7 +713,9 @@ std::unique_ptr<Stmt> STUITranspiler::generateMain(const STUIFile& file) {
             }
         } else if (!windowWidget && appComp->viewRoot) {
             // No Window widget, use the view root directly
-            auto widgetExpr = transpileWidget(*appComp->viewRoot);
+            std::vector<std::unique_ptr<Stmt>> widgetSetup;
+            auto widgetExpr = transpileWidget(*appComp->viewRoot, widgetSetup);
+            for (auto& s : widgetSetup) mainBody.push_back(std::move(s));
             std::vector<std::unique_ptr<Expr>> rootArgs;
             rootArgs.push_back(std::move(widgetExpr));
             mainBody.push_back(makeExprStmt(
