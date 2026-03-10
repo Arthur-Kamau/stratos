@@ -65,6 +65,9 @@ void HTMLGenerator::generateHTML(const stui::STUIFile& file, const std::string& 
     html_ << "  <meta charset=\"UTF-8\">\n";
     html_ << "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n";
     html_ << "  <title>" << title << "</title>\n";
+    html_ << "  <link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n";
+    html_ << "  <link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n";
+    html_ << "  <link href=\"https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap\" rel=\"stylesheet\">\n";
     html_ << "  <link rel=\"stylesheet\" href=\"styles.css\">\n";
     html_ << "</head>\n<body>\n";
     html_ << "  <div id=\"app\">\n";
@@ -172,9 +175,28 @@ void HTMLGenerator::generateWidgetOpen(const stui::WidgetNode& widget, const std
         }
         html_ << " />\n";
         return;
+    } else if (widget.widgetType == "RadioButton") {
+        html_ << ind(indent) << "<label class=\"" << classes << "\" id=\"" << id << "\"><input type=\"radio\"";
+        for (const auto& prop : widget.properties) {
+            if (prop.name == "group") html_ << " name=\"" << exprToString(*prop.value) << "\"";
+            if (prop.name == "value") html_ << " value=\"" << exprToString(*prop.value) << "\"";
+        }
+        html_ << " /> ";
+        if (!widget.arguments.empty()) html_ << exprToString(*widget.arguments[0]);
+        html_ << "</label>\n";
+        return;
     } else if (widget.widgetType == "Dropdown") {
         html_ << ind(indent) << "<select class=\"" << classes << "\" id=\"" << id << "\">\n";
+        // Render children as <option> elements
+        for (const auto& child : widget.children) {
+            html_ << ind(indent + 1) << "<option>" << child->widgetType << "</option>\n";
+        }
         html_ << ind(indent) << "</select>\n";
+        return;
+    } else if (widget.widgetType == "Icon") {
+        html_ << ind(indent) << "<span class=\"" << classes << "\" id=\"" << id << "\">";
+        if (!widget.arguments.empty()) html_ << exprToString(*widget.arguments[0]);
+        html_ << "</span>\n";
         return;
     } else if (widget.widgetType == "AppBar") {
         html_ << ind(indent) << "<header class=\"" << classes << "\" id=\"" << id << "\">";
@@ -183,6 +205,12 @@ void HTMLGenerator::generateWidgetOpen(const stui::WidgetNode& widget, const std
         }
     } else if (widget.widgetType == "Dialog" || widget.widgetType == "Modal") {
         html_ << ind(indent) << "<dialog class=\"" << classes << "\" id=\"" << id << "\">\n";
+    } else if (widget.widgetType == "Drawer") {
+        html_ << ind(indent) << "<aside class=\"" << classes << "\" id=\"" << id << "\">\n";
+    } else if (widget.widgetType == "TabBar") {
+        html_ << ind(indent) << "<nav class=\"" << classes << "\" id=\"" << id << "\" role=\"tablist\">\n";
+    } else if (widget.widgetType == "Menu") {
+        html_ << ind(indent) << "<div class=\"" << classes << "\" id=\"" << id << "\" role=\"menu\">\n";
     } else if (widget.widgetType == "Spacer") {
         html_ << ind(indent) << "<div class=\"" << classes << "\" id=\"" << id << "\"></div>\n";
         return;
@@ -203,6 +231,12 @@ void HTMLGenerator::generateWidgetClose(const stui::WidgetNode& widget, int inde
         html_ << "</header>\n";
     } else if (widget.widgetType == "Dialog" || widget.widgetType == "Modal") {
         html_ << ind(indent) << "</dialog>\n";
+    } else if (widget.widgetType == "Drawer") {
+        html_ << ind(indent) << "</aside>\n";
+    } else if (widget.widgetType == "TabBar") {
+        html_ << ind(indent) << "</nav>\n";
+    } else if (widget.widgetType == "Menu") {
+        html_ << ind(indent) << "</div>\n";
     } else {
         html_ << ind(indent) << "</div>\n";
     }
@@ -256,7 +290,7 @@ void HTMLGenerator::generateBaseStyles() {
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--st-bg);
   color: var(--st-text);
   min-height: 100vh;
@@ -354,6 +388,46 @@ body {
   padding: 8px 12px;
   border-radius: var(--st-radius);
 }
+
+.st-radiobutton { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.st-radiobutton input[type="radio"] { accent-color: var(--st-primary); }
+
+.st-icon { display: inline-flex; align-items: center; justify-content: center; }
+
+.st-drawer {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: 280px; background: var(--st-surface);
+  border-right: 1px solid var(--st-border);
+  transform: translateX(-100%); transition: transform 0.3s ease;
+  z-index: 100; overflow-y: auto;
+}
+.st-drawer.open { transform: translateX(0); }
+
+.st-tabbar {
+  display: flex; border-bottom: 2px solid var(--st-border);
+  background: var(--st-surface);
+}
+.st-tabbar > * {
+  padding: 12px 24px; cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -2px;
+  color: var(--st-text-secondary); transition: all 0.2s;
+}
+.st-tabbar > *.active {
+  color: var(--st-primary); border-bottom-color: var(--st-primary);
+}
+
+.st-menu {
+  position: absolute; background: var(--st-surface);
+  border: 1px solid var(--st-border); border-radius: var(--st-radius);
+  box-shadow: var(--st-shadow); min-width: 180px; z-index: 200;
+  display: none;
+}
+.st-menu.open { display: block; }
+.st-menu [role="menuitem"] {
+  padding: 8px 16px; cursor: pointer; transition: background 0.15s;
+}
+.st-menu [role="menuitem"]:hover { background: rgba(255,255,255,0.05); }
+.st-menu hr { border: none; border-top: 1px solid var(--st-border); margin: 4px 0; }
 )";
 }
 

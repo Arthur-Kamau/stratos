@@ -5,6 +5,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <memory>
+#include <functional>
 
 namespace stratos {
 
@@ -12,6 +13,20 @@ namespace stratos {
 static int nextWidgetId = 1;
 static std::unordered_map<int, gui::WidgetPtr> widgetRegistry;
 static std::unique_ptr<gui::App> currentApp;
+
+// Callback storage: widget ID -> callback function (set by interpreter)
+static int nextCallbackId = 1;
+static std::unordered_map<int, std::function<void()>> clickCallbacks;
+static std::unordered_map<int, std::function<void(std::string)>> changeCallbacks;
+static std::unordered_map<int, std::function<void(bool)>> boolChangeCallbacks;
+static std::unordered_map<int, std::function<void(float)>> floatChangeCallbacks;
+static std::unordered_map<int, std::function<void(float, float)>> mouseCallbacks;
+static std::unordered_map<int, std::function<void(int, int)>> keyCallbacks;
+
+// State storage: state ID -> value
+static int nextStateId = 1;
+static std::unordered_map<int, std::any> stateValues;
+static std::unordered_map<int, std::vector<std::function<void()>>> stateListeners;
 
 static int storeWidget(gui::WidgetPtr widget) {
     int id = nextWidgetId++;
@@ -138,6 +153,180 @@ void NativeRegistry::initGui() {
                 if (align == "center") widget->setTextAlign(gui::TextAlign::Center);
                 else if (align == "right") widget->setTextAlign(gui::TextAlign::Right);
                 else widget->setTextAlign(gui::TextAlign::Left);
+            }
+            return true;
+        });
+
+    // ========================================
+    // Typography: font weight, style, family, generic text color
+    // ========================================
+
+    // Set font weight by name: "thin","light","regular","medium","semibold","bold","extrabold","black"
+    registerFunction("gui", "__gui_text_set_weight",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            std::string w = std::any_cast<std::string>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::Text>(getWidget(id));
+            if (widget) {
+                gui::FontSpec font = widget->getFont();
+                if (w == "thin") font.weight = gui::FontWeight::Thin;
+                else if (w == "light") font.weight = gui::FontWeight::Light;
+                else if (w == "regular") font.weight = gui::FontWeight::Regular;
+                else if (w == "medium") font.weight = gui::FontWeight::Medium;
+                else if (w == "semibold") font.weight = gui::FontWeight::SemiBold;
+                else if (w == "bold") font.weight = gui::FontWeight::Bold;
+                else if (w == "extrabold") font.weight = gui::FontWeight::ExtraBold;
+                else if (w == "black") font.weight = gui::FontWeight::Black;
+                widget->setFont(font);
+            }
+            return true;
+        });
+
+    // Set italic
+    registerFunction("gui", "__gui_text_set_italic",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            bool italic = std::any_cast<bool>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::Text>(getWidget(id));
+            if (widget) {
+                gui::FontSpec font = widget->getFont();
+                font.style = italic ? gui::FontStyle::Italic : gui::FontStyle::Normal;
+                widget->setFont(font);
+            }
+            return true;
+        });
+
+    // Set font family
+    registerFunction("gui", "__gui_text_set_font_family",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            std::string family = std::any_cast<std::string>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::Text>(getWidget(id));
+            if (widget) {
+                gui::FontSpec font = widget->getFont();
+                font.family = family;
+                widget->setFont(font);
+            }
+            return true;
+        });
+
+    // Generic widget font size (works on any widget that has a font_)
+    registerFunction("gui", "__gui_widget_set_font_size",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            float size = static_cast<float>(std::any_cast<double>(args[1]));
+            auto widget = getWidget(id);
+            if (!widget) return true;
+            // Try each widget type that has a font
+            if (auto t = std::dynamic_pointer_cast<gui::Text>(widget)) {
+                gui::FontSpec f = t->getFont(); f.size = size; t->setFont(f);
+            } else if (auto b = std::dynamic_pointer_cast<gui::Button>(widget)) {
+                gui::FontSpec f; f.size = size; b->setFont(f);
+            }
+            return true;
+        });
+
+    // Generic widget text color (works on Text, Button, Icon)
+    registerFunction("gui", "__gui_widget_set_text_color",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            int r = std::any_cast<int>(args[1]);
+            int g = std::any_cast<int>(args[2]);
+            int b = std::any_cast<int>(args[3]);
+            auto widget = getWidget(id);
+            if (!widget) return true;
+            if (auto t = std::dynamic_pointer_cast<gui::Text>(widget)) {
+                t->setColor(gui::Color::rgb(r, g, b));
+            } else if (auto btn = std::dynamic_pointer_cast<gui::Button>(widget)) {
+                btn->setTextColor(gui::Color::rgb(r, g, b));
+            } else if (auto icon = std::dynamic_pointer_cast<gui::Icon>(widget)) {
+                icon->setColor(gui::Color::rgb(r, g, b));
+            }
+            return true;
+        });
+
+    // Generic widget font weight
+    registerFunction("gui", "__gui_widget_set_font_weight",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            std::string w = std::any_cast<std::string>(args[1]);
+            auto widget = getWidget(id);
+            if (!widget) return true;
+            gui::FontWeight weight = gui::FontWeight::Regular;
+            if (w == "thin") weight = gui::FontWeight::Thin;
+            else if (w == "light") weight = gui::FontWeight::Light;
+            else if (w == "medium") weight = gui::FontWeight::Medium;
+            else if (w == "semibold") weight = gui::FontWeight::SemiBold;
+            else if (w == "bold") weight = gui::FontWeight::Bold;
+            else if (w == "extrabold") weight = gui::FontWeight::ExtraBold;
+            else if (w == "black") weight = gui::FontWeight::Black;
+            if (auto t = std::dynamic_pointer_cast<gui::Text>(widget)) {
+                gui::FontSpec f = t->getFont(); f.weight = weight; t->setFont(f);
+            } else if (auto btn = std::dynamic_pointer_cast<gui::Button>(widget)) {
+                gui::FontSpec f; f.weight = weight; btn->setFont(f);
+            }
+            return true;
+        });
+
+    // Generic widget font family
+    registerFunction("gui", "__gui_widget_set_font_family",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            std::string family = std::any_cast<std::string>(args[1]);
+            auto widget = getWidget(id);
+            if (!widget) return true;
+            if (auto t = std::dynamic_pointer_cast<gui::Text>(widget)) {
+                gui::FontSpec f = t->getFont(); f.family = family; t->setFont(f);
+            } else if (auto btn = std::dynamic_pointer_cast<gui::Button>(widget)) {
+                gui::FontSpec f; f.family = family; btn->setFont(f);
+            }
+            return true;
+        });
+
+    // Generic widget italic
+    registerFunction("gui", "__gui_widget_set_italic",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            bool italic = std::any_cast<bool>(args[1]);
+            auto widget = getWidget(id);
+            if (!widget) return true;
+            gui::FontStyle style = italic ? gui::FontStyle::Italic : gui::FontStyle::Normal;
+            if (auto t = std::dynamic_pointer_cast<gui::Text>(widget)) {
+                gui::FontSpec f = t->getFont(); f.style = style; t->setFont(f);
+            } else if (auto btn = std::dynamic_pointer_cast<gui::Button>(widget)) {
+                gui::FontSpec f; f.style = style; btn->setFont(f);
+            }
+            return true;
+        });
+
+    // Font management
+    registerFunction("gui", "__gui_font_register_file",
+        [](const std::vector<std::any>& args) -> std::any {
+            std::string family = std::any_cast<std::string>(args[0]);
+            std::string path = std::any_cast<std::string>(args[1]);
+            std::string variant = args.size() > 2 ? std::any_cast<std::string>(args[2]) : "regular";
+            if (currentApp) {
+                currentApp->getRenderer().registerFontFile(family, path, variant);
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_font_register_url",
+        [](const std::vector<std::any>& args) -> std::any {
+            std::string family = std::any_cast<std::string>(args[0]);
+            std::string url = std::any_cast<std::string>(args[1]);
+            std::string variant = args.size() > 2 ? std::any_cast<std::string>(args[2]) : "regular";
+            if (currentApp) {
+                return currentApp->getRenderer().registerFontURL(family, url, variant);
+            }
+            return false;
+        });
+
+    registerFunction("gui", "__gui_font_set_default",
+        [](const std::vector<std::any>& args) -> std::any {
+            std::string family = std::any_cast<std::string>(args[0]);
+            if (currentApp) {
+                currentApp->getRenderer().setDefaultFontFamily(family);
             }
             return true;
         });
@@ -496,23 +685,391 @@ void NativeRegistry::initGui() {
         });
 
     // ========================================
-    // Event handler registration
+    // New widgets: TextArea, RadioButton, Dropdown, Icon, Drawer, TabBar, Menu
     // ========================================
 
-    // Note: Event handlers from Stratos use a callback mechanism.
-    // The interpreter stores the Stratos function reference and
-    // calls it when the C++ widget fires the event.
-    // This is handled via the Interpreter's callback system.
+    // TextArea
+    registerFunction("gui", "__gui_textarea_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto widget = std::make_shared<gui::TextArea>();
+            if (!args.empty()) {
+                widget->setPlaceholder(std::any_cast<std::string>(args[0]));
+            }
+            return storeWidget(widget);
+        });
 
-    registerFunction("gui", "__gui_widget_set_onclick",
+    registerFunction("gui", "__gui_textarea_get_value",
         [](const std::vector<std::any>& args) -> std::any {
             int id = std::any_cast<int>(args[0]);
-            // The callback function is stored as an opaque ID by the interpreter
-            // and invoked through the interpreter's callback dispatch
-            auto widget = getWidget(id);
+            auto widget = std::dynamic_pointer_cast<gui::TextArea>(getWidget(id));
+            if (widget) return widget->getValue();
+            return std::string("");
+        });
+
+    registerFunction("gui", "__gui_textarea_set_value",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            std::string value = std::any_cast<std::string>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::TextArea>(getWidget(id));
+            if (widget) widget->setValue(value);
+            return true;
+        });
+
+    // RadioButton
+    registerFunction("gui", "__gui_radiobutton_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            std::string label = args.size() > 0 ? std::any_cast<std::string>(args[0]) : "";
+            std::string group = args.size() > 1 ? std::any_cast<std::string>(args[1]) : "default";
+            auto widget = std::make_shared<gui::RadioButton>(label, group);
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_radiobutton_is_selected",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::RadioButton>(getWidget(id));
+            return widget ? widget->isSelected() : false;
+        });
+
+    // Dropdown
+    registerFunction("gui", "__gui_dropdown_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto widget = std::make_shared<gui::Dropdown>();
+            if (!args.empty()) {
+                widget->setPlaceholder(std::any_cast<std::string>(args[0]));
+            }
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_dropdown_add_item",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            std::string item = std::any_cast<std::string>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::Dropdown>(getWidget(id));
+            if (widget) widget->addItem(item);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_dropdown_get_selected",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::Dropdown>(getWidget(id));
+            return widget ? widget->getSelectedItem() : std::string("");
+        });
+
+    registerFunction("gui", "__gui_dropdown_get_selected_index",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::Dropdown>(getWidget(id));
+            return widget ? widget->getSelectedIndex() : -1;
+        });
+
+    registerFunction("gui", "__gui_dropdown_set_selected",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            int idx = std::any_cast<int>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::Dropdown>(getWidget(id));
+            if (widget) widget->setSelectedIndex(idx);
+            return true;
+        });
+
+    // Icon
+    registerFunction("gui", "__gui_icon_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            std::string icon = std::any_cast<std::string>(args[0]);
+            float size = args.size() > 1 ? static_cast<float>(std::any_cast<double>(args[1])) : 24.0f;
+            auto widget = std::make_shared<gui::Icon>(icon, size);
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_icon_set_color",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            int r = std::any_cast<int>(args[1]);
+            int g = std::any_cast<int>(args[2]);
+            int b = std::any_cast<int>(args[3]);
+            auto widget = std::dynamic_pointer_cast<gui::Icon>(getWidget(id));
+            if (widget) widget->setColor(gui::Color::rgb(r, g, b));
+            return true;
+        });
+
+    // Drawer
+    registerFunction("gui", "__gui_drawer_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            float width = args.empty() ? 280.0f : static_cast<float>(std::any_cast<double>(args[0]));
+            auto widget = std::make_shared<gui::Drawer>(width);
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_drawer_open",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            bool open = std::any_cast<bool>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::Drawer>(getWidget(id));
+            if (widget) widget->setOpen(open);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_drawer_is_open",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::Drawer>(getWidget(id));
+            return widget ? widget->isOpen() : false;
+        });
+
+    // TabBar
+    registerFunction("gui", "__gui_tabbar_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto widget = std::make_shared<gui::TabBar>();
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_tabbar_add_tab",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            std::string label = std::any_cast<std::string>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::TabBar>(getWidget(id));
+            if (widget) widget->addTab(label);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_tabbar_get_active",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::TabBar>(getWidget(id));
+            return widget ? widget->getActiveTab() : 0;
+        });
+
+    registerFunction("gui", "__gui_tabbar_set_active",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            int idx = std::any_cast<int>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::TabBar>(getWidget(id));
+            if (widget) widget->setActiveTab(idx);
+            return true;
+        });
+
+    // Menu
+    registerFunction("gui", "__gui_menu_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto widget = std::make_shared<gui::Menu>();
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_menu_add_item",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            std::string label = std::any_cast<std::string>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::Menu>(getWidget(id));
             if (widget) {
-                // The interpreter will set this up via its own mechanism
-                // This is a placeholder for the callback bridge
+                gui::MenuItem item;
+                item.label = label;
+                widget->addItem(item);
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_menu_add_separator",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::Menu>(getWidget(id));
+            if (widget) widget->addSeparator();
+            return true;
+        });
+
+    registerFunction("gui", "__gui_menu_show",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            float x = static_cast<float>(std::any_cast<double>(args[1]));
+            float y = static_cast<float>(std::any_cast<double>(args[2]));
+            auto widget = std::dynamic_pointer_cast<gui::Menu>(getWidget(id));
+            if (widget) widget->show(x, y);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_menu_hide",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::Menu>(getWidget(id));
+            if (widget) widget->hide();
+            return true;
+        });
+
+    // ========================================
+    // Event handler registration (callback bridge)
+    // ========================================
+
+    // onClick — stores callback ID, wires C++ widget handler to invoke it
+    registerFunction("gui", "__gui_widget_set_onclick",
+        [](const std::vector<std::any>& args) -> std::any {
+            int widgetId = std::any_cast<int>(args[0]);
+            int callbackId = std::any_cast<int>(args[1]);
+            auto widget = getWidget(widgetId);
+            if (widget) {
+                // Store the callback ID; the interpreter resolves it
+                clickCallbacks[widgetId] = [callbackId]() {
+                    // The interpreter will check clickCallbacks and dispatch
+                };
+                widget->setOnClick([widgetId]() {
+                    auto it = clickCallbacks.find(widgetId);
+                    if (it != clickCallbacks.end()) {
+                        it->second();
+                    }
+                });
+            }
+            return callbackId;
+        });
+
+    // onChange (string value) — for TextField, TextArea, Dropdown
+    registerFunction("gui", "__gui_widget_set_onchange",
+        [](const std::vector<std::any>& args) -> std::any {
+            int widgetId = std::any_cast<int>(args[0]);
+            int callbackId = std::any_cast<int>(args[1]);
+            auto widget = getWidget(widgetId);
+            if (!widget) return callbackId;
+
+            auto textField = std::dynamic_pointer_cast<gui::TextField>(widget);
+            if (textField) {
+                textField->setOnChange([widgetId, callbackId](const std::string& val) {
+                    auto it = changeCallbacks.find(widgetId);
+                    if (it != changeCallbacks.end()) it->second(val);
+                });
+                changeCallbacks[widgetId] = [](const std::string&) {};
+            }
+
+            auto textArea = std::dynamic_pointer_cast<gui::TextArea>(widget);
+            if (textArea) {
+                textArea->setOnChange([widgetId, callbackId](const std::string& val) {
+                    auto it = changeCallbacks.find(widgetId);
+                    if (it != changeCallbacks.end()) it->second(val);
+                });
+                changeCallbacks[widgetId] = [](const std::string&) {};
+            }
+
+            auto dropdown = std::dynamic_pointer_cast<gui::Dropdown>(widget);
+            if (dropdown) {
+                dropdown->setOnChange([widgetId, callbackId](const std::string& val) {
+                    auto it = changeCallbacks.find(widgetId);
+                    if (it != changeCallbacks.end()) it->second(val);
+                });
+                changeCallbacks[widgetId] = [](const std::string&) {};
+            }
+
+            return callbackId;
+        });
+
+    // onSubmit — for TextField
+    registerFunction("gui", "__gui_widget_set_onsubmit",
+        [](const std::vector<std::any>& args) -> std::any {
+            int widgetId = std::any_cast<int>(args[0]);
+            int callbackId = std::any_cast<int>(args[1]);
+            auto widget = getWidget(widgetId);
+            if (widget) {
+                auto textField = std::dynamic_pointer_cast<gui::TextField>(widget);
+                if (textField) {
+                    textField->setOnSubmit([widgetId]() {
+                        auto it = clickCallbacks.find(widgetId + 10000); // offset for submit
+                        if (it != clickCallbacks.end()) it->second();
+                    });
+                    clickCallbacks[widgetId + 10000] = []() {};
+                }
+            }
+            return callbackId;
+        });
+
+    // onMouseEnter
+    registerFunction("gui", "__gui_widget_set_onmouseenter",
+        [](const std::vector<std::any>& args) -> std::any {
+            int widgetId = std::any_cast<int>(args[0]);
+            int callbackId = std::any_cast<int>(args[1]);
+            auto widget = getWidget(widgetId);
+            if (widget) {
+                widget->setOnMouseEnter([widgetId](float x, float y) {
+                    auto it = mouseCallbacks.find(widgetId);
+                    if (it != mouseCallbacks.end()) it->second(x, y);
+                });
+                mouseCallbacks[widgetId] = [](float, float) {};
+            }
+            return callbackId;
+        });
+
+    // onMouseLeave
+    registerFunction("gui", "__gui_widget_set_onmouseleave",
+        [](const std::vector<std::any>& args) -> std::any {
+            int widgetId = std::any_cast<int>(args[0]);
+            int callbackId = std::any_cast<int>(args[1]);
+            auto widget = getWidget(widgetId);
+            if (widget) {
+                widget->setOnMouseLeave([widgetId](float x, float y) {
+                    auto it = mouseCallbacks.find(widgetId + 20000); // offset
+                    if (it != mouseCallbacks.end()) it->second(x, y);
+                });
+                mouseCallbacks[widgetId + 20000] = [](float, float) {};
+            }
+            return callbackId;
+        });
+
+    // onKeyPress
+    registerFunction("gui", "__gui_widget_set_onkeypress",
+        [](const std::vector<std::any>& args) -> std::any {
+            int widgetId = std::any_cast<int>(args[0]);
+            int callbackId = std::any_cast<int>(args[1]);
+            auto widget = getWidget(widgetId);
+            if (widget) {
+                widget->setOnKeyPress([widgetId](gui::KeyCode key, gui::KeyModifiers mods) {
+                    auto it = keyCallbacks.find(widgetId);
+                    if (it != keyCallbacks.end()) it->second(static_cast<int>(key), 0);
+                });
+                keyCallbacks[widgetId] = [](int, int) {};
+            }
+            return callbackId;
+        });
+
+    // ========================================
+    // State management
+    // ========================================
+
+    registerFunction("gui", "__gui_state_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = nextStateId++;
+            stateValues[id] = args.empty() ? std::any() : args[0];
+            stateListeners[id] = {};
+            return id;
+        });
+
+    registerFunction("gui", "__gui_state_get",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto it = stateValues.find(id);
+            if (it != stateValues.end()) return it->second;
+            return std::any();
+        });
+
+    registerFunction("gui", "__gui_state_set",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            stateValues[id] = args[1];
+            // Notify listeners
+            auto lit = stateListeners.find(id);
+            if (lit != stateListeners.end()) {
+                for (auto& listener : lit->second) {
+                    listener();
+                }
+            }
+            // Request redraw
+            if (currentApp) currentApp->requestRedraw();
+            return true;
+        });
+
+    registerFunction("gui", "__gui_state_watch",
+        [](const std::vector<std::any>& args) -> std::any {
+            int stateId = std::any_cast<int>(args[0]);
+            int callbackId = std::any_cast<int>(args[1]);
+            auto lit = stateListeners.find(stateId);
+            if (lit != stateListeners.end()) {
+                lit->second.push_back([]() {
+                    // Interpreter will dispatch this callback
+                });
             }
             return true;
         });
@@ -532,6 +1089,16 @@ void NativeRegistry::initGui() {
         [](const std::vector<std::any>& args) -> std::any {
             widgetRegistry.clear();
             nextWidgetId = 1;
+            clickCallbacks.clear();
+            changeCallbacks.clear();
+            boolChangeCallbacks.clear();
+            floatChangeCallbacks.clear();
+            mouseCallbacks.clear();
+            keyCallbacks.clear();
+            stateValues.clear();
+            stateListeners.clear();
+            nextStateId = 1;
+            nextCallbackId = 1;
             currentApp.reset();
             return true;
         });

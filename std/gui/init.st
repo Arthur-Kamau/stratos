@@ -32,6 +32,16 @@ fn __gui_text_set_font_size(id: int, size: float) bool;
 fn __gui_text_set_color(id: int, r: int, g: int, b: int) bool;
 fn __gui_text_set_bold(id: int) bool;
 fn __gui_text_set_align(id: int, align: string) bool;
+fn __gui_text_set_weight(id: int, weight: string) bool;
+fn __gui_text_set_italic(id: int, italic: bool) bool;
+fn __gui_text_set_font_family(id: int, family: string) bool;
+
+// Generic typography (works on Text, Button, Icon, etc.)
+fn __gui_widget_set_font_size(id: int, size: float) bool;
+fn __gui_widget_set_text_color(id: int, r: int, g: int, b: int) bool;
+fn __gui_widget_set_font_weight(id: int, weight: string) bool;
+fn __gui_widget_set_font_family(id: int, family: string) bool;
+fn __gui_widget_set_italic(id: int, italic: bool) bool;
 
 fn __gui_button_create(label: string) int;
 fn __gui_button_set_color(id: int, r: int, g: int, b: int) bool;
@@ -43,8 +53,24 @@ fn __gui_textfield_create(placeholder: string) int;
 fn __gui_textfield_get_value(id: int) string;
 fn __gui_textfield_set_value(id: int, value: string) bool;
 
+fn __gui_textarea_create(placeholder: string) int;
+fn __gui_textarea_get_value(id: int) string;
+fn __gui_textarea_set_value(id: int, value: string) bool;
+
 fn __gui_checkbox_create(label: string) int;
 fn __gui_checkbox_is_checked(id: int) bool;
+
+fn __gui_radiobutton_create(label: string, group: string) int;
+fn __gui_radiobutton_is_selected(id: int) bool;
+
+fn __gui_dropdown_create(placeholder: string) int;
+fn __gui_dropdown_add_item(id: int, item: string) bool;
+fn __gui_dropdown_get_selected(id: int) string;
+fn __gui_dropdown_get_selected_index(id: int) int;
+fn __gui_dropdown_set_selected(id: int, index: int) bool;
+
+fn __gui_icon_create(icon: string, size: float) int;
+fn __gui_icon_set_color(id: int, r: int, g: int, b: int) bool;
 
 fn __gui_slider_create(min: float, max: float) int;
 fn __gui_slider_get_value(id: int) float;
@@ -56,6 +82,21 @@ fn __gui_appbar_create(title: string) int;
 
 fn __gui_dialog_create(title: string) int;
 fn __gui_dialog_open(id: int, open: bool) bool;
+
+fn __gui_drawer_create(width: float) int;
+fn __gui_drawer_open(id: int, open: bool) bool;
+fn __gui_drawer_is_open(id: int) bool;
+
+fn __gui_tabbar_create() int;
+fn __gui_tabbar_add_tab(id: int, label: string) bool;
+fn __gui_tabbar_get_active(id: int) int;
+fn __gui_tabbar_set_active(id: int, index: int) bool;
+
+fn __gui_menu_create() int;
+fn __gui_menu_add_item(id: int, label: string) bool;
+fn __gui_menu_add_separator(id: int) bool;
+fn __gui_menu_show(id: int, x: float, y: float) bool;
+fn __gui_menu_hide(id: int) bool;
 
 // Layout creation
 fn __gui_row_create(spacing: float) int;
@@ -81,10 +122,28 @@ fn __gui_widget_set_visible(id: int, visible: bool) bool;
 fn __gui_widget_set_enabled(id: int, enabled: bool) bool;
 fn __gui_widget_set_flex(id: int, flex: float) bool;
 fn __gui_widget_set_opacity(id: int, opacity: float) bool;
-fn __gui_widget_set_onclick(id: int) bool;
+
+// Event handlers
+fn __gui_widget_set_onclick(id: int, callbackId: int) int;
+fn __gui_widget_set_onchange(id: int, callbackId: int) int;
+fn __gui_widget_set_onsubmit(id: int, callbackId: int) int;
+fn __gui_widget_set_onmouseenter(id: int, callbackId: int) int;
+fn __gui_widget_set_onmouseleave(id: int, callbackId: int) int;
+fn __gui_widget_set_onkeypress(id: int, callbackId: int) int;
+
+// State management
+fn __gui_state_create(initial: any) int;
+fn __gui_state_get(id: int) any;
+fn __gui_state_set(id: int, value: any) bool;
+fn __gui_state_watch(stateId: int, callbackId: int) bool;
 
 fn __gui_destroy_widget(id: int) bool;
 fn __gui_destroy_all() bool;
+
+// Font management
+fn __gui_font_register_file(family: string, path: string, variant: string) bool;
+fn __gui_font_register_url(family: string, url: string, variant: string) bool;
+fn __gui_font_set_default(family: string) bool;
 
 // ============================================================
 // App class
@@ -138,6 +197,55 @@ class App {
 }
 
 // ============================================================
+// State management
+// ============================================================
+
+/// Reactive state container.
+///
+/// Example:
+///   val count = State(0);
+///   println(count.get());
+///   count.set(count.get() + 1);
+class State {
+    var id: int;
+
+    constructor(initial: any) {
+        this.id = __gui_state_create(initial);
+    }
+
+    fn get() any {
+        return __gui_state_get(this.id);
+    }
+
+    fn set(value: any) void {
+        __gui_state_set(this.id, value);
+    }
+}
+
+/// Derived state that computes a value from other state.
+///
+/// Example:
+///   val count = State(5);
+///   val doubled = DerivedState(fn() any => count.get() as int * 2);
+class DerivedState {
+    var computeFn: any;
+    var cachedValue: any;
+
+    constructor(compute: any) {
+        this.computeFn = compute;
+        this.cachedValue = nil;
+    }
+
+    fn get() any {
+        return this.cachedValue;
+    }
+
+    fn recompute() void {
+        // Caller should invoke this after dependencies change
+    }
+}
+
+// ============================================================
 // Widget helper — adds children to a parent
 // ============================================================
 
@@ -153,10 +261,6 @@ fn addChildren(parentId: int, children: array<int>) int {
 // ============================================================
 
 /// Create a text label.
-///
-/// Example:
-///   val label = gui.Text("Hello, World!");
-///   val big = gui.Text("Title", { fontSize: 24.0, bold: true });
 fn Text(text: string) int {
     return __gui_text_create(text);
 }
@@ -182,9 +286,6 @@ fn BoldText(text: string, fontSize: float) int {
 // ============================================================
 
 /// Create a clickable button.
-///
-/// Example:
-///   val btn = gui.Button("Click Me");
 fn Button(label: string) int {
     return __gui_button_create(label);
 }
@@ -249,6 +350,21 @@ fn setTextFieldValue(id: int, value: string) void {
     __gui_textfield_set_value(id, value);
 }
 
+/// Create a multi-line text input area.
+fn TextArea(placeholder: string) int {
+    return __gui_textarea_create(placeholder);
+}
+
+/// Get the current value of a text area.
+fn getTextAreaValue(id: int) string {
+    return __gui_textarea_get_value(id);
+}
+
+/// Set the value of a text area.
+fn setTextAreaValue(id: int, value: string) void {
+    __gui_textarea_set_value(id, value);
+}
+
 /// Create a checkbox with a label.
 fn Checkbox(label: string) int {
     return __gui_checkbox_create(label);
@@ -257,6 +373,47 @@ fn Checkbox(label: string) int {
 /// Check if a checkbox is checked.
 fn isChecked(id: int) bool {
     return __gui_checkbox_is_checked(id);
+}
+
+/// Create a radio button with a label and group name.
+/// Only one radio button per group can be selected at a time.
+fn RadioButton(label: string, group: string) int {
+    return __gui_radiobutton_create(label, group);
+}
+
+/// Check if a radio button is selected.
+fn isRadioSelected(id: int) bool {
+    return __gui_radiobutton_is_selected(id);
+}
+
+/// Create a dropdown/select widget.
+fn Dropdown(placeholder: string) int {
+    return __gui_dropdown_create(placeholder);
+}
+
+/// Add an item to a dropdown.
+fn addDropdownItem(id: int, item: string) void {
+    __gui_dropdown_add_item(id, item);
+}
+
+/// Get the selected item text from a dropdown.
+fn getDropdownSelected(id: int) string {
+    return __gui_dropdown_get_selected(id);
+}
+
+/// Get the selected index from a dropdown (-1 if none).
+fn getDropdownSelectedIndex(id: int) int {
+    return __gui_dropdown_get_selected_index(id);
+}
+
+/// Set the selected index of a dropdown.
+fn setDropdownSelected(id: int, index: int) void {
+    __gui_dropdown_set_selected(id, index);
+}
+
+/// Create an icon widget (Unicode character or symbol).
+fn Icon(icon: string, size: float) int {
+    return __gui_icon_create(icon, size);
 }
 
 /// Create a range slider.
@@ -284,13 +441,6 @@ fn isSwitchOn(id: int) bool {
 // ============================================================
 
 /// Arrange children in a horizontal row.
-///
-/// Example:
-///   val row = gui.Row(8.0, [
-///       gui.Text("Left"),
-///       gui.Spacer(),
-///       gui.Text("Right"),
-///   ]);
 fn Row(spacing: float, children: array<int>) int {
     val id = __gui_row_create(spacing);
     return addChildren(id, children);
@@ -304,13 +454,6 @@ fn AlignedRow(spacing: float, mainAlign: string, crossAlign: string, children: a
 }
 
 /// Arrange children in a vertical column.
-///
-/// Example:
-///   val col = gui.Column(16.0, [
-///       gui.Text("Title"),
-///       gui.Text("Subtitle"),
-///       gui.Button("Action"),
-///   ]);
 fn Column(spacing: float, children: array<int>) int {
     val id = __gui_column_create(spacing);
     return addChildren(id, children);
@@ -375,6 +518,202 @@ fn Dialog(title: string, children: array<int>) int {
 /// Open or close a dialog.
 fn openDialog(id: int, open: bool) void {
     __gui_dialog_open(id, open);
+}
+
+/// Create a side drawer panel.
+fn Drawer(width: float, children: array<int>) int {
+    val id = __gui_drawer_create(width);
+    return addChildren(id, children);
+}
+
+/// Open or close a drawer.
+fn openDrawer(id: int, open: bool) void {
+    __gui_drawer_open(id, open);
+}
+
+/// Check if a drawer is open.
+fn isDrawerOpen(id: int) bool {
+    return __gui_drawer_is_open(id);
+}
+
+/// Create a tab bar with labeled tabs.
+fn TabBar(tabs: array<string>) int {
+    val id = __gui_tabbar_create();
+    for val tab in tabs {
+        __gui_tabbar_add_tab(id, tab);
+    }
+    return id;
+}
+
+/// Get the active tab index.
+fn getActiveTab(id: int) int {
+    return __gui_tabbar_get_active(id);
+}
+
+/// Set the active tab index.
+fn setActiveTab(id: int, index: int) void {
+    __gui_tabbar_set_active(id, index);
+}
+
+/// Create a context menu.
+fn Menu() int {
+    return __gui_menu_create();
+}
+
+/// Add a menu item.
+fn addMenuItem(id: int, label: string) void {
+    __gui_menu_add_item(id, label);
+}
+
+/// Add a separator line to a menu.
+fn addMenuSeparator(id: int) void {
+    __gui_menu_add_separator(id);
+}
+
+/// Show a menu at a position.
+fn showMenu(id: int, x: float, y: float) void {
+    __gui_menu_show(id, x, y);
+}
+
+/// Hide a menu.
+fn hideMenu(id: int) void {
+    __gui_menu_hide(id);
+}
+
+// ============================================================
+// Event handler helpers
+// ============================================================
+
+/// Set a click handler on a widget.
+fn onClick(id: int, callbackId: int) void {
+    __gui_widget_set_onclick(id, callbackId);
+}
+
+/// Set a change handler on a text input or dropdown.
+fn onChange(id: int, callbackId: int) void {
+    __gui_widget_set_onchange(id, callbackId);
+}
+
+/// Set a submit handler on a text field.
+fn onSubmit(id: int, callbackId: int) void {
+    __gui_widget_set_onsubmit(id, callbackId);
+}
+
+/// Set a mouse enter handler.
+fn onMouseEnter(id: int, callbackId: int) void {
+    __gui_widget_set_onmouseenter(id, callbackId);
+}
+
+/// Set a mouse leave handler.
+fn onMouseLeave(id: int, callbackId: int) void {
+    __gui_widget_set_onmouseleave(id, callbackId);
+}
+
+/// Set a key press handler.
+fn onKeyPress(id: int, callbackId: int) void {
+    __gui_widget_set_onkeypress(id, callbackId);
+}
+
+// ============================================================
+// Typography helpers
+// ============================================================
+
+/// Set font size on any widget (Text, Button, etc.).
+fn setFontSize(id: int, size: float) void {
+    __gui_widget_set_font_size(id, size);
+}
+
+/// Set text color on any widget (Text, Button, Icon).
+fn setTextColor(id: int, r: int, g: int, b: int) void {
+    __gui_widget_set_text_color(id, r, g, b);
+}
+
+/// Set font weight: "thin","light","regular","medium","semibold","bold","extrabold","black".
+fn setFontWeight(id: int, weight: string) void {
+    __gui_widget_set_font_weight(id, weight);
+}
+
+/// Set font family (e.g. "sans-serif", "monospace", "serif").
+fn setFontFamily(id: int, family: string) void {
+    __gui_widget_set_font_family(id, family);
+}
+
+/// Set italic style.
+fn setItalic(id: int, italic: bool) void {
+    __gui_widget_set_italic(id, italic);
+}
+
+/// Set text alignment on a Text widget: "left", "center", "right".
+fn setTextAlign(id: int, align: string) void {
+    __gui_text_set_align(id, align);
+}
+
+/// Create text with full typography control.
+fn StyledTextFull(text: string, fontSize: float, r: int, g: int, b: int, weight: string, family: string) int {
+    val id = __gui_text_create(text);
+    __gui_text_set_font_size(id, fontSize);
+    __gui_text_set_color(id, r, g, b);
+    __gui_text_set_weight(id, weight);
+    __gui_text_set_font_family(id, family);
+    return id;
+}
+
+/// Create italic text.
+fn ItalicText(text: string, fontSize: float) int {
+    val id = __gui_text_create(text);
+    __gui_text_set_font_size(id, fontSize);
+    __gui_text_set_italic(id, true);
+    return id;
+}
+
+/// Create monospace text (code-style).
+fn MonoText(text: string, fontSize: float) int {
+    val id = __gui_text_create(text);
+    __gui_text_set_font_size(id, fontSize);
+    __gui_text_set_font_family(id, "monospace");
+    return id;
+}
+
+// ============================================================
+// Font management
+// ============================================================
+
+/// Register a font from a local .ttf or .otf file.
+/// Variant: "regular", "bold", "italic", "bolditalic", "variable"
+///
+/// Example:
+///   registerFontFile("MyFont", "/path/to/MyFont-Regular.ttf");
+///   registerFontFile("MyFont", "/path/to/MyFont-Bold.ttf", "bold");
+fn registerFontFile(family: string, path: string) void {
+    __gui_font_register_file(family, path, "regular");
+}
+
+/// Register a font variant from a local file.
+fn registerFontVariant(family: string, path: string, variant: string) void {
+    __gui_font_register_file(family, path, variant);
+}
+
+/// Register a font from a URL (downloads and caches automatically).
+/// Supports Google Fonts direct download links.
+///
+/// Example:
+///   registerFontFromURL("Roboto", "https://github.com/google/fonts/raw/main/ofl/roboto/Roboto%5Bwdth%2Cwght%5D.ttf");
+fn registerFontFromURL(family: string, url: string) void {
+    __gui_font_register_url(family, url, "regular");
+}
+
+/// Register a font variant from a URL.
+fn registerFontVariantFromURL(family: string, url: string, variant: string) void {
+    __gui_font_register_url(family, url, variant);
+}
+
+/// Set the default font family for all text rendering.
+/// Inter is the default. Call this to change it.
+///
+/// Example:
+///   setDefaultFont("Roboto");
+fn setDefaultFont(family: string) void {
+    __gui_font_set_default(family);
 }
 
 // ============================================================

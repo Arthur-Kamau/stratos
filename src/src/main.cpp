@@ -425,6 +425,30 @@ CompileResult compileSTUIFile(const std::string& path, bool verbose, bool run) {
         return result;
     }
 
+    // Derive project root from the .stui file path
+    // If file is in src/, project root is grandparent; otherwise parent
+    fs::path absPath = fs::absolute(path);
+    fs::path stuiProjectRoot;
+    if (absPath.parent_path().filename() == "src") {
+        stuiProjectRoot = absPath.parent_path().parent_path();
+    } else {
+        stuiProjectRoot = absPath.parent_path();
+    }
+
+    // Also check for stratos.conf to find the proper project root
+    fs::path configPath = stuiProjectRoot / "stratos.conf";
+    if (!fs::exists(configPath)) {
+        // Try parent directory
+        fs::path parentConfig = stuiProjectRoot.parent_path() / "stratos.conf";
+        if (fs::exists(parentConfig)) {
+            stuiProjectRoot = stuiProjectRoot.parent_path();
+        }
+    }
+
+    if (verbose) {
+        std::cout << "  Project root: " << stuiProjectRoot << std::endl;
+    }
+
     std::stringstream buffer;
     buffer << file.rdbuf();
     std::string source = buffer.str();
@@ -446,7 +470,7 @@ CompileResult compileSTUIFile(const std::string& path, bool verbose, bool run) {
         if (verbose) std::cout << "  [Transpiler]  OK (" << statements.size() << " statements)" << std::endl;
 
         // Phase 4: Feed into normal Stratos pipeline
-        SemanticAnalyzer analyzer;
+        SemanticAnalyzer analyzer(stuiProjectRoot.string());
         if (!analyzer.analyze(statements)) {
             result.success = false;
             result.errorMessage = "Semantic analysis failed for transpiled STUI";
@@ -455,7 +479,7 @@ CompileResult compileSTUIFile(const std::string& path, bool verbose, bool run) {
         if (verbose) std::cout << "  [Semantics]   OK" << std::endl;
 
         if (run) {
-            Interpreter interpreter;
+            Interpreter interpreter(stuiProjectRoot.string());
             interpreter.execute(std::move(statements));
 
             try {
@@ -1172,6 +1196,18 @@ std::optional<std::string> resolveEntryPoint(const std::string& inputPath) {
         if (fs::is_regular_file(srcMainPath)) {
             return srcMainPath.string();
         }
+
+        // Try main.stui in the directory
+        fs::path mainStuiPath = dirPath / "main.stui";
+        if (fs::is_regular_file(mainStuiPath)) {
+            return mainStuiPath.string();
+        }
+
+        // Try src/main.stui in the directory
+        fs::path srcMainStuiPath = dirPath / "src" / "main.stui";
+        if (fs::is_regular_file(srcMainStuiPath)) {
+            return srcMainStuiPath.string();
+        }
     }
 
     // Try adding .st extension
@@ -1266,6 +1302,8 @@ int handleRun(int argc, char* argv[]) {
             std::cerr << "  - " << inputPath << "/stratos.conf entry\n";
             std::cerr << "  - " << inputPath << "/main.st\n";
             std::cerr << "  - " << inputPath << "/src/main.st\n";
+            std::cerr << "  - " << inputPath << "/main.stui\n";
+            std::cerr << "  - " << inputPath << "/src/main.stui\n";
         } else {
             std::cerr << "  - " << inputPath << ".st\n";
         }
@@ -1276,6 +1314,17 @@ int handleRun(int argc, char* argv[]) {
     }
 
     std::string resolvedPath = *resolvedPathOpt;
+
+    // If the resolved entry point is a .stui file, delegate to STUI handler
+    if (resolvedPath.ends_with(".stui")) {
+        // Build synthetic argv for handleSTUI: stratos run <resolved.stui> [options]
+        std::vector<std::string> stuiArgs = {"stratos", "run", resolvedPath};
+        if (verbose) stuiArgs.push_back("-v");
+        std::vector<char*> stuiArgv;
+        for (auto& s : stuiArgs) stuiArgv.push_back(s.data());
+        return handleSTUI(static_cast<int>(stuiArgv.size()), stuiArgv.data());
+    }
+
     fs::path projectRoot;
     fs::path resolvedPathFs = resolvedPath;
 
@@ -1802,7 +1851,31 @@ int handleBuild(int argc, char* argv[]) {
     } else if (!config.entry.empty()) {
         // Use entry point
         sourceFiles.push_back(projectRoot + "/" + config.entry);
+    } else if (!config.stuiEntry.empty()) {
+        // STUI entry point — delegate to web/stui compilation
+        std::string stuiPath = projectRoot + "/" + config.stuiEntry;
+        if (fs::exists(stuiPath)) {
+            std::cout << "Detected .stui entry point, compiling to web...\n";
+            // Build argv for handleCompile with --target web
+            std::vector<std::string> fakeArgs = {"stratos", "compile", projectDir, "--target", "web"};
+            std::vector<char*> fakeArgv;
+            for (auto& s : fakeArgs) fakeArgv.push_back(s.data());
+            return handleCompile(fakeArgv.size(), fakeArgv.data());
+        }
     } else {
+        // Scan for .stui files in src/
+        fs::path srcDir = fs::path(projectDir) / "src";
+        if (fs::exists(srcDir)) {
+            for (const auto& entry : fs::directory_iterator(srcDir)) {
+                if (entry.path().extension() == ".stui") {
+                    std::cout << "Found .stui file: " << entry.path() << ", compiling to web...\n";
+                    std::vector<std::string> fakeArgs = {"stratos", "compile", projectDir, "--target", "web"};
+                    std::vector<char*> fakeArgv;
+                    for (auto& s : fakeArgs) fakeArgv.push_back(s.data());
+                    return handleCompile(fakeArgv.size(), fakeArgv.data());
+                }
+            }
+        }
         std::cerr << "Error: No entry point or source files specified in config" << std::endl;
         return 1;
     }
@@ -2293,7 +2366,7 @@ int handleFmt(int argc, char* argv[]) {
             }
 
             for (const auto& entry : fs::recursive_directory_iterator(inputPath)) {
-                if (entry.path().extension() == ".st") {
+                if (entry.path().extension() == ".st" || entry.path().extension() == ".stui") {
                     formatFile(entry.path().string());
                 }
             }

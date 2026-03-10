@@ -2066,6 +2066,15 @@ void Interpreter::visit(CallExpr& expr) {
             return;
         }
 
+        // Check if this is a native function in any loaded module
+        // (handles __gui_* calls from init.st native declarations)
+        for (const auto& [modName, modFuncs] : moduleFunctions) {
+            if (modFuncs.count(functionName) && registry.isNative(modName, functionName)) {
+                lastValue = evaluateNativeCall(modName, functionName, args);
+                return;
+            }
+        }
+
         // Call user-defined function
         lastValue = callFunction(functionName, args);
     }
@@ -2630,37 +2639,60 @@ void Interpreter::visit(UseStmt& stmt) {
     namespace fs = std::filesystem;
     std::string moduleName = stmt.moduleName.lexeme;
 
+    // Handle "std/xxx" module names: strip "std/" prefix for search paths
+    // and register as just "xxx" so gui.Text() syntax works
+    std::string searchName = moduleName;
+    std::string registerName = moduleName;
+    if (moduleName.starts_with("std/")) {
+        searchName = moduleName.substr(4); // strip "std/"
+        registerName = searchName;
+    }
+
     // First, register the module as a module object in the environment
     // This allows module.function() syntax to work
     RuntimeValue moduleValue(std::any(), "module");
-    currentEnv->define(moduleName, moduleValue);
+    currentEnv->define(registerName, moduleValue);
 
     // Search paths in priority order
     std::vector<std::string> searchPaths;
 
     // Add project-root-relative paths if projectRoot is set
     if (!projectRoot.empty()) {
-        searchPaths.push_back(projectRoot + "/src/" + moduleName);
-        searchPaths.push_back(projectRoot + "/deps/" + moduleName + "/src");
-        searchPaths.push_back(projectRoot + "/deps/" + moduleName);
+        searchPaths.push_back(projectRoot + "/src/" + searchName);
+        searchPaths.push_back(projectRoot + "/deps/" + searchName + "/src");
+        searchPaths.push_back(projectRoot + "/deps/" + searchName);
+        searchPaths.push_back(projectRoot + "/std/" + searchName);
     }
 
+    // Add binary-relative std path
+#ifdef __linux__
+    {
+        char exeBuf[4096];
+        ssize_t len = readlink("/proc/self/exe", exeBuf, sizeof(exeBuf) - 1);
+        if (len != -1) {
+            exeBuf[len] = '\0';
+            std::string exeStdDir = (fs::path(exeBuf).parent_path().parent_path().parent_path() / "std").string();
+            searchPaths.push_back(exeStdDir + "/" + searchName);
+        }
+    }
+#endif
+
     // Add relative paths as fallback
-    searchPaths.push_back("src/" + moduleName);
-    searchPaths.push_back("deps/" + moduleName + "/src");
-    searchPaths.push_back("deps/" + moduleName);
-    searchPaths.push_back("std/" + moduleName);
-    searchPaths.push_back("std/encoding/" + moduleName);
-    searchPaths.push_back("std/net/" + moduleName);
-    searchPaths.push_back("../std/" + moduleName);
-    searchPaths.push_back("../std/encoding/" + moduleName);
-    searchPaths.push_back("../std/net/" + moduleName);
-    searchPaths.push_back("../../std/" + moduleName);
-    searchPaths.push_back("../../std/encoding/" + moduleName);
-    searchPaths.push_back("../../std/net/" + moduleName);
-    searchPaths.push_back("../../../std/" + moduleName);
-    searchPaths.push_back("../../../std/encoding/" + moduleName);
-    searchPaths.push_back("../../../std/net/" + moduleName);
+    searchPaths.push_back("src/" + searchName);
+    searchPaths.push_back("deps/" + searchName + "/src");
+    searchPaths.push_back("deps/" + searchName);
+    searchPaths.push_back("std/" + searchName);
+    searchPaths.push_back("std/encoding/" + searchName);
+    searchPaths.push_back("std/net/" + searchName);
+    searchPaths.push_back("../std/" + searchName);
+    searchPaths.push_back("../std/encoding/" + searchName);
+    searchPaths.push_back("../std/net/" + searchName);
+    searchPaths.push_back("../../std/" + searchName);
+    searchPaths.push_back("../../std/encoding/" + searchName);
+    searchPaths.push_back("../../std/net/" + searchName);
+    searchPaths.push_back("../../../std/" + searchName);
+    searchPaths.push_back("../../../std/encoding/" + searchName);
+    searchPaths.push_back("../../../std/net/" + searchName);
 
     // Try each search path until we find the module
     for (const auto& modulePath : searchPaths) {
@@ -2687,7 +2719,7 @@ void Interpreter::visit(UseStmt& stmt) {
         if (!filesToLoad.empty()) {
             // Save and set current module name to track module context
             std::string previousModuleName = currentModuleName;
-            currentModuleName = moduleName;
+            currentModuleName = registerName;
 
             for (const auto& filePath : filesToLoad) {
                 std::ifstream file(filePath);

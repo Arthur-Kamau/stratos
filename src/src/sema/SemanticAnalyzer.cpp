@@ -6,6 +6,9 @@
 #include <fstream>
 #include <sstream>
 #include <filesystem>
+#ifdef __linux__
+#include <unistd.h>
+#endif
 #include <algorithm>
 
 namespace stratos {
@@ -1099,15 +1102,20 @@ void SemanticAnalyzer::visit(UseStmt& stmt) {
     // Load the module if not already loaded
     std::string moduleName = stmt.moduleName.lexeme;
 
-    // Debug statements removed UseStmt processing module '" << moduleName << "'" << std::endl;
+    // Handle "std/xxx" module names: use short name for registration
+    std::string registerName = moduleName;
+    if (moduleName.starts_with("std/")) {
+        registerName = moduleName.substr(4);
+    }
 
     // Check if already loaded
-    bool alreadyLoaded = std::find(loadedModules.begin(), loadedModules.end(), moduleName) != loadedModules.end();
+    bool alreadyLoaded = std::find(loadedModules.begin(), loadedModules.end(), moduleName) != loadedModules.end()
+                      || std::find(loadedModules.begin(), loadedModules.end(), registerName) != loadedModules.end();
 
     if (!alreadyLoaded) {
         // Check if this is a native module (implemented in C++ via NativeRegistry)
         auto& registry = NativeRegistry::getInstance();
-        bool isNativeModule = registry.hasModule(moduleName);
+        bool isNativeModule = registry.hasModule(registerName);
 
         // Try to load as a source file module (even for native modules - they can have .st implementations)
         loadModule(moduleName);
@@ -1116,12 +1124,14 @@ void SemanticAnalyzer::visit(UseStmt& stmt) {
         if (std::find(loadedModules.begin(), loadedModules.end(), moduleName) == loadedModules.end()) {
             loadedModules.push_back(moduleName);
         }
+        if (registerName != moduleName && std::find(loadedModules.begin(), loadedModules.end(), registerName) == loadedModules.end()) {
+            loadedModules.push_back(registerName);
+        }
     }
 
     // ALWAYS define the module name as a variable in the current scope
-    // This is needed even if the module content was already loaded (e.g., from project src/ directory)
-    symbolTable.define(Symbol::Variable(moduleName, "module", false, false, stmt.moduleName.line, stmt.moduleName.column, stmt.moduleName.file));
-    // Debug statements removed UseStmt completed for module '" << moduleName << "'" << std::endl;
+    // Use the short name (e.g., "gui" not "std/gui") so gui.Text() works
+    symbolTable.define(Symbol::Variable(registerName, "module", false, false, stmt.moduleName.line, stmt.moduleName.column, stmt.moduleName.file));
 }
 
 void SemanticAnalyzer::visit(BlockStmt& stmt) {
@@ -1244,52 +1254,80 @@ void SemanticAnalyzer::visit(SelectStmt& stmt) {
 void SemanticAnalyzer::loadModule(const std::string& moduleName) {
     namespace fs = std::filesystem;
 
+    // Handle "std/xxx" module names: strip "std/" prefix to avoid double "std/std/xxx"
+    std::string searchName = moduleName;
+    if (moduleName.starts_with("std/")) {
+        searchName = moduleName.substr(4);
+    }
+
+    // Get executable directory for binary-relative std lookup
+    std::string exeStdDir;
+#ifdef __linux__
+    {
+        char exeBuf[4096];
+        ssize_t len = readlink("/proc/self/exe", exeBuf, sizeof(exeBuf) - 1);
+        if (len != -1) {
+            exeBuf[len] = '\0';
+            // Binary is at <repo>/src/build/stratos, std is at <repo>/std
+            exeStdDir = (fs::path(exeBuf).parent_path().parent_path().parent_path() / "std").string();
+        }
+    }
+#endif
+
     // Possible module file locations
     std::vector<std::string> searchPaths = {
         // Internal project packages (highest priority)
-        projectRoot + "/src/" + moduleName + "/init.st",
-        projectRoot + "/src/" + moduleName + "/" + moduleName + ".st",
+        projectRoot + "/src/" + searchName + "/init.st",
+        projectRoot + "/src/" + searchName + "/" + searchName + ".st",
 
         // Dependencies directory
-        projectRoot + "/deps/" + moduleName + "/src/init.st",
-        projectRoot + "/deps/" + moduleName + "/src/" + moduleName + ".st",
-        projectRoot + "/../deps/" + moduleName + "/src/init.st",
-        projectRoot + "/../deps/" + moduleName + "/src/" + moduleName + ".st",
+        projectRoot + "/deps/" + searchName + "/src/init.st",
+        projectRoot + "/deps/" + searchName + "/src/" + searchName + ".st",
+        projectRoot + "/../deps/" + searchName + "/src/init.st",
+        projectRoot + "/../deps/" + searchName + "/src/" + searchName + ".st",
+
+        // Project std directory
+        projectRoot + "/std/" + searchName + "/init.st",
 
         // Current directory (fallback)
-        "std/" + moduleName + "/init.st",
-        "std/encoding/" + moduleName + "/init.st",
-        "std/net/" + moduleName + "/init.st",
+        "std/" + searchName + "/init.st",
+        "std/encoding/" + searchName + "/init.st",
+        "std/net/" + searchName + "/init.st",
 
         // Build directory
-        "build/std/" + moduleName + "/init.st",
-        "build/std/encoding/" + moduleName + "/init.st",
-        "build/std/net/" + moduleName + "/init.st",
+        "build/std/" + searchName + "/init.st",
+        "build/std/encoding/" + searchName + "/init.st",
+        "build/std/net/" + searchName + "/init.st",
 
         // One level up (from samples/ or similar)
-        "../std/" + moduleName + "/init.st",
-        "../std/encoding/" + moduleName + "/init.st",
-        "../std/net/" + moduleName + "/init.st",
-        "../build/std/" + moduleName + "/init.st",
-        "../build/std/encoding/" + moduleName + "/init.st",
-        "../build/std/net/" + moduleName + "/init.st",
-        "../interpreter/C++/build/std/" + moduleName + "/init.st",
-        "../interpreter/C++/build/std/encoding/" + moduleName + "/init.st",
-        "../interpreter/C++/build/std/net/" + moduleName + "/init.st",
+        "../std/" + searchName + "/init.st",
+        "../std/encoding/" + searchName + "/init.st",
+        "../std/net/" + searchName + "/init.st",
+        "../build/std/" + searchName + "/init.st",
+        "../build/std/encoding/" + searchName + "/init.st",
+        "../build/std/net/" + searchName + "/init.st",
+        "../interpreter/C++/build/std/" + searchName + "/init.st",
+        "../interpreter/C++/build/std/encoding/" + searchName + "/init.st",
+        "../interpreter/C++/build/std/net/" + searchName + "/init.st",
 
         // Two levels up
-        "../../std/" + moduleName + "/init.st",
-        "../../std/encoding/" + moduleName + "/init.st",
-        "../../std/net/" + moduleName + "/init.st",
-        "../../interpreter/C++/build/std/" + moduleName + "/init.st",
-        "../../interpreter/C++/build/std/encoding/" + moduleName + "/init.st",
-        "../../interpreter/C++/build/std/net/" + moduleName + "/init.st",
+        "../../std/" + searchName + "/init.st",
+        "../../std/encoding/" + searchName + "/init.st",
+        "../../std/net/" + searchName + "/init.st",
+        "../../interpreter/C++/build/std/" + searchName + "/init.st",
+        "../../interpreter/C++/build/std/encoding/" + searchName + "/init.st",
+        "../../interpreter/C++/build/std/net/" + searchName + "/init.st",
 
         // Three levels up
-        "../../../std/" + moduleName + "/init.st",
-        "../../../std/encoding/" + moduleName + "/init.st",
-        "../../../std/net/" + moduleName + "/init.st"
+        "../../../std/" + searchName + "/init.st",
+        "../../../std/encoding/" + searchName + "/init.st",
+        "../../../std/net/" + searchName + "/init.st"
     };
+
+    // Add binary-relative std path (highest priority fallback)
+    if (!exeStdDir.empty()) {
+        searchPaths.insert(searchPaths.begin() + 6, exeStdDir + "/" + searchName + "/init.st");
+    }
 
     std::string moduleFilePath;
     bool isUserModule = false;
@@ -1305,7 +1343,7 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
 
     // If no specific module file was found, check if module directory exists
     if (moduleFilePath.empty()) {
-        std::string moduleDir = projectRoot + "/src/" + moduleName;
+        std::string moduleDir = projectRoot + "/src/" + searchName;
         if (fs::exists(moduleDir) && fs::is_directory(moduleDir)) {
             moduleFilePath = moduleDir;
             isUserModule = true;

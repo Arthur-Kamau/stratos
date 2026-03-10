@@ -102,7 +102,7 @@ enum class TextAlign {
 };
 
 struct FontSpec {
-    std::string family = "sans-serif";
+    std::string family = "Inter";
     float size = 14.0f;
     FontWeight weight = FontWeight::Regular;
     FontStyle style = FontStyle::Normal;
@@ -156,6 +156,13 @@ public:
     // Text
     virtual void drawText(const std::string& text, float x, float y, const FontSpec& font, const Color& color) = 0;
     virtual TextMetrics measureText(const std::string& text, const FontSpec& font) = 0;
+
+    // Fonts
+    virtual void registerFontFile(const std::string& family, const std::string& filePath,
+                                  const std::string& variant = "regular") {}
+    virtual bool registerFontURL(const std::string& family, const std::string& url,
+                                 const std::string& variant = "regular") { return false; }
+    virtual void setDefaultFontFamily(const std::string& family) {}
 
     // Images
     virtual int loadImage(const std::string& path) = 0;

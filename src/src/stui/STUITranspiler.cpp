@@ -79,9 +79,21 @@ std::unique_ptr<Expr> STUITranspiler::makeCall(const std::string& callee,
 std::unique_ptr<Expr> STUITranspiler::makeMemberCall(const std::string& object,
                                                       const std::string& method,
                                                       std::vector<std::unique_ptr<Expr>> args) {
-    // object.method(args) → CallExpr with dotted callee
-    std::string fullName = object + "." + method;
-    return makeCall(fullName, std::move(args));
+    // object.method(args) → CallExpr with BinaryExpr(DOT) callee
+    auto objExpr = std::make_unique<SVariableExpr>(makeIdentifier(object));
+    auto methodExpr = std::make_unique<SVariableExpr>(makeIdentifier(method));
+    Token dotToken;
+    dotToken.type = TokenType::DOT;
+    dotToken.lexeme = ".";
+    auto dotExpr = std::make_unique<SBinaryExpr>(
+        std::move(objExpr), dotToken, std::move(methodExpr));
+
+    Token paren;
+    paren.type = TokenType::LEFT_PAREN;
+    paren.lexeme = "(";
+    return std::make_unique<SCallExpr>(
+        std::move(dotExpr), paren,
+        std::move(args));
 }
 
 std::unique_ptr<Expr> STUITranspiler::makeMapLiteral(
@@ -225,7 +237,7 @@ std::unique_ptr<Stmt> STUITranspiler::transpileComponent(const ComponentDecl& co
 }
 
 // ============================================================================
-// State → gui.State()
+// State → State()
 // ============================================================================
 
 std::unique_ptr<Stmt> STUITranspiler::transpileStateDecl(const StateDecl& state) {
@@ -234,22 +246,39 @@ std::unique_ptr<Stmt> STUITranspiler::transpileStateDecl(const StateDecl& state)
     if (state.initialValue) {
         args.push_back(transpileExpr(*state.initialValue));
     }
-    auto stateCall = makeCall("gui.State", std::move(args));
+    auto stateCall = makeCall("State", std::move(args));
     return makeVarDecl(state.name, std::move(stateCall));
 }
 
 // ============================================================================
-// Widget Tree → gui.Widget() calls
+// Widget Tree → Widget() calls
 // ============================================================================
 
 std::unique_ptr<Expr> STUITranspiler::transpileWidget(const WidgetNode& widget) {
-    // Build: gui.WidgetType(args..., propsMap, childrenArray)
+    // Window is a STUI-only concept — skip it and transpile children directly
+    if (widget.widgetType == "Window") {
+        if (widget.children.size() == 1) {
+            return transpileWidget(*widget.children[0]);
+        } else if (widget.children.size() > 1) {
+            std::vector<std::unique_ptr<Expr>> childExprs;
+            for (const auto& child : widget.children) {
+                childExprs.push_back(transpileWidget(*child));
+            }
+            std::vector<std::unique_ptr<Expr>> colArgs;
+            colArgs.push_back(makeArrayLiteral(std::move(childExprs)));
+            return makeCall("Column", std::move(colArgs));
+        }
+        // Empty Window → return a placeholder
+        return makeCall("Center", {});
+    }
+
+    // Build: WidgetType(args..., propsMap, childrenArray)
     //
     // The exact mapping depends on the widget type.
-    // For most widgets: gui.Text("content", { fontSize: 24 })
-    // For containers: gui.Column({ spacing: 8 }, [child1, child2])
+    // For most widgets: Text("content", { fontSize: 24 })
+    // For containers: Column({ spacing: 8 }, [child1, child2])
 
-    std::string guiCall = "gui." + widget.widgetType;
+    std::string guiCall = widget.widgetType;
     std::vector<std::unique_ptr<Expr>> callArgs;
 
     // Positional arguments
@@ -518,7 +547,7 @@ std::unique_ptr<Stmt> STUITranspiler::generateMain(const STUIFile& file) {
             args.push_back(makeString(title, true));
             args.push_back(makeNumber(width));
             args.push_back(makeNumber(height));
-            mainBody.push_back(makeVarDecl("app", makeCall("gui.App", std::move(args))));
+            mainBody.push_back(makeVarDecl("app", makeCall("App", std::move(args))));
         }
 
         // Build the content widget tree (children of Window, or the App's view root)
@@ -540,7 +569,7 @@ std::unique_ptr<Stmt> STUITranspiler::generateMain(const STUIFile& file) {
                 }
                 std::vector<std::unique_ptr<Expr>> colArgs;
                 colArgs.push_back(makeArrayLiteral(std::move(childExprs)));
-                auto columnExpr = makeCall("gui.Column", std::move(colArgs));
+                auto columnExpr = makeCall("Column", std::move(colArgs));
 
                 std::vector<std::unique_ptr<Expr>> rootArgs;
                 rootArgs.push_back(std::move(columnExpr));

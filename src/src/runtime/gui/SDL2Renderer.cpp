@@ -8,6 +8,66 @@
 #include <cmath>
 #include <algorithm>
 #include <iostream>
+#include <fstream>
+#include <filesystem>
+#include <cstdlib>
+#include <sstream>
+
+namespace {
+
+// Global font registry: family name → file path(s) by weight
+struct FontFamilyEntry {
+    std::string regular;     // path to regular weight file
+    std::string bold;        // path to bold weight file (optional)
+    std::string italic;      // path to italic file (optional)
+    std::string boldItalic;  // path to bold-italic file (optional)
+    std::string variableFont; // path to variable font file (covers all weights)
+};
+
+static std::unordered_map<std::string, FontFamilyEntry> fontRegistry_;
+static std::string defaultFontFamily_ = "Inter";
+
+// Get cache directory for downloaded fonts
+std::string getFontCacheDir() {
+    const char* home = std::getenv("HOME");
+    if (!home) home = "/tmp";
+    std::string dir = std::string(home) + "/.cache/stratos/fonts";
+    std::filesystem::create_directories(dir);
+    return dir;
+}
+
+// Download a file via curl (blocking)
+bool downloadFile(const std::string& url, const std::string& outputPath) {
+    if (std::filesystem::exists(outputPath)) return true; // Already cached
+    std::string cmd = "curl -sL -o \"" + outputPath + "\" \"" + url + "\" 2>/dev/null";
+    int result = std::system(cmd.c_str());
+    return result == 0 && std::filesystem::exists(outputPath) &&
+           std::filesystem::file_size(outputPath) > 100;
+}
+
+// Download Inter font from Google Fonts API on first use
+std::string ensureInterFont() {
+    std::string cacheDir = getFontCacheDir();
+    std::string fontPath = cacheDir + "/Inter-VariableFont.ttf";
+
+    if (std::filesystem::exists(fontPath)) return fontPath;
+
+    // Google Fonts direct download URL for Inter variable font
+    std::string url = "https://github.com/google/fonts/raw/main/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf";
+    std::cout << "Downloading Inter font..." << std::endl;
+    if (downloadFile(url, fontPath)) {
+        std::cout << "  Font cached at: " << fontPath << std::endl;
+        return fontPath;
+    }
+
+    // Fallback: try alternate URL pattern
+    url = "https://github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip";
+    // If the variable font URL fails, we'll fall back to system fonts
+    std::cerr << "  Warning: Could not download Inter font. Using system font." << std::endl;
+    return "";
+}
+
+} // anonymous namespace
 
 namespace stratos {
 namespace gui {
@@ -281,6 +341,38 @@ public:
         }
     }
 
+    // Font registration
+    void registerFontFile(const std::string& family, const std::string& filePath,
+                          const std::string& variant = "regular") override {
+        auto& entry = fontRegistry_[family];
+        if (variant == "bold") entry.bold = filePath;
+        else if (variant == "italic") entry.italic = filePath;
+        else if (variant == "bolditalic") entry.boldItalic = filePath;
+        else if (variant == "variable") entry.variableFont = filePath;
+        else entry.regular = filePath;
+    }
+
+    bool registerFontURL(const std::string& family, const std::string& url,
+                         const std::string& variant = "regular") override {
+        std::string cacheDir = getFontCacheDir();
+        std::string filename = family + "-" + variant + ".ttf";
+        std::string localPath = cacheDir + "/" + filename;
+
+        if (!downloadFile(url, localPath)) return false;
+
+        registerFontFile(family, localPath, variant);
+        return true;
+    }
+
+    void setDefaultFontFamily(const std::string& family) override {
+        defaultFontFamily_ = family;
+        auto it = fontRegistry_.find(family);
+        if (it != fontRegistry_.end()) {
+            if (!it->second.variableFont.empty()) defaultFontPath_ = it->second.variableFont;
+            else if (!it->second.regular.empty()) defaultFontPath_ = it->second.regular;
+        }
+    }
+
     // Shadows (approximate with layered rects)
     void drawShadow(const Rect& rect, const BorderRadius& radius, const Shadow& shadow) override {
         int layers = static_cast<int>(shadow.blur);
@@ -341,7 +433,24 @@ private:
     }
 
     void loadDefaultFont() {
-        // Try common system font paths
+        // 1. Try to load Inter (download if needed)
+        std::string interPath = ensureInterFont();
+        if (!interPath.empty()) {
+            TTF_Font* font = TTF_OpenFont(interPath.c_str(), 14);
+            if (font) {
+                defaultFontPath_ = interPath;
+                fontCache_["Inter:14:400:0"] = font;
+                fontCache_["sans-serif:14:400:0"] = font; // alias
+                // Register Inter in the font registry
+                FontFamilyEntry entry;
+                entry.variableFont = interPath;
+                fontRegistry_["Inter"] = entry;
+                fontRegistry_["inter"] = entry; // case-insensitive alias
+                return;
+            }
+        }
+
+        // 2. Fallback: Try common system font paths
         const char* fontPaths[] = {
             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
             "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
@@ -363,7 +472,7 @@ private:
                 return;
             }
         }
-        std::cerr << "Warning: No system font found. Text rendering may not work." << std::endl;
+        std::cerr << "Warning: No font found. Text rendering may not work." << std::endl;
     }
 
     std::string fontCacheKey(const FontSpec& spec) const {
@@ -378,10 +487,55 @@ private:
         auto it = fontCache_.find(key);
         if (it != fontCache_.end()) return it->second;
 
-        // Try to open with default font path at the requested size
-        if (defaultFontPath_.empty()) return nullptr;
+        // Look up family in font registry
+        std::string fontPath = defaultFontPath_;
 
-        TTF_Font* font = TTF_OpenFont(defaultFontPath_.c_str(), static_cast<int>(spec.size));
+        auto regIt = fontRegistry_.find(spec.family);
+        if (regIt != fontRegistry_.end()) {
+            const auto& entry = regIt->second;
+            // Pick the best file for requested weight/style
+            if (!entry.variableFont.empty()) {
+                fontPath = entry.variableFont;
+            } else if (spec.weight >= FontWeight::Bold && spec.style == FontStyle::Italic && !entry.boldItalic.empty()) {
+                fontPath = entry.boldItalic;
+            } else if (spec.weight >= FontWeight::Bold && !entry.bold.empty()) {
+                fontPath = entry.bold;
+            } else if (spec.style == FontStyle::Italic && !entry.italic.empty()) {
+                fontPath = entry.italic;
+            } else if (!entry.regular.empty()) {
+                fontPath = entry.regular;
+            }
+        } else if (spec.family == "monospace") {
+            const char* monoPaths[] = {
+                "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
+                "C:\\Windows\\Fonts\\consola.ttf",
+                nullptr
+            };
+            for (int i = 0; monoPaths[i]; i++) {
+                if (std::filesystem::exists(monoPaths[i])) {
+                    fontPath = monoPaths[i];
+                    break;
+                }
+            }
+        } else if (spec.family == "serif") {
+            const char* serifPaths[] = {
+                "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+                "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+                "C:\\Windows\\Fonts\\times.ttf",
+                nullptr
+            };
+            for (int i = 0; serifPaths[i]; i++) {
+                if (std::filesystem::exists(serifPaths[i])) {
+                    fontPath = serifPaths[i];
+                    break;
+                }
+            }
+        }
+
+        if (fontPath.empty()) return nullptr;
+
+        TTF_Font* font = TTF_OpenFont(fontPath.c_str(), static_cast<int>(spec.size));
         if (font) {
             int style = TTF_STYLE_NORMAL;
             if (spec.weight >= FontWeight::Bold) style |= TTF_STYLE_BOLD;
