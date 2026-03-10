@@ -51,6 +51,7 @@
 #include "stratos/STUIParser.h"
 #include "stratos/STUITranspiler.h"
 #include "stratos/WasmCompiler.h"
+#include "stratos/HTMLGenerator.h"
 
 using namespace stratos;
 namespace fs = std::filesystem;
@@ -617,9 +618,9 @@ int handleCompile(int argc, char* argv[]) {
         } else if (arg == "--target" || arg == "-t") {
             if (i + 1 < argc) {
                 targetStr = argv[++i];
-                if (targetStr != "native" && targetStr != "wasm" && targetStr != "wasm-emscripten") {
+                if (targetStr != "native" && targetStr != "wasm" && targetStr != "wasm-emscripten" && targetStr != "web") {
                     std::cerr << "Error: Invalid target: " << targetStr << std::endl;
-                    std::cerr << "Valid targets: native, wasm, wasm-emscripten" << std::endl;
+                    std::cerr << "Valid targets: native, wasm, wasm-emscripten, web" << std::endl;
                     return 1;
                 }
             }
@@ -743,6 +744,85 @@ int handleCompile(int argc, char* argv[]) {
 
             return 0;
 
+        } catch (const std::exception& e) {
+            std::cerr << "Error: " << e.what() << "\n";
+            return 1;
+        }
+    }
+
+    // Handle web target (HTML transpilation from .stui files)
+    if (targetStr == "web") {
+        std::cout << "Compiling to HTML/CSS/JS (web)...\n";
+
+        std::string resolvedPath;
+        if (fs::is_directory(inputPath)) {
+            auto resolved = resolveEntryPoint(inputPath);
+            if (resolved) resolvedPath = *resolved;
+            // Also check for .stui files
+            if (resolvedPath.empty()) {
+                fs::path srcDir = fs::path(inputPath) / "src";
+                for (const auto& entry : fs::directory_iterator(fs::exists(srcDir) ? srcDir : fs::path(inputPath))) {
+                    if (entry.path().extension() == ".stui") {
+                        resolvedPath = entry.path().string();
+                        break;
+                    }
+                }
+            }
+        } else {
+            resolvedPath = inputPath;
+        }
+
+        if (resolvedPath.empty()) {
+            std::cerr << "Error: Could not find source file in: " << inputPath << "\n";
+            return 1;
+        }
+
+        // Must be a .stui file for HTML generation
+        if (!resolvedPath.ends_with(".stui")) {
+            std::cerr << "Error: --target web requires a .stui file (got: " << resolvedPath << ")\n";
+            return 1;
+        }
+
+        try {
+            std::ifstream file(resolvedPath);
+            if (!file.is_open()) {
+                std::cerr << "Error: Could not open file: " << resolvedPath << "\n";
+                return 1;
+            }
+            std::stringstream buffer;
+            buffer << file.rdbuf();
+            std::string source = buffer.str();
+
+            stui::STUILexer stuiLexer(source, resolvedPath);
+            auto stuiTokens = stuiLexer.scanTokens();
+            if (verbose) std::cout << "  [STUI Lexer]  OK (" << stuiTokens.size() << " tokens)\n";
+
+            stui::STUIParser stuiParser(stuiTokens, resolvedPath);
+            auto stuiFile = stuiParser.parse();
+            if (verbose) std::cout << "  [STUI Parser] OK (" << stuiFile.components.size() << " components)\n";
+
+            std::string webOutputDir = outputPath.empty() ? "dist" : outputPath;
+            std::string title = fs::path(resolvedPath).stem().string();
+
+            HTMLGenerator htmlGen;
+            auto result = htmlGen.generate(stuiFile, webOutputDir, title);
+
+            if (!result.success) {
+                std::cerr << "Error: " << result.errorMessage << "\n";
+                return 1;
+            }
+
+            std::cout << "\n[SUCCESS] Web compilation complete!\n";
+            std::cout << "  Output: " << webOutputDir << "/\n";
+            std::cout << "  HTML:   " << result.htmlPath << "\n";
+            std::cout << "  CSS:    " << result.cssPath << "\n";
+            std::cout << "  JS:     " << result.jsPath << "\n";
+            std::cout << "\nTo run: cd " << webOutputDir << " && python3 -m http.server 8080\n";
+            return 0;
+
+        } catch (const stui::STUIParseError& e) {
+            std::cerr << "Error: " << e.what() << "\n";
+            return 1;
         } catch (const std::exception& e) {
             std::cerr << "Error: " << e.what() << "\n";
             return 1;

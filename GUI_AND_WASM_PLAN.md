@@ -1,6 +1,6 @@
 # Stratos GUI, HTML Transpilation & WASM Plan
 
-> Status: **Phase 3 Complete** | Last updated: 2026-03-10
+> Status: **Phase 4 Complete** | Last updated: 2026-03-10
 
 ## Decisions
 
@@ -279,16 +279,16 @@ component App {
 | `Dialog` | `<dialog>` |
 | `ListView` | `<ul>` / virtual scroll div |
 
-- [ ] CSS generation — map theme/style properties to CSS
-- [ ] JS generation — event handlers, state reactivity (minimal runtime)
-- [ ] Generate `index.html` + `styles.css` + `app.js` bundle
+- [x] CSS generation — full widget styles with CSS custom properties (dark theme)
+- [x] JS generation — event handlers, reactive state via createState()
+- [x] Generate `index.html` + `styles.css` + `app.js` bundle
 
 ### 4.2 — Reactive Runtime (JS)
-- [ ] `src/web/runtime.js` — minimal reactive framework (~2KB)
-  - State management (Proxy-based or signal-based reactivity)
-  - DOM diffing / patching (or direct DOM manipulation)
-  - Event delegation
-  - Component lifecycle (mount, update, unmount)
+- [x] Inline reactive runtime in app.js — createState(name, initial) with get/set/watch
+  - [x] State management (listener-based reactivity)
+  - [x] Event delegation via addEventListener
+  - [ ] DOM diffing / patching (deferred — direct DOM manipulation for now)
+  - [ ] Component lifecycle (mount, update, unmount) (deferred)
 
 ### 4.3 — Canvas Rendering Mode (Optional)
 - [ ] Compile Skia to WASM (via CanvasKit / Skia WASM build)
@@ -311,7 +311,7 @@ component App {
                               → OR: WASM + CanvasKit → index.html + app.wasm
 ```
 
-- [ ] `stratos compile --target web <dir>` — produces `dist/` folder
+- [x] `stratos compile --target web <file.stui>` — produces `dist/` folder
 - [ ] Dev server: `stratos serve <dir>` — local dev server with hot reload (stretch goal)
 
 ### 4.5 — Examples
