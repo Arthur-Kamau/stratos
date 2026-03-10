@@ -1,0 +1,587 @@
+#include "stratos/STUITranspiler.h"
+#include <iostream>
+#include <algorithm>
+
+// Aliases to disambiguate Stratos AST types from STUI AST types
+// (both namespaces have LiteralExpr, BinaryExpr, etc.)
+namespace st = stratos;
+using SLiteralExpr = stratos::LiteralExpr;
+using SBinaryExpr = stratos::BinaryExpr;
+using SUnaryExpr = stratos::UnaryExpr;
+using SCallExpr = stratos::CallExpr;
+using SVariableExpr = stratos::VariableExpr;
+using SLambdaExpr = stratos::LambdaExpr;
+
+namespace stratos {
+namespace stui {
+
+STUITranspiler::STUITranspiler() {}
+
+// ============================================================================
+// Token/AST Helper Factories
+// ============================================================================
+
+Token STUITranspiler::makeToken(TokenType type, const std::string& lexeme) {
+    return Token{type, lexeme, ++syntheticLine_, 1, "<stui-generated>", ""};
+}
+
+Token STUITranspiler::makeIdentifier(const std::string& name) {
+    return makeToken(TokenType::IDENTIFIER, name);
+}
+
+Token STUITranspiler::makeString(const std::string& value) {
+    return makeToken(TokenType::STRING, value);
+}
+
+Token STUITranspiler::makeNumber(const std::string& value) {
+    return makeToken(TokenType::NUMBER, value);
+}
+
+std::unique_ptr<Expr> STUITranspiler::makeVar(const std::string& name) {
+    return std::make_unique<SVariableExpr>(makeIdentifier(name));
+}
+
+std::unique_ptr<Expr> STUITranspiler::makeString(const std::string& value, bool) {
+    return std::make_unique<SLiteralExpr>(value, TokenType::STRING);
+}
+
+std::unique_ptr<Expr> STUITranspiler::makeNumber(int value) {
+    return std::make_unique<SLiteralExpr>(std::to_string(value), TokenType::NUMBER);
+}
+
+std::unique_ptr<Expr> STUITranspiler::makeNumber(double value) {
+    return std::make_unique<SLiteralExpr>(std::to_string(value), TokenType::NUMBER);
+}
+
+std::unique_ptr<Expr> STUITranspiler::makeCall(const std::string& callee,
+                                                std::vector<std::unique_ptr<Expr>> args) {
+    // Check if callee has a dot (e.g., "gui.App")
+    auto dotPos = callee.find('.');
+    std::unique_ptr<Expr> calleeExpr;
+    if (dotPos != std::string::npos) {
+        std::string obj = callee.substr(0, dotPos);
+        std::string method = callee.substr(dotPos + 1);
+        // Build member access: obj.method
+        auto objExpr = std::make_unique<SVariableExpr>(makeIdentifier(obj));
+        // For Stratos, member calls are CallExpr with a dotted callee
+        // We'll use a VariableExpr with the full dotted name
+        calleeExpr = std::make_unique<SVariableExpr>(makeIdentifier(callee));
+    } else {
+        calleeExpr = std::make_unique<SVariableExpr>(makeIdentifier(callee));
+    }
+
+    return std::make_unique<SCallExpr>(
+        std::move(calleeExpr),
+        makeToken(TokenType::LEFT_PAREN, "("),
+        std::move(args));
+}
+
+std::unique_ptr<Expr> STUITranspiler::makeMemberCall(const std::string& object,
+                                                      const std::string& method,
+                                                      std::vector<std::unique_ptr<Expr>> args) {
+    // object.method(args) → CallExpr with dotted callee
+    std::string fullName = object + "." + method;
+    return makeCall(fullName, std::move(args));
+}
+
+std::unique_ptr<Expr> STUITranspiler::makeMapLiteral(
+    std::vector<std::pair<std::string, std::unique_ptr<Expr>>> entries) {
+    return std::make_unique<MapLiteralExpr>(std::move(entries));
+}
+
+std::unique_ptr<Expr> STUITranspiler::makeArrayLiteral(
+    std::vector<std::unique_ptr<Expr>> elements) {
+    return std::make_unique<ArrayLiteralExpr>(std::move(elements));
+}
+
+std::unique_ptr<Stmt> STUITranspiler::makeVarDecl(const std::string& name,
+                                                    std::unique_ptr<Expr> init,
+                                                    bool isMutable) {
+    return std::make_unique<VarDecl>(
+        makeIdentifier(name), "", std::move(init), isMutable);
+}
+
+std::unique_ptr<Stmt> STUITranspiler::makeExprStmt(std::unique_ptr<Expr> expr) {
+    return std::make_unique<ExpressionStmt>(std::move(expr));
+}
+
+// ============================================================================
+// Main Transpilation
+// ============================================================================
+
+std::vector<std::unique_ptr<Stmt>> STUITranspiler::transpile(const STUIFile& file) {
+    std::vector<std::unique_ptr<Stmt>> statements;
+
+    // 1. Package declaration
+    if (!file.packageName.empty()) {
+        std::vector<std::unique_ptr<Stmt>> pkgDecls;
+        statements.push_back(std::make_unique<PackageDecl>(
+            makeIdentifier(file.packageName), std::move(pkgDecls)));
+    }
+
+    // 2. Imports — always include std/gui
+    auto imports = transpileImports(file);
+    for (auto& imp : imports) {
+        statements.push_back(std::move(imp));
+    }
+
+    // 3. Each component → a class or a function
+    for (const auto& component : file.components) {
+        statements.push_back(transpileComponent(component));
+    }
+
+    // 4. Generate main() if there's an "App" component
+    bool hasApp = false;
+    for (const auto& comp : file.components) {
+        if (comp.name == "App") {
+            hasApp = true;
+            break;
+        }
+    }
+    if (hasApp) {
+        statements.push_back(generateMain(file));
+    }
+
+    return statements;
+}
+
+std::vector<std::unique_ptr<Stmt>> STUITranspiler::transpileImports(const STUIFile& file) {
+    std::vector<std::unique_ptr<Stmt>> imports;
+
+    // Always import std/gui
+    bool hasGuiImport = false;
+    for (const auto& imp : file.imports) {
+        if (imp == "std/gui") hasGuiImport = true;
+        imports.push_back(std::make_unique<UseStmt>(makeToken(TokenType::STRING, imp)));
+    }
+
+    if (!hasGuiImport) {
+        imports.insert(imports.begin(),
+            std::make_unique<UseStmt>(makeToken(TokenType::STRING, "std/gui")));
+    }
+
+    return imports;
+}
+
+// ============================================================================
+// Component → Function
+// ============================================================================
+
+// Each component becomes a function that:
+// 1. Creates state variables
+// 2. Builds the widget tree
+// 3. Returns the root widget
+//
+// component Counter { state count: int = 0; view { ... } }
+// →
+// fn Counter() {
+//     val count = gui.State(0);
+//     val root = gui.Column({ ... }, [ ... ]);
+//     return root;
+// }
+
+std::unique_ptr<Stmt> STUITranspiler::transpileComponent(const ComponentDecl& component) {
+    std::vector<std::unique_ptr<Stmt>> bodyStmts;
+
+    // State declarations → gui.State() calls
+    for (const auto& state : component.states) {
+        bodyStmts.push_back(transpileStateDecl(state));
+    }
+
+    // Build the widget tree
+    if (component.viewRoot) {
+        auto widgetExpr = transpileWidget(*component.viewRoot);
+        bodyStmts.push_back(makeVarDecl("__root__", std::move(widgetExpr)));
+
+        // Return the root widget
+        bodyStmts.push_back(std::make_unique<ReturnStmt>(
+            makeToken(TokenType::IDENTIFIER, "return"),
+            makeVar("__root__")));
+    }
+
+    // Create function body
+    auto body = std::make_unique<std::vector<std::unique_ptr<Stmt>>>();
+    for (auto& stmt : bodyStmts) {
+        body->push_back(std::move(stmt));
+    }
+
+    // Parameters from props
+    std::vector<Parameter> params;
+    for (const auto& prop : component.props) {
+        params.push_back(Parameter(
+            makeIdentifier(prop.name),
+            prop.typeName,
+            nullptr, false));
+    }
+
+    return std::make_unique<FunctionDecl>(
+        makeIdentifier(component.name),
+        std::move(params),
+        "any", // return type
+        std::move(body),
+        true,  // isPublic
+        false  // isAsync
+    );
+}
+
+// ============================================================================
+// State → gui.State()
+// ============================================================================
+
+std::unique_ptr<Stmt> STUITranspiler::transpileStateDecl(const StateDecl& state) {
+    // state count: int = 0;  →  val count = gui.State(0);
+    std::vector<std::unique_ptr<Expr>> args;
+    if (state.initialValue) {
+        args.push_back(transpileExpr(*state.initialValue));
+    }
+    auto stateCall = makeCall("gui.State", std::move(args));
+    return makeVarDecl(state.name, std::move(stateCall));
+}
+
+// ============================================================================
+// Widget Tree → gui.Widget() calls
+// ============================================================================
+
+std::unique_ptr<Expr> STUITranspiler::transpileWidget(const WidgetNode& widget) {
+    // Build: gui.WidgetType(args..., propsMap, childrenArray)
+    //
+    // The exact mapping depends on the widget type.
+    // For most widgets: gui.Text("content", { fontSize: 24 })
+    // For containers: gui.Column({ spacing: 8 }, [child1, child2])
+
+    std::string guiCall = "gui." + widget.widgetType;
+    std::vector<std::unique_ptr<Expr>> callArgs;
+
+    // Positional arguments
+    for (const auto& arg : widget.arguments) {
+        callArgs.push_back(transpileExpr(*arg));
+    }
+
+    // Properties → map literal
+    if (!widget.properties.empty() || !widget.events.empty()) {
+        std::vector<std::pair<std::string, std::unique_ptr<Expr>>> mapEntries;
+
+        for (const auto& prop : widget.properties) {
+            mapEntries.push_back({prop.name, transpileExpr(*prop.value)});
+        }
+
+        // Events → lambda entries in the map
+        for (const auto& event : widget.events) {
+            mapEntries.push_back({event.eventName, transpileExpr(*event.handler)});
+        }
+
+        callArgs.push_back(makeMapLiteral(std::move(mapEntries)));
+    }
+
+    // Children → array literal
+    if (!widget.children.empty()) {
+        std::vector<std::unique_ptr<Expr>> childExprs;
+        for (const auto& child : widget.children) {
+            childExprs.push_back(transpileWidget(*child));
+        }
+        callArgs.push_back(makeArrayLiteral(std::move(childExprs)));
+    }
+
+    return makeCall(guiCall, std::move(callArgs));
+}
+
+// ============================================================================
+// Expression Conversion: STUI Expr → Stratos Expr
+// ============================================================================
+
+std::unique_ptr<Expr> STUITranspiler::transpileExpr(const STUIExpr& expr) {
+    // Literal
+    if (auto* lit = dynamic_cast<const stui::LiteralExpr*>(&expr)) {
+        switch (lit->token.type) {
+            case STUITokenType::NUMBER:
+                return std::make_unique<SLiteralExpr>(lit->token.lexeme, TokenType::NUMBER);
+            case STUITokenType::STRING:
+                return std::make_unique<SLiteralExpr>(lit->token.lexeme, TokenType::STRING);
+            case STUITokenType::TRUE:
+                return std::make_unique<SLiteralExpr>("true", TokenType::TRUE);
+            case STUITokenType::FALSE:
+                return std::make_unique<SLiteralExpr>("false", TokenType::FALSE);
+            case STUITokenType::NONE:
+                return std::make_unique<SLiteralExpr>("none", TokenType::NONE);
+            default:
+                return std::make_unique<SLiteralExpr>(lit->token.lexeme, TokenType::STRING);
+        }
+    }
+
+    // Identifier
+    if (auto* id = dynamic_cast<const stui::IdentifierExpr*>(&expr)) {
+        return std::make_unique<SVariableExpr>(makeIdentifier(id->name.lexeme));
+    }
+
+    // Member access: obj.member
+    if (auto* mem = dynamic_cast<const stui::MemberAccessExpr*>(&expr)) {
+        // Flatten to dotted name for simple cases
+        // For complex cases, this would need proper member access AST
+        if (auto* baseId = dynamic_cast<const stui::IdentifierExpr*>(mem->object.get())) {
+            return std::make_unique<SVariableExpr>(
+                makeIdentifier(baseId->name.lexeme + "." + mem->member.lexeme));
+        }
+        // Fallback: treat as variable with dotted name
+        return std::make_unique<SVariableExpr>(makeIdentifier(mem->member.lexeme));
+    }
+
+    // Function call
+    if (auto* call = dynamic_cast<const stui::CallExpr*>(&expr)) {
+        auto callee = transpileExpr(*call->callee);
+        std::vector<std::unique_ptr<stratos::Expr>> args;
+        for (const auto& arg : call->arguments) {
+            args.push_back(transpileExpr(*arg));
+        }
+        return std::make_unique<SCallExpr>(
+            std::move(callee),
+            makeToken(TokenType::LEFT_PAREN, "("),
+            std::move(args));
+    }
+
+    // Binary expression
+    if (auto* bin = dynamic_cast<const stui::BinaryExpr*>(&expr)) {
+        auto left = transpileExpr(*bin->left);
+        auto right = transpileExpr(*bin->right);
+        // Map STUI operator token to Stratos token
+        TokenType opType;
+        switch (bin->op.type) {
+            case STUITokenType::PLUS: opType = TokenType::PLUS; break;
+            case STUITokenType::MINUS: opType = TokenType::MINUS; break;
+            case STUITokenType::STAR: opType = TokenType::STAR; break;
+            case STUITokenType::SLASH: opType = TokenType::SLASH; break;
+            case STUITokenType::PERCENT: opType = TokenType::PERCENT; break;
+            case STUITokenType::EQUAL_EQUAL: opType = TokenType::EQUAL_EQUAL; break;
+            case STUITokenType::BANG_EQUAL: opType = TokenType::BANG_EQUAL; break;
+            case STUITokenType::LESS: opType = TokenType::LESS; break;
+            case STUITokenType::LESS_EQUAL: opType = TokenType::LESS_EQUAL; break;
+            case STUITokenType::GREATER: opType = TokenType::GREATER; break;
+            case STUITokenType::GREATER_EQUAL: opType = TokenType::GREATER_EQUAL; break;
+            case STUITokenType::AMPERSAND: opType = TokenType::AND; break;
+            case STUITokenType::PIPE_PIPE: opType = TokenType::OR; break;
+            default: opType = TokenType::PLUS; break;
+        }
+        return std::make_unique<SBinaryExpr>(
+            std::move(left),
+            makeToken(opType, bin->op.lexeme),
+            std::move(right));
+    }
+
+    // Unary expression
+    if (auto* un = dynamic_cast<const stui::UnaryExpr*>(&expr)) {
+        auto operand = transpileExpr(*un->operand);
+        TokenType opType = (un->op.type == STUITokenType::MINUS) ? TokenType::MINUS : TokenType::BANG;
+        return std::make_unique<SUnaryExpr>(
+            makeToken(opType, un->op.lexeme),
+            std::move(operand));
+    }
+
+    // Lambda
+    if (auto* lam = dynamic_cast<const stui::LambdaExpr*>(&expr)) {
+        std::vector<Token> params;
+        for (const auto& p : lam->params) {
+            params.push_back(makeIdentifier(p.lexeme));
+        }
+
+        // For lambdas with bodySource, we create a block with the raw content
+        // passed through. The Stratos interpreter will need to re-lex/parse it.
+        // For expression-body lambdas, we transpile the expression.
+        std::unique_ptr<Stmt> body;
+        if (!lam->bodyExprs.empty()) {
+            // Expression body → return statement
+            auto retExpr = transpileExpr(*lam->bodyExprs[0]);
+            std::vector<std::unique_ptr<Stmt>> stmts;
+            stmts.push_back(std::make_unique<ReturnStmt>(
+                makeToken(TokenType::IDENTIFIER, "return"),
+                std::move(retExpr)));
+            body = std::make_unique<BlockStmt>(std::move(stmts));
+        } else {
+            // Block body — we need to pass the raw source to be re-lexed
+            // For now, create an empty block (the interpreter handles raw source via NativeRegistry callbacks)
+            std::vector<std::unique_ptr<Stmt>> stmts;
+            // If there's body source, create a print statement as placeholder
+            // The actual event binding happens through the GUI native callback system
+            body = std::make_unique<BlockStmt>(std::move(stmts));
+        }
+
+        return std::make_unique<SLambdaExpr>(
+            std::move(params), std::move(body), false);
+    }
+
+    // Interpolated string
+    if (auto* interp = dynamic_cast<const stui::InterpolatedStringExpr*>(&expr)) {
+        // Pass through as a Stratos interpolated string
+        return std::make_unique<SLiteralExpr>(interp->raw, TokenType::INTERPOLATED_STRING);
+    }
+
+    // Array literal
+    if (auto* arr = dynamic_cast<const stui::ArrayExpr*>(&expr)) {
+        std::vector<std::unique_ptr<stratos::Expr>> elements;
+        for (const auto& el : arr->elements) {
+            elements.push_back(transpileExpr(*el));
+        }
+        return std::make_unique<ArrayLiteralExpr>(std::move(elements));
+    }
+
+    // Map literal
+    if (auto* map = dynamic_cast<const stui::MapExpr*>(&expr)) {
+        std::vector<std::pair<std::string, std::unique_ptr<stratos::Expr>>> entries;
+        for (const auto& entry : map->entries) {
+            entries.push_back({entry.first, transpileExpr(*entry.second)});
+        }
+        return std::make_unique<MapLiteralExpr>(std::move(entries));
+    }
+
+    // Assignment
+    if (auto* assign = dynamic_cast<const stui::AssignExpr*>(&expr)) {
+        // For state assignments like count += 1, we transform to:
+        // count.set(count.get() + 1)
+        // But for simple cases, just emit as binary with assignment
+        auto target = transpileExpr(*assign->target);
+        auto value = transpileExpr(*assign->value);
+
+        // Check if it's a compound assignment
+        if (assign->op.type == STUITokenType::PLUS_EQUAL ||
+            assign->op.type == STUITokenType::MINUS_EQUAL) {
+            // target += value  →  target.set(target.get() + value)
+            // This is a simplification; full state binding would need more work
+            TokenType binOp = (assign->op.type == STUITokenType::PLUS_EQUAL) ?
+                              TokenType::PLUS : TokenType::MINUS;
+            auto getCall = transpileExpr(*assign->target);
+            auto binExpr = std::make_unique<SBinaryExpr>(
+                std::move(getCall),
+                makeToken(binOp, assign->op.lexeme.substr(0, 1)),
+                std::move(value));
+            return std::make_unique<SBinaryExpr>(
+                std::move(target),
+                makeToken(TokenType::EQUAL, "="),
+                std::move(binExpr));
+        }
+
+        return std::make_unique<SBinaryExpr>(
+            std::move(target),
+            makeToken(TokenType::EQUAL, "="),
+            std::move(value));
+    }
+
+    // Fallback: return a "none" literal
+    return std::make_unique<SLiteralExpr>("none", TokenType::NONE);
+}
+
+// ============================================================================
+// Generate main() function
+// ============================================================================
+
+std::unique_ptr<Stmt> STUITranspiler::generateMain(const STUIFile& file) {
+    // Find the App component to extract window config
+    const ComponentDecl* appComp = nullptr;
+    for (const auto& comp : file.components) {
+        if (comp.name == "App") {
+            appComp = &comp;
+            break;
+        }
+    }
+
+    std::vector<std::unique_ptr<Stmt>> mainBody;
+
+    if (appComp && appComp->viewRoot) {
+        // Look for a Window widget in the App's view
+        const WidgetNode* windowWidget = nullptr;
+        if (appComp->viewRoot->widgetType == "Window") {
+            windowWidget = appComp->viewRoot.get();
+        }
+
+        // Extract window properties
+        std::string title = "Stratos App";
+        int width = 800, height = 600;
+
+        if (windowWidget) {
+            for (const auto& prop : windowWidget->properties) {
+                if (prop.name == "title") {
+                    if (auto* lit = dynamic_cast<const stui::LiteralExpr*>(prop.value.get())) {
+                        title = lit->token.lexeme;
+                    }
+                } else if (prop.name == "width") {
+                    if (auto* lit = dynamic_cast<const stui::LiteralExpr*>(prop.value.get())) {
+                        width = std::stoi(lit->token.lexeme);
+                    }
+                } else if (prop.name == "height") {
+                    if (auto* lit = dynamic_cast<const stui::LiteralExpr*>(prop.value.get())) {
+                        height = std::stoi(lit->token.lexeme);
+                    }
+                }
+            }
+        }
+
+        // val app = gui.App("Title", width, height);
+        {
+            std::vector<std::unique_ptr<Expr>> args;
+            args.push_back(makeString(title, true));
+            args.push_back(makeNumber(width));
+            args.push_back(makeNumber(height));
+            mainBody.push_back(makeVarDecl("app", makeCall("gui.App", std::move(args))));
+        }
+
+        // Build the content widget tree (children of Window, or the App's view root)
+        const WidgetNode* contentRoot = windowWidget;
+        if (windowWidget && !windowWidget->children.empty()) {
+            // If Window has children, wrap them
+            if (windowWidget->children.size() == 1) {
+                auto widgetExpr = transpileWidget(*windowWidget->children[0]);
+                // app.root(widgetExpr);
+                std::vector<std::unique_ptr<Expr>> rootArgs;
+                rootArgs.push_back(std::move(widgetExpr));
+                mainBody.push_back(makeExprStmt(
+                    makeMemberCall("app", "root", std::move(rootArgs))));
+            } else {
+                // Multiple children → wrap in Column
+                std::vector<std::unique_ptr<Expr>> childExprs;
+                for (const auto& child : windowWidget->children) {
+                    childExprs.push_back(transpileWidget(*child));
+                }
+                std::vector<std::unique_ptr<Expr>> colArgs;
+                colArgs.push_back(makeArrayLiteral(std::move(childExprs)));
+                auto columnExpr = makeCall("gui.Column", std::move(colArgs));
+
+                std::vector<std::unique_ptr<Expr>> rootArgs;
+                rootArgs.push_back(std::move(columnExpr));
+                mainBody.push_back(makeExprStmt(
+                    makeMemberCall("app", "root", std::move(rootArgs))));
+            }
+        } else if (!windowWidget && appComp->viewRoot) {
+            // No Window widget, use the view root directly
+            auto widgetExpr = transpileWidget(*appComp->viewRoot);
+            std::vector<std::unique_ptr<Expr>> rootArgs;
+            rootArgs.push_back(std::move(widgetExpr));
+            mainBody.push_back(makeExprStmt(
+                makeMemberCall("app", "root", std::move(rootArgs))));
+        }
+
+        // For non-App components referenced in the tree, call their functions
+        // This is already handled since component names become function calls
+        // in transpileWidget (e.g., Counter() calls the Counter function)
+
+        // app.run();
+        {
+            std::vector<std::unique_ptr<Expr>> runArgs;
+            mainBody.push_back(makeExprStmt(
+                makeMemberCall("app", "run", std::move(runArgs))));
+        }
+    }
+
+    auto body = std::make_unique<std::vector<std::unique_ptr<Stmt>>>();
+    for (auto& stmt : mainBody) {
+        body->push_back(std::move(stmt));
+    }
+
+    return std::make_unique<FunctionDecl>(
+        makeIdentifier("main"),
+        std::vector<Parameter>{},
+        "void",
+        std::move(body),
+        true,   // isPublic
+        false   // isAsync
+    );
+}
+
+} // namespace stui
+} // namespace stratos

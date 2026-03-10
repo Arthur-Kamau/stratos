@@ -1,0 +1,24 @@
+// stui-hello: Minimal STUI hello world
+import "std/gui";
+
+component App {
+    view {
+        Window(title: "Hello STUI", width: 800, height: 600) {
+            Column(alignment: "center", spacing: 16) {
+                Text("Hello from STUI!") {
+                    fontSize: 32;
+                    color: "white";
+                }
+                Text("Declarative UI for Stratos") {
+                    fontSize: 18;
+                    color: "gray";
+                }
+                Button("Click Me") {
+                    onClick: {
+                        println("Button clicked!");
+                    }
+                }
+            }
+        }
+    }
+}

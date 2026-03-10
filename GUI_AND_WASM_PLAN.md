@@ -1,6 +1,6 @@
 # Stratos GUI, HTML Transpilation & WASM Plan
 
-> Status: **Phase 1 In Progress** | Last updated: 2026-03-09
+> Status: **Phase 2 Complete** | Last updated: 2026-03-10
 
 ## Decisions
 
@@ -187,26 +187,31 @@ component App {
   → STUI Transpiler → Stratos AST (std/gui calls) → normal pipeline
 ```
 
-- [ ] `src/include/stratos/STUILexer.h` — tokenizer for `.stui` syntax
-- [ ] `src/src/stui/STUILexer.cpp` — implementation
-- [ ] `src/include/stratos/STUIParser.h` — parser for component/view/state declarations
-- [ ] `src/src/stui/STUIParser.cpp` — implementation
-- [ ] `src/include/stratos/STUITranspiler.h` — converts STUI AST → Stratos AST
-- [ ] `src/src/stui/STUITranspiler.cpp` — emits `std/gui` calls
-- [ ] Update `src/src/main.cpp` — detect `.stui` extension, route through STUI pipeline
+- [x] `src/include/stratos/STUIToken.h` — STUI-specific token types
+- [x] `src/include/stratos/STUILexer.h` — tokenizer for `.stui` syntax
+- [x] `src/src/stui/STUILexer.cpp` — implementation (keywords, strings, interpolation, comments)
+- [x] `src/include/stratos/STUIAST.h` — STUI AST nodes (WidgetNode, ComponentDecl, StateDecl, PropDecl, etc.)
+- [x] `src/include/stratos/STUIParser.h` — parser for component/view/state declarations
+- [x] `src/src/stui/STUIParser.cpp` — recursive descent parser (widgets, properties, events, expressions)
+- [x] `src/include/stratos/STUITranspiler.h` — converts STUI AST → Stratos AST
+- [x] `src/src/stui/STUITranspiler.cpp` — emits `std/gui` calls, generates main() from App component
+- [x] Update `src/src/main.cpp` — detect `.stui` extension, route through STUI pipeline
+- [x] Update `src/CMakeLists.txt` — include stui source files
+- [x] Update `src/build.sh` — include stui source files
 - [ ] Support `stui` block in `stratos.conf` for UI entry points
 
 ### 2.3 — CLI Integration
-- [ ] `stratos run app.stui` — compile & run a `.stui` file
+- [x] `stratos run app.stui` — compile & run a `.stui` file
 - [ ] `stratos build` — detect `.stui` files in project, compile them
 - [ ] `stratos fmt` — format `.stui` files
-- [ ] `stratos check` — validate `.stui` syntax
+- [x] `stratos check app.stui` — validate `.stui` syntax and list components
+- [x] `stratos compile app.stui` — compile `.stui` to IR
 
 ### 2.4 — Examples
-- [ ] `examples/stui-hello/` — minimal .stui app
-- [ ] `examples/stui-counter/` — counter (same as above)
-- [ ] `examples/stui-todo/` — todo app in .stui
-- [ ] `examples/stui-dashboard/` — multi-component dashboard
+- [x] `examples/stui-hello/` — minimal .stui app (Text, Button, Column)
+- [x] `examples/stui-counter/` — counter with state, increment/decrement/reset
+- [x] `examples/stui-todo/` — todo app with TextField, AppBar, event handlers
+- [x] `examples/stui-dashboard/` — multi-component dashboard (StatCard, Sidebar, Grid)
 
 ---
 

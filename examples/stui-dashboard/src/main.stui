@@ -1,0 +1,75 @@
+// stui-dashboard: Multi-component dashboard
+import "std/gui";
+
+component StatCard {
+    prop label: string;
+    prop value: string;
+    prop color: string = "blue";
+
+    view {
+        Box() {
+            backgroundColor: "darkgray";
+            padding: 16;
+            borderRadius: 8;
+            Column(spacing: 4) {
+                Text(label) {
+                    fontSize: 12;
+                    color: "gray";
+                }
+                Text(value) {
+                    fontSize: 28;
+                    fontWeight: "bold";
+                    color: "white";
+                }
+            }
+        }
+    }
+}
+
+component Sidebar {
+    view {
+        Column(spacing: 8) {
+            backgroundColor: "dark";
+            padding: 16;
+            width: 200;
+            Text("Dashboard") {
+                fontSize: 20;
+                fontWeight: "bold";
+                color: "white";
+            }
+            Spacer(height: 16)
+            Button("Overview") {
+                onClick: { println("Overview"); }
+            }
+            Button("Analytics") {
+                onClick: { println("Analytics"); }
+            }
+            Button("Settings") {
+                onClick: { println("Settings"); }
+            }
+        }
+    }
+}
+
+component App {
+    view {
+        Window(title: "STUI Dashboard", width: 1024, height: 768) {
+            Row() {
+                Sidebar()
+                Column(spacing: 16) {
+                    padding: 24;
+                    flex: 1;
+                    Text("Welcome to Dashboard") {
+                        fontSize: 24;
+                        color: "white";
+                    }
+                    Grid(columns: 3, spacing: 12) {
+                        StatCard(label: "Users", value: "1,234")
+                        StatCard(label: "Revenue", value: "$52.3k", color: "green")
+                        StatCard(label: "Orders", value: "847", color: "purple")
+                    }
+                }
+            }
+        }
+    }
+}

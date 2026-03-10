@@ -1,0 +1,41 @@
+// stui-todo: Todo list with STUI
+import "std/gui";
+
+component TodoApp {
+    state taskText: string = "";
+
+    view {
+        Column(spacing: 12) {
+            AppBar("Todo List")
+            Padding(padding: 16) {
+                Column(spacing: 12) {
+                    Row(spacing: 8) {
+                        TextField("Add a task...") {
+                            flex: 1;
+                            onChange: fn(value) {
+                                taskText = value;
+                            }
+                        }
+                        Button("Add") {
+                            onClick: {
+                                println("Adding task: " + taskText);
+                            }
+                        }
+                    }
+                    Text("Your tasks will appear here") {
+                        fontSize: 14;
+                        color: "gray";
+                    }
+                }
+            }
+        }
+    }
+}
+
+component App {
+    view {
+        Window(title: "STUI Todo", width: 600, height: 500) {
+            TodoApp()
+        }
+    }
+}

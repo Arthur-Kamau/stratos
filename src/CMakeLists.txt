@@ -25,6 +25,7 @@ file(GLOB_RECURSE SOURCES
     "src/optimizer/*.cpp"
     "src/runtime/*.cpp"
     "src/runtime/gui/*.cpp"
+    "src/stui/*.cpp"
     "src/config/*.cpp"
     "src/devtools/*.cpp"
     "src/doc/*.cpp"

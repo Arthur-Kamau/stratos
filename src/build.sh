@@ -94,6 +94,9 @@ g++ -std=c++20 -I include -I libs/sqlite -I/usr/include/postgresql $(pkg-config 
   src/devtools/NetworkMonitor.cpp \
   src/devtools/Profiler.cpp \
   src/doc/DocExtractor.cpp \
+  src/stui/STUILexer.cpp \
+  src/stui/STUIParser.cpp \
+  src/stui/STUITranspiler.cpp \
   src/doc/HTMLDocGenerator.cpp \
   src/doc/MarkdownDocGenerator.cpp \
   src/doc/JSONDocGenerator.cpp \

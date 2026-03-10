@@ -47,6 +47,9 @@
 #include "stratos/MarkdownDocGenerator.h"
 #include "stratos/JSONDocGenerator.h"
 #include "stratos/RuntimeLinkConfig.h"
+#include "stratos/STUILexer.h"
+#include "stratos/STUIParser.h"
+#include "stratos/STUITranspiler.h"
 
 using namespace stratos;
 namespace fs = std::filesystem;
@@ -95,8 +98,10 @@ void printHelp() {
     std::cout << "  stratos generate-ir <file.st>  Generate LLVM IR (.ll) file (output in build/)\n";
     std::cout << "  stratos generate-ir <proj_dir> Generate IR for project (output in build/)\n";
     std::cout << "  stratos run <file.st>          Execute a Stratos program directly\n";
+    std::cout << "  stratos run <file.stui>        Execute a STUI declarative UI file\n";
     std::cout << "  stratos run                    Execute project (uses stratos.conf in current dir)\n";
     std::cout << "  stratos check <file.st>        Parse and analyze without code generation\n";
+    std::cout << "  stratos check <file.stui>      Validate STUI syntax and components\n";
     std::cout << "  stratos check <directory>      Check all .st files in directory\n";
     std::cout << "  stratos fmt <file.st>          Format a Stratos source file\n";
     std::cout << "  stratos fmt <directory> --write Format all .st files in directory\n";
@@ -389,6 +394,188 @@ int handleGenerateIR(int argc, char* argv[]) {
         std::cerr << "Error: Input path not found: " << inputPath << std::endl;
         return 1;
     }
+}
+
+// ============================================================================
+// STUI FILE HANDLING
+// ============================================================================
+
+CompileResult compileSTUIFile(const std::string& path, bool verbose, bool run) {
+    CompileResult result;
+    auto start = std::chrono::high_resolution_clock::now();
+
+    if (verbose) {
+        std::cout << (run ? "Executing" : "Compiling") << " STUI: " << path << std::endl;
+    }
+
+    // Read source file
+    std::ifstream file(path);
+    if (!file.is_open()) {
+        result.success = false;
+        result.errorMessage = "Could not open file: " + path;
+        return result;
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    std::string source = buffer.str();
+
+    try {
+        // Phase 1: STUI Lexer
+        stui::STUILexer stuiLexer(source, path);
+        auto stuiTokens = stuiLexer.scanTokens();
+        if (verbose) std::cout << "  [STUI Lexer]  OK (" << stuiTokens.size() << " tokens)" << std::endl;
+
+        // Phase 2: STUI Parser
+        stui::STUIParser stuiParser(stuiTokens, path);
+        auto stuiFile = stuiParser.parse();
+        if (verbose) std::cout << "  [STUI Parser] OK (" << stuiFile.components.size() << " components)" << std::endl;
+
+        // Phase 3: Transpile STUI AST → Stratos AST
+        stui::STUITranspiler transpiler;
+        auto statements = transpiler.transpile(stuiFile);
+        if (verbose) std::cout << "  [Transpiler]  OK (" << statements.size() << " statements)" << std::endl;
+
+        // Phase 4: Feed into normal Stratos pipeline
+        SemanticAnalyzer analyzer;
+        if (!analyzer.analyze(statements)) {
+            result.success = false;
+            result.errorMessage = "Semantic analysis failed for transpiled STUI";
+            return result;
+        }
+        if (verbose) std::cout << "  [Semantics]   OK" << std::endl;
+
+        if (run) {
+            Interpreter interpreter;
+            interpreter.execute(std::move(statements));
+
+            try {
+                std::vector<RuntimeValue> emptyArgs;
+                interpreter.callFunction("main", emptyArgs);
+                if (verbose) std::cout << "  [Execution]   Complete" << std::endl;
+            } catch (const ReturnException& e) {
+                if (verbose) std::cout << "  [Execution]   Complete" << std::endl;
+            } catch (const std::runtime_error& e) {
+                std::string err = e.what();
+                if (err.find("Undefined function: main") == std::string::npos) {
+                    throw std::runtime_error("Error executing main(): " + err);
+                }
+                if (verbose) std::cout << "  [Execution]   Complete (no main function)" << std::endl;
+            }
+
+            interpreter.cleanup();
+        } else {
+            Optimizer optimizer;
+            optimizer.optimize(statements);
+            if (verbose) std::cout << "  [Optimizer]   Finished" << std::endl;
+
+            std::string irPath = path + ".ll";
+            IRGenerator generator(irPath);
+            generator.generate(statements);
+            result.outputFilePath = irPath;
+            if (verbose) std::cout << "  [CodeGen]     Generated " << irPath << std::endl;
+        }
+
+        result.success = true;
+
+    } catch (const stui::STUIParseError& e) {
+        result.success = false;
+        result.errorMessage = std::string("STUI Parse Error: ") + e.what();
+    } catch (const std::exception& e) {
+        result.success = false;
+        result.errorMessage = std::string(e.what());
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    result.compilationTime = duration.count();
+
+    return result;
+}
+
+int handleSTUI(int argc, char* argv[]) {
+    std::string inputPath;
+    bool verbose = false;
+    bool run = false;
+
+    // Determine context: "stratos run file.stui" vs "stratos compile file.stui" vs "stratos file.stui"
+    std::string command = argv[1];
+    int argStart;
+    if (command == "run") {
+        run = true;
+        argStart = 2;
+    } else if (command == "compile") {
+        run = false;
+        argStart = 2;
+    } else if (command == "check") {
+        // Check mode: parse only, no execution
+        argStart = 2;
+    } else {
+        // Direct: stratos file.stui
+        run = false;
+        argStart = 1;
+    }
+
+    for (int i = argStart; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "-v" || arg == "--verbose") {
+            verbose = true;
+        } else if (arg == "--run" || arg == "-r") {
+            run = true;
+        } else if (inputPath.empty()) {
+            inputPath = arg;
+        }
+    }
+
+    if (inputPath.empty()) {
+        std::cerr << "Error: No .stui file specified\n";
+        return 1;
+    }
+
+    // Handle check command
+    if (command == "check") {
+        try {
+            std::ifstream file(inputPath);
+            if (!file.is_open()) {
+                std::cerr << "Error: Could not open file: " << inputPath << "\n";
+                return 1;
+            }
+            std::stringstream buffer;
+            buffer << file.rdbuf();
+            std::string source = buffer.str();
+
+            stui::STUILexer lexer(source, inputPath);
+            auto tokens = lexer.scanTokens();
+
+            stui::STUIParser parser(tokens, inputPath);
+            auto stuiFile = parser.parse();
+
+            std::cout << "OK: " << inputPath << " (" << stuiFile.components.size() << " components)\n";
+            for (const auto& comp : stuiFile.components) {
+                std::cout << "  component " << comp.name;
+                std::cout << " [" << comp.states.size() << " state, "
+                          << comp.props.size() << " props";
+                if (comp.viewRoot) std::cout << ", has view";
+                std::cout << "]\n";
+            }
+            return 0;
+        } catch (const stui::STUIParseError& e) {
+            std::cerr << "Error: " << e.what() << "\n";
+            return 1;
+        }
+    }
+
+    auto result = compileSTUIFile(inputPath, verbose, run);
+    if (!result.success) {
+        std::cerr << "Error: " << result.errorMessage << "\n";
+        return 1;
+    }
+
+    if (verbose) {
+        std::cout << "Completed in " << result.compilationTime << "ms\n";
+    }
+
+    return 0;
 }
 
 int handleCompile(int argc, char* argv[]) {
@@ -2142,10 +2329,18 @@ int main(int argc, char* argv[]) {
     }
 
     if (command == "run") {
+        // Check if target is a .stui file
+        if (argc > 2 && std::string(argv[2]).ends_with(".stui")) {
+            return handleSTUI(argc, argv);
+        }
         return handleRun(argc, argv);
     }
 
     if (command == "check") {
+        // Check if target is a .stui file
+        if (argc > 2 && std::string(argv[2]).ends_with(".stui")) {
+            return handleSTUI(argc, argv);
+        }
         return handleCheck(argc, argv);
     }
 
@@ -2169,7 +2364,19 @@ int main(int argc, char* argv[]) {
         return handleGenerateIR(argc, argv);
     }
 
+    // Route .stui files to STUI handler
+    if (command.ends_with(".stui")) {
+        return handleSTUI(argc, argv);
+    }
+
     if (command == "compile" || command.ends_with(".st")) {
+        // Check if the target file is .stui
+        if (argc > 2) {
+            std::string target = argv[2];
+            if (target.ends_with(".stui")) {
+                return handleSTUI(argc, argv);
+            }
+        }
         return handleCompile(argc, argv);
     }
 
