@@ -542,6 +542,14 @@ void NativeRegistry::initGui() {
             return storeWidget(widget);
         });
 
+    registerFunction("gui", "__gui_padding_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            float all = args.empty() ? 0.0f :
+                        static_cast<float>(std::any_cast<double>(args[0]));
+            auto widget = std::make_shared<gui::Padding>(gui::EdgeInsets::all(all));
+            return storeWidget(widget);
+        });
+
     registerFunction("gui", "__gui_scrollview_create",
         [](const std::vector<std::any>& args) -> std::any {
             auto widget = std::make_shared<gui::ScrollView>();

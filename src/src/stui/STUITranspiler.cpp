@@ -1,6 +1,7 @@
 #include "stratos/STUITranspiler.h"
 #include <iostream>
 #include <algorithm>
+#include <map>
 
 // Aliases to disambiguate Stratos AST types from STUI AST types
 // (both namespaces have LiteralExpr, BinaryExpr, etc.)
@@ -137,8 +138,17 @@ std::vector<std::unique_ptr<Stmt>> STUITranspiler::transpile(const STUIFile& fil
         statements.push_back(std::move(imp));
     }
 
+    // Collect component names for later use (to distinguish custom components from built-in widgets)
+    componentNames_.clear();
+    for (const auto& comp : file.components) {
+        componentNames_.insert(comp.name);
+    }
+
     // 3. Each component → a class or a function
+    //    Skip the "App" component since generateMain() handles it inline.
+    //    Generating fn App() would shadow the gui.App class.
     for (const auto& component : file.components) {
+        if (component.name == "App") continue;
         statements.push_back(transpileComponent(component));
     }
 
@@ -219,13 +229,17 @@ std::unique_ptr<Stmt> STUITranspiler::transpileComponent(const ComponentDecl& co
         body->push_back(std::move(stmt));
     }
 
-    // Parameters from props
+    // Parameters from props (with default values if specified)
     std::vector<Parameter> params;
     for (const auto& prop : component.props) {
+        std::unique_ptr<Expr> defaultVal = nullptr;
+        if (prop.defaultValue) {
+            defaultVal = transpileExpr(*prop.defaultValue);
+        }
         params.push_back(Parameter(
             makeIdentifier(prop.name),
             prop.typeName,
-            nullptr, false));
+            std::move(defaultVal), false));
     }
 
     return std::make_unique<FunctionDecl>(
@@ -260,6 +274,18 @@ std::string STUITranspiler::nextTempVar() {
     return "__w" + std::to_string(tempVarCounter_++);
 }
 
+// Ensure a numeric STUI expression becomes a float literal (append .0 to ints)
+std::unique_ptr<Expr> STUITranspiler::transpileAsFloat(const STUIExpr& expr) {
+    if (auto* lit = dynamic_cast<const stui::LiteralExpr*>(&expr)) {
+        if (lit->token.type == STUITokenType::NUMBER) {
+            std::string val = lit->token.lexeme;
+            if (val.find('.') == std::string::npos) val += ".0";
+            return std::make_unique<SLiteralExpr>(val, TokenType::NUMBER);
+        }
+    }
+    return transpileExpr(expr);
+}
+
 // Simple version (no setup statements) — used by callers that don't need styling
 std::unique_ptr<Expr> STUITranspiler::transpileWidget(const WidgetNode& widget) {
     std::vector<std::unique_ptr<Stmt>> unused;
@@ -284,7 +310,24 @@ std::unique_ptr<Expr> STUITranspiler::transpileWidget(const WidgetNode& widget,
         return makeCall("Center", {});
     }
 
-    // Separate properties into constructor args vs post-creation styling
+    // Check if this is a custom component (not a built-in widget)
+    bool isCustomComponent = componentNames_.count(widget.widgetType) > 0;
+
+    if (isCustomComponent) {
+        // Custom component: all properties become function call arguments (positional, by prop order)
+        std::vector<std::unique_ptr<Expr>> callArgs;
+        // Positional arguments first
+        for (const auto& arg : widget.arguments) {
+            callArgs.push_back(transpileExpr(*arg));
+        }
+        // Named properties become additional positional args
+        for (const auto& prop : widget.properties) {
+            callArgs.push_back(transpileExpr(*prop.value));
+        }
+        return makeCall(widget.widgetType, std::move(callArgs));
+    }
+
+    // Built-in widget: separate properties into constructor args vs post-creation styling
     std::vector<std::unique_ptr<Expr>> callArgs;
     std::vector<const Property*> styleProps;
 
@@ -293,29 +336,71 @@ std::unique_ptr<Expr> STUITranspiler::transpileWidget(const WidgetNode& widget,
         callArgs.push_back(transpileExpr(*arg));
     }
 
-    // Determine which properties are constructor args vs style props
+    // Collect constructor args from named properties (separate from style props).
+    // We store them by name so we can order them correctly for each widget type.
+    std::map<std::string, const Property*> ctorProps;
     for (const auto& prop : widget.properties) {
-        // Constructor args: spacing (Row/Column), columns (Grid), min/max (Slider)
-        if ((prop.name == "spacing" && (widget.widgetType == "Row" || widget.widgetType == "Column" || widget.widgetType == "Grid")) ||
+        bool isCtorArg =
+            (prop.name == "spacing" && (widget.widgetType == "Row" || widget.widgetType == "Column" || widget.widgetType == "Grid")) ||
             (prop.name == "columns" && widget.widgetType == "Grid") ||
             ((prop.name == "min" || prop.name == "max") && widget.widgetType == "Slider") ||
             (prop.name == "group" && widget.widgetType == "RadioButton") ||
-            (prop.name == "width" && widget.widgetType == "Drawer")) {
-            // These are constructor args — handled by the widget function signature
-            // For spacing: Row(spacing, children) / Column(spacing, children)
-            if (prop.name == "spacing" && callArgs.empty()) {
-                // Ensure spacing is a float literal for Column/Row/Grid
-                auto* lit = dynamic_cast<const stui::LiteralExpr*>(prop.value.get());
-                if (lit) {
-                    std::string val = lit->token.lexeme;
-                    if (val.find('.') == std::string::npos) val += ".0";
-                    callArgs.push_back(std::make_unique<SLiteralExpr>(val, TokenType::NUMBER));
-                } else {
-                    callArgs.push_back(transpileExpr(*prop.value));
-                }
-            }
+            (prop.name == "width" && widget.widgetType == "Drawer") ||
+            (prop.name == "padding" && widget.widgetType == "Padding") ||
+            (prop.name == "height" && widget.widgetType == "Spacer");
+        if (isCtorArg) {
+            ctorProps[prop.name] = &prop;
         } else {
             styleProps.push_back(&prop);
+        }
+    }
+
+    // Build constructor args in the correct order for each widget type
+    // (only if no positional args were already provided)
+    if (callArgs.empty()) {
+        // Define parameter order for each widget type
+        std::vector<std::pair<std::string, bool>> paramOrder; // {name, isFloat}
+        if (widget.widgetType == "Row" || widget.widgetType == "Column") {
+            paramOrder = {{"spacing", true}};
+        } else if (widget.widgetType == "Grid") {
+            paramOrder = {{"columns", false}, {"spacing", true}};
+        } else if (widget.widgetType == "Slider") {
+            paramOrder = {{"min", true}, {"max", true}};
+        } else if (widget.widgetType == "RadioButton") {
+            paramOrder = {{"group", false}};
+        } else if (widget.widgetType == "Drawer") {
+            paramOrder = {{"width", true}};
+        } else if (widget.widgetType == "Padding") {
+            paramOrder = {{"padding", true}};
+        } else if (widget.widgetType == "Spacer") {
+            paramOrder = {{"height", true}};
+        }
+
+        for (const auto& [paramName, isFloat] : paramOrder) {
+            auto it = ctorProps.find(paramName);
+            if (it != ctorProps.end()) {
+                if (isFloat) {
+                    callArgs.push_back(transpileAsFloat(*it->second->value));
+                } else {
+                    callArgs.push_back(transpileExpr(*it->second->value));
+                }
+            }
+        }
+    }
+
+    // Add default constructor args for widgets that require them
+    if (callArgs.empty()) {
+        if (widget.widgetType == "Row" || widget.widgetType == "Column" || widget.widgetType == "Grid") {
+            callArgs.push_back(std::make_unique<SLiteralExpr>("0.0", TokenType::NUMBER));
+        } else if (widget.widgetType == "Padding") {
+            callArgs.push_back(std::make_unique<SLiteralExpr>("0.0", TokenType::NUMBER));
+        }
+        // Grid also needs columns as first arg
+        if (widget.widgetType == "Grid" && callArgs.size() == 1) {
+            // Insert columns before spacing: Grid(columns, spacing, children)
+            auto spacing = std::move(callArgs[0]);
+            callArgs[0] = std::make_unique<SLiteralExpr>("1", TokenType::NUMBER);
+            callArgs.push_back(std::move(spacing));
         }
     }
 
@@ -328,14 +413,20 @@ std::unique_ptr<Expr> STUITranspiler::transpileWidget(const WidgetNode& widget,
         callArgs.push_back(makeArrayLiteral(std::move(childExprs)));
     }
 
+    // Map Spacer with a size argument to FixedSpacer
+    std::string resolvedType = widget.widgetType;
+    if (resolvedType == "Spacer" && !callArgs.empty()) {
+        resolvedType = "FixedSpacer";
+    }
+
     // If no styling needed, return the call directly
     if (styleProps.empty() && widget.events.empty()) {
-        return makeCall(widget.widgetType, std::move(callArgs));
+        return makeCall(resolvedType, std::move(callArgs));
     }
 
     // Need styling: create temp var, apply styles, return var reference
     std::string tmpVar = nextTempVar();
-    setupStmts.push_back(makeVarDecl(tmpVar, makeCall(widget.widgetType, std::move(callArgs))));
+    setupStmts.push_back(makeVarDecl(tmpVar, makeCall(resolvedType, std::move(callArgs))));
 
     // Generate style calls
     for (const auto* prop : styleProps) {
@@ -368,6 +459,9 @@ std::unique_ptr<Expr> STUITranspiler::transpileWidget(const WidgetNode& widget,
             else if (colorStr == "cyan") { r = 0; g = 255; b = 255; }
             else if (colorStr == "magenta") { r = 255; g = 0; b = 255; }
             else if (colorStr == "orange") { r = 255; g = 165; b = 0; }
+            else if (colorStr == "purple") { r = 128; g = 0; b = 128; }
+            else if (colorStr == "darkgray" || colorStr == "darkgrey") { r = 64; g = 64; b = 64; }
+            else if (colorStr == "dark") { r = 40; g = 40; b = 50; }
             std::vector<std::unique_ptr<Expr>> args;
             args.push_back(makeVar(tmpVar));
             args.push_back(makeNumber(r));
@@ -381,6 +475,14 @@ std::unique_ptr<Expr> STUITranspiler::transpileWidget(const WidgetNode& widget,
             if (colorStr == "white") { r = 255; g = 255; b = 255; }
             else if (colorStr == "black") { r = 0; g = 0; b = 0; }
             else if (colorStr == "gray" || colorStr == "grey") { r = 128; g = 128; b = 128; }
+            else if (colorStr == "darkgray" || colorStr == "darkgrey") { r = 64; g = 64; b = 64; }
+            else if (colorStr == "dark") { r = 40; g = 40; b = 50; }
+            else if (colorStr == "red") { r = 255; g = 0; b = 0; }
+            else if (colorStr == "green") { r = 0; g = 255; b = 0; }
+            else if (colorStr == "blue") { r = 0; g = 0; b = 255; }
+            else if (colorStr == "purple") { r = 128; g = 0; b = 128; }
+            else if (colorStr == "orange") { r = 255; g = 165; b = 0; }
+            else if (colorStr == "yellow") { r = 255; g = 255; b = 0; }
             std::vector<std::unique_ptr<Expr>> args;
             args.push_back(makeVar(tmpVar));
             args.push_back(makeNumber(r));
@@ -400,22 +502,22 @@ std::unique_ptr<Expr> STUITranspiler::transpileWidget(const WidgetNode& widget,
         } else if (propName == "padding") {
             std::vector<std::unique_ptr<Expr>> args;
             args.push_back(makeVar(tmpVar));
-            args.push_back(transpileExpr(*prop->value));
+            args.push_back(transpileAsFloat(*prop->value));
             setupStmts.push_back(makeExprStmt(makeCall("setPadding", std::move(args))));
         } else if (propName == "margin") {
             std::vector<std::unique_ptr<Expr>> args;
             args.push_back(makeVar(tmpVar));
-            args.push_back(transpileExpr(*prop->value));
+            args.push_back(transpileAsFloat(*prop->value));
             setupStmts.push_back(makeExprStmt(makeCall("setMargin", std::move(args))));
         } else if (propName == "borderRadius") {
             std::vector<std::unique_ptr<Expr>> args;
             args.push_back(makeVar(tmpVar));
-            args.push_back(transpileExpr(*prop->value));
+            args.push_back(transpileAsFloat(*prop->value));
             setupStmts.push_back(makeExprStmt(makeCall("setBorderRadius", std::move(args))));
         } else if (propName == "opacity") {
             std::vector<std::unique_ptr<Expr>> args;
             args.push_back(makeVar(tmpVar));
-            args.push_back(transpileExpr(*prop->value));
+            args.push_back(transpileAsFloat(*prop->value));
             setupStmts.push_back(makeExprStmt(makeCall("setOpacity", std::move(args))));
         } else if (propName == "width" || propName == "height") {
             // Need both width and height for setSize — skip individual for now
@@ -427,7 +529,7 @@ std::unique_ptr<Expr> STUITranspiler::transpileWidget(const WidgetNode& widget,
         } else if (propName == "flex") {
             std::vector<std::unique_ptr<Expr>> args;
             args.push_back(makeVar(tmpVar));
-            args.push_back(transpileExpr(*prop->value));
+            args.push_back(transpileAsFloat(*prop->value));
             setupStmts.push_back(makeExprStmt(makeCall("setFlex", std::move(args))));
         } else if (propName == "italic") {
             std::vector<std::unique_ptr<Expr>> args;
@@ -568,10 +670,36 @@ std::unique_ptr<Expr> STUITranspiler::transpileExpr(const STUIExpr& expr) {
             std::move(params), std::move(body), false);
     }
 
-    // Interpolated string
+    // Interpolated string — parse into InterpolatedStringExpr parts
     if (auto* interp = dynamic_cast<const stui::InterpolatedStringExpr*>(&expr)) {
-        // Pass through as a Stratos interpolated string
-        return std::make_unique<SLiteralExpr>(interp->raw, TokenType::INTERPOLATED_STRING);
+        std::vector<InterpolatedPart> parts;
+        const std::string& raw = interp->raw;
+        size_t pos = 0;
+        while (pos < raw.size()) {
+            // Look for ${...} interpolation
+            auto dollarPos = raw.find("${", pos);
+            if (dollarPos == std::string::npos) {
+                // Rest is literal text
+                parts.emplace_back(raw.substr(pos));
+                break;
+            }
+            // Add literal text before the interpolation
+            if (dollarPos > pos) {
+                parts.emplace_back(raw.substr(pos, dollarPos - pos));
+            }
+            // Find matching closing brace
+            auto endBrace = raw.find('}', dollarPos + 2);
+            if (endBrace == std::string::npos) {
+                parts.emplace_back(raw.substr(pos));
+                break;
+            }
+            // Extract expression string and create a VariableExpr for it
+            std::string exprStr = raw.substr(dollarPos + 2, endBrace - dollarPos - 2);
+            parts.emplace_back(
+                std::make_unique<SVariableExpr>(makeIdentifier(exprStr)));
+            pos = endBrace + 1;
+        }
+        return std::make_unique<stratos::InterpolatedStringExpr>(std::move(parts));
     }
 
     // Array literal

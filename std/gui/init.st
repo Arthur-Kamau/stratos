@@ -98,6 +98,8 @@ fn __gui_menu_add_separator(id: int) bool;
 fn __gui_menu_show(id: int, x: float, y: float) bool;
 fn __gui_menu_hide(id: int) bool;
 
+fn __gui_padding_create(all: float) int;
+
 // Layout creation
 fn __gui_row_create(spacing: float) int;
 fn __gui_row_set_alignment(id: int, main: string, cross: string) bool;
@@ -475,6 +477,12 @@ fn Stack(children: array<int>) int {
 /// Center a child widget.
 fn Center(children: array<int>) int {
     val id = __gui_center_create();
+    return addChildren(id, children);
+}
+
+/// Wrap children with padding on all sides.
+fn Padding(all: float, children: array<int>) int {
+    val id = __gui_padding_create(all);
     return addChildren(id, children);
 }
 

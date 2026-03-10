@@ -7,6 +7,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <set>
 
 namespace stratos {
 namespace stui {
@@ -41,8 +42,12 @@ private:
     int tempVarCounter_ = 0;
     std::string nextTempVar();
 
+    // Set of user-defined component names (to distinguish from built-in widgets)
+    std::set<std::string> componentNames_;
+
     // Expression conversion: STUI expr → Stratos expr
     std::unique_ptr<Expr> transpileExpr(const STUIExpr& expr);
+    std::unique_ptr<Expr> transpileAsFloat(const STUIExpr& expr);
 
     // State declarations → gui.State() calls
     std::unique_ptr<Stmt> transpileStateDecl(const StateDecl& state);
