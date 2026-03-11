@@ -8,6 +8,7 @@ std::unordered_map<std::string, STUITokenType> STUILexer::keywords_ = {
     // STUI-specific
     {"component", STUITokenType::COMPONENT},
     {"state",     STUITokenType::STATE},
+    {"computed",  STUITokenType::COMPUTED},
     {"view",      STUITokenType::VIEW},
     {"prop",      STUITokenType::PROP},
     {"style",     STUITokenType::STYLE},

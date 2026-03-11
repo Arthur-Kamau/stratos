@@ -124,6 +124,8 @@ ComponentDecl STUIParser::parseComponent() {
     while (!check(STUITokenType::RIGHT_BRACE) && !isAtEnd()) {
         if (check(STUITokenType::STATE)) {
             component.states.push_back(parseStateDecl());
+        } else if (check(STUITokenType::COMPUTED)) {
+            component.computeds.push_back(parseComputedDecl());
         } else if (check(STUITokenType::PROP)) {
             component.props.push_back(parsePropDecl());
         } else if (check(STUITokenType::VIEW)) {
@@ -158,7 +160,7 @@ ComponentDecl STUIParser::parseComponent() {
             // Store function name -> "raw" (reconstruction happens in transpiler)
             component.functions.push_back({fnName, ""});
         } else {
-            throw error(peek(), "Expected 'state', 'prop', 'view', or 'fn' inside component");
+            throw error(peek(), "Expected 'state', 'computed', 'prop', 'view', or 'fn' inside component");
         }
     }
 
@@ -180,6 +182,20 @@ StateDecl STUIParser::parseStateDecl() {
 
     consume(STUITokenType::SEMICOLON, "Expected ';' after state declaration");
     return StateDecl(name, typeName, std::move(initialValue), line);
+}
+
+ComputedDecl STUIParser::parseComputedDecl() {
+    consume(STUITokenType::COMPUTED, "Expected 'computed'");
+    int line = previous().line;
+    std::string name = consume(STUITokenType::IDENTIFIER, "Expected computed variable name").lexeme;
+    consume(STUITokenType::COLON, "Expected ':' after computed name");
+    std::string typeName = parseTypeName();
+
+    consume(STUITokenType::EQUAL, "Expected '=' after computed type");
+    auto expression = parseExpression();
+
+    consume(STUITokenType::SEMICOLON, "Expected ';' after computed declaration");
+    return ComputedDecl(name, typeName, std::move(expression), line);
 }
 
 PropDecl STUIParser::parsePropDecl() {

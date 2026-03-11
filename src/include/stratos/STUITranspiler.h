@@ -55,8 +55,10 @@ private:
     std::unique_ptr<Expr> transpileExpr(const STUIExpr& expr);
     std::unique_ptr<Expr> transpileAsFloat(const STUIExpr& expr);
 
-    // State declarations → gui.State() calls
+    // State declarations → gui.Signal() calls
     std::unique_ptr<Stmt> transpileStateDecl(const StateDecl& state);
+    // Computed declarations → gui.Computed() calls
+    std::unique_ptr<Stmt> transpileComputedDecl(const ComputedDecl& computed);
 
     // Helper: create synthetic tokens for generated AST nodes
     Token makeToken(TokenType type, const std::string& lexeme);

@@ -47,6 +47,7 @@ private:
 
     // Component members
     StateDecl parseStateDecl();
+    ComputedDecl parseComputedDecl();
     PropDecl parsePropDecl();
     std::unique_ptr<WidgetNode> parseViewBlock();
 

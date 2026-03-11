@@ -4,6 +4,7 @@
 #include "stratos/gui/Widget.h"
 #include "stratos/gui/Renderer.h"
 #include "stratos/gui/Signals.h"
+#include "stratos/gui/Router.h"
 #include <iostream>
 #include <unordered_map>
 #include <memory>
@@ -1324,6 +1325,198 @@ void NativeRegistry::initGui() {
         });
 
     // ========================================
+    // Router
+    // ========================================
+
+    registerFunction("gui", "__gui_router_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            return gui::RouterRegistry::instance().createRouter();
+        });
+
+    registerFunction("gui", "__gui_router_add_route",
+        [](const std::vector<std::any>& args) -> std::any {
+            int routerId = std::any_cast<int>(args[0]);
+            auto path = std::any_cast<std::string>(args[1]);
+            auto builder = args[2]; // closure
+            auto* router = gui::RouterRegistry::instance().getRouter(routerId);
+            if (!router) return false;
+            router->addRoute(path, builder);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_router_add_guard",
+        [](const std::vector<std::any>& args) -> std::any {
+            int routerId = std::any_cast<int>(args[0]);
+            auto path = std::any_cast<std::string>(args[1]);
+            auto guardFn = args[2]; // closure
+            auto* router = gui::RouterRegistry::instance().getRouter(routerId);
+            if (!router) return false;
+            router->addGuard(path, guardFn);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_router_set_not_found",
+        [](const std::vector<std::any>& args) -> std::any {
+            int routerId = std::any_cast<int>(args[0]);
+            auto builder = args[1]; // closure
+            auto* router = gui::RouterRegistry::instance().getRouter(routerId);
+            if (!router) return false;
+            router->setNotFound(builder);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_router_navigate",
+        [](const std::vector<std::any>& args) -> std::any {
+            int routerId = std::any_cast<int>(args[0]);
+            auto path = std::any_cast<std::string>(args[1]);
+            auto* router = gui::RouterRegistry::instance().getRouter(routerId);
+            if (!router) return false;
+
+            bool matched = router->navigate(path);
+            if (!matched) return false;
+
+            // Execute the matched route's builder to get the widget tree
+            if (!guiInterpreter_) return false;
+            auto& builder = router->getCurrentBuilder();
+            if (!builder.has_value()) {
+                // Check notFound
+                if (router->hasNotFoundBuilder()) {
+                    auto& nfBuilder = router->getNotFoundBuilder();
+                    RuntimeValue rv(nfBuilder, "function");
+                    std::vector<RuntimeValue> noArgs;
+                    RuntimeValue result = guiInterpreter_->executeCallback(rv, noArgs);
+                    if (result.type == "int") {
+                        int widgetId = std::get<int>(result.value);
+                        router->setCurrentWidgetId(widgetId);
+
+                        // If there's an app, swap the root widget
+                        if (currentApp) {
+                            auto it = widgetRegistry.find(widgetId);
+                            if (it != widgetRegistry.end()) {
+                                currentApp->setRoot(it->second);
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+
+            RuntimeValue rv(builder, "function");
+            std::vector<RuntimeValue> noArgs;
+            RuntimeValue result = guiInterpreter_->executeCallback(rv, noArgs);
+            if (result.type == "int") {
+                int widgetId = std::get<int>(result.value);
+                router->setCurrentWidgetId(widgetId);
+
+                // If there's an app, swap the root widget
+                if (currentApp) {
+                    auto it = widgetRegistry.find(widgetId);
+                    if (it != widgetRegistry.end()) {
+                        currentApp->setRoot(it->second);
+                    }
+                }
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_router_back",
+        [](const std::vector<std::any>& args) -> std::any {
+            int routerId = std::any_cast<int>(args[0]);
+            auto* router = gui::RouterRegistry::instance().getRouter(routerId);
+            if (!router) return false;
+            bool ok = router->back();
+            if (ok && guiInterpreter_) {
+                auto& builder = router->getCurrentBuilder();
+                if (builder.has_value()) {
+                    RuntimeValue rv(builder, "function");
+                    std::vector<RuntimeValue> noArgs;
+                    RuntimeValue result = guiInterpreter_->executeCallback(rv, noArgs);
+                    if (result.type == "int") {
+                        int widgetId = std::get<int>(result.value);
+                        router->setCurrentWidgetId(widgetId);
+                        if (currentApp) {
+                            auto it = widgetRegistry.find(widgetId);
+                            if (it != widgetRegistry.end()) {
+                                currentApp->setRoot(it->second);
+                            }
+                        }
+                    }
+                }
+            }
+            return ok;
+        });
+
+    registerFunction("gui", "__gui_router_forward",
+        [](const std::vector<std::any>& args) -> std::any {
+            int routerId = std::any_cast<int>(args[0]);
+            auto* router = gui::RouterRegistry::instance().getRouter(routerId);
+            if (!router) return false;
+            bool ok = router->forward();
+            if (ok && guiInterpreter_) {
+                auto& builder = router->getCurrentBuilder();
+                if (builder.has_value()) {
+                    RuntimeValue rv(builder, "function");
+                    std::vector<RuntimeValue> noArgs;
+                    RuntimeValue result = guiInterpreter_->executeCallback(rv, noArgs);
+                    if (result.type == "int") {
+                        int widgetId = std::get<int>(result.value);
+                        router->setCurrentWidgetId(widgetId);
+                        if (currentApp) {
+                            auto it = widgetRegistry.find(widgetId);
+                            if (it != widgetRegistry.end()) {
+                                currentApp->setRoot(it->second);
+                            }
+                        }
+                    }
+                }
+            }
+            return ok;
+        });
+
+    registerFunction("gui", "__gui_router_replace",
+        [](const std::vector<std::any>& args) -> std::any {
+            int routerId = std::any_cast<int>(args[0]);
+            auto path = std::any_cast<std::string>(args[1]);
+            auto* router = gui::RouterRegistry::instance().getRouter(routerId);
+            if (!router) return false;
+            return router->replace(path);
+        });
+
+    registerFunction("gui", "__gui_router_get_param",
+        [](const std::vector<std::any>& args) -> std::any {
+            int routerId = std::any_cast<int>(args[0]);
+            auto name = std::any_cast<std::string>(args[1]);
+            auto* router = gui::RouterRegistry::instance().getRouter(routerId);
+            if (!router) return std::string("");
+            return router->getParam(name);
+        });
+
+    registerFunction("gui", "__gui_router_get_query",
+        [](const std::vector<std::any>& args) -> std::any {
+            int routerId = std::any_cast<int>(args[0]);
+            auto name = std::any_cast<std::string>(args[1]);
+            auto* router = gui::RouterRegistry::instance().getRouter(routerId);
+            if (!router) return std::string("");
+            return router->getQuery(name);
+        });
+
+    registerFunction("gui", "__gui_router_get_path",
+        [](const std::vector<std::any>& args) -> std::any {
+            int routerId = std::any_cast<int>(args[0]);
+            auto* router = gui::RouterRegistry::instance().getRouter(routerId);
+            if (!router) return std::string("");
+            return router->currentPath();
+        });
+
+    registerFunction("gui", "__gui_router_get_widget",
+        [](const std::vector<std::any>& args) -> std::any {
+            int routerId = std::any_cast<int>(args[0]);
+            auto* router = gui::RouterRegistry::instance().getRouter(routerId);
+            if (!router) return -1;
+            return router->getCurrentWidgetId();
+        });
+
+    // ========================================
     // Cleanup
     // ========================================
 
@@ -1348,6 +1541,7 @@ void NativeRegistry::initGui() {
             stateListeners.clear();
             signalEffects.clear();
             gui::SignalRegistry::instance().clear();
+            gui::RouterRegistry::instance().clear();
             guiInterpreter_ = nullptr;
             nextStateId = 1;
             nextCallbackId = 1;

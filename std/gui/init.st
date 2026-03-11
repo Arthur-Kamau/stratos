@@ -153,6 +153,20 @@ fn __gui_batch(closure: any) bool;
 fn __gui_untrack(closure: any) any;
 fn __gui_on_cleanup(closure: any) bool;
 
+// Router
+fn __gui_router_create() int;
+fn __gui_router_add_route(routerId: int, path: string, builder: any) bool;
+fn __gui_router_add_guard(routerId: int, path: string, guardFn: any) bool;
+fn __gui_router_set_not_found(routerId: int, builder: any) bool;
+fn __gui_router_navigate(routerId: int, path: string) bool;
+fn __gui_router_back(routerId: int) bool;
+fn __gui_router_forward(routerId: int) bool;
+fn __gui_router_replace(routerId: int, path: string) bool;
+fn __gui_router_get_param(routerId: int, name: string) string;
+fn __gui_router_get_query(routerId: int, name: string) string;
+fn __gui_router_get_path(routerId: int) string;
+fn __gui_router_get_widget(routerId: int) int;
+
 fn __gui_destroy_widget(id: int) bool;
 fn __gui_destroy_all() bool;
 
@@ -904,6 +918,89 @@ fn setFlex(id: int, flex: float) void {
 /// Set opacity (0.0 to 1.0).
 fn setOpacity(id: int, opacity: float) void {
     __gui_widget_set_opacity(id, opacity);
+}
+
+// ============================================================
+// Router — Client-side navigation
+// ============================================================
+
+/// Router for single-page app navigation.
+///   val router = Router();
+///   router.route("/", fn() int => HomePage());
+///   router.route("/user/:id", fn() int => UserPage(router.param("id")));
+///   router.notFound(fn() int => NotFoundPage());
+///   router.navigate("/");
+class Router {
+    var id: int;
+
+    constructor() {
+        this.id = __gui_router_create();
+    }
+
+    /// Register a route with a path pattern and builder function.
+    /// Patterns: "/" (exact), "/user/:id" (param), "/files/*" (wildcard)
+    fn route(path: string, builder: any) void {
+        __gui_router_add_route(this.id, path, builder);
+    }
+
+    /// Add a guard function to a route. Guard returns bool.
+    fn guard(path: string, guardFn: any) void {
+        __gui_router_add_guard(this.id, path, guardFn);
+    }
+
+    /// Set the 404 handler.
+    fn notFound(builder: any) void {
+        __gui_router_set_not_found(this.id, builder);
+    }
+
+    /// Navigate to a path. Matches route and executes builder.
+    fn navigate(path: string) void {
+        __gui_router_navigate(this.id, path);
+    }
+
+    /// Go back in history.
+    fn back() void {
+        __gui_router_back(this.id);
+    }
+
+    /// Go forward in history.
+    fn forward() void {
+        __gui_router_forward(this.id);
+    }
+
+    /// Replace current route without adding to history.
+    fn replace(path: string) void {
+        __gui_router_replace(this.id, path);
+    }
+
+    /// Get a route parameter value (e.g., ":id" → param("id")).
+    fn param(name: string) string {
+        return __gui_router_get_param(this.id, name);
+    }
+
+    /// Get a query parameter value (e.g., "?q=hello" → query("q")).
+    fn query(name: string) string {
+        return __gui_router_get_query(this.id, name);
+    }
+
+    /// Get the current route path.
+    fn currentPath() string {
+        return __gui_router_get_path(this.id);
+    }
+
+    /// Get the widget ID of the current route.
+    fn widget() int {
+        return __gui_router_get_widget(this.id);
+    }
+}
+
+/// Convenience: create a navigation link button.
+fn Link(text: string, path: string, router: any) int {
+    val btn = Button(text);
+    onClick(btn, fn() void {
+        router.navigate(path);
+    });
+    return btn;
 }
 
 // ============================================================

@@ -207,15 +207,23 @@ std::vector<std::unique_ptr<Stmt>> STUITranspiler::transpileImports(const STUIFi
 std::unique_ptr<Stmt> STUITranspiler::transpileComponent(const ComponentDecl& component) {
     std::vector<std::unique_ptr<Stmt>> bodyStmts;
 
-    // Collect state names for signal-aware transpilation
+    // Collect state and computed names for signal-aware transpilation
     currentStateNames_.clear();
     for (const auto& state : component.states) {
         currentStateNames_.insert(state.name);
     }
+    for (const auto& computed : component.computeds) {
+        currentStateNames_.insert(computed.name);
+    }
 
-    // State declarations → gui.State() calls
+    // State declarations → gui.Signal() calls
     for (const auto& state : component.states) {
         bodyStmts.push_back(transpileStateDecl(state));
+    }
+
+    // Computed declarations → gui.Computed() calls
+    for (const auto& computed : component.computeds) {
+        bodyStmts.push_back(transpileComputedDecl(computed));
     }
 
     // Build the widget tree
@@ -261,17 +269,39 @@ std::unique_ptr<Stmt> STUITranspiler::transpileComponent(const ComponentDecl& co
 }
 
 // ============================================================================
-// State → State()
+// State → Signal(), Computed → Computed()
 // ============================================================================
 
 std::unique_ptr<Stmt> STUITranspiler::transpileStateDecl(const StateDecl& state) {
-    // state count: int = 0;  →  val count = gui.State(0);
+    // state count: int = 0;  →  val count = Signal(0);
     std::vector<std::unique_ptr<Expr>> args;
     if (state.initialValue) {
         args.push_back(transpileExpr(*state.initialValue));
     }
-    auto stateCall = makeCall("State", std::move(args));
-    return makeVarDecl(state.name, std::move(stateCall));
+    auto signalCall = makeCall("Signal", std::move(args));
+    return makeVarDecl(state.name, std::move(signalCall));
+}
+
+std::unique_ptr<Stmt> STUITranspiler::transpileComputedDecl(const ComputedDecl& computed) {
+    // computed doubled: int = count * 2;
+    // → val doubled = Computed(fn() any => count.get() * 2);
+    auto bodyExpr = transpileExpr(*computed.expression);
+
+    // Wrap in a lambda: fn() { return expr; }
+    std::vector<std::unique_ptr<Stmt>> stmts;
+    stmts.push_back(std::make_unique<ReturnStmt>(
+        makeToken(TokenType::IDENTIFIER, "return"),
+        std::move(bodyExpr)));
+    auto body = std::make_unique<BlockStmt>(std::move(stmts));
+
+    std::vector<Token> params; // no params
+    auto lambda = std::make_unique<SLambdaExpr>(std::move(params), std::move(body), false);
+
+    // Call Computed(lambda)
+    std::vector<std::unique_ptr<Expr>> args;
+    args.push_back(std::move(lambda));
+    auto computedCall = makeCall("Computed", std::move(args));
+    return makeVarDecl(computed.name, std::move(computedCall));
 }
 
 // ============================================================================
@@ -316,6 +346,86 @@ std::unique_ptr<Expr> STUITranspiler::transpileWidget(const WidgetNode& widget,
             return makeCall("Column", std::move(colArgs));
         }
         return makeCall("Center", {});
+    }
+
+    // Router: create Router(), register routes from Route/NotFound children
+    if (widget.widgetType == "Router") {
+        std::string routerVar = nextTempVar();
+        // val __router = Router();
+        setupStmts.push_back(makeVarDecl(routerVar, makeCall("Router", {})));
+
+        std::string firstRoutePath;
+        for (const auto& child : widget.children) {
+            if (child->widgetType == "Route") {
+                // Extract path from properties
+                std::string path = "/";
+                for (const auto& prop : child->properties) {
+                    if (prop.name == "path") {
+                        if (auto* lit = dynamic_cast<const stui::LiteralExpr*>(prop.value.get())) {
+                            path = lit->token.lexeme;
+                        }
+                    }
+                }
+                if (firstRoutePath.empty()) firstRoutePath = path;
+
+                // Build the route builder lambda: fn() int { return transpileChildren(); }
+                std::vector<std::unique_ptr<Stmt>> lambdaBody;
+                if (child->children.size() == 1) {
+                    auto childExpr = transpileWidget(*child->children[0], lambdaBody);
+                    lambdaBody.push_back(std::make_unique<ReturnStmt>(
+                        makeToken(TokenType::IDENTIFIER, "return"), std::move(childExpr)));
+                } else if (child->children.size() > 1) {
+                    std::vector<std::unique_ptr<Expr>> childExprs;
+                    for (const auto& grandchild : child->children) {
+                        childExprs.push_back(transpileWidget(*grandchild, lambdaBody));
+                    }
+                    std::vector<std::unique_ptr<Expr>> colArgs;
+                    colArgs.push_back(makeArrayLiteral(std::move(childExprs)));
+                    auto colCall = makeCall("Column", std::move(colArgs));
+                    lambdaBody.push_back(std::make_unique<ReturnStmt>(
+                        makeToken(TokenType::IDENTIFIER, "return"), std::move(colCall)));
+                }
+
+                auto body = std::make_unique<BlockStmt>(std::move(lambdaBody));
+                std::vector<Token> params;
+                auto lambda = std::make_unique<SLambdaExpr>(std::move(params), std::move(body), false);
+
+                // __router.route(path, lambda)
+                std::vector<std::unique_ptr<Expr>> routeArgs;
+                routeArgs.push_back(makeString(path, true));
+                routeArgs.push_back(std::move(lambda));
+                setupStmts.push_back(makeExprStmt(
+                    makeMemberCall(routerVar, "route", std::move(routeArgs))));
+            } else if (child->widgetType == "NotFound") {
+                // Build 404 handler
+                std::vector<std::unique_ptr<Stmt>> lambdaBody;
+                if (child->children.size() == 1) {
+                    auto childExpr = transpileWidget(*child->children[0], lambdaBody);
+                    lambdaBody.push_back(std::make_unique<ReturnStmt>(
+                        makeToken(TokenType::IDENTIFIER, "return"), std::move(childExpr)));
+                }
+
+                auto body = std::make_unique<BlockStmt>(std::move(lambdaBody));
+                std::vector<Token> params;
+                auto lambda = std::make_unique<SLambdaExpr>(std::move(params), std::move(body), false);
+
+                std::vector<std::unique_ptr<Expr>> nfArgs;
+                nfArgs.push_back(std::move(lambda));
+                setupStmts.push_back(makeExprStmt(
+                    makeMemberCall(routerVar, "notFound", std::move(nfArgs))));
+            }
+        }
+
+        // Navigate to first route
+        if (!firstRoutePath.empty()) {
+            std::vector<std::unique_ptr<Expr>> navArgs;
+            navArgs.push_back(makeString(firstRoutePath, true));
+            setupStmts.push_back(makeExprStmt(
+                makeMemberCall(routerVar, "navigate", std::move(navArgs))));
+        }
+
+        // Return the router's current widget
+        return makeMemberCall(routerVar, "widget", {});
     }
 
     // Check if this is a custom component (not a built-in widget)

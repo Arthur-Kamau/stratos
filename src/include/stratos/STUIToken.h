@@ -26,7 +26,7 @@ enum class STUITokenType {
     IDENTIFIER, STRING, NUMBER, INTERPOLATED_STRING,
 
     // STUI-specific keywords
-    COMPONENT, STATE, VIEW, PROP, STYLE,
+    COMPONENT, STATE, COMPUTED, VIEW, PROP, STYLE,
     ON, EMIT,
 
     // Shared keywords (subset of Stratos)

@@ -167,6 +167,20 @@ struct StateDecl {
           initialValue(std::move(initialValue)), line(line) {}
 };
 
+// Computed state declaration inside a component
+// computed doubled: int = count * 2;
+struct ComputedDecl {
+    std::string name;
+    std::string typeName;
+    std::unique_ptr<STUIExpr> expression; // The derived expression
+    int line;
+
+    ComputedDecl(std::string name, std::string typeName,
+                 std::unique_ptr<STUIExpr> expression, int line)
+        : name(std::move(name)), typeName(std::move(typeName)),
+          expression(std::move(expression)), line(line) {}
+};
+
 // Prop declaration (input to component)
 // prop title: string;
 // prop count: int = 0;
@@ -187,6 +201,7 @@ struct PropDecl {
 struct ComponentDecl {
     std::string name;
     std::vector<StateDecl> states;
+    std::vector<ComputedDecl> computeds;
     std::vector<PropDecl> props;
     std::unique_ptr<WidgetNode> viewRoot; // The root widget of the view block
     std::vector<std::pair<std::string, std::string>> functions; // helper fns (name -> source)
