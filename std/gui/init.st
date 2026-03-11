@@ -226,38 +226,29 @@ class State {
     var id: int;
 
     constructor(initial: any) {
-        this.id = __gui_state_create(initial);
+        this.id = __gui_signal_create(initial);
     }
 
     fn get() any {
-        return __gui_state_get(this.id);
+        return __gui_signal_get(this.id);
     }
 
     fn set(value: any) void {
-        __gui_state_set(this.id, value);
+        __gui_signal_set(this.id, value);
     }
 }
 
 /// Derived state that computes a value from other state.
-///
-/// Example:
-///   val count = State(5);
-///   val doubled = DerivedState(fn() any => count.get() as int * 2);
+/// Wraps Computed (Signal-based) for automatic dependency tracking.
 class DerivedState {
-    var computeFn: any;
-    var cachedValue: any;
+    var id: int;
 
     constructor(compute: any) {
-        this.computeFn = compute;
-        this.cachedValue = nil;
+        this.id = __gui_computed_create(compute);
     }
 
     fn get() any {
-        return this.cachedValue;
-    }
-
-    fn recompute() void {
-        // Caller should invoke this after dependencies change
+        return __gui_computed_get(this.id);
     }
 }
 
