@@ -92,6 +92,7 @@ void NativeRegistry::initGui() {
             stateListeners.clear();
             signalEffects.clear();
             gui::SignalRegistry::instance().clear();
+            gui::LifecycleRegistry::instance().clear();
             widgetRegistry.clear();
             currentApp.reset();
 
@@ -1606,6 +1607,351 @@ void NativeRegistry::initGui() {
             return gui::ContextRegistry::instance().consume(contextId);
         });
 
+    // ========================================
+    // Phase 8 — Lifecycle Hooks
+    // ========================================
+
+    registerFunction("gui", "__gui_lifecycle_on_mount",
+        [](const std::vector<std::any>& args) -> std::any {
+            int widgetId = std::any_cast<int>(args[0]);
+            auto closure = args[1];
+            if (!guiInterpreter_) return false;
+            auto interpPtr = guiInterpreter_;
+            auto widget = getWidget(widgetId);
+            if (!widget) return false;
+            gui::LifecycleRegistry::instance().onMount(widget->getId(), [closure, interpPtr]() {
+                RuntimeValue rv(closure, "function");
+                std::vector<RuntimeValue> noArgs;
+                interpPtr->executeCallback(rv, noArgs);
+            });
+            return true;
+        });
+
+    registerFunction("gui", "__gui_lifecycle_on_destroy",
+        [](const std::vector<std::any>& args) -> std::any {
+            int widgetId = std::any_cast<int>(args[0]);
+            auto closure = args[1];
+            if (!guiInterpreter_) return false;
+            auto interpPtr = guiInterpreter_;
+            auto widget = getWidget(widgetId);
+            if (!widget) return false;
+            gui::LifecycleRegistry::instance().onDestroy(widget->getId(), [closure, interpPtr]() {
+                RuntimeValue rv(closure, "function");
+                std::vector<RuntimeValue> noArgs;
+                interpPtr->executeCallback(rv, noArgs);
+            });
+            return true;
+        });
+
+    registerFunction("gui", "__gui_lifecycle_on_update",
+        [](const std::vector<std::any>& args) -> std::any {
+            int widgetId = std::any_cast<int>(args[0]);
+            auto closure = args[1];
+            if (!guiInterpreter_) return false;
+            auto interpPtr = guiInterpreter_;
+            auto widget = getWidget(widgetId);
+            if (!widget) return false;
+            gui::LifecycleRegistry::instance().onUpdate(widget->getId(), [closure, interpPtr]() {
+                RuntimeValue rv(closure, "function");
+                std::vector<RuntimeValue> noArgs;
+                interpPtr->executeCallback(rv, noArgs);
+            });
+            return true;
+        });
+
+    registerFunction("gui", "__gui_lifecycle_trigger_mount",
+        [](const std::vector<std::any>& args) -> std::any {
+            int widgetId = std::any_cast<int>(args[0]);
+            auto widget = getWidget(widgetId);
+            if (widget) gui::LifecycleRegistry::instance().triggerMount(widget->getId());
+            return true;
+        });
+
+    registerFunction("gui", "__gui_lifecycle_trigger_destroy",
+        [](const std::vector<std::any>& args) -> std::any {
+            int widgetId = std::any_cast<int>(args[0]);
+            auto widget = getWidget(widgetId);
+            if (widget) gui::LifecycleRegistry::instance().triggerDestroy(widget->getId());
+            return true;
+        });
+
+    // ========================================
+    // Phase 8 — New Widgets
+    // ========================================
+
+    // Card
+    registerFunction("gui", "__gui_card_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto widget = std::make_shared<gui::Card>();
+            if (!args.empty()) {
+                float elevation = static_cast<float>(std::any_cast<double>(args[0]));
+                widget->setElevation(elevation);
+            }
+            return storeWidget(widget);
+        });
+
+    // Divider
+    registerFunction("gui", "__gui_divider_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            bool vertical = !args.empty() && std::any_cast<bool>(args[0]);
+            auto widget = std::make_shared<gui::Divider>(vertical);
+            if (args.size() > 1) {
+                widget->setThickness(static_cast<float>(std::any_cast<double>(args[1])));
+            }
+            return storeWidget(widget);
+        });
+
+    // Badge
+    registerFunction("gui", "__gui_badge_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            std::string label = args.empty() ? "" : std::any_cast<std::string>(args[0]);
+            auto widget = std::make_shared<gui::Badge>(label);
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_badge_set_label",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            std::string label = std::any_cast<std::string>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::Badge>(getWidget(id));
+            if (widget) widget->setLabel(label);
+            return true;
+        });
+
+    // Tooltip
+    registerFunction("gui", "__gui_tooltip_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            std::string message = std::any_cast<std::string>(args[0]);
+            auto widget = std::make_shared<gui::Tooltip>(message);
+            return storeWidget(widget);
+        });
+
+    // Chip
+    registerFunction("gui", "__gui_chip_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            std::string label = std::any_cast<std::string>(args[0]);
+            auto widget = std::make_shared<gui::Chip>(label);
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_chip_set_selected",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            bool selected = std::any_cast<bool>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::Chip>(getWidget(id));
+            if (widget) widget->setSelected(selected);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_chip_is_selected",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::Chip>(getWidget(id));
+            return widget ? widget->isSelected() : false;
+        });
+
+    // FAB
+    registerFunction("gui", "__gui_fab_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            std::string icon = args.empty() ? "+" : std::any_cast<std::string>(args[0]);
+            auto widget = std::make_shared<gui::FAB>(icon);
+            return storeWidget(widget);
+        });
+
+    // ProgressBar
+    registerFunction("gui", "__gui_progressbar_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            float value = args.empty() ? 0.0f : static_cast<float>(std::any_cast<double>(args[0]));
+            auto widget = std::make_shared<gui::ProgressBar>();
+            widget->setValue(value);
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_progressbar_set_value",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            float value = static_cast<float>(std::any_cast<double>(args[1]));
+            auto widget = std::dynamic_pointer_cast<gui::ProgressBar>(getWidget(id));
+            if (widget) {
+                widget->setValue(value);
+                if (currentApp) currentApp->requestRedraw();
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_progressbar_set_indeterminate",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            bool indeterminate = std::any_cast<bool>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::ProgressBar>(getWidget(id));
+            if (widget) widget->setIndeterminate(indeterminate);
+            return true;
+        });
+
+    // CircularProgress
+    registerFunction("gui", "__gui_circular_progress_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto widget = std::make_shared<gui::CircularProgress>();
+            if (!args.empty()) {
+                float value = static_cast<float>(std::any_cast<double>(args[0]));
+                widget->setValue(value);
+                widget->setIndeterminate(false);
+            }
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_circular_progress_set_value",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            float value = static_cast<float>(std::any_cast<double>(args[1]));
+            auto widget = std::dynamic_pointer_cast<gui::CircularProgress>(getWidget(id));
+            if (widget) {
+                widget->setValue(value);
+                if (currentApp) currentApp->requestRedraw();
+            }
+            return true;
+        });
+
+    // SnackBar
+    registerFunction("gui", "__gui_snackbar_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            std::string message = args.empty() ? "" : std::any_cast<std::string>(args[0]);
+            auto widget = std::make_shared<gui::SnackBar>(message);
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_snackbar_show",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::SnackBar>(getWidget(id));
+            if (widget) {
+                widget->show();
+                if (currentApp) currentApp->requestRedraw();
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_snackbar_hide",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::SnackBar>(getWidget(id));
+            if (widget) widget->hide();
+            return true;
+        });
+
+    registerFunction("gui", "__gui_snackbar_set_message",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            std::string message = std::any_cast<std::string>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::SnackBar>(getWidget(id));
+            if (widget) widget->setMessage(message);
+            return true;
+        });
+
+    // Wrap
+    registerFunction("gui", "__gui_wrap_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            float spacing = args.empty() ? 8.0f : static_cast<float>(std::any_cast<double>(args[0]));
+            float runSpacing = args.size() > 1 ? static_cast<float>(std::any_cast<double>(args[1])) : 8.0f;
+            auto widget = std::make_shared<gui::Wrap>(spacing, runSpacing);
+            return storeWidget(widget);
+        });
+
+    // ExpansionPanel
+    registerFunction("gui", "__gui_expansion_panel_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            std::string title = std::any_cast<std::string>(args[0]);
+            auto widget = std::make_shared<gui::ExpansionPanel>(title);
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_expansion_panel_set_expanded",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            bool expanded = std::any_cast<bool>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::ExpansionPanel>(getWidget(id));
+            if (widget) widget->setExpanded(expanded);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_expansion_panel_is_expanded",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::ExpansionPanel>(getWidget(id));
+            return widget ? widget->isExpanded() : false;
+        });
+
+    // Scaffold
+    registerFunction("gui", "__gui_scaffold_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto widget = std::make_shared<gui::Scaffold>();
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_scaffold_set_appbar",
+        [](const std::vector<std::any>& args) -> std::any {
+            int scaffoldId = std::any_cast<int>(args[0]);
+            int appbarId = std::any_cast<int>(args[1]);
+            auto scaffold = std::dynamic_pointer_cast<gui::Scaffold>(getWidget(scaffoldId));
+            auto appbar = getWidget(appbarId);
+            if (scaffold && appbar) scaffold->setAppBar(appbar);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_scaffold_set_body",
+        [](const std::vector<std::any>& args) -> std::any {
+            int scaffoldId = std::any_cast<int>(args[0]);
+            int bodyId = std::any_cast<int>(args[1]);
+            auto scaffold = std::dynamic_pointer_cast<gui::Scaffold>(getWidget(scaffoldId));
+            auto body = getWidget(bodyId);
+            if (scaffold && body) scaffold->setBody(body);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_scaffold_set_fab",
+        [](const std::vector<std::any>& args) -> std::any {
+            int scaffoldId = std::any_cast<int>(args[0]);
+            int fabId = std::any_cast<int>(args[1]);
+            auto scaffold = std::dynamic_pointer_cast<gui::Scaffold>(getWidget(scaffoldId));
+            auto fab = getWidget(fabId);
+            if (scaffold && fab) scaffold->setFab(fab);
+            return true;
+        });
+
+    // BottomNavBar
+    registerFunction("gui", "__gui_bottomnav_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto widget = std::make_shared<gui::BottomNavBar>();
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_bottomnav_add_item",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            std::string icon = std::any_cast<std::string>(args[1]);
+            std::string label = std::any_cast<std::string>(args[2]);
+            auto widget = std::dynamic_pointer_cast<gui::BottomNavBar>(getWidget(id));
+            if (widget) widget->addItem(icon, label);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_bottomnav_get_active",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::BottomNavBar>(getWidget(id));
+            return widget ? widget->getActiveIndex() : 0;
+        });
+
+    registerFunction("gui", "__gui_bottomnav_set_active",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            int idx = std::any_cast<int>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::BottomNavBar>(getWidget(id));
+            if (widget) widget->setActiveIndex(idx);
+            return true;
+        });
+
+    // ========================================
     // Cleanup
     // ========================================
 
@@ -1633,6 +1979,7 @@ void NativeRegistry::initGui() {
             gui::RouterRegistry::instance().clear();
             gui::StoreRegistry::instance().clear();
             gui::ContextRegistry::instance().clear();
+            gui::LifecycleRegistry::instance().clear();
             guiInterpreter_ = nullptr;
             nextStateId = 1;
             nextCallbackId = 1;

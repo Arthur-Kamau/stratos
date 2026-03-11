@@ -7,6 +7,7 @@
 #include <memory>
 #include <functional>
 #include <any>
+#include <unordered_map>
 
 namespace stratos {
 namespace gui {
@@ -754,6 +755,387 @@ private:
     int hoveredIndex_ = -1;
     float itemHeight_ = 36.0f;
     FontSpec font_;
+};
+
+// ============================================================
+// Phase 8 — Lifecycle Hooks
+// ============================================================
+
+using LifecycleCallback = std::function<void()>;
+
+// Global lifecycle registry — tracks mount/destroy/update callbacks per widget ID
+class LifecycleRegistry {
+public:
+    static LifecycleRegistry& instance() {
+        static LifecycleRegistry inst;
+        return inst;
+    }
+
+    void onMount(const std::string& widgetId, LifecycleCallback cb) {
+        mountCallbacks_[widgetId].push_back(std::move(cb));
+    }
+
+    void onDestroy(const std::string& widgetId, LifecycleCallback cb) {
+        destroyCallbacks_[widgetId].push_back(std::move(cb));
+    }
+
+    void onUpdate(const std::string& widgetId, LifecycleCallback cb) {
+        updateCallbacks_[widgetId].push_back(std::move(cb));
+    }
+
+    void triggerMount(const std::string& widgetId) {
+        auto it = mountCallbacks_.find(widgetId);
+        if (it != mountCallbacks_.end()) {
+            for (auto& cb : it->second) cb();
+        }
+    }
+
+    void triggerDestroy(const std::string& widgetId) {
+        auto it = destroyCallbacks_.find(widgetId);
+        if (it != destroyCallbacks_.end()) {
+            for (auto& cb : it->second) cb();
+        }
+        // Clean up all callbacks for this widget
+        mountCallbacks_.erase(widgetId);
+        destroyCallbacks_.erase(widgetId);
+        updateCallbacks_.erase(widgetId);
+    }
+
+    void triggerUpdate(const std::string& widgetId) {
+        auto it = updateCallbacks_.find(widgetId);
+        if (it != updateCallbacks_.end()) {
+            for (auto& cb : it->second) cb();
+        }
+    }
+
+    void clear() {
+        mountCallbacks_.clear();
+        destroyCallbacks_.clear();
+        updateCallbacks_.clear();
+    }
+
+private:
+    LifecycleRegistry() = default;
+    std::unordered_map<std::string, std::vector<LifecycleCallback>> mountCallbacks_;
+    std::unordered_map<std::string, std::vector<LifecycleCallback>> destroyCallbacks_;
+    std::unordered_map<std::string, std::vector<LifecycleCallback>> updateCallbacks_;
+};
+
+// ============================================================
+// Phase 8 — New Composite Widgets
+// ============================================================
+
+// Card — elevated container with rounded corners and shadow
+class Card : public Widget {
+public:
+    Card() {
+        style_.borderRadius = BorderRadius::all(8.0f);
+        style_.backgroundColor = Color::white();
+        style_.hasShadow = true;
+        style_.shadow = {0, 2, 8, Color::rgba(0, 0, 0, 30)};
+        style_.padding = EdgeInsets::all(16.0f);
+    }
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    std::string typeName() const override { return "Card"; }
+
+    void setElevation(float e) {
+        style_.shadow = {0, e, e * 3, Color::rgba(0, 0, 0, static_cast<uint8_t>(20 + e * 5))};
+    }
+};
+
+// Divider — horizontal or vertical line separator
+class Divider : public Widget {
+public:
+    Divider(bool vertical = false) : vertical_(vertical) {
+        style_.backgroundColor = Color::rgb(224, 224, 224);
+    }
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    std::string typeName() const override { return "Divider"; }
+
+    void setThickness(float t) { thickness_ = t; }
+    void setVertical(bool v) { vertical_ = v; }
+
+private:
+    float thickness_ = 1.0f;
+    bool vertical_ = false;
+};
+
+// Badge — small count/dot indicator
+class Badge : public Widget {
+public:
+    Badge() {
+        style_.backgroundColor = Color::rgb(244, 67, 54); // Material red
+    }
+    explicit Badge(const std::string& label) : label_(label) {
+        style_.backgroundColor = Color::rgb(244, 67, 54);
+    }
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    std::string typeName() const override { return "Badge"; }
+
+    void setLabel(const std::string& label) { label_ = label; markDirty(); }
+    void setDot(bool dot) { dot_ = dot; markDirty(); }
+
+private:
+    std::string label_;
+    bool dot_ = false;
+    FontSpec font_;
+};
+
+// Tooltip — hover info popup
+class Tooltip : public Widget {
+public:
+    Tooltip() = default;
+    explicit Tooltip(const std::string& message) : message_(message) {}
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    bool handleEvent(const Event& event) override;
+    std::string typeName() const override { return "Tooltip"; }
+
+    void setMessage(const std::string& msg) { message_ = msg; }
+
+private:
+    std::string message_;
+    bool showing_ = false;
+    FontSpec font_;
+};
+
+// Chip — small labeled element (tag, filter)
+class Chip : public Widget {
+public:
+    Chip() = default;
+    explicit Chip(const std::string& label) : label_(label) {}
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    bool handleEvent(const Event& event) override;
+    std::string typeName() const override { return "Chip"; }
+
+    void setLabel(const std::string& label) { label_ = label; markDirty(); }
+    void setSelected(bool s) { selected_ = s; markDirty(); }
+    bool isSelected() const { return selected_; }
+    void setOnDelete(OnClickHandler handler) { onDelete_ = std::move(handler); }
+
+private:
+    std::string label_;
+    bool selected_ = false;
+    FontSpec font_;
+    Color selectedColor_ = Color::rgb(33, 150, 243);
+    Color normalColor_ = Color::rgb(224, 224, 224);
+    OnClickHandler onDelete_;
+};
+
+// FAB — Floating Action Button
+class FAB : public Widget {
+public:
+    FAB() {
+        style_.backgroundColor = Color::rgb(33, 150, 243);
+        style_.borderRadius = BorderRadius::all(28.0f);
+        style_.hasShadow = true;
+        style_.shadow = {0, 4, 12, Color::rgba(0, 0, 0, 40)};
+        style_.width = 56;
+        style_.height = 56;
+    }
+    explicit FAB(const std::string& icon) : icon_(icon) {
+        style_.backgroundColor = Color::rgb(33, 150, 243);
+        style_.borderRadius = BorderRadius::all(28.0f);
+        style_.hasShadow = true;
+        style_.shadow = {0, 4, 12, Color::rgba(0, 0, 0, 40)};
+        style_.width = 56;
+        style_.height = 56;
+    }
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    bool handleEvent(const Event& event) override;
+    std::string typeName() const override { return "FAB"; }
+
+    void setIcon(const std::string& icon) { icon_ = icon; markDirty(); }
+
+private:
+    std::string icon_ = "+";
+    Color iconColor_ = Color::white();
+    FontSpec font_;
+};
+
+// ProgressBar — linear progress indicator
+class ProgressBar : public Widget {
+public:
+    ProgressBar() {
+        style_.height = 4;
+    }
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    std::string typeName() const override { return "ProgressBar"; }
+
+    void setValue(float v) { value_ = v; markDirty(); }
+    float getValue() const { return value_; }
+    void setIndeterminate(bool i) { indeterminate_ = i; markDirty(); }
+
+private:
+    float value_ = 0.0f; // 0.0 to 1.0
+    bool indeterminate_ = false;
+    Color trackColor_ = Color::rgb(224, 224, 224);
+    Color activeColor_ = Color::rgb(33, 150, 243);
+    float animOffset_ = 0;
+};
+
+// CircularProgress — spinning/circular progress indicator
+class CircularProgress : public Widget {
+public:
+    CircularProgress() {
+        style_.width = 40;
+        style_.height = 40;
+    }
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    std::string typeName() const override { return "CircularProgress"; }
+
+    void setValue(float v) { value_ = v; markDirty(); }
+    float getValue() const { return value_; }
+    void setIndeterminate(bool i) { indeterminate_ = i; markDirty(); }
+
+private:
+    float value_ = 0.0f;
+    bool indeterminate_ = true;
+    float strokeWidth_ = 4.0f;
+    Color activeColor_ = Color::rgb(33, 150, 243);
+    float animAngle_ = 0;
+};
+
+// SnackBar — temporary message bar at bottom
+class SnackBar : public Widget {
+public:
+    SnackBar() {
+        style_.backgroundColor = Color::rgb(50, 50, 50);
+        style_.borderRadius = BorderRadius::all(4.0f);
+        style_.padding = EdgeInsets::all(12.0f);
+    }
+    explicit SnackBar(const std::string& message) : message_(message) {
+        style_.backgroundColor = Color::rgb(50, 50, 50);
+        style_.borderRadius = BorderRadius::all(4.0f);
+        style_.padding = EdgeInsets::all(12.0f);
+    }
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    std::string typeName() const override { return "SnackBar"; }
+
+    void setMessage(const std::string& msg) { message_ = msg; markDirty(); }
+    void setAction(const std::string& label, OnClickHandler handler) {
+        actionLabel_ = label;
+        onAction_ = std::move(handler);
+    }
+    void show() { visible_ = true; markDirty(); }
+    void hide() { visible_ = false; markDirty(); }
+
+private:
+    std::string message_;
+    std::string actionLabel_;
+    OnClickHandler onAction_;
+    FontSpec font_;
+};
+
+// Wrap — flow layout that wraps to next line
+class Wrap : public Widget {
+public:
+    Wrap() = default;
+    Wrap(float spacing, float runSpacing) : spacing_(spacing), runSpacing_(runSpacing) {}
+
+    void layout(const Constraints& constraints) override;
+    std::string typeName() const override { return "Wrap"; }
+
+    void setSpacing(float s) { spacing_ = s; }
+    void setRunSpacing(float s) { runSpacing_ = s; }
+
+private:
+    float spacing_ = 8.0f;
+    float runSpacing_ = 8.0f;
+};
+
+// ExpansionPanel — collapsible section
+class ExpansionPanel : public Widget {
+public:
+    ExpansionPanel() = default;
+    explicit ExpansionPanel(const std::string& title) : title_(title) {}
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    bool handleEvent(const Event& event) override;
+    std::string typeName() const override { return "ExpansionPanel"; }
+
+    void setTitle(const std::string& title) { title_ = title; markDirty(); }
+    void setExpanded(bool e) { expanded_ = e; markDirty(); }
+    bool isExpanded() const { return expanded_; }
+
+private:
+    std::string title_;
+    bool expanded_ = false;
+    float headerHeight_ = 48.0f;
+    FontSpec font_;
+    Color headerColor_ = Color::rgb(245, 245, 245);
+};
+
+// Scaffold — composite layout: AppBar + body + FAB
+class Scaffold : public Widget {
+public:
+    Scaffold() = default;
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    std::string typeName() const override { return "Scaffold"; }
+
+    void setAppBar(WidgetPtr appBar) { appBar_ = std::move(appBar); markDirty(); }
+    void setBody(WidgetPtr body) { body_ = std::move(body); markDirty(); }
+    void setFab(WidgetPtr fab) { fab_ = std::move(fab); markDirty(); }
+
+private:
+    WidgetPtr appBar_;
+    WidgetPtr body_;
+    WidgetPtr fab_;
+};
+
+// BottomNavBar — bottom navigation with labels
+class BottomNavBar : public Widget {
+public:
+    BottomNavBar() {
+        style_.height = 56;
+        style_.backgroundColor = Color::white();
+    }
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    bool handleEvent(const Event& event) override;
+    std::string typeName() const override { return "BottomNavBar"; }
+
+    struct NavItem {
+        std::string icon;
+        std::string label;
+    };
+
+    void addItem(const std::string& icon, const std::string& label) {
+        items_.push_back({icon, label});
+        markDirty();
+    }
+    int getActiveIndex() const { return activeIndex_; }
+    void setActiveIndex(int idx) { activeIndex_ = idx; markDirty(); }
+    void setOnChange(std::function<void(int)> handler) { onChange_ = std::move(handler); }
+
+private:
+    std::vector<NavItem> items_;
+    int activeIndex_ = 0;
+    Color activeColor_ = Color::rgb(33, 150, 243);
+    Color inactiveColor_ = Color::rgb(117, 117, 117);
+    FontSpec font_;
+    std::function<void(int)> onChange_;
 };
 
 } // namespace gui

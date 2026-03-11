@@ -1760,5 +1760,520 @@ bool Menu::handleEvent(const Event& event) {
     return false;
 }
 
+// ============================================================
+// Phase 8 — Card
+// ============================================================
+
+void Card::layout(const Constraints& constraints) {
+    float pad = style_.padding.left + style_.padding.right;
+    float childMaxW = constraints.maxWidth - pad;
+    float childMaxH = constraints.maxHeight - style_.padding.top - style_.padding.bottom;
+
+    Constraints childConstraints{0, childMaxW, 0, childMaxH};
+    float contentH = 0;
+    float contentW = 0;
+    for (auto& child : children_) {
+        child->layout(childConstraints);
+        auto sz = child->getComputedSize();
+        child->setPosition(style_.padding.left, style_.padding.top + contentH);
+        contentH += sz.height;
+        contentW = std::max(contentW, sz.width);
+    }
+
+    float w = style_.width >= 0 ? style_.width : contentW + pad;
+    float h = style_.height >= 0 ? style_.height : contentH + style_.padding.top + style_.padding.bottom;
+    bounds_.width = std::clamp(w, constraints.minWidth, constraints.maxWidth);
+    bounds_.height = std::clamp(h, constraints.minHeight, constraints.maxHeight);
+}
+
+void Card::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+    paintShadow(renderer);
+    paintBackground(renderer);
+    paintChildren(renderer);
+    paintBorder(renderer);
+    renderer.restore();
+}
+
+// ============================================================
+// Phase 8 — Divider
+// ============================================================
+
+void Divider::layout(const Constraints& constraints) {
+    if (vertical_) {
+        bounds_.width = thickness_;
+        bounds_.height = style_.height >= 0 ? style_.height : constraints.maxHeight;
+    } else {
+        bounds_.width = style_.width >= 0 ? style_.width : constraints.maxWidth;
+        bounds_.height = thickness_;
+    }
+}
+
+void Divider::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+    renderer.fillRect({0, 0, bounds_.width, bounds_.height}, style_.backgroundColor);
+    renderer.restore();
+}
+
+// ============================================================
+// Phase 8 — Badge
+// ============================================================
+
+void Badge::layout(const Constraints& constraints) {
+    if (dot_) {
+        bounds_.width = 8;
+        bounds_.height = 8;
+    } else {
+        float textW = label_.length() * 7.0f + 12;
+        bounds_.width = std::max(20.0f, textW);
+        bounds_.height = 20;
+    }
+}
+
+void Badge::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    float radius = bounds_.height / 2;
+    renderer.fillRoundedRect({0, 0, bounds_.width, bounds_.height}, BorderRadius::all(radius), style_.backgroundColor);
+
+    if (!dot_ && !label_.empty()) {
+        font_.size = 11;
+        TextMetrics m = renderer.measureText(label_, font_);
+        renderer.drawText(label_, (bounds_.width - m.width) / 2, (bounds_.height - m.height) / 2, font_, Color::white());
+    }
+
+    renderer.restore();
+}
+
+// ============================================================
+// Phase 8 — Tooltip
+// ============================================================
+
+void Tooltip::layout(const Constraints& constraints) {
+    // Layout child first
+    for (auto& child : children_) {
+        child->layout(constraints);
+    }
+    if (!children_.empty()) {
+        auto sz = children_[0]->getComputedSize();
+        bounds_.width = sz.width;
+        bounds_.height = sz.height;
+    }
+}
+
+void Tooltip::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+    paintChildren(renderer);
+
+    if (showing_ && !message_.empty()) {
+        font_.size = 12;
+        TextMetrics m = renderer.measureText(message_, font_);
+        float tipW = m.width + 16;
+        float tipH = m.height + 12;
+        float tipX = (bounds_.width - tipW) / 2;
+        float tipY = -tipH - 4;
+
+        renderer.fillRoundedRect({tipX, tipY, tipW, tipH}, BorderRadius::all(4), Color::rgb(50, 50, 50));
+        renderer.drawText(message_, tipX + 8, tipY + 6, font_, Color::white());
+    }
+
+    renderer.restore();
+}
+
+bool Tooltip::handleEvent(const Event& event) {
+    if (event.type == Event::MouseMove) {
+        auto& me = event.mouseMove();
+        bool inside = hitTest(me.x, me.y);
+        if (inside && !showing_) {
+            showing_ = true;
+            markDirty();
+        } else if (!inside && showing_) {
+            showing_ = false;
+            markDirty();
+        }
+    }
+    return dispatchToChildren(event);
+}
+
+// ============================================================
+// Phase 8 — Chip
+// ============================================================
+
+void Chip::layout(const Constraints& constraints) {
+    float textW = label_.length() * 7.0f;
+    bounds_.width = textW + 24;
+    bounds_.height = 32;
+}
+
+void Chip::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    Color bg = selected_ ? selectedColor_ : normalColor_;
+    renderer.fillRoundedRect({0, 0, bounds_.width, bounds_.height}, BorderRadius::all(16), bg);
+
+    Color textColor = selected_ ? Color::white() : Color::rgb(50, 50, 50);
+    font_.size = 13;
+    renderer.drawText(label_, 12, 8, font_, textColor);
+
+    renderer.restore();
+}
+
+bool Chip::handleEvent(const Event& event) {
+    if (event.type == Event::MouseButton) {
+        auto& me = event.mouseButton();
+        if (me.pressed && hitTest(me.x, me.y)) {
+            if (onClick_) onClick_();
+            return true;
+        }
+    }
+    return false;
+}
+
+// ============================================================
+// Phase 8 — FAB
+// ============================================================
+
+void FAB::layout(const Constraints& constraints) {
+    bounds_.width = style_.width >= 0 ? style_.width : 56;
+    bounds_.height = style_.height >= 0 ? style_.height : 56;
+}
+
+void FAB::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    paintShadow(renderer);
+    float radius = bounds_.width / 2;
+    renderer.fillRoundedRect({0, 0, bounds_.width, bounds_.height}, BorderRadius::all(radius), style_.backgroundColor);
+
+    font_.size = 24;
+    TextMetrics m = renderer.measureText(icon_, font_);
+    renderer.drawText(icon_, (bounds_.width - m.width) / 2, (bounds_.height - m.height) / 2, font_, iconColor_);
+
+    renderer.restore();
+}
+
+bool FAB::handleEvent(const Event& event) {
+    if (event.type == Event::MouseButton) {
+        auto& me = event.mouseButton();
+        if (me.pressed && hitTest(me.x, me.y)) {
+            if (onClick_) onClick_();
+            return true;
+        }
+    }
+    return false;
+}
+
+// ============================================================
+// Phase 8 — ProgressBar
+// ============================================================
+
+void ProgressBar::layout(const Constraints& constraints) {
+    bounds_.width = style_.width >= 0 ? style_.width : constraints.maxWidth;
+    bounds_.height = style_.height >= 0 ? style_.height : 4;
+}
+
+void ProgressBar::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    // Track
+    float r = bounds_.height / 2;
+    renderer.fillRoundedRect({0, 0, bounds_.width, bounds_.height}, BorderRadius::all(r), trackColor_);
+
+    // Active portion
+    if (indeterminate_) {
+        float barW = bounds_.width * 0.3f;
+        float offset = fmod(animOffset_, bounds_.width + barW) - barW;
+        renderer.fillRoundedRect({offset, 0, barW, bounds_.height}, BorderRadius::all(r), activeColor_);
+    } else {
+        float fillW = bounds_.width * std::clamp(value_, 0.0f, 1.0f);
+        if (fillW > 0) {
+            renderer.fillRoundedRect({0, 0, fillW, bounds_.height}, BorderRadius::all(r), activeColor_);
+        }
+    }
+
+    renderer.restore();
+}
+
+// ============================================================
+// Phase 8 — CircularProgress
+// ============================================================
+
+void CircularProgress::layout(const Constraints& constraints) {
+    bounds_.width = style_.width >= 0 ? style_.width : 40;
+    bounds_.height = style_.height >= 0 ? style_.height : 40;
+}
+
+void CircularProgress::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    float cx = bounds_.width / 2;
+    float cy = bounds_.height / 2;
+    float radius = std::min(cx, cy) - strokeWidth_;
+
+    // Draw arc segments as line approximation
+    int segments = 36;
+    float startAngle = indeterminate_ ? animAngle_ : -M_PI / 2;
+    float sweep = indeterminate_ ? M_PI * 1.5f : value_ * 2 * M_PI;
+
+    for (int i = 0; i < segments; i++) {
+        float a1 = startAngle + (sweep * i / segments);
+        float a2 = startAngle + (sweep * (i + 1) / segments);
+        float x1 = cx + radius * cosf(a1);
+        float y1 = cy + radius * sinf(a1);
+        float x2 = cx + radius * cosf(a2);
+        float y2 = cy + radius * sinf(a2);
+        renderer.drawLine(x1, y1, x2, y2, activeColor_, strokeWidth_);
+    }
+
+    renderer.restore();
+}
+
+// ============================================================
+// Phase 8 — SnackBar
+// ============================================================
+
+void SnackBar::layout(const Constraints& constraints) {
+    float textW = message_.length() * 8.0f;
+    float actionW = actionLabel_.empty() ? 0 : actionLabel_.length() * 8.0f + 16;
+    bounds_.width = style_.width >= 0 ? style_.width : std::min(textW + actionW + 32, constraints.maxWidth);
+    bounds_.height = style_.height >= 0 ? style_.height : 48;
+}
+
+void SnackBar::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    paintBackground(renderer);
+
+    font_.size = 14;
+    renderer.drawText(message_, 16, 14, font_, Color::white());
+
+    if (!actionLabel_.empty()) {
+        TextMetrics m = renderer.measureText(actionLabel_, font_);
+        float actionX = bounds_.width - m.width - 16;
+        renderer.drawText(actionLabel_, actionX, 14, font_, Color::rgb(187, 134, 252));
+    }
+
+    renderer.restore();
+}
+
+// ============================================================
+// Phase 8 — Wrap
+// ============================================================
+
+void Wrap::layout(const Constraints& constraints) {
+    float maxW = style_.width >= 0 ? style_.width : constraints.maxWidth;
+    float x = 0, y = 0, rowHeight = 0;
+    float totalW = 0;
+
+    for (auto& child : children_) {
+        child->layout(constraints.loosen());
+        auto sz = child->getComputedSize();
+
+        if (x + sz.width > maxW && x > 0) {
+            // Wrap to next line
+            x = 0;
+            y += rowHeight + runSpacing_;
+            rowHeight = 0;
+        }
+
+        child->setPosition(x, y);
+        x += sz.width + spacing_;
+        rowHeight = std::max(rowHeight, sz.height);
+        totalW = std::max(totalW, x - spacing_);
+    }
+
+    bounds_.width = std::clamp(totalW, constraints.minWidth, constraints.maxWidth);
+    bounds_.height = std::clamp(y + rowHeight, constraints.minHeight, constraints.maxHeight);
+}
+
+// ============================================================
+// Phase 8 — ExpansionPanel
+// ============================================================
+
+void ExpansionPanel::layout(const Constraints& constraints) {
+    float w = style_.width >= 0 ? style_.width : constraints.maxWidth;
+    float h = headerHeight_;
+
+    if (expanded_) {
+        Constraints childConstraints{0, w, 0, constraints.maxHeight - headerHeight_};
+        float childY = headerHeight_;
+        for (auto& child : children_) {
+            child->layout(childConstraints);
+            child->setPosition(0, childY);
+            childY += child->getComputedSize().height;
+        }
+        h = childY;
+    }
+
+    bounds_.width = std::clamp(w, constraints.minWidth, constraints.maxWidth);
+    bounds_.height = h;
+}
+
+void ExpansionPanel::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    // Header
+    renderer.fillRect({0, 0, bounds_.width, headerHeight_}, headerColor_);
+
+    font_.size = 14;
+    renderer.drawText(title_, 16, 14, font_, Color::black());
+
+    // Expand/collapse indicator
+    std::string arrow = expanded_ ? "v" : ">";
+    renderer.drawText(arrow, bounds_.width - 30, 14, font_, Color::black());
+
+    // Children (only if expanded)
+    if (expanded_) {
+        paintChildren(renderer);
+    }
+
+    renderer.restore();
+}
+
+bool ExpansionPanel::handleEvent(const Event& event) {
+    if (event.type == Event::MouseButton) {
+        auto& me = event.mouseButton();
+        if (me.pressed) {
+            float localX = me.x - bounds_.x;
+            float localY = me.y - bounds_.y;
+            if (localX >= 0 && localX <= bounds_.width && localY >= 0 && localY <= headerHeight_) {
+                expanded_ = !expanded_;
+                markDirty();
+                return true;
+            }
+        }
+    }
+    if (expanded_) return dispatchToChildren(event);
+    return false;
+}
+
+// ============================================================
+// Phase 8 — Scaffold
+// ============================================================
+
+void Scaffold::layout(const Constraints& constraints) {
+    float w = style_.width >= 0 ? style_.width : constraints.maxWidth;
+    float h = style_.height >= 0 ? style_.height : constraints.maxHeight;
+    bounds_.width = w;
+    bounds_.height = h;
+
+    float bodyTop = 0;
+    if (appBar_) {
+        Constraints barConstraints{w, w, 0, 64};
+        appBar_->layout(barConstraints);
+        appBar_->setPosition(0, 0);
+        bodyTop = appBar_->getComputedSize().height;
+    }
+
+    if (body_) {
+        Constraints bodyConstraints{0, w, 0, h - bodyTop};
+        body_->layout(bodyConstraints);
+        body_->setPosition(0, bodyTop);
+    }
+
+    if (fab_) {
+        fab_->layout(constraints.loosen());
+        auto fabSz = fab_->getComputedSize();
+        fab_->setPosition(w - fabSz.width - 16, h - fabSz.height - 16);
+    }
+}
+
+void Scaffold::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    paintBackground(renderer);
+    if (body_) body_->paint(renderer);
+    if (appBar_) appBar_->paint(renderer);
+    if (fab_) fab_->paint(renderer);
+
+    renderer.restore();
+}
+
+// ============================================================
+// Phase 8 — BottomNavBar
+// ============================================================
+
+void BottomNavBar::layout(const Constraints& constraints) {
+    bounds_.width = style_.width >= 0 ? style_.width : constraints.maxWidth;
+    bounds_.height = style_.height >= 0 ? style_.height : 56;
+}
+
+void BottomNavBar::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    // Background
+    renderer.fillRect({0, 0, bounds_.width, bounds_.height}, style_.backgroundColor);
+
+    // Top border line
+    renderer.fillRect({0, 0, bounds_.width, 1}, Color::rgb(224, 224, 224));
+
+    if (items_.empty()) {
+        renderer.restore();
+        return;
+    }
+
+    float itemW = bounds_.width / items_.size();
+    for (size_t i = 0; i < items_.size(); i++) {
+        float x = i * itemW;
+        bool active = (int)i == activeIndex_;
+        Color color = active ? activeColor_ : inactiveColor_;
+
+        font_.size = 20;
+        TextMetrics im = renderer.measureText(items_[i].icon, font_);
+        renderer.drawText(items_[i].icon, x + (itemW - im.width) / 2, 6, font_, color);
+
+        font_.size = 11;
+        TextMetrics lm = renderer.measureText(items_[i].label, font_);
+        renderer.drawText(items_[i].label, x + (itemW - lm.width) / 2, 34, font_, color);
+    }
+
+    renderer.restore();
+}
+
+bool BottomNavBar::handleEvent(const Event& event) {
+    if (event.type == Event::MouseButton) {
+        auto& me = event.mouseButton();
+        if (me.pressed) {
+            float localX = me.x - bounds_.x;
+            float localY = me.y - bounds_.y;
+            if (localX >= 0 && localX <= bounds_.width && localY >= 0 && localY <= bounds_.height && !items_.empty()) {
+                float itemW = bounds_.width / items_.size();
+                int idx = static_cast<int>(localX / itemW);
+                if (idx >= 0 && idx < (int)items_.size() && idx != activeIndex_) {
+                    activeIndex_ = idx;
+                    if (onChange_) onChange_(idx);
+                    markDirty();
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 } // namespace gui
 } // namespace stratos

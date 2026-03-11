@@ -534,10 +534,10 @@ component App {
 
 ### 8.1 — Component Lifecycle Hooks
 
-- [ ] `onMount(fn)` — called once after widget is first rendered
-- [ ] `onDestroy(fn)` — called when widget is removed from tree
-- [ ] `onUpdate(fn)` — called after widget re-renders due to state change
-- [ ] C++ implementation: hook into Widget::addChild / removeChild / paint cycle
+- [x] `onMount(fn)` — called once after widget is first rendered
+- [x] `onDestroy(fn)` — called when widget is removed from tree
+- [x] `onUpdate(fn)` — called after widget re-renders due to state change
+- [x] C++ implementation: LifecycleRegistry singleton with per-widget callbacks
 - [ ] STUI syntax: `onMount { ... }` block inside component
 - [ ] HTML target: generate `connectedCallback` / `disconnectedCallback` (or manual lifecycle tracking)
 
@@ -577,9 +577,9 @@ component App {
 | `AspectRatio` | Constrains child to aspect ratio | `AspectRatio` / `aspectRatio` modifier |
 
 Implementation for each:
-- [ ] C++ widget class in Widget.h/Widget.cpp
-- [ ] Native function registration in GuiNatives.cpp
-- [ ] Stratos helper function in std/gui/init.st
+- [x] C++ widget class in Widget.h/Widget.cpp (all except AspectRatio)
+- [x] Native function registration in GuiNatives.cpp
+- [x] Stratos helper function in std/gui/init.st
 - [ ] HTML element mapping in HTMLGenerator
 - [ ] STUI transpiler support
 
@@ -679,12 +679,12 @@ Phase 7    Global State & Context                    MOSTLY COMPLETE
   7.6  STUI store/provide syntax                      ⬜ TODO
   7.7  Examples                                       ✅
   ↓
-Phase 8    Lifecycle, Gestures & Missing Widgets
-  8.1  Lifecycle hooks (onMount, onDestroy, onUpdate)
-  8.2  Gesture detection (drag, swipe, long press)
-  8.3  Missing widgets (Scaffold, Card, FAB, BottomNav, etc.)
-  8.4  Error boundaries
-  8.5  Responsive / MediaQuery
+Phase 8    Lifecycle, Gestures & Missing Widgets      MOSTLY COMPLETE
+  8.1  Lifecycle hooks (onMount, onDestroy, onUpdate)  ✅
+  8.2  Gesture detection (drag, swipe, long press)     ⬜ TODO
+  8.3  Missing widgets (13 new widgets)                ✅
+  8.4  Error boundaries                                ⬜ TODO
+  8.5  Responsive / MediaQuery                         ⬜ TODO
   ↓
 Phase 9    Polish & DX
   9.1  Form system

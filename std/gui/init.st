@@ -179,6 +179,45 @@ fn __gui_context_create(name: string, defaultValue: any) int;
 fn __gui_context_provide(contextId: int, value: any) bool;
 fn __gui_context_consume(contextId: int) any;
 
+// Lifecycle hooks
+fn __gui_lifecycle_on_mount(widgetId: int, callback: any) bool;
+fn __gui_lifecycle_on_destroy(widgetId: int, callback: any) bool;
+fn __gui_lifecycle_on_update(widgetId: int, callback: any) bool;
+fn __gui_lifecycle_trigger_mount(widgetId: int) bool;
+fn __gui_lifecycle_trigger_destroy(widgetId: int) bool;
+
+// Phase 8 widgets
+fn __gui_card_create(elevation: float) int;
+fn __gui_divider_create(vertical: bool, thickness: float) int;
+fn __gui_badge_create(label: string) int;
+fn __gui_badge_set_label(id: int, label: string) bool;
+fn __gui_tooltip_create(message: string) int;
+fn __gui_chip_create(label: string) int;
+fn __gui_chip_set_selected(id: int, selected: bool) bool;
+fn __gui_chip_is_selected(id: int) bool;
+fn __gui_fab_create(icon: string) int;
+fn __gui_progressbar_create(value: float) int;
+fn __gui_progressbar_set_value(id: int, value: float) bool;
+fn __gui_progressbar_set_indeterminate(id: int, indeterminate: bool) bool;
+fn __gui_circular_progress_create(value: float) int;
+fn __gui_circular_progress_set_value(id: int, value: float) bool;
+fn __gui_snackbar_create(message: string) int;
+fn __gui_snackbar_show(id: int) bool;
+fn __gui_snackbar_hide(id: int) bool;
+fn __gui_snackbar_set_message(id: int, message: string) bool;
+fn __gui_wrap_create(spacing: float, runSpacing: float) int;
+fn __gui_expansion_panel_create(title: string) int;
+fn __gui_expansion_panel_set_expanded(id: int, expanded: bool) bool;
+fn __gui_expansion_panel_is_expanded(id: int) bool;
+fn __gui_scaffold_create() int;
+fn __gui_scaffold_set_appbar(scaffoldId: int, appbarId: int) bool;
+fn __gui_scaffold_set_body(scaffoldId: int, bodyId: int) bool;
+fn __gui_scaffold_set_fab(scaffoldId: int, fabId: int) bool;
+fn __gui_bottomnav_create() int;
+fn __gui_bottomnav_add_item(id: int, icon: string, label: string) bool;
+fn __gui_bottomnav_get_active(id: int) int;
+fn __gui_bottomnav_set_active(id: int, index: int) bool;
+
 fn __gui_destroy_widget(id: int) bool;
 fn __gui_destroy_all() bool;
 
@@ -1067,6 +1106,218 @@ class Context {
     fn consume() any {
         return __gui_context_consume(this.id);
     }
+}
+
+// ============================================================
+// Lifecycle hooks
+// ============================================================
+
+/// Register a callback that runs once after a widget is added to the tree.
+fn onMount(widgetId: int, callback: any) void {
+    __gui_lifecycle_on_mount(widgetId, callback);
+}
+
+/// Register a callback that runs when a widget is removed from the tree.
+fn onDestroy(widgetId: int, callback: any) void {
+    __gui_lifecycle_on_destroy(widgetId, callback);
+}
+
+/// Register a callback that runs when a widget is re-rendered.
+fn onUpdate(widgetId: int, callback: any) void {
+    __gui_lifecycle_on_update(widgetId, callback);
+}
+
+/// Trigger mount callbacks for a widget (call after adding to tree).
+fn triggerMount(widgetId: int) void {
+    __gui_lifecycle_trigger_mount(widgetId);
+}
+
+/// Trigger destroy callbacks for a widget (call before removing from tree).
+fn triggerDestroy(widgetId: int) void {
+    __gui_lifecycle_trigger_destroy(widgetId);
+}
+
+// ============================================================
+// Phase 8 — New Widgets
+// ============================================================
+
+/// Create a card — elevated container with rounded corners and shadow.
+fn Card(children: array<int>) int {
+    val id = __gui_card_create(2.0);
+    return addChildren(id, children);
+}
+
+/// Create a card with custom elevation.
+fn ElevatedCard(elevation: float, children: array<int>) int {
+    val id = __gui_card_create(elevation);
+    return addChildren(id, children);
+}
+
+/// Create a horizontal divider line.
+fn Divider() int {
+    return __gui_divider_create(false, 1.0);
+}
+
+/// Create a vertical divider line.
+fn VerticalDivider() int {
+    return __gui_divider_create(true, 1.0);
+}
+
+/// Create a divider with custom thickness.
+fn ThickDivider(thickness: float) int {
+    return __gui_divider_create(false, thickness);
+}
+
+/// Create a badge with a text label (e.g., notification count).
+fn Badge(label: string) int {
+    return __gui_badge_create(label);
+}
+
+/// Update the badge label.
+fn setBadgeLabel(id: int, label: string) void {
+    __gui_badge_set_label(id, label);
+}
+
+/// Create a tooltip that shows a message on hover.
+fn Tooltip(message: string, child: int) int {
+    val id = __gui_tooltip_create(message);
+    __gui_widget_add_child(id, child);
+    return id;
+}
+
+/// Create a chip (small tag/filter element).
+fn Chip(label: string) int {
+    return __gui_chip_create(label);
+}
+
+/// Set chip selected state.
+fn setChipSelected(id: int, selected: bool) void {
+    __gui_chip_set_selected(id, selected);
+}
+
+/// Check if a chip is selected.
+fn isChipSelected(id: int) bool {
+    return __gui_chip_is_selected(id);
+}
+
+/// Create a floating action button.
+fn FAB(icon: string) int {
+    return __gui_fab_create(icon);
+}
+
+/// Create a linear progress bar (0.0 to 1.0).
+fn ProgressBar(value: float) int {
+    return __gui_progressbar_create(value);
+}
+
+/// Update the progress bar value.
+fn setProgress(id: int, value: float) void {
+    __gui_progressbar_set_value(id, value);
+}
+
+/// Set a progress bar to indeterminate mode (animated).
+fn setProgressIndeterminate(id: int, indeterminate: bool) void {
+    __gui_progressbar_set_indeterminate(id, indeterminate);
+}
+
+/// Create a circular progress indicator.
+fn CircularProgress() int {
+    return __gui_circular_progress_create(0.0);
+}
+
+/// Create a circular progress with a specific value (0.0 to 1.0).
+fn CircularProgressValue(value: float) int {
+    return __gui_circular_progress_create(value);
+}
+
+/// Update circular progress value.
+fn setCircularProgress(id: int, value: float) void {
+    __gui_circular_progress_set_value(id, value);
+}
+
+/// Create a snackbar (temporary message at bottom).
+fn SnackBar(message: string) int {
+    return __gui_snackbar_create(message);
+}
+
+/// Show a snackbar.
+fn showSnackBar(id: int) void {
+    __gui_snackbar_show(id);
+}
+
+/// Hide a snackbar.
+fn hideSnackBar(id: int) void {
+    __gui_snackbar_hide(id);
+}
+
+/// Update the snackbar message.
+fn setSnackBarMessage(id: int, message: string) void {
+    __gui_snackbar_set_message(id, message);
+}
+
+/// Create a wrap layout (flow, wraps to next line).
+fn Wrap(spacing: float, children: array<int>) int {
+    val id = __gui_wrap_create(spacing, spacing);
+    return addChildren(id, children);
+}
+
+/// Create a wrap layout with custom run spacing.
+fn WrapCustom(spacing: float, runSpacing: float, children: array<int>) int {
+    val id = __gui_wrap_create(spacing, runSpacing);
+    return addChildren(id, children);
+}
+
+/// Create an expansion panel (collapsible section).
+fn ExpansionPanel(title: string, children: array<int>) int {
+    val id = __gui_expansion_panel_create(title);
+    return addChildren(id, children);
+}
+
+/// Set expansion panel expanded state.
+fn setExpanded(id: int, expanded: bool) void {
+    __gui_expansion_panel_set_expanded(id, expanded);
+}
+
+/// Check if an expansion panel is expanded.
+fn isExpanded(id: int) bool {
+    return __gui_expansion_panel_is_expanded(id);
+}
+
+/// Create a scaffold layout (appbar + body + optional FAB).
+fn Scaffold(appBarId: int, bodyId: int) int {
+    val id = __gui_scaffold_create();
+    __gui_scaffold_set_appbar(id, appBarId);
+    __gui_scaffold_set_body(id, bodyId);
+    return id;
+}
+
+/// Create a scaffold with a floating action button.
+fn ScaffoldWithFAB(appBarId: int, bodyId: int, fabId: int) int {
+    val id = __gui_scaffold_create();
+    __gui_scaffold_set_appbar(id, appBarId);
+    __gui_scaffold_set_body(id, bodyId);
+    __gui_scaffold_set_fab(id, fabId);
+    return id;
+}
+
+/// Create a bottom navigation bar.
+fn BottomNavBar() int {
+    return __gui_bottomnav_create();
+}
+
+/// Add an item to a bottom nav bar.
+fn addNavItem(id: int, icon: string, label: string) void {
+    __gui_bottomnav_add_item(id, icon, label);
+}
+
+/// Get the active nav item index.
+fn getActiveNavItem(id: int) int {
+    return __gui_bottomnav_get_active(id);
+}
+
+/// Set the active nav item index.
+fn setActiveNavItem(id: int, index: int) void {
+    __gui_bottomnav_set_active(id, index);
 }
 
 // ============================================================
