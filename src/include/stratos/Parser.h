@@ -70,6 +70,7 @@ private:
 
     // Type Parsing
     std::string parseType();
+    std::string parseCastType();
 
     // Helpers
     bool match(const std::vector<TokenType>& types);

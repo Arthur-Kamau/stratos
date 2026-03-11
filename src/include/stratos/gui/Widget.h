@@ -538,5 +538,223 @@ private:
     float spacing_ = 8;
 };
 
+// ============================================================
+// TextArea Widget (multi-line text input)
+// ============================================================
+
+class TextArea : public Widget {
+public:
+    TextArea() = default;
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    bool handleEvent(const Event& event) override;
+    std::string typeName() const override { return "TextArea"; }
+
+    void setValue(const std::string& value) { value_ = value; markDirty(); }
+    const std::string& getValue() const { return value_; }
+    void setPlaceholder(const std::string& placeholder) { placeholder_ = placeholder; }
+    void setOnChange(OnChangeHandler handler) { onChange_ = std::move(handler); }
+
+private:
+    std::string value_;
+    std::string placeholder_;
+    FontSpec font_;
+    int cursorPos_ = 0;
+    int cursorLine_ = 0;
+    int cursorCol_ = 0;
+    float scrollY_ = 0;
+    bool cursorVisible_ = true;
+    OnChangeHandler onChange_;
+
+    // Helper to split text into lines
+    std::vector<std::string> getLines() const;
+    void updateCursorLineCol();
+};
+
+// ============================================================
+// RadioButton Widget
+// ============================================================
+
+class RadioButton : public Widget {
+public:
+    RadioButton() = default;
+    RadioButton(const std::string& label, const std::string& group)
+        : label_(label), group_(group) {}
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    bool handleEvent(const Event& event) override;
+    std::string typeName() const override { return "RadioButton"; }
+
+    void setSelected(bool selected) { selected_ = selected; markDirty(); }
+    bool isSelected() const { return selected_; }
+    void setLabel(const std::string& label) { label_ = label; }
+    void setGroup(const std::string& group) { group_ = group; }
+    const std::string& getGroup() const { return group_; }
+    void setOnChange(OnBoolChangeHandler handler) { onChange_ = std::move(handler); }
+
+    // Static: deselect all other radio buttons in the same group
+    static void deselectGroup(Widget* root, const std::string& group, RadioButton* except);
+
+private:
+    std::string label_;
+    std::string group_;
+    bool selected_ = false;
+    Color activeColor_ = Color::rgb(33, 150, 243);
+    OnBoolChangeHandler onChange_;
+};
+
+// ============================================================
+// Dropdown / Select Widget
+// ============================================================
+
+class Dropdown : public Widget {
+public:
+    Dropdown() = default;
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    bool handleEvent(const Event& event) override;
+    std::string typeName() const override { return "Dropdown"; }
+
+    void addItem(const std::string& item) { items_.push_back(item); markDirty(); }
+    void setItems(const std::vector<std::string>& items) { items_ = items; markDirty(); }
+    const std::vector<std::string>& getItems() const { return items_; }
+    int getSelectedIndex() const { return selectedIndex_; }
+    std::string getSelectedItem() const {
+        return (selectedIndex_ >= 0 && selectedIndex_ < (int)items_.size()) ? items_[selectedIndex_] : "";
+    }
+    void setSelectedIndex(int idx) { selectedIndex_ = idx; markDirty(); }
+    void setPlaceholder(const std::string& ph) { placeholder_ = ph; }
+    void setOnChange(OnChangeHandler handler) { onChange_ = std::move(handler); }
+
+private:
+    std::vector<std::string> items_;
+    int selectedIndex_ = -1;
+    std::string placeholder_ = "Select...";
+    bool open_ = false;
+    int hoveredIndex_ = -1;
+    FontSpec font_;
+    OnChangeHandler onChange_;
+};
+
+// ============================================================
+// Icon Widget
+// ============================================================
+
+class Icon : public Widget {
+public:
+    Icon() = default;
+    explicit Icon(const std::string& icon, float size = 24.0f)
+        : icon_(icon), size_(size) {}
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    std::string typeName() const override { return "Icon"; }
+
+    void setIcon(const std::string& icon) { icon_ = icon; markDirty(); }
+    void setIconSize(float size) { size_ = size; markDirty(); }
+    void setColor(const Color& color) { color_ = color; }
+
+private:
+    std::string icon_;  // Unicode character or icon name
+    float size_ = 24.0f;
+    Color color_ = Color::black();
+};
+
+// ============================================================
+// Drawer Widget (side panel)
+// ============================================================
+
+class Drawer : public Widget {
+public:
+    Drawer() = default;
+    explicit Drawer(float width) : drawerWidth_(width) {}
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    bool handleEvent(const Event& event) override;
+    std::string typeName() const override { return "Drawer"; }
+
+    void setOpen(bool open) { open_ = open; markDirty(); }
+    bool isOpen() const { return open_; }
+    void setDrawerWidth(float w) { drawerWidth_ = w; }
+    void setOnClose(OnClickHandler handler) { onClose_ = std::move(handler); }
+
+private:
+    bool open_ = false;
+    float drawerWidth_ = 280.0f;
+    float animProgress_ = 0.0f; // 0 = closed, 1 = open
+    Color backdropColor_ = Color::rgba(0, 0, 0, 100);
+    OnClickHandler onClose_;
+};
+
+// ============================================================
+// TabBar Widget
+// ============================================================
+
+class TabBar : public Widget {
+public:
+    TabBar() = default;
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    bool handleEvent(const Event& event) override;
+    std::string typeName() const override { return "TabBar"; }
+
+    void addTab(const std::string& label) { tabs_.push_back(label); markDirty(); }
+    void setTabs(const std::vector<std::string>& tabs) { tabs_ = tabs; markDirty(); }
+    int getActiveTab() const { return activeTab_; }
+    void setActiveTab(int idx) { activeTab_ = idx; markDirty(); }
+    void setOnTabChange(std::function<void(int)> handler) { onTabChange_ = std::move(handler); }
+
+private:
+    std::vector<std::string> tabs_;
+    int activeTab_ = 0;
+    int hoveredTab_ = -1;
+    Color activeColor_ = Color::rgb(33, 150, 243);
+    Color inactiveColor_ = Color::rgb(117, 117, 117);
+    std::function<void(int)> onTabChange_;
+};
+
+// ============================================================
+// Menu / ContextMenu Widget
+// ============================================================
+
+struct MenuItem {
+    std::string label;
+    std::string icon;  // Unicode icon (optional)
+    OnClickHandler onClick;
+    bool enabled = true;
+    bool separator = false; // If true, renders as a horizontal line
+};
+
+class Menu : public Widget {
+public:
+    Menu() = default;
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    bool handleEvent(const Event& event) override;
+    std::string typeName() const override { return "Menu"; }
+
+    void addItem(const MenuItem& item) { items_.push_back(item); markDirty(); }
+    void addSeparator() { items_.push_back({"", "", nullptr, true, true}); markDirty(); }
+    void setItems(const std::vector<MenuItem>& items) { items_ = items; markDirty(); }
+
+    void show(float x, float y) { posX_ = x; posY_ = y; open_ = true; markDirty(); }
+    void hide() { open_ = false; markDirty(); }
+    bool isOpen() const { return open_; }
+
+private:
+    std::vector<MenuItem> items_;
+    bool open_ = false;
+    float posX_ = 0, posY_ = 0;
+    int hoveredIndex_ = -1;
+    float itemHeight_ = 36.0f;
+    FontSpec font_;
+};
+
 } // namespace gui
 } // namespace stratos

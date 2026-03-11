@@ -1,7 +1,9 @@
 #include "stratos/NativeRegistry.h"
+#include "stratos/Interpreter.h"
 #include "stratos/gui/App.h"
 #include "stratos/gui/Widget.h"
 #include "stratos/gui/Renderer.h"
+#include "stratos/gui/Signals.h"
 #include <iostream>
 #include <unordered_map>
 #include <memory>
@@ -27,6 +29,17 @@ static std::unordered_map<int, std::function<void(int, int)>> keyCallbacks;
 static int nextStateId = 1;
 static std::unordered_map<int, std::any> stateValues;
 static std::unordered_map<int, std::vector<std::function<void()>>> stateListeners;
+
+// Interpreter bridge for callback dispatch
+static Interpreter* guiInterpreter_ = nullptr;
+
+// Signal effects: signalId -> list of {widgetId, closure} pairs
+static std::unordered_map<int, std::vector<std::pair<int, RuntimeValue>>> signalEffects;
+
+// Free function to set interpreter reference from outside
+void setGuiInterpreter(void* interp) {
+    guiInterpreter_ = static_cast<Interpreter*>(interp);
+}
 
 static int storeWidget(gui::WidgetPtr widget) {
     int id = nextWidgetId++;
@@ -61,6 +74,25 @@ void NativeRegistry::initGui() {
         [](const std::vector<std::any>& args) -> std::any {
             if (!currentApp) return false;
             currentApp->run();
+
+            // Clean up all static state after the event loop exits.
+            // Order matters: clear callbacks/signals first (they hold closures
+            // that reference the interpreter), then widgets (before SDL is
+            // fully torn down by currentApp destruction), then the app itself.
+            guiInterpreter_ = nullptr;
+            clickCallbacks.clear();
+            changeCallbacks.clear();
+            boolChangeCallbacks.clear();
+            floatChangeCallbacks.clear();
+            mouseCallbacks.clear();
+            keyCallbacks.clear();
+            stateValues.clear();
+            stateListeners.clear();
+            signalEffects.clear();
+            gui::SignalRegistry::instance().clear();
+            widgetRegistry.clear();
+            currentApp.reset();
+
             return true;
         });
 
@@ -106,6 +138,18 @@ void NativeRegistry::initGui() {
             std::string text = std::any_cast<std::string>(args[0]);
             auto widget = std::make_shared<gui::Text>(text);
             return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_text_set_content",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            std::string text = std::any_cast<std::string>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::Text>(getWidget(id));
+            if (widget) {
+                widget->setText(text);
+                if (currentApp) currentApp->requestRedraw();
+            }
+            return true;
         });
 
     registerFunction("gui", "__gui_text_set_font_size",
@@ -907,130 +951,127 @@ void NativeRegistry::initGui() {
     // Event handler registration (callback bridge)
     // ========================================
 
-    // onClick — stores callback ID, wires C++ widget handler to invoke it
+    // onClick — accepts a closure and executes it via the interpreter on click
     registerFunction("gui", "__gui_widget_set_onclick",
         [](const std::vector<std::any>& args) -> std::any {
             int widgetId = std::any_cast<int>(args[0]);
-            int callbackId = std::any_cast<int>(args[1]);
+            auto closure = args[1];
             auto widget = getWidget(widgetId);
-            if (widget) {
-                // Store the callback ID; the interpreter resolves it
-                clickCallbacks[widgetId] = [callbackId]() {
-                    // The interpreter will check clickCallbacks and dispatch
-                };
-                widget->setOnClick([widgetId]() {
-                    auto it = clickCallbacks.find(widgetId);
-                    if (it != clickCallbacks.end()) {
-                        it->second();
-                    }
+            if (widget && guiInterpreter_) {
+                auto interpPtr = guiInterpreter_;
+                widget->setOnClick([closure, interpPtr]() {
+                    RuntimeValue rv(closure, "function");
+                    std::vector<RuntimeValue> noArgs;
+                    interpPtr->executeCallback(rv, noArgs);
                 });
             }
-            return callbackId;
+            return widgetId;
         });
 
     // onChange (string value) — for TextField, TextArea, Dropdown
     registerFunction("gui", "__gui_widget_set_onchange",
         [](const std::vector<std::any>& args) -> std::any {
             int widgetId = std::any_cast<int>(args[0]);
-            int callbackId = std::any_cast<int>(args[1]);
+            auto closure = args[1];
             auto widget = getWidget(widgetId);
-            if (!widget) return callbackId;
+            if (!widget || !guiInterpreter_) return widgetId;
+            auto interpPtr = guiInterpreter_;
+
+            auto invokeCallback = [closure, interpPtr](const std::string& val) {
+                RuntimeValue rv(closure, "function");
+                std::vector<RuntimeValue> cbArgs;
+                cbArgs.push_back(RuntimeValue(val));
+                interpPtr->executeCallback(rv, cbArgs);
+            };
 
             auto textField = std::dynamic_pointer_cast<gui::TextField>(widget);
             if (textField) {
-                textField->setOnChange([widgetId, callbackId](const std::string& val) {
-                    auto it = changeCallbacks.find(widgetId);
-                    if (it != changeCallbacks.end()) it->second(val);
-                });
-                changeCallbacks[widgetId] = [](const std::string&) {};
+                textField->setOnChange(invokeCallback);
             }
 
             auto textArea = std::dynamic_pointer_cast<gui::TextArea>(widget);
             if (textArea) {
-                textArea->setOnChange([widgetId, callbackId](const std::string& val) {
-                    auto it = changeCallbacks.find(widgetId);
-                    if (it != changeCallbacks.end()) it->second(val);
-                });
-                changeCallbacks[widgetId] = [](const std::string&) {};
+                textArea->setOnChange(invokeCallback);
             }
 
             auto dropdown = std::dynamic_pointer_cast<gui::Dropdown>(widget);
             if (dropdown) {
-                dropdown->setOnChange([widgetId, callbackId](const std::string& val) {
-                    auto it = changeCallbacks.find(widgetId);
-                    if (it != changeCallbacks.end()) it->second(val);
-                });
-                changeCallbacks[widgetId] = [](const std::string&) {};
+                dropdown->setOnChange(invokeCallback);
             }
 
-            return callbackId;
+            return widgetId;
         });
 
     // onSubmit — for TextField
     registerFunction("gui", "__gui_widget_set_onsubmit",
         [](const std::vector<std::any>& args) -> std::any {
             int widgetId = std::any_cast<int>(args[0]);
-            int callbackId = std::any_cast<int>(args[1]);
+            auto closure = args[1];
             auto widget = getWidget(widgetId);
-            if (widget) {
+            if (widget && guiInterpreter_) {
+                auto interpPtr = guiInterpreter_;
                 auto textField = std::dynamic_pointer_cast<gui::TextField>(widget);
                 if (textField) {
-                    textField->setOnSubmit([widgetId]() {
-                        auto it = clickCallbacks.find(widgetId + 10000); // offset for submit
-                        if (it != clickCallbacks.end()) it->second();
+                    textField->setOnSubmit([closure, interpPtr]() {
+                        RuntimeValue rv(closure, "function");
+                        std::vector<RuntimeValue> noArgs;
+                        interpPtr->executeCallback(rv, noArgs);
                     });
-                    clickCallbacks[widgetId + 10000] = []() {};
                 }
             }
-            return callbackId;
+            return widgetId;
         });
 
     // onMouseEnter
     registerFunction("gui", "__gui_widget_set_onmouseenter",
         [](const std::vector<std::any>& args) -> std::any {
             int widgetId = std::any_cast<int>(args[0]);
-            int callbackId = std::any_cast<int>(args[1]);
+            auto closure = args[1];
             auto widget = getWidget(widgetId);
-            if (widget) {
-                widget->setOnMouseEnter([widgetId](float x, float y) {
-                    auto it = mouseCallbacks.find(widgetId);
-                    if (it != mouseCallbacks.end()) it->second(x, y);
+            if (widget && guiInterpreter_) {
+                auto interpPtr = guiInterpreter_;
+                widget->setOnMouseEnter([closure, interpPtr](float x, float y) {
+                    RuntimeValue rv(closure, "function");
+                    std::vector<RuntimeValue> noArgs;
+                    interpPtr->executeCallback(rv, noArgs);
                 });
-                mouseCallbacks[widgetId] = [](float, float) {};
             }
-            return callbackId;
+            return widgetId;
         });
 
     // onMouseLeave
     registerFunction("gui", "__gui_widget_set_onmouseleave",
         [](const std::vector<std::any>& args) -> std::any {
             int widgetId = std::any_cast<int>(args[0]);
-            int callbackId = std::any_cast<int>(args[1]);
+            auto closure = args[1];
             auto widget = getWidget(widgetId);
-            if (widget) {
-                widget->setOnMouseLeave([widgetId](float x, float y) {
-                    auto it = mouseCallbacks.find(widgetId + 20000); // offset
-                    if (it != mouseCallbacks.end()) it->second(x, y);
+            if (widget && guiInterpreter_) {
+                auto interpPtr = guiInterpreter_;
+                widget->setOnMouseLeave([closure, interpPtr](float x, float y) {
+                    RuntimeValue rv(closure, "function");
+                    std::vector<RuntimeValue> noArgs;
+                    interpPtr->executeCallback(rv, noArgs);
                 });
-                mouseCallbacks[widgetId + 20000] = [](float, float) {};
             }
-            return callbackId;
+            return widgetId;
         });
 
     // onKeyPress
     registerFunction("gui", "__gui_widget_set_onkeypress",
         [](const std::vector<std::any>& args) -> std::any {
             int widgetId = std::any_cast<int>(args[0]);
-            int callbackId = std::any_cast<int>(args[1]);
+            auto closure = args[1];
             auto widget = getWidget(widgetId);
-            if (widget) {
-                widget->setOnKeyPress([widgetId](gui::KeyCode key, gui::KeyModifiers mods) {
-                    auto it = keyCallbacks.find(widgetId);
-                    if (it != keyCallbacks.end()) it->second(static_cast<int>(key), 0);
+            if (widget && guiInterpreter_) {
+                auto interpPtr = guiInterpreter_;
+                widget->setOnKeyPress([closure, interpPtr](gui::KeyCode key, gui::KeyModifiers mods) {
+                    RuntimeValue rv(closure, "function");
+                    std::vector<RuntimeValue> cbArgs;
+                    cbArgs.push_back(RuntimeValue(static_cast<int>(key)));
+                    interpPtr->executeCallback(rv, cbArgs);
                 });
-                keyCallbacks[widgetId] = [](int, int) {};
             }
-            return callbackId;
+            return widgetId;
         });
 
     // ========================================
@@ -1064,6 +1105,22 @@ void NativeRegistry::initGui() {
                     listener();
                 }
             }
+            // Trigger signal text effects
+            auto eit = signalEffects.find(id);
+            if (eit != signalEffects.end() && guiInterpreter_) {
+                for (auto& [widgetId, effectClosure] : eit->second) {
+                    std::vector<RuntimeValue> noArgs;
+                    RuntimeValue newText = guiInterpreter_->executeCallback(effectClosure, noArgs);
+                    // Update widget text
+                    auto widget = getWidget(widgetId);
+                    if (widget) {
+                        auto textWidget = std::dynamic_pointer_cast<gui::Text>(widget);
+                        if (textWidget) {
+                            textWidget->setText(newText.asString());
+                        }
+                    }
+                }
+            }
             // Request redraw
             if (currentApp) currentApp->requestRedraw();
             return true;
@@ -1077,6 +1134,190 @@ void NativeRegistry::initGui() {
             if (lit != stateListeners.end()) {
                 lit->second.push_back([]() {
                     // Interpreter will dispatch this callback
+                });
+            }
+            return true;
+        });
+
+    // ========================================
+    // Signal-aware event handlers
+    // ========================================
+
+    // Store and invoke Stratos closures for click events
+    registerFunction("gui", "__gui_set_click_closure",
+        [](const std::vector<std::any>& args) -> std::any {
+            int widgetId = std::any_cast<int>(args[0]);
+            auto closure = args[1]; // Keep as std::any (shared_ptr<Closure>)
+            auto widget = getWidget(widgetId);
+            if (widget && guiInterpreter_) {
+                auto closureCopy = closure;
+                auto interpPtr = guiInterpreter_;
+                widget->setOnClick([closureCopy, interpPtr]() {
+                    RuntimeValue rv(closureCopy, "function");
+                    std::vector<RuntimeValue> noArgs;
+                    interpPtr->executeCallback(rv, noArgs);
+                });
+            }
+            return true;
+        });
+
+    // Store and invoke Stratos closures for change events
+    registerFunction("gui", "__gui_set_change_closure",
+        [](const std::vector<std::any>& args) -> std::any {
+            int widgetId = std::any_cast<int>(args[0]);
+            auto closure = args[1];
+            auto widget = getWidget(widgetId);
+            if (widget && guiInterpreter_) {
+                auto closureCopy = closure;
+                auto interpPtr = guiInterpreter_;
+                auto tf = std::dynamic_pointer_cast<gui::TextField>(widget);
+                if (tf) {
+                    tf->setOnChange([closureCopy, interpPtr](const std::string& val) {
+                        RuntimeValue rv(closureCopy, "function");
+                        std::vector<RuntimeValue> callArgs = { RuntimeValue(val) };
+                        interpPtr->executeCallback(rv, callArgs);
+                    });
+                }
+            }
+            return true;
+        });
+
+    // Bind a text-update effect to a signal
+    registerFunction("gui", "__gui_signal_bind_text",
+        [](const std::vector<std::any>& args) -> std::any {
+            int signalId = std::any_cast<int>(args[0]);
+            int widgetId = std::any_cast<int>(args[1]);
+            auto closure = args[2]; // format closure
+            signalEffects[signalId].push_back({widgetId, RuntimeValue(closure, "function")});
+            return true;
+        });
+
+    // ========================================
+    // Signal system (Phase 5 — advanced reactivity)
+    // ========================================
+
+    registerFunction("gui", "__gui_signal_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto& reg = gui::SignalRegistry::instance();
+            return reg.createSignal(args[0]);
+        });
+
+    registerFunction("gui", "__gui_signal_get",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto& reg = gui::SignalRegistry::instance();
+            return reg.getSignal(id);
+        });
+
+    registerFunction("gui", "__gui_signal_set",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto& reg = gui::SignalRegistry::instance();
+            reg.setSignal(id, args[1]);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_signal_peek",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto& reg = gui::SignalRegistry::instance();
+            return reg.peekSignal(id);
+        });
+
+    registerFunction("gui", "__gui_effect_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto closure = args[0];
+            if (!guiInterpreter_) return -1;
+            auto interpPtr = guiInterpreter_;
+            auto& reg = gui::SignalRegistry::instance();
+            int id = reg.createEffect([closure, interpPtr]() {
+                RuntimeValue rv(closure, "function");
+                std::vector<RuntimeValue> noArgs;
+                interpPtr->executeCallback(rv, noArgs);
+            });
+            return id;
+        });
+
+    registerFunction("gui", "__gui_effect_dispose",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto& reg = gui::SignalRegistry::instance();
+            reg.disposeEffect(id);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_computed_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto closure = args[0];
+            if (!guiInterpreter_) return -1;
+            auto interpPtr = guiInterpreter_;
+            auto& reg = gui::SignalRegistry::instance();
+            int id = reg.createComputed([closure, interpPtr]() -> std::any {
+                RuntimeValue rv(closure, "function");
+                std::vector<RuntimeValue> noArgs;
+                RuntimeValue result = interpPtr->executeCallback(rv, noArgs);
+                // Convert RuntimeValue back to std::any for signal storage
+                if (result.type == "int") return std::any(std::get<int>(result.value));
+                if (result.type == "double") return std::any(std::get<double>(result.value));
+                if (result.type == "string") return std::any(std::get<std::string>(result.value));
+                if (result.type == "bool") return std::any(std::get<bool>(result.value));
+                return std::any{};
+            });
+            return id;
+        });
+
+    registerFunction("gui", "__gui_computed_get",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto& reg = gui::SignalRegistry::instance();
+            return reg.getComputed(id);
+        });
+
+    registerFunction("gui", "__gui_batch",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto closure = args[0];
+            if (!guiInterpreter_) return false;
+            auto interpPtr = guiInterpreter_;
+            auto& ctx = gui::TrackingContext::instance();
+            ctx.beginBatch();
+            RuntimeValue rv(closure, "function");
+            std::vector<RuntimeValue> noArgs;
+            interpPtr->executeCallback(rv, noArgs);
+            ctx.endBatch();
+            return true;
+        });
+
+    registerFunction("gui", "__gui_untrack",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto closure = args[0];
+            if (!guiInterpreter_) return std::any{};
+            auto interpPtr = guiInterpreter_;
+            auto& ctx = gui::TrackingContext::instance();
+            ctx.pushUntrack();
+            RuntimeValue rv(closure, "function");
+            std::vector<RuntimeValue> noArgs;
+            RuntimeValue result = interpPtr->executeCallback(rv, noArgs);
+            ctx.popUntrack();
+            // Convert result
+            if (result.type == "int") return std::any(std::get<int>(result.value));
+            if (result.type == "double") return std::any(std::get<double>(result.value));
+            if (result.type == "string") return std::any(std::get<std::string>(result.value));
+            if (result.type == "bool") return std::any(std::get<bool>(result.value));
+            return std::any{};
+        });
+
+    registerFunction("gui", "__gui_on_cleanup",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto closure = args[0];
+            if (!guiInterpreter_) return false;
+            auto interpPtr = guiInterpreter_;
+            auto& ctx = gui::TrackingContext::instance();
+            gui::Effect* current = ctx.getCurrentEffect();
+            if (current) {
+                current->addCleanup([closure, interpPtr]() {
+                    RuntimeValue rv(closure, "function");
+                    std::vector<RuntimeValue> noArgs;
+                    interpPtr->executeCallback(rv, noArgs);
                 });
             }
             return true;
@@ -1105,6 +1346,9 @@ void NativeRegistry::initGui() {
             keyCallbacks.clear();
             stateValues.clear();
             stateListeners.clear();
+            signalEffects.clear();
+            gui::SignalRegistry::instance().clear();
+            guiInterpreter_ = nullptr;
             nextStateId = 1;
             nextCallbackId = 1;
             currentApp.reset();

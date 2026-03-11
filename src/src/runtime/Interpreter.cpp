@@ -3329,6 +3329,16 @@ RuntimeValue Interpreter::evaluateNativeCall(const std::string& moduleName,
         }
     }
 
+    // When the declared return type is "any" or "void", infer the actual type
+    // from the std::any value so callers get a properly-typed RuntimeValue
+    if ((resultType == "any" || resultType == "void") && result.has_value()) {
+        if (result.type() == typeid(int)) resultType = "int";
+        else if (result.type() == typeid(double)) resultType = "double";
+        else if (result.type() == typeid(std::string)) resultType = "string";
+        else if (result.type() == typeid(bool)) resultType = "bool";
+        else if (result.type() == typeid(float)) resultType = "double";
+    }
+
     return RuntimeValue(result, resultType);
 }
 
@@ -3357,6 +3367,10 @@ RuntimeValue Interpreter::callFunction(const std::string& name,
 
     // Check if this is "main" function - special case
     if (name == "main") {
+        // Set interpreter reference for GUI callback dispatch
+        extern void setGuiInterpreter(void* interp);
+        setGuiInterpreter(this);
+
         enterScope();
 
         try {

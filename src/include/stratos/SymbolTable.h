@@ -20,7 +20,6 @@ public:
     // Enter a new nested scope (e.g., entering a block or function)
     void enterScope() {
         scopes.push_back({});
-        // std::cout << "  [Scope] Enter (Depth: " << scopes.size() << ")" << std::endl;
     }
 
     // Exit the current scope
@@ -62,6 +61,16 @@ public:
     bool isDefinedInCurrentScope(const std::string& name) {
         if (scopes.empty()) return false;
         return scopes.back().count(name) > 0;
+    }
+
+    // Get current scope depth (for scope guards)
+    size_t depth() const { return scopes.size(); }
+
+    // Restore to a specific depth (emergency scope repair)
+    void restoreDepth(size_t targetDepth) {
+        while (scopes.size() > targetDepth) {
+            scopes.pop_back();
+        }
     }
 
 private:

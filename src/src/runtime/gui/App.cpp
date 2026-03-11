@@ -56,6 +56,10 @@ App::App(const std::string& title, int width, int height, RenderBackend backend)
 }
 
 App::~App() {
+    // Release widget tree before renderer shutdown so widgets
+    // are destroyed while SDL/TTF resources are still valid.
+    root_.reset();
+    if (renderer_) renderer_->shutdown();
     if (currentApp_ == this) currentApp_ = nullptr;
 }
 
@@ -123,7 +127,9 @@ void App::run() {
         }
     }
 
-    renderer_->shutdown();
+    // Don't call renderer_->shutdown() here — let the App destructor
+    // handle it. This allows the native cleanup code to destroy widgets
+    // (which may reference SDL/TTF resources) BEFORE SDL_Quit() runs.
 }
 
 void App::quit() {

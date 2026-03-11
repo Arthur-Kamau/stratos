@@ -911,7 +911,19 @@ void SemanticAnalyzer::visit(LambdaExpr& expr) {
     for (const auto& param : expr.params) {
         symbolTable.define(Symbol::Variable(param.lexeme, "any", false, false, param.line, param.column, param.file));
     }
-    if (expr.body) expr.body->accept(*this);
+    if (expr.body) {
+        // If body is a BlockStmt, visit its statements directly to avoid
+        // double scope nesting (BlockStmt::visit also calls enterScope/exitScope)
+        if (auto* block = dynamic_cast<BlockStmt*>(expr.body.get())) {
+            for (size_t i = 0; i < block->statements.size(); ++i) {
+                if (block->statements[i]) {
+                    block->statements[i]->accept(*this);
+                }
+            }
+        } else {
+            expr.body->accept(*this);
+        }
+    }
     symbolTable.exitScope();
 
     currentFunctionIsAsync = previousAsync;

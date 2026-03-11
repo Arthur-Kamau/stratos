@@ -37,6 +37,15 @@ struct ProjectConfig {
     // memory section
     MemoryConfig memory;    // Memory management configuration
 
+    // stui section
+    std::string stuiEntry;     // Entry point for .stui files
+
+    // build target
+    std::string target;        // "native", "wasm", "web" (default: "native")
+
+    // web section
+    std::string webRenderer;   // "dom" or "canvas" (default: "dom")
+
     // dependencies array
     std::vector<DependencyEntry> dependencies;
 

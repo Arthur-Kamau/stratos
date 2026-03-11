@@ -95,6 +95,7 @@ private:
     void initXML();
     void initTemplate();
     void initGui();
+    void initAnimation();
 
 };
 

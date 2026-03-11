@@ -1080,6 +1080,52 @@ std::unique_ptr<Expr> Parser::primary() {
         return std::make_unique<VariableExpr>(previous());
     }
 
+    // Handle fn-keyword lambdas in expression context:
+    //   fn() void { ... }
+    //   fn(a: int, b: int) int { return a + b; }
+    //   fn(x: int) int => x * 2
+    if (match({TokenType::FN})) {
+        consume(TokenType::LEFT_PAREN, "Expect '(' after 'fn' in lambda expression.");
+
+        std::vector<Token> params;
+        if (!check(TokenType::RIGHT_PAREN)) {
+            do {
+                Token paramName = consume(TokenType::IDENTIFIER, "Expect parameter name.");
+                // Skip optional type annotation (: type)
+                if (match({TokenType::COLON})) {
+                    parseType(); // consume and discard type for LambdaExpr params
+                }
+                params.push_back(paramName);
+            } while (match({TokenType::COMMA}));
+        }
+        consume(TokenType::RIGHT_PAREN, "Expect ')' after lambda parameters.");
+
+        // Skip optional return type
+        if (!check(TokenType::LEFT_BRACE) && !check(TokenType::ARROW)) {
+            if (check(TokenType::IDENTIFIER) || check(TokenType::INT) || check(TokenType::DOUBLE) ||
+                check(TokenType::STRING) || check(TokenType::BOOL) || check(TokenType::VOID) ||
+                check(TokenType::ASYNC)) {
+                parseType();
+            }
+        }
+
+        // Parse body: either block { ... } or arrow => expr
+        if (match({TokenType::ARROW})) {
+            std::unique_ptr<Stmt> body = parseLambdaBody();
+            return std::make_unique<LambdaExpr>(std::move(params), std::move(body));
+        }
+
+        // Block body
+        consume(TokenType::LEFT_BRACE, "Expect '{' or '=>' after fn lambda signature.");
+        std::vector<std::unique_ptr<Stmt>> stmts;
+        while (!check(TokenType::RIGHT_BRACE) && !isAtEnd()) {
+            stmts.push_back(declaration());
+        }
+        consume(TokenType::RIGHT_BRACE, "Expect '}' after fn lambda body.");
+        auto body = std::make_unique<BlockStmt>(std::move(stmts));
+        return std::make_unique<LambdaExpr>(std::move(params), std::move(body));
+    }
+
     if (match({TokenType::WHEN})) {
         return whenExpression(); // Parse as expression
     }
@@ -1269,7 +1315,7 @@ std::unique_ptr<Expr> Parser::cast() {
             isSafe = true;
         }
 
-        std::string typeName = parseType(); // Parse the target type (e.g., int, double)
+        std::string typeName = parseCastType(); // Parse target type without consuming * (ambiguous with multiply)
         
         // Convert typeName string back to TokenType for CastExpr
         TokenType targetTypeToken = TokenType::IDENTIFIER; // Default to IDENTIFIER
@@ -1338,6 +1384,47 @@ std::string Parser::parseType() {
         if (match({TokenType::QUESTION})) {
              typeName += "?";
         }
+
+        return typeName;
+    }
+    Token t = peek();
+    throw ParseError("Expect type. Found: " + t.lexeme, t.line, t.column);
+}
+
+// Like parseType() but does not consume '*' as pointer suffix,
+// since in cast context (expr as int * 2), '*' is ambiguous with multiplication.
+std::string Parser::parseCastType() {
+    if (match({TokenType::OPTIONAL})) {
+        consume(TokenType::LESS, "Expect <");
+        std::string inner = parseCastType();
+        consume(TokenType::GREATER, "Expect >");
+        return "Optional<" + inner + ">";
+    }
+    if (match({TokenType::IDENTIFIER, TokenType::INT, TokenType::STRING, TokenType::BOOL, TokenType::DOUBLE, TokenType::VOID,
+                TokenType::I8, TokenType::I16, TokenType::I32, TokenType::I64,
+                TokenType::U8, TokenType::U16, TokenType::U32, TokenType::U64,
+                TokenType::F32, TokenType::F64, TokenType::USIZE, TokenType::ISIZE,
+                TokenType::ASYNC})) {
+        std::string typeName = previous().lexeme;
+
+        while (match({TokenType::DOT})) {
+            Token name = consume(TokenType::IDENTIFIER, "Expect type name after '.'");
+            typeName += "." + name.lexeme;
+        }
+
+        if (match({TokenType::LESS})) {
+            typeName += "<";
+            int depth = 1;
+            while (depth > 0 && !isAtEnd()) {
+                Token token = advance();
+                typeName += token.lexeme;
+                if (token.type == TokenType::LESS) depth++;
+                else if (token.type == TokenType::GREATER) depth--;
+            }
+        }
+
+        // No pointer suffix '*' — ambiguous with multiplication in cast context
+        // No optional suffix '?' — ambiguous with ternary
 
         return typeName;
     }

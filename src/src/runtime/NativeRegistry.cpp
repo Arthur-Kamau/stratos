@@ -130,6 +130,7 @@ void NativeRegistry::initializeStdlib() {
     initHTTP();      // HTTP server and client
     initAsync();     // Async/await primitives
     initGui();       // GUI widget system (SDL2/Skia)
+    initAnimation(); // GUI animation system
 }
 
 // ============================================================================

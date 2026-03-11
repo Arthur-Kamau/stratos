@@ -1,4 +1,6 @@
 #include "stratos/STUITranspiler.h"
+#include "stratos/Lexer.h"
+#include "stratos/Parser.h"
 #include <iostream>
 #include <algorithm>
 #include <map>
@@ -204,6 +206,12 @@ std::vector<std::unique_ptr<Stmt>> STUITranspiler::transpileImports(const STUIFi
 
 std::unique_ptr<Stmt> STUITranspiler::transpileComponent(const ComponentDecl& component) {
     std::vector<std::unique_ptr<Stmt>> bodyStmts;
+
+    // Collect state names for signal-aware transpilation
+    currentStateNames_.clear();
+    for (const auto& state : component.states) {
+        currentStateNames_.insert(state.name);
+    }
 
     // State declarations → gui.State() calls
     for (const auto& state : component.states) {
@@ -419,8 +427,23 @@ std::unique_ptr<Expr> STUITranspiler::transpileWidget(const WidgetNode& widget,
         resolvedType = "FixedSpacer";
     }
 
+    // Check if Text widget has state-dependent interpolated strings (needs bindText)
+    bool needsTextBinding = false;
+    if (widget.widgetType == "Text" && !widget.arguments.empty() && !currentStateNames_.empty()) {
+        auto* interp = dynamic_cast<const stui::InterpolatedStringExpr*>(widget.arguments[0].get());
+        if (interp) {
+            const std::string& raw = interp->raw;
+            for (const auto& sn : currentStateNames_) {
+                if (raw.find("${" + sn + "}") != std::string::npos) {
+                    needsTextBinding = true;
+                    break;
+                }
+            }
+        }
+    }
+
     // If no styling needed, return the call directly
-    if (styleProps.empty() && widget.events.empty()) {
+    if (styleProps.empty() && widget.events.empty() && !needsTextBinding) {
         return makeCall(resolvedType, std::move(callArgs));
     }
 
@@ -543,6 +566,193 @@ std::unique_ptr<Expr> STUITranspiler::transpileWidget(const WidgetNode& widget,
             setupStmts.push_back(makeExprStmt(makeCall("setTextAlign", std::move(args))));
         }
         // Other properties silently ignored for now
+    }
+
+    // Generate event handler bindings (signal-aware closures)
+    for (const auto& event : widget.events) {
+        auto* lam = dynamic_cast<const stui::LambdaExpr*>(event.handler.get());
+        if (!lam) continue;
+
+        if (!lam->bodySource.empty()) {
+            // Transform state variable assignments in the body:
+            //   count += 1  ->  count.set(count.get() + 1)
+            //   count -= 1  ->  count.set(count.get() - 1)
+            //   count = 0   ->  count.set(0)
+            std::string body = lam->bodySource;
+            for (const auto& stateName : currentStateNames_) {
+                // Handle +=
+                std::string plusEq = stateName + " += ";
+                size_t pos = 0;
+                while ((pos = body.find(plusEq, pos)) != std::string::npos) {
+                    size_t exprStart = pos + plusEq.size();
+                    size_t semi = body.find(';', exprStart);
+                    if (semi == std::string::npos) semi = body.size();
+                    std::string expr = body.substr(exprStart, semi - exprStart);
+                    std::string replacement = stateName + ".set(" + stateName + ".get() + " + expr + ")";
+                    body.replace(pos, semi - pos, replacement);
+                    pos += replacement.size();
+                }
+
+                // Handle -=
+                std::string minusEq = stateName + " -= ";
+                pos = 0;
+                while ((pos = body.find(minusEq, pos)) != std::string::npos) {
+                    size_t exprStart = pos + minusEq.size();
+                    size_t semi = body.find(';', exprStart);
+                    if (semi == std::string::npos) semi = body.size();
+                    std::string expr = body.substr(exprStart, semi - exprStart);
+                    std::string replacement = stateName + ".set(" + stateName + ".get() - " + expr + ")";
+                    body.replace(pos, semi - pos, replacement);
+                    pos += replacement.size();
+                }
+
+                // Handle simple = (must come after += and -=)
+                std::string eq = stateName + " = ";
+                pos = 0;
+                while ((pos = body.find(eq, pos)) != std::string::npos) {
+                    // Make sure it's not part of += or -= by checking preceding char
+                    if (pos > 0 && (body[pos - 1] == '+' || body[pos - 1] == '-')) {
+                        pos++;
+                        continue;
+                    }
+                    // Also skip if preceded by . (e.g. count.set)
+                    if (pos > 0 && body[pos - 1] == '.') {
+                        pos++;
+                        continue;
+                    }
+                    size_t exprStart = pos + eq.size();
+                    size_t semi = body.find(';', exprStart);
+                    if (semi == std::string::npos) semi = body.size();
+                    std::string expr = body.substr(exprStart, semi - exprStart);
+                    std::string replacement = stateName + ".set(" + expr + ")";
+                    body.replace(pos, semi - pos, replacement);
+                    pos += replacement.size();
+                }
+            }
+
+            // Build the lambda source
+            std::string lambdaSource = "fn(";
+            for (size_t i = 0; i < lam->params.size(); i++) {
+                if (i > 0) lambdaSource += ", ";
+                lambdaSource += lam->params[i].lexeme;
+            }
+            lambdaSource += ") {\n" + body + "\n}";
+
+            // Parse the lambda using Stratos lexer/parser
+            try {
+                static const std::string stuiEventFile = "<stui-event>";
+                stratos::Lexer lexer(lambdaSource, stuiEventFile);
+                auto tokens = lexer.scanTokens();
+                stratos::Parser parser(tokens);
+                auto stmts = parser.parse();
+
+                if (!stmts.empty()) {
+                    auto* exprStmt = dynamic_cast<ExpressionStmt*>(stmts[0].get());
+                    if (exprStmt && exprStmt->expression) {
+                        auto* lambdaExpr = dynamic_cast<stratos::LambdaExpr*>(exprStmt->expression.get());
+                        if (lambdaExpr) {
+                            auto lambdaPtr = std::unique_ptr<Expr>(exprStmt->expression.release());
+
+                            std::string bindFn;
+                            if (event.eventName == "onClick") bindFn = "bindClick";
+                            else if (event.eventName == "onChange") bindFn = "bindChange";
+                            else continue;
+
+                            std::vector<std::unique_ptr<Expr>> bindArgs;
+                            bindArgs.push_back(makeVar(tmpVar));
+                            bindArgs.push_back(std::move(lambdaPtr));
+                            setupStmts.push_back(makeExprStmt(makeCall(bindFn, std::move(bindArgs))));
+                        }
+                    }
+                }
+
+                // Keep parsed stmts alive
+                parsedEventStmts_.push_back(std::move(stmts));
+            } catch (const std::exception& e) {
+                std::cerr << "[STUI] Warning: failed to parse event handler: " << e.what() << std::endl;
+            }
+        }
+    }
+
+    // Generate reactive text bindings for Text widgets with state-dependent interpolated strings
+    if (widget.widgetType == "Text" && !widget.arguments.empty()) {
+        auto* interp = dynamic_cast<const stui::InterpolatedStringExpr*>(widget.arguments[0].get());
+        if (interp) {
+            // Check which state variables are referenced in the interpolated string
+            std::set<std::string> referencedStates;
+            const std::string& raw = interp->raw;
+            size_t searchPos = 0;
+            while (searchPos < raw.size()) {
+                auto dp = raw.find("${", searchPos);
+                if (dp == std::string::npos) break;
+                auto eb = raw.find('}', dp + 2);
+                if (eb == std::string::npos) break;
+                std::string exprStr = raw.substr(dp + 2, eb - dp - 2);
+                if (currentStateNames_.count(exprStr)) {
+                    referencedStates.insert(exprStr);
+                }
+                searchPos = eb + 1;
+            }
+
+            // For each referenced state, generate a bindText call
+            // bindText(stateName.id, widgetId, fn() string { return "interpolated string"; })
+            for (const auto& stateName : referencedStates) {
+                // Build the format lambda that reconstructs the interpolated string
+                // The lambda body: return "Count: " + toString(count.get())
+                // We'll use an interpolated string with .get() calls
+                std::string fmtLambdaSrc = "fn() string {\n    return \"";
+
+                // Rebuild the interpolated string with .get() calls
+                size_t fmtPos = 0;
+                while (fmtPos < raw.size()) {
+                    auto dp = raw.find("${", fmtPos);
+                    if (dp == std::string::npos) {
+                        fmtLambdaSrc += raw.substr(fmtPos);
+                        break;
+                    }
+                    fmtLambdaSrc += raw.substr(fmtPos, dp - fmtPos);
+                    auto eb = raw.find('}', dp + 2);
+                    if (eb == std::string::npos) {
+                        fmtLambdaSrc += raw.substr(fmtPos);
+                        break;
+                    }
+                    std::string exprStr = raw.substr(dp + 2, eb - dp - 2);
+                    if (currentStateNames_.count(exprStr)) {
+                        fmtLambdaSrc += "${" + exprStr + ".get()}";
+                    } else {
+                        fmtLambdaSrc += "${" + exprStr + "}";
+                    }
+                    fmtPos = eb + 1;
+                }
+                fmtLambdaSrc += "\";\n}";
+
+                try {
+                    static const std::string stuiBindFile = "<stui-bindtext>";
+                    stratos::Lexer lexer(fmtLambdaSrc, stuiBindFile);
+                    auto tokens = lexer.scanTokens();
+                    stratos::Parser parser(tokens);
+                    auto stmts = parser.parse();
+
+                    if (!stmts.empty()) {
+                        auto* exprStmt = dynamic_cast<ExpressionStmt*>(stmts[0].get());
+                        if (exprStmt && exprStmt->expression) {
+                            auto fmtLambda = std::unique_ptr<Expr>(exprStmt->expression.release());
+
+                            // Generate: bindText(stateName.id, widgetId, fmtLambda)
+                            std::vector<std::unique_ptr<Expr>> bindArgs;
+                            // stateName.id → member access (dotted identifier)
+                            bindArgs.push_back(makeVar(stateName + ".id"));
+                            bindArgs.push_back(makeVar(tmpVar));
+                            bindArgs.push_back(std::move(fmtLambda));
+                            setupStmts.push_back(makeExprStmt(makeCall("bindText", std::move(bindArgs))));
+                        }
+                    }
+                    parsedEventStmts_.push_back(std::move(stmts));
+                } catch (const std::exception& e) {
+                    std::cerr << "[STUI] Warning: failed to parse bindText lambda: " << e.what() << std::endl;
+                }
+            }
+        }
     }
 
     return makeVar(tmpVar);
@@ -693,10 +903,28 @@ std::unique_ptr<Expr> STUITranspiler::transpileExpr(const STUIExpr& expr) {
                 parts.emplace_back(raw.substr(pos));
                 break;
             }
-            // Extract expression string and create a VariableExpr for it
+            // Extract expression string and create appropriate expr
             std::string exprStr = raw.substr(dollarPos + 2, endBrace - dollarPos - 2);
-            parts.emplace_back(
-                std::make_unique<SVariableExpr>(makeIdentifier(exprStr)));
+            // If this is a state variable, generate stateName.get() call
+            if (currentStateNames_.count(exprStr)) {
+                auto objExpr = std::make_unique<SVariableExpr>(makeIdentifier(exprStr));
+                auto methodExpr = std::make_unique<SVariableExpr>(makeIdentifier("get"));
+                Token dotToken;
+                dotToken.type = TokenType::DOT;
+                dotToken.lexeme = ".";
+                auto dotExpr = std::make_unique<SBinaryExpr>(
+                    std::move(objExpr), dotToken, std::move(methodExpr));
+                Token paren;
+                paren.type = TokenType::LEFT_PAREN;
+                paren.lexeme = "(";
+                std::vector<std::unique_ptr<Expr>> noArgs;
+                auto callExpr = std::make_unique<SCallExpr>(
+                    std::move(dotExpr), paren, std::move(noArgs));
+                parts.emplace_back(std::move(callExpr));
+            } else {
+                parts.emplace_back(
+                    std::make_unique<SVariableExpr>(makeIdentifier(exprStr)));
+            }
             pos = endBrace + 1;
         }
         return std::make_unique<stratos::InterpolatedStringExpr>(std::move(parts));

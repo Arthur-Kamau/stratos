@@ -221,20 +221,7 @@ public:
     void visit(DestructuringDecl& stmt) override;
     void visit(SelectStmt& stmt) override;
 
-private:
-    // Forward declaration
-    struct Environment;
-
-    // Closure for lambdas/first-class functions
-    struct Closure {
-        std::vector<Token> params;
-        Stmt* body; // Non-owning pointer to AST
-        std::shared_ptr<Environment> env; // Captured environment (shared ownership)
-    };
-
-    // Runtime environment (variable storage)
-    // Uses shared_ptr for automatic lifetime management - environments are freed
-    // when no longer referenced by currentEnv, closures, or parent chains
+    // Runtime environment (variable storage) - public for Closure access
     struct Environment {
         std::unordered_map<std::string, RuntimeValue> variables;
         std::shared_ptr<Environment> parent = nullptr;
@@ -277,6 +264,17 @@ private:
         }
     };
 
+    // Closure for lambdas/first-class functions (public for GUI callback dispatch)
+    struct Closure {
+        std::vector<Token> params;
+        Stmt* body; // Non-owning pointer to AST
+        std::shared_ptr<Environment> env; // Captured environment (shared ownership)
+    };
+
+    // Execute a closure with arguments (public for GUI callback dispatch)
+    RuntimeValue executeCallback(const RuntimeValue& closureValue, const std::vector<RuntimeValue>& args);
+
+private:
     // Current execution environment - shared ownership allows closures to
     // keep environments alive as long as needed
     std::shared_ptr<Environment> currentEnv;
@@ -375,8 +373,6 @@ private:
                                     FunctionDecl* funcDecl);
 
     RuntimeValue instantiateClass(const std::string& className, const std::vector<RuntimeValue>& args);
-
-    RuntimeValue executeCallback(const RuntimeValue& closureValue, const std::vector<RuntimeValue>& args);
 
     // Concurrency support
     void spawnGoroutine(const RuntimeValue& closureValue);

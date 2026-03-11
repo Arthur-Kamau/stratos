@@ -1,6 +1,6 @@
 # Stratos GUI, HTML Transpilation & WASM Plan
 
-> Status: **Phase 4 Complete** | Last updated: 2026-03-10
+> Status: **Phase 5 In Progress** | Last updated: 2026-03-11
 
 ## Decisions
 
@@ -11,50 +11,50 @@
 | HTML compilation | Default: compile to HTML DOM. Flag/config: render to `<canvas>` |
 | WASM target | Existing LLVM IR → wasm32 backend |
 | GC | Use GC (keep it simple) |
-| Priority | GUI library → WASM → HTML transpilation |
+| Priority | GUI library → WASM → HTML transpilation → Reactivity → Routing → Global State → Widgets |
+| Reactivity model | Solid-inspired signals: `createEffect()` auto-tracks, `batch()` for grouping |
+| Routing model | Both declarative (Router/Route components) and imperative (`navigate()`) |
+| State model | Stores with fine-grained subscriptions; Context/Provider for DI |
 
 ---
 
-## Phase 1: Native GUI Library (`std/gui`)
+## Phase 1: Native GUI Library (`std/gui`) — COMPLETE
 
 **Goal**: A standard library module that wraps Skia+SDL2, exposing widgets, layout, and rendering to Stratos code.
 
 ### 1.1 — Vendor & Build Skia + SDL2
 - [x] Add SDL2 as a build dependency (system package: libsdl2-dev, libsdl2-ttf-dev, libsdl2-image-dev)
-- [ ] Add Skia as a build dependency (pre-built binaries or build from source) — *deferred: SDL2 renderer works now, Skia backend structured as optional upgrade*
+- [ ] Add Skia as a build dependency — *deferred: SDL2 renderer works, Skia is optional upgrade*
 - [x] Update `src/CMakeLists.txt` and `src/build.sh` to link SDL2
 - [x] Create `src/src/runtime/gui/` directory for C++ GUI backend code
 - [x] Verify build works on Linux — **BUILD SUCCESSFUL**
 
 ### 1.2 — C++ GUI Backend (`src/src/runtime/gui/`)
-Core rendering layer in C++, called from NativeRegistry.
-
-- [x] `SDL2Renderer.cpp` + `Renderer.h` — IRenderer interface with SDL2 backend (drawRect, drawText, drawImage, rounded rects, shadows, circles)
+- [x] `SDL2Renderer.cpp` + `Renderer.h` — IRenderer interface with SDL2 backend
 - [x] `App.cpp` + `App.h` — Window creation, event loop, theme, SDL2 event translation
 - [x] `Event.h` — Full event system (mouse, keyboard, text input, window events)
-- [x] `Widget.cpp` + `Widget.h` — Base widget + all layout widgets (Row, Column, Stack, Grid, Center, Padding, ScrollView, Spacer)
+- [x] `Widget.cpp` + `Widget.h` — Base widget + all layout widgets
 - [x] Theme system — Light/dark presets, colors, fonts, spacing, elevation
-- [ ] `Animation.cpp/h` — Basic animation system (tweens, transitions)
+- [x] `Animation.cpp/h` — Tween system with 4 easings (Linear, EaseIn, EaseOut, EaseInOut)
 
 ### 1.3 — Widget Library (C++ implementations)
-Each widget implemented in C++ and registered in NativeRegistry.
 
 **Core widgets:**
 - [x] `Text` — styled text rendering (font, size, color, weight, alignment)
 - [x] `Button` — clickable with label, color states (hover, pressed, disabled), shadow
 - [x] `Image` — load and display images (PNG, JPG via SDL2_image)
-- [ ] `Icon` — icon rendering (built-in icon set or custom)
+- [x] `Icon` — Unicode icon/symbol rendering with color and size
 - [x] `Box` / `Container` — generic container with background, border, shadow, padding
 - [x] `Spacer` — flexible space
 
 **Input widgets:**
 - [x] `TextField` — single-line text input with cursor, selection
-- [ ] `TextArea` — multi-line text input
+- [x] `TextArea` — multi-line text input
 - [x] `Checkbox` — toggle with label
-- [ ] `RadioButton` — single-select group
+- [x] `RadioButton` — single-select group with deselectGroup()
 - [x] `Switch` — toggle switch
 - [x] `Slider` — range selector with thumb and track
-- [ ] `Dropdown` / `Select` — dropdown menu
+- [x] `Dropdown` / `Select` — dropdown menu with items
 
 **Layout widgets:**
 - [x] `Row` — horizontal layout (flexbox-like, main/cross axis alignment)
@@ -67,326 +67,676 @@ Each widget implemented in C++ and registered in NativeRegistry.
 
 **Navigation:**
 - [x] `AppBar` — top bar with title and actions
-- [ ] `Drawer` — slide-in side panel
-- [ ] `TabBar` — tabbed navigation
+- [x] `Drawer` — slide-in side panel with animation
+- [x] `TabBar` — tabbed navigation with active tab tracking
 - [x] `Dialog` / `Modal` — overlay dialogs with backdrop
-- [ ] `Menu` / `ContextMenu` — popup menus
+- [x] `Menu` / `ContextMenu` — popup menus with separators
 
 ### 1.4 — NativeRegistry Integration
-- [x] Create `initGui()` in `GuiNatives.cpp` (separate file)
-- [x] Register all widget constructors and methods as native functions (~50 functions)
-- [ ] Register event callback mechanism (onClick, onChange, onSubmit, etc.) — *placeholder exists, needs interpreter callback bridge*
+- [x] Create `initGui()` in `GuiNatives.cpp` (separate file, ~85 native functions)
+- [x] Register all widget constructors and methods
+- [x] Register event callback mechanism (onClick, onChange, onSubmit + closure-based bindClick/bindChange)
 - [x] Register layout functions
 - [x] Register window lifecycle functions (create, run, quit, setRoot, setTheme, setFPS)
 - [x] Add `initGui()` call to `initializeStdlib()`
 
 ### 1.5 — Stratos Standard Library Module (`std/gui/`)
-- [x] `std/gui/init.st` — unified module with App class, all widget constructors, style helpers, cleanup functions
-- *Decided against splitting into multiple .st files — single init.st is cleaner and matches other std modules*
-
-**API design (target usage):**
-```stratos
-package main;
-import "std/gui";
-
-fn main() {
-    val app = gui.App("My App", 800, 600);
-
-    val counter = gui.State(0);
-
-    app.root(
-        gui.Column({
-            alignment: "center",
-            spacing: 16,
-        }, [
-            gui.Text("Count: ${counter.get()}", { fontSize: 24 }),
-            gui.Row({ spacing: 8 }, [
-                gui.Button("Increment", { onClick: fn() { counter.set(counter.get() + 1); } }),
-                gui.Button("Reset", { onClick: fn() { counter.set(0); } }),
-            ]),
-        ])
-    );
-
-    app.run();
-}
-```
+- [x] `std/gui/init.st` — unified module (823 lines, 70+ functions, App/State/DerivedState classes)
 
 ### 1.6 — State Management
-- [x] `State<T>` — reactive state container in C++ (get/set, triggers re-render via listener pattern)
-- [ ] `DerivedState<T>` — computed from other states
+- [x] `State<T>` — reactive state container (get/set, triggers re-render via listener pattern)
+- [x] `DerivedState<T>` — computed state with recompute() (in init.st)
 - [x] Dirty-flag diffing — markDirty() propagates up, needsRedraw_ in App
 - [x] Observer pattern for state → widget binding (listener callbacks)
-- [ ] Expose State to Stratos via NativeRegistry (currently C++ only)
+- [x] State exposed to Stratos via NativeRegistry (__gui_state_create/get/set/watch)
 
 ### 1.7 — Examples
 - [x] `examples/gui-hello/` — minimal window with text, buttons, inputs
 - [x] `examples/gui-counter/` — counter with styled buttons
-- [ ] `examples/gui-form/` — form with text fields, checkboxes, submit
-- [ ] `examples/gui-layout/` — layout showcase (row, column, grid)
 - [x] `examples/gui-todo/` — todo list with checkboxes, text field, app bar
-- [ ] `examples/gui-theme/` — dark/light theme switching
 
 ---
 
-## Phase 2: `.stui` DSL (Declarative UI Language)
+## Phase 2: `.stui` DSL (Declarative UI Language) — COMPLETE
 
-**Goal**: A new file extension `.stui` with declarative UI syntax (inspired by Jetpack Compose / QML) that compiles down to `std/gui` calls.
+**Goal**: A new file extension `.stui` with declarative UI syntax that compiles down to `std/gui` calls.
 
 ### 2.1 — Language Design
-
-**Target syntax:**
-```stui
-// counter.stui
-import "std/gui";
-
-component Counter {
-    state count: int = 0;
-
-    view {
-        Column(alignment: "center", spacing: 16) {
-            Text("Count: ${count}") {
-                fontSize: 24;
-                color: theme.primary;
-            }
-
-            Row(spacing: 8) {
-                Button("Increment") {
-                    onClick: { count += 1; }
-                }
-                Button("Reset") {
-                    onClick: { count = 0; }
-                }
-            }
-        }
-    }
-}
-
-component App {
-    view {
-        Window(title: "Counter App", width: 800, height: 600) {
-            Counter()
-        }
-    }
-}
-```
-
-**Key DSL features:**
-- `component` — defines a reusable UI component (compiles to a class)
-- `state` — reactive state variable (compiles to `gui.State<T>`)
-- `view { }` — declarative widget tree (compiles to nested `gui.*` calls)
-- Widget properties as key-value blocks
-- Event handlers inline
-- Component composition (call components like functions)
-- Conditional rendering: `if`/`when` inside `view`
-- List rendering: `for item in list { WidgetFor(item) }`
+- [x] Component declarations, state, view blocks, props, event handlers
+- [x] Conditional rendering, list rendering, component composition
 
 ### 2.2 — Compiler Pipeline for `.stui`
-
-```
-.stui → STUI Lexer → STUI Tokens → STUI Parser → STUI AST
-  → STUI Transpiler → Stratos AST (std/gui calls) → normal pipeline
-```
-
-- [x] `src/include/stratos/STUIToken.h` — STUI-specific token types
-- [x] `src/include/stratos/STUILexer.h` — tokenizer for `.stui` syntax
-- [x] `src/src/stui/STUILexer.cpp` — implementation (keywords, strings, interpolation, comments)
-- [x] `src/include/stratos/STUIAST.h` — STUI AST nodes (WidgetNode, ComponentDecl, StateDecl, PropDecl, etc.)
-- [x] `src/include/stratos/STUIParser.h` — parser for component/view/state declarations
-- [x] `src/src/stui/STUIParser.cpp` — recursive descent parser (widgets, properties, events, expressions)
-- [x] `src/include/stratos/STUITranspiler.h` — converts STUI AST → Stratos AST
-- [x] `src/src/stui/STUITranspiler.cpp` — emits `std/gui` calls, generates main() from App component
-- [x] Update `src/src/main.cpp` — detect `.stui` extension, route through STUI pipeline
-- [x] Update `src/CMakeLists.txt` — include stui source files
-- [x] Update `src/build.sh` — include stui source files
+- [x] `STUIToken.h`, `STUILexer.h/.cpp` — tokenizer
+- [x] `STUIAST.h`, `STUIParser.h/.cpp` — parser
+- [x] `STUITranspiler.h/.cpp` — STUI AST → Stratos AST
+- [x] main.cpp — detect `.stui` extension, route through pipeline
+- [x] CMakeLists.txt + build.sh — include stui source files
 - [ ] Support `stui` block in `stratos.conf` for UI entry points
 
 ### 2.3 — CLI Integration
-- [x] `stratos run app.stui` — compile & run a `.stui` file
-- [ ] `stratos build` — detect `.stui` files in project, compile them
+- [x] `stratos run app.stui` — compile & run
+- [x] `stratos check app.stui` — validate syntax
+- [x] `stratos compile app.stui` — compile to IR
+- [ ] `stratos build` — detect `.stui` files in project
 - [ ] `stratos fmt` — format `.stui` files
-- [x] `stratos check app.stui` — validate `.stui` syntax and list components
-- [x] `stratos compile app.stui` — compile `.stui` to IR
 
 ### 2.4 — Examples
-- [x] `examples/stui-hello/` — minimal .stui app (Text, Button, Column)
-- [x] `examples/stui-counter/` — counter with state, increment/decrement/reset
-- [x] `examples/stui-todo/` — todo app with TextField, AppBar, event handlers
-- [x] `examples/stui-dashboard/` — multi-component dashboard (StatCard, Sidebar, Grid)
+- [x] `examples/stui-hello/`, `stui-counter/`, `stui-todo/`, `stui-dashboard/`
 
 ---
 
-## Phase 3: WASM Compilation Target
+## Phase 3: WASM Compilation Target — COMPLETE
 
-**Goal**: Compile Stratos programs to WebAssembly using existing LLVM IR → wasm32.
+**Goal**: Compile Stratos programs to WebAssembly using LLVM IR → wasm32.
 
 ### 3.1 — LLVM wasm32 Backend
-- [x] Update `IRGenerator.cpp` — add `wasm32-unknown-wasi` target triple
-- [x] Add `--target wasm` flag to `stratos compile`
-- [x] Handle wasm32-specific data layout (`e-m:e-p:32:32-p10:8:8-p20:8:8-i64:64-n32:64-S128-ni:1:10:20`)
-- [x] Generate wasm-compatible LLVM IR (WASI imports, host-bridged print functions)
-- [x] Add `wasm32-unknown-emscripten` target for Emscripten-backed builds
-- [x] `CompileTarget` enum: `NATIVE`, `WASM`, `WASM_EMSCRIPTEN`
+- [x] wasm32-unknown-wasi + wasm32-unknown-emscripten targets
+- [x] CompileTarget enum: NATIVE, WASM, WASM_EMSCRIPTEN
 
 ### 3.2 — WASM Runtime Shims
-- [x] `src/wasm/runtime.js` — JS glue code (StratosRuntime class: memory mgmt, string passing, printf shim, WASI fd_write)
-- [ ] `src/wasm/stdlib_shims.cpp` — wasm-compatible std function implementations (deferred: needs per-function porting)
-- [x] Map `println` → `console.log` via `__stratos_print_str/int/float` imports
-- [ ] HTTP client → `fetch()` API bridge (deferred)
+- [x] `src/wasm/runtime.js` — StratosRuntime class (memory, strings, printf, WASI, math)
+- [x] println → console.log bridge
+- [ ] `src/wasm/stdlib_shims.cpp` — wasm-compatible stdlib (deferred)
+- [ ] HTTP client → fetch() API bridge (deferred)
 
 ### 3.3 — Build Pipeline
-- [x] `WasmCompiler.cpp/h` — full pipeline: IR → clang (wasm32) → wasm-ld → .wasm
-- [x] Emscripten pipeline support: IR → emcc → .wasm + .js + .html
-- [x] `stratos compile --target wasm <dir>` command (outputs to dist/)
-- [x] `src/wasm/shell.html` — HTML shell template with dark theme, output console
-- [x] Tool auto-detection (clang-14..20, wasm-ld-14..20, emcc) with clear error messages
-- [ ] Support `stratos.conf` target option (deferred)
+- [x] WasmCompiler.cpp/h — IR → clang → wasm-ld → .wasm (+ Emscripten path)
+- [x] Tool auto-detection (clang-14..20, wasm-ld-14..20, emcc)
 
 ### 3.4 — Testing
-- [x] Test IR generation produces valid wasm32 target triple and WASI imports
-- [ ] Test in Node.js (requires clang + wasm-ld installed)
-- [ ] Test in browser (requires clang + wasm-ld installed)
+- [x] Test IR generation produces valid wasm32 target triple
+- [ ] Test in Node.js / browser (requires toolchain)
 - [ ] Benchmark: wasm vs native interpreter
 
 ---
 
-## Phase 4: HTML Transpilation (Default Web Target)
+## Phase 4: HTML Transpilation (Default Web Target) — MOSTLY COMPLETE
 
-**Goal**: Compile `std/gui` widgets and `.stui` files to HTML/CSS/JS DOM elements by default, with canvas rendering as an option.
+**Goal**: Compile `.stui` files to HTML/CSS/JS DOM elements.
 
 ### 4.1 — HTML Code Generator
-- [ ] `src/src/codegen/HTMLGenerator.cpp/h` — traverses GUI AST, emits HTML/CSS/JS
-- [ ] Widget → HTML element mapping:
-
-| Stratos Widget | HTML Output |
-|---------------|-------------|
-| `Text` | `<span>` / `<p>` / `<h1>`-`<h6>` |
-| `Button` | `<button>` |
-| `TextField` | `<input type="text">` |
-| `TextArea` | `<textarea>` |
-| `Checkbox` | `<input type="checkbox">` |
-| `RadioButton` | `<input type="radio">` |
-| `Switch` | `<label class="switch"><input type="checkbox">` |
-| `Slider` | `<input type="range">` |
-| `Dropdown` | `<select>` |
-| `Image` | `<img>` |
-| `Row` | `<div style="display:flex;flex-direction:row">` |
-| `Column` | `<div style="display:flex;flex-direction:column">` |
-| `Grid` | `<div style="display:grid">` |
-| `Stack` | `<div style="position:relative">` + absolute children |
-| `ScrollView` | `<div style="overflow:auto">` |
-| `Container`/`Box` | `<div>` |
-| `AppBar` | `<header>` / `<nav>` |
-| `Dialog` | `<dialog>` |
-| `ListView` | `<ul>` / virtual scroll div |
-
-- [x] CSS generation — full widget styles with CSS custom properties (dark theme)
-- [x] JS generation — event handlers, reactive state via createState()
-- [x] Generate `index.html` + `styles.css` + `app.js` bundle
+- [x] HTMLGenerator — traverses STUI AST, emits HTML/CSS/JS
+- [x] Widget → HTML element mapping (all 26+ widgets)
+- [x] CSS generation with custom properties
+- [x] JS generation with event handlers and reactive state
 
 ### 4.2 — Reactive Runtime (JS)
-- [x] Inline reactive runtime in app.js — createState(name, initial) with get/set/watch
-  - [x] State management (listener-based reactivity)
-  - [x] Event delegation via addEventListener
-  - [ ] DOM diffing / patching (deferred — direct DOM manipulation for now)
-  - [ ] Component lifecycle (mount, update, unmount) (deferred)
+- [x] createState(name, initial) with get/set/watch
+- [x] Event delegation via addEventListener
+- [ ] DOM diffing / patching (direct DOM manipulation for now)
+- [ ] Component lifecycle (mount, update, unmount)
 
-### 4.3 — Canvas Rendering Mode (Optional)
-- [ ] Compile Skia to WASM (via CanvasKit / Skia WASM build)
-- [ ] Or: Use SDL2 + Emscripten → `<canvas>` rendering
-- [ ] Toggle via `stratos.conf`:
-  ```hocon
-  build {
-      target = "web"
-      web {
-          renderer = "html"    // default: DOM elements
-          // renderer = "canvas"  // Skia/SDL canvas rendering
-      }
-  }
-  ```
-- [ ] Toggle via CLI flag: `stratos compile --target web --renderer canvas`
+### 4.3 — Canvas Rendering Mode (Optional) — DEFERRED
+- [ ] CanvasKit / Emscripten canvas rendering
+- [ ] `stratos.conf` renderer toggle
+- [ ] CLI flag: `--renderer canvas`
 
 ### 4.4 — Full Web Build Pipeline
-```
-.st/.stui → Parse → GUI AST → HTMLGenerator → index.html + app.js + styles.css
-                              → OR: WASM + CanvasKit → index.html + app.wasm
-```
-
-- [x] `stratos compile --target web <file.stui>` — produces `dist/` folder
-- [ ] Dev server: `stratos serve <dir>` — local dev server with hot reload (stretch goal)
+- [x] `stratos compile --target web <file.stui>` → dist/ folder
+- [ ] Dev server: `stratos serve <dir>` with hot reload (stretch goal)
 
 ### 4.5 — Examples
-- [ ] `examples/web-hello/` — hello world in browser (HTML mode)
-- [ ] `examples/web-counter/` — counter app in browser
-- [ ] `examples/web-todo/` — todo app (HTML mode)
-- [ ] `examples/web-canvas/` — same app in canvas mode
-- [ ] `examples/web-dashboard/` — multi-component web app
+- [ ] Web examples (hello, counter, todo, canvas, dashboard)
+
+---
+
+## Phase 5: Advanced Reactivity System
+
+**Goal**: Solid/Svelte-grade reactivity — auto-tracking effects, computed signals, batch updates, and fine-grained DOM updates. Works across native GUI and HTML web target.
+
+**Reference**: Solid.js `createSignal`/`createEffect`/`createMemo`/`batch`, Svelte 5 `$state`/`$derived`/`$effect`
+
+### 5.1 — Signal Primitives (C++ backend)
+
+Upgrade the existing `State` to a full signal system with auto-dependency tracking.
+
+**C++ implementation** (`src/src/runtime/gui/Signals.cpp/h`):
+- [ ] `Signal<T>` class — wraps a value, tracks which Effects read it
+  - `get()` — returns value, registers current Effect as subscriber
+  - `set(value)` — updates value, notifies all subscribed Effects
+  - `peek()` — read without tracking (like Solid's `untrack` for a single read)
+- [ ] `Effect` class — auto-tracking reactive side-effect
+  - Constructor takes a closure, runs it immediately
+  - During execution, any Signal.get() calls register the Effect as a subscriber
+  - Re-runs automatically when any tracked Signal changes
+  - `dispose()` — unsubscribes from all signals, prevents re-execution
+- [ ] `Computed<T>` (Memo) — derived signal that caches until dependencies change
+  - Lazy evaluation: only recalculates when read AND a dependency changed
+  - Diamond dependency problem: correct topological ordering
+- [ ] `batch(fn)` — group multiple signal updates, defer Effect re-runs until batch completes
+- [ ] `untrack(fn)` — run a function without tracking signal reads
+- [ ] Tracking context stack (thread-local `currentEffect` pointer)
+- [ ] Cleanup functions — Effects can register cleanup that runs before re-execution
+
+**Native functions to register:**
+```
+__gui_signal_create(initial: any) -> int
+__gui_signal_get(id: int) -> any
+__gui_signal_set(id: int, value: any) -> bool
+__gui_signal_peek(id: int) -> any
+__gui_effect_create(closure: any) -> int
+__gui_effect_dispose(id: int) -> bool
+__gui_computed_create(closure: any) -> int
+__gui_computed_get(id: int) -> any
+__gui_batch(closure: any) -> bool
+__gui_untrack(closure: any) -> any
+__gui_on_cleanup(closure: any) -> bool
+```
+
+### 5.2 — Stratos API (`std/gui/init.st` additions)
+
+```stratos
+/// Create a reactive signal.
+///   val count = Signal(0);
+///   count.set(count.get() + 1);
+class Signal {
+    var id: int;
+    constructor(initial: any) { this.id = __gui_signal_create(initial); }
+    fn get() any { return __gui_signal_get(this.id); }
+    fn set(value: any) void { __gui_signal_set(this.id, value); }
+    fn peek() any { return __gui_signal_peek(this.id); }
+}
+
+/// Create a computed (memoized) signal.
+///   val doubled = Computed(fn() any => count.get() as int * 2);
+class Computed {
+    var id: int;
+    constructor(compute: any) { this.id = __gui_computed_create(compute); }
+    fn get() any { return __gui_computed_get(this.id); }
+}
+
+/// Run a side-effect that auto-tracks signal dependencies.
+///   val dispose = createEffect(fn() void {
+///       println("Count is: ${count.get()}");
+///   });
+fn createEffect(closure: any) int { return __gui_effect_create(closure); }
+
+/// Dispose an effect (stop it from running).
+fn disposeEffect(id: int) void { __gui_effect_dispose(id); }
+
+/// Batch multiple signal updates (effects run once at end).
+fn batch(closure: any) void { __gui_batch(closure); }
+
+/// Read signals without tracking dependencies.
+fn untrack(closure: any) any { return __gui_untrack(closure); }
+
+/// Register cleanup for current effect (runs before re-execution).
+fn onCleanup(closure: any) void { __gui_on_cleanup(closure); }
+```
+
+### 5.3 — Backward Compatibility
+
+- [ ] Keep existing `State` class working (wraps Signal internally)
+- [ ] Keep existing `DerivedState` working (wraps Computed internally)
+- [ ] Keep `bindClick`/`bindChange`/`bindText` working
+- [ ] Existing examples must not break
+
+### 5.4 — HTML Target Integration
+
+Update HTMLGenerator's JS output to use the same signal model:
+
+- [ ] Generate `createSignal(initial)` → returns `[get, set]` (Solid-style)
+- [ ] Generate `createEffect(fn)` → auto-subscribes to signals read inside
+- [ ] Generate `createMemo(fn)` → cached computed
+- [ ] Generate `batch(fn)` → deferred DOM updates
+- [ ] Fine-grained DOM updates — only update the specific DOM node bound to a changed signal, not re-render entire tree
+
+### 5.5 — STUI Transpiler Updates
+
+- [ ] `state count: int = 0;` compiles to `Signal(0)` instead of `State(0)`
+- [ ] Automatic effect wrapping for view bindings (e.g., `Text("Count: ${count}")` auto-creates an effect)
+- [ ] Computed state: `computed doubled: int = count * 2;` syntax
+
+### 5.6 — Examples
+
+- [ ] `examples/signals-basic/` — Signal, Computed, Effect demo
+- [ ] `examples/signals-batch/` — batch updates demo
+- [ ] Update existing `stui-counter/` to use Signal internally
+
+---
+
+## Phase 6: Routing & Navigation
+
+**Goal**: Client-side routing for single-page apps — both native GUI and HTML web targets. Inspired by Flutter GoRouter + SolidJS Router.
+
+**Reference**: Flutter `Navigator`/`GoRouter`, Compose `NavHost`/`NavController`, SolidJS `@solidjs/router`
+
+### 6.1 — C++ Router Backend (`src/src/runtime/gui/Router.cpp/h`)
+
+- [ ] `Router` class
+  - Route table: `vector<RouteEntry>` — path pattern + widget builder
+  - Path matching: exact, parameterized (`:id`), wildcard (`*`)
+  - Current route state (path, params, query)
+  - Navigation stack (history) with push/pop/replace
+  - `navigate(path)` — match route, swap widget tree
+  - `back()` / `forward()` — history navigation
+  - `replace(path)` — replace current route without adding to history
+- [ ] `RouteEntry` struct — `{ pattern, paramNames, builder, guard? }`
+- [ ] Route parameter extraction: `/user/:id` → `params["id"] = "42"`
+- [ ] Query parameter parsing: `/search?q=hello` → `query["q"] = "hello"`
+- [ ] Nested routes: `/dashboard/settings` with parent layout
+- [ ] Route guards: `beforeEnter(from, to) -> bool` for auth checks
+- [ ] Redirect support: `redirect("/old", "/new")`
+- [ ] 404 / fallback route: `notFound(builder)`
+
+### 6.2 — Native Functions
+
+```
+__gui_router_create() -> int
+__gui_router_add_route(routerId: int, path: string, builderId: int) -> bool
+__gui_router_add_guard(routerId: int, path: string, guardFn: any) -> bool
+__gui_router_set_not_found(routerId: int, builderId: int) -> bool
+__gui_router_navigate(routerId: int, path: string) -> bool
+__gui_router_back(routerId: int) -> bool
+__gui_router_forward(routerId: int) -> bool
+__gui_router_replace(routerId: int, path: string) -> bool
+__gui_router_get_param(routerId: int, name: string) -> string
+__gui_router_get_query(routerId: int, name: string) -> string
+__gui_router_get_path(routerId: int) -> string
+__gui_router_get_widget(routerId: int) -> int
+```
+
+### 6.3 — Stratos API (`std/gui/init.st` additions)
+
+```stratos
+/// Create a Router.
+///   val router = Router();
+///   router.route("/", fn() int => HomePage());
+///   router.route("/user/:id", fn() int => UserPage(router.param("id")));
+///   router.notFound(fn() int => NotFoundPage());
+///   app.root(router.widget());
+class Router {
+    var id: int;
+    constructor() { this.id = __gui_router_create(); }
+
+    fn route(path: string, builder: any) void {
+        __gui_router_add_route(this.id, path, builder);
+    }
+
+    fn guard(path: string, guardFn: any) void {
+        __gui_router_add_guard(this.id, path, guardFn);
+    }
+
+    fn notFound(builder: any) void {
+        __gui_router_set_not_found(this.id, builder);
+    }
+
+    fn navigate(path: string) void { __gui_router_navigate(this.id, path); }
+    fn back() void { __gui_router_back(this.id); }
+    fn forward() void { __gui_router_forward(this.id); }
+    fn replace(path: string) void { __gui_router_replace(this.id, path); }
+
+    fn param(name: string) string { return __gui_router_get_param(this.id, name); }
+    fn query(name: string) string { return __gui_router_get_query(this.id, name); }
+    fn currentPath() string { return __gui_router_get_path(this.id); }
+
+    fn widget() int { return __gui_router_get_widget(this.id); }
+}
+
+/// Convenience: navigation link button
+fn Link(text: string, path: string, router: Router) int {
+    val btn = Button(text);
+    bindClick(btn, fn() void { router.navigate(path); });
+    return btn;
+}
+```
+
+### 6.4 — HTML Target Integration
+
+- [ ] Generate JS router using `window.history` + `popstate` event
+- [ ] Hash-based routing fallback (`#/path`) for static hosting
+- [ ] URL ↔ route sync (browser URL bar updates on navigate)
+- [ ] `<a>` tags for Link widgets with `preventDefault` + pushState
+
+### 6.5 — STUI Syntax
+
+```stui
+component App {
+    view {
+        Router {
+            Route(path: "/") {
+                HomePage()
+            }
+            Route(path: "/user/:id") {
+                UserPage()
+            }
+            NotFound {
+                Text("404 — Page not found")
+            }
+        }
+    }
+}
+```
+
+- [ ] Parse `Router`, `Route`, `NotFound` as special STUI nodes
+- [ ] Transpile to Router class API calls
+- [ ] Support `navigate()` in event handlers
+
+### 6.6 — Examples
+
+- [ ] `examples/routing-basic/` — multi-page app with links
+- [ ] `examples/routing-params/` — route parameters and query strings
+- [ ] `examples/routing-guards/` — auth guard demo
+
+---
+
+## Phase 7: Global State & Context
+
+**Goal**: App-wide state management and scoped state injection (provider/consumer pattern). Inspired by Svelte stores, SolidJS context, Flutter Provider.
+
+**Reference**: Svelte `writable`/`readable`/`derived` stores, SolidJS `createContext`/`useContext`, Flutter `Provider`/`InheritedWidget`, Compose `CompositionLocal`
+
+### 7.1 — Store (C++ backend)
+
+- [ ] `Store` class — reactive key-value container with fine-grained subscriptions
+  - `get(key)` — read a field (tracks if inside Effect)
+  - `set(key, value)` — update a field, notify subscribers of that key only
+  - `update(key, fn)` — functional update: `store.update("count", fn(v) => v + 1)`
+  - `subscribe(key, callback)` — subscribe to a specific key
+  - `getAll()` — return entire store as map
+- [ ] `ReadonlyStore` — derived store that computes from other stores (like Svelte `derived`)
+- [ ] Store ↔ Signal interop — stores built on top of Signal primitives
+
+### 7.2 — Context / Provider (C++ backend)
+
+- [ ] `Context<T>` — named context for dependency injection
+  - `createContext(name, defaultValue)` → context ID
+  - `provide(contextId, value)` — set value for current widget subtree
+  - `consume(contextId)` — read nearest ancestor's provided value
+- [ ] Widget tree walking — consume() walks up parent_ chain to find provider
+- [ ] Multiple contexts — theme context, auth context, router context, etc.
+
+### 7.3 — Native Functions
+
+```
+// Store
+__gui_store_create() -> int
+__gui_store_get(id: int, key: string) -> any
+__gui_store_set(id: int, key: string, value: any) -> bool
+__gui_store_subscribe(id: int, key: string, callback: any) -> int
+__gui_store_unsubscribe(subscriptionId: int) -> bool
+
+// Context
+__gui_context_create(name: string, defaultValue: any) -> int
+__gui_context_provide(contextId: int, value: any, widgetId: int) -> bool
+__gui_context_consume(contextId: int) -> any
+```
+
+### 7.4 — Stratos API (`std/gui/init.st` additions)
+
+```stratos
+/// Global reactive store.
+///   val store = Store();
+///   store.set("user", "Alice");
+///   store.set("count", 0);
+///   val name = store.get("user");
+class Store {
+    var id: int;
+    constructor() { this.id = __gui_store_create(); }
+    fn get(key: string) any { return __gui_store_get(this.id, key); }
+    fn set(key: string, value: any) void { __gui_store_set(this.id, key, value); }
+    fn subscribe(key: string, callback: any) int {
+        return __gui_store_subscribe(this.id, key, callback);
+    }
+    fn unsubscribe(subscriptionId: int) void {
+        __gui_store_unsubscribe(subscriptionId);
+    }
+}
+
+/// Scoped value provider for dependency injection.
+///   val ThemeCtx = Context("theme", "light");
+///   provide(ThemeCtx, "dark", rootWidget);
+///   val theme = consume(ThemeCtx);
+class Context {
+    var id: int;
+    constructor(name: string, defaultValue: any) {
+        this.id = __gui_context_create(name, defaultValue);
+    }
+}
+
+fn provide(ctx: Context, value: any, widgetId: int) void {
+    __gui_context_provide(ctx.id, value, widgetId);
+}
+
+fn consume(ctx: Context) any {
+    return __gui_context_consume(ctx.id);
+}
+```
+
+### 7.5 — HTML Target Integration
+
+- [ ] Generate JS Store class with `Proxy`-based reactivity
+- [ ] Generate Context as module-scoped variable with provider/consumer pattern
+- [ ] Fine-grained DOM updates per store key
+
+### 7.6 — STUI Syntax
+
+```stui
+// Global store
+store AppStore {
+    user: string = "Guest";
+    count: int = 0;
+    theme: string = "dark";
+}
+
+component App {
+    // Provide context to subtree
+    provide theme: string = "dark";
+
+    view {
+        Column {
+            Text("Hello, ${AppStore.user}")
+            Button("Increment") {
+                onClick: { AppStore.count += 1; }
+            }
+        }
+    }
+}
+```
+
+- [ ] Parse `store` declaration as global reactive object
+- [ ] Parse `provide` in components
+- [ ] Transpile to Store/Context API calls
+
+### 7.7 — Examples
+
+- [ ] `examples/global-store/` — shared counter across components
+- [ ] `examples/context-theme/` — theme provider/consumer
+- [ ] `examples/store-todo/` — todo app with global store
+
+---
+
+## Phase 8: Lifecycle, Gestures & Missing Widgets
+
+**Goal**: Component lifecycle hooks, gesture detection, and commonly-expected widgets from Flutter/Compose.
+
+### 8.1 — Component Lifecycle Hooks
+
+- [ ] `onMount(fn)` — called once after widget is first rendered
+- [ ] `onDestroy(fn)` — called when widget is removed from tree
+- [ ] `onUpdate(fn)` — called after widget re-renders due to state change
+- [ ] C++ implementation: hook into Widget::addChild / removeChild / paint cycle
+- [ ] STUI syntax: `onMount { ... }` block inside component
+- [ ] HTML target: generate `connectedCallback` / `disconnectedCallback` (or manual lifecycle tracking)
+
+### 8.2 — Gesture Detection
+
+- [ ] `GestureDetector` wrapper widget — catches gesture events on children
+- [ ] Supported gestures:
+  - `onTap` — single tap (already have onClick)
+  - `onDoubleTap` — double tap
+  - `onLongPress` — press and hold
+  - `onDragStart/onDrag/onDragEnd` — drag gestures
+  - `onSwipe(direction)` — swipe left/right/up/down
+  - `onPinch` — pinch-to-zoom (if multi-touch available)
+- [ ] C++ Event.h: add gesture recognizer state machine
+- [ ] Native functions: `__gui_gesture_create()`, `__gui_gesture_set_on_*`
+- [ ] Stratos API: `GestureDetector(child, { onDoubleTap: fn() { ... } })`
+
+### 8.3 — Missing Widgets
+
+**Composite / convenience widgets:**
+
+| Widget | Description | Flutter/Compose equiv |
+|--------|-------------|-----------------------|
+| `Scaffold` | Composite: AppBar + body + drawer + FAB + bottomNav | `Scaffold` / `Scaffold` |
+| `Card` | Elevated container with rounded corners and shadow | `Card` / `Card` |
+| `Divider` | Horizontal/vertical line separator | `Divider` / `Divider` |
+| `Badge` | Small count/dot indicator | `Badge` / `Badge` |
+| `Tooltip` | Hover/long-press info popup | `Tooltip` / `TooltipBox` |
+| `Chip` | Small labeled element (tag, filter) | `Chip` / `FilterChip` |
+| `FAB` | Floating action button (circular, bottom-right) | `FloatingActionButton` / `FloatingActionButton` |
+| `BottomNavBar` | Bottom navigation bar with icons + labels | `BottomNavigationBar` / `NavigationBar` |
+| `ProgressBar` | Linear progress indicator | `LinearProgressIndicator` / `LinearProgressIndicator` |
+| `CircularProgress` | Spinning/circular progress | `CircularProgressIndicator` / `CircularProgressIndicator` |
+| `SnackBar` | Temporary message bar at bottom | `SnackBar` / `Snackbar` |
+| `ExpansionPanel` | Collapsible/expandable section | `ExpansionTile` / `AnimatedVisibility` |
+| `Wrap` | Flow layout that wraps to next line | `Wrap` / `FlowRow` |
+| `AspectRatio` | Constrains child to aspect ratio | `AspectRatio` / `aspectRatio` modifier |
+
+Implementation for each:
+- [ ] C++ widget class in Widget.h/Widget.cpp
+- [ ] Native function registration in GuiNatives.cpp
+- [ ] Stratos helper function in std/gui/init.st
+- [ ] HTML element mapping in HTMLGenerator
+- [ ] STUI transpiler support
+
+### 8.4 — Error Boundaries
+
+- [ ] `ErrorBoundary` widget — catches errors in child widget tree rendering
+- [ ] `fallback` widget shown when error occurs
+- [ ] Error propagation: child error → ErrorBoundary catches → shows fallback
+- [ ] `onError(fn(error))` callback for logging
+- [ ] STUI syntax: `ErrorBoundary { ... } fallback { Text("Something went wrong") }`
+
+### 8.5 — Responsive / MediaQuery
+
+- [ ] `MediaQuery` — provides screen size info to children
+  - `width`, `height` of window
+  - `orientation` (portrait/landscape)
+  - `breakpoint` (mobile/tablet/desktop thresholds)
+- [ ] `Responsive` widget — renders different children based on breakpoints
+  ```stratos
+  Responsive({
+      mobile: fn() int => MobileLayout(),
+      tablet: fn() int => TabletLayout(),
+      desktop: fn() int => DesktopLayout(),
+  })
+  ```
+- [ ] CSS media queries in HTML target
+
+---
+
+## Phase 9: Polish & Developer Experience
+
+**Goal**: Fill remaining gaps for a production-ready GUI framework.
+
+### 9.1 — Form System
+
+- [ ] `Form` widget — groups input widgets, tracks validity
+- [ ] `FormField` wrapper — adds label, error message, validation rules
+- [ ] Built-in validators: `required`, `minLength`, `maxLength`, `email`, `regex`, `custom(fn)`
+- [ ] `form.validate()` → bool, `form.reset()`, `form.values()` → map
+- [ ] Submit handling: `form.onSubmit(fn(values) { ... })`
+
+### 9.2 — Async Widget Support
+
+- [ ] `FutureBuilder(future, { loading: ..., success: fn(data) => ..., error: fn(e) => ... })`
+- [ ] `Suspense(fallback: LoadingWidget()) { AsyncContent() }` — shows loading while async children resolve
+- [ ] Integration with Stratos async/await
+
+### 9.3 — Transition Animations
+
+- [ ] `AnimatedContainer` — smoothly animates size, color, border changes
+- [ ] `FadeTransition` — opacity animation
+- [ ] `SlideTransition` — slide in/out
+- [ ] `ScaleTransition` — scale up/down
+- [ ] Route transitions — animate between pages on navigation
+- [ ] Hero animations — shared element transitions between routes
+
+### 9.4 — Remaining Infrastructure
+
+- [ ] `stratos serve <dir>` — dev server with hot reload for web target
+- [ ] `stratos fmt` for `.stui` files
+- [ ] `stratos build` — detect and compile `.stui` files in project
+- [ ] `stui` block in `stratos.conf`
+- [ ] Web examples: hello, counter, todo, canvas, dashboard
 
 ---
 
 ## Implementation Order
 
 ```
-Phase 1.1  Vendor Skia + SDL2, update build system
-Phase 1.2  C++ GUI backend (Window, Renderer, EventLoop)
-Phase 1.3  Core widgets (Text, Button, Box, Row, Column)
-Phase 1.4  NativeRegistry integration
-Phase 1.5  std/gui Stratos module
-Phase 1.6  State management & reactivity
-Phase 1.7  Remaining widgets + examples
+Phase 1    Native GUI Library (std/gui)               ✅ COMPLETE
+Phase 2    .stui DSL (Declarative UI Language)         ✅ COMPLETE
+Phase 3    WASM Compilation Target                     ✅ COMPLETE
+Phase 4    HTML Transpilation (Web Target)             ✅ MOSTLY COMPLETE
   ↓
-Phase 2.1  Design .stui syntax specification
-Phase 2.2  STUI Lexer + Parser + Transpiler
-Phase 2.3  CLI integration (.stui support)
-Phase 2.4  .stui examples
+Phase 5    Advanced Reactivity System                  🔄 IN PROGRESS
+  5.1  Signal/Effect/Computed C++ backend
+  5.2  Stratos API (Signal, Computed, createEffect, batch)
+  5.3  Backward compatibility (State wraps Signal)
+  5.4  HTML target JS signal runtime
+  5.5  STUI transpiler updates
+  5.6  Examples
   ↓
-Phase 3.1  LLVM IR wasm32 target triple
-Phase 3.2  WASM runtime shims
-Phase 3.3  Build pipeline (ll → wasm)
-Phase 3.4  Testing & verification
+Phase 6    Routing & Navigation
+  6.1  C++ Router backend
+  6.2  Native functions
+  6.3  Stratos Router API
+  6.4  HTML target (history API + hash routing)
+  6.5  STUI Router/Route syntax
+  6.6  Examples
   ↓
-Phase 4.1  HTML code generator (widget → DOM mapping)
-Phase 4.2  Reactive JS runtime
-Phase 4.3  Canvas rendering mode (CanvasKit/Emscripten)
-Phase 4.4  Full web build pipeline
-Phase 4.5  Web examples
+Phase 7    Global State & Context
+  7.1  Store C++ backend
+  7.2  Context/Provider C++ backend
+  7.3  Native functions
+  7.4  Stratos Store/Context API
+  7.5  HTML target integration
+  7.6  STUI store/provide syntax
+  7.7  Examples
+  ↓
+Phase 8    Lifecycle, Gestures & Missing Widgets
+  8.1  Lifecycle hooks (onMount, onDestroy, onUpdate)
+  8.2  Gesture detection (drag, swipe, long press)
+  8.3  Missing widgets (Scaffold, Card, FAB, BottomNav, etc.)
+  8.4  Error boundaries
+  8.5  Responsive / MediaQuery
+  ↓
+Phase 9    Polish & DX
+  9.1  Form system
+  9.2  Async widget support (FutureBuilder, Suspense)
+  9.3  Transition animations
+  9.4  Infrastructure (serve, fmt .stui, build .stui)
 ```
 
-## Files to Create/Modify
+## Files to Create/Modify (Phases 5-9)
 
 ### New Files
-| File | Purpose |
-|------|---------|
-| `src/src/runtime/gui/Window.cpp/h` | SDL2 window + Skia surface |
-| `src/src/runtime/gui/Renderer.cpp/h` | Skia canvas rendering |
-| `src/src/runtime/gui/EventLoop.cpp/h` | SDL2 event dispatch |
-| `src/src/runtime/gui/Widget.cpp/h` | Base widget class |
-| `src/src/runtime/gui/Layout.cpp/h` | Layout engine |
-| `src/src/runtime/gui/Theme.cpp/h` | Theming system |
-| `src/src/runtime/gui/Animation.cpp/h` | Animation system |
-| `src/src/runtime/gui/widgets/*.cpp` | Individual widget implementations |
-| `std/gui/init.st` | GUI module entry point |
-| `std/gui/widgets.st` | Widget classes |
-| `std/gui/layout.st` | Layout classes |
-| `std/gui/theme.st` | Theme/styling |
-| `std/gui/events.st` | Event types |
-| `std/gui/app.st` | App class |
-| `src/src/stui/STUILexer.cpp` | .stui tokenizer |
-| `src/src/stui/STUIParser.cpp` | .stui parser |
-| `src/src/stui/STUITranspiler.cpp` | .stui → Stratos transpiler |
-| `src/include/stratos/STUILexer.h` | .stui lexer header |
-| `src/include/stratos/STUIParser.h` | .stui parser header |
-| `src/include/stratos/STUITranspiler.h` | .stui transpiler header |
-| `src/src/codegen/HTMLGenerator.cpp/h` | Widget → HTML generator |
-| `src/wasm/runtime.js` | WASM JS glue |
-| `src/web/runtime.js` | Reactive DOM runtime |
+| File | Phase | Purpose |
+|------|-------|---------|
+| `src/include/stratos/gui/Signals.h` | 5 | Signal, Effect, Computed classes |
+| `src/src/runtime/gui/Signals.cpp` | 5 | Signal system implementation |
+| `src/include/stratos/gui/Router.h` | 6 | Router class |
+| `src/src/runtime/gui/Router.cpp` | 6 | Router implementation |
+| `src/include/stratos/gui/Store.h` | 7 | Store and Context classes |
+| `src/src/runtime/gui/Store.cpp` | 7 | Store implementation |
+| `src/include/stratos/gui/Gestures.h` | 8 | Gesture recognizer |
+| `src/src/runtime/gui/Gestures.cpp` | 8 | Gesture implementation |
+| `examples/signals-basic/` | 5 | Signal demo |
+| `examples/routing-basic/` | 6 | Router demo |
+| `examples/global-store/` | 7 | Store demo |
 
 ### Modified Files
-| File | Change |
-|------|--------|
-| `src/CMakeLists.txt` | Add Skia, SDL2 deps, new source files |
-| `src/build.sh` | Link Skia + SDL2 |
-| `src/src/runtime/NativeRegistry.cpp` | Add `initGui()` |
-| `src/src/codegen/IRGenerator.cpp` | Add wasm32 target triple |
-| `src/src/main.cpp` | Handle `.stui` extension, `--target wasm/web` flags |
-| `src/include/stratos/ProjectConfig.h` | Add `target`, `web.renderer` config fields |
-| `src/src/config/ProjectConfig.cpp` | Parse new config fields |
+| File | Phases | Change |
+|------|--------|--------|
+| `src/src/runtime/gui/GuiNatives.cpp` | 5,6,7,8 | Register new native functions |
+| `src/src/runtime/NativeRegistry.cpp` | 5,6,7,8 | Call new init functions |
+| `std/gui/init.st` | 5,6,7,8 | Add Signal, Router, Store, new widgets |
+| `src/src/stui/STUITranspiler.cpp` | 5,6,7 | Emit Signal instead of State, Router/Route nodes |
+| `src/include/stratos/STUITranspiler.h` | 5,6 | New transpiler methods |
+| `src/include/stratos/gui/Widget.h` | 8 | New widget classes |
+| `src/src/runtime/gui/Widget.cpp` | 8 | New widget implementations |
+| `src/build.sh` | 5,6,7,8 | Add new .cpp files to build |
+| `src/CMakeLists.txt` | 5,6,7,8 | Add new source files |

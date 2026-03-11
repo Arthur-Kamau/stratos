@@ -45,6 +45,12 @@ private:
     // Set of user-defined component names (to distinguish from built-in widgets)
     std::set<std::string> componentNames_;
 
+    // State variable names in current component (for signal-aware transpilation)
+    std::set<std::string> currentStateNames_;
+
+    // Storage to keep parsed event statement ASTs alive
+    std::vector<std::vector<std::unique_ptr<Stmt>>> parsedEventStmts_;
+
     // Expression conversion: STUI expr → Stratos expr
     std::unique_ptr<Expr> transpileExpr(const STUIExpr& expr);
     std::unique_ptr<Expr> transpileAsFloat(const STUIExpr& expr);

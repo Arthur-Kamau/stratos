@@ -102,6 +102,64 @@ class StratosRuntime {
                     return ptr;
                 },
 
+                // HTTP fetch bridge
+                __stratos_http_get(urlPtr, urlLen, callbackId) {
+                    const url = runtime.readStringN(urlPtr, urlLen);
+                    fetch(url)
+                        .then(res => res.text())
+                        .then(body => {
+                            const bodyPtr = runtime.writeString(body);
+                            if (runtime.instance.exports.__stratos_http_callback) {
+                                runtime.instance.exports.__stratos_http_callback(callbackId, bodyPtr, body.length, 200);
+                            }
+                        })
+                        .catch(err => {
+                            const errPtr = runtime.writeString(err.message);
+                            if (runtime.instance.exports.__stratos_http_callback) {
+                                runtime.instance.exports.__stratos_http_callback(callbackId, errPtr, err.message.length, 0);
+                            }
+                        });
+                },
+
+                __stratos_http_post(urlPtr, urlLen, bodyPtr, bodyLen, callbackId) {
+                    const url = runtime.readStringN(urlPtr, urlLen);
+                    const body = runtime.readStringN(bodyPtr, bodyLen);
+                    fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: body
+                    })
+                        .then(res => res.text())
+                        .then(respBody => {
+                            const ptr = runtime.writeString(respBody);
+                            if (runtime.instance.exports.__stratos_http_callback) {
+                                runtime.instance.exports.__stratos_http_callback(callbackId, ptr, respBody.length, 200);
+                            }
+                        })
+                        .catch(err => {
+                            const errPtr = runtime.writeString(err.message);
+                            if (runtime.instance.exports.__stratos_http_callback) {
+                                runtime.instance.exports.__stratos_http_callback(callbackId, errPtr, err.message.length, 0);
+                            }
+                        });
+                },
+
+                // String operations
+                __stratos_str_length(ptr) {
+                    return runtime.readString(ptr).length;
+                },
+
+                __stratos_str_concat(aPtr, bPtr) {
+                    const a = runtime.readString(aPtr);
+                    const b = runtime.readString(bPtr);
+                    return runtime.writeString(a + b);
+                },
+
+                // Time
+                __stratos_time_now_ms() {
+                    return Date.now();
+                },
+
                 // Math imports
                 sin: Math.sin,
                 cos: Math.cos,

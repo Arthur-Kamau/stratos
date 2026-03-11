@@ -58,10 +58,14 @@ bool Widget::handleEvent(const Event& event) {
         }
     }
 
-    // Check click
+    // Check click — dispatch to children first, then handle self
     if (event.type == Event::MouseButton) {
         auto& me = event.mouseButton();
         if (hitTest(me.x, me.y)) {
+            // Let children handle it first
+            if (dispatchToChildren(event)) return true;
+
+            // No child consumed it — handle it ourselves
             if (me.pressed) {
                 state_ = WidgetState::Pressed;
             } else {
@@ -70,7 +74,7 @@ bool Widget::handleEvent(const Event& event) {
                 }
                 state_ = hovered_ ? WidgetState::Hovered : WidgetState::Normal;
             }
-            return true;
+            return onClick_ != nullptr; // only consume if we have a handler
         }
     }
 
@@ -141,9 +145,30 @@ void Widget::paintChildren(IRenderer& renderer) {
 }
 
 bool Widget::dispatchToChildren(const Event& event) {
+    // Transform mouse coordinates to local space before dispatching
+    Event localEvent = event;
+    float ox = bounds_.x, oy = bounds_.y;
+
+    if (event.type == Event::MouseButton) {
+        auto me = event.mouseButton();
+        me.x -= ox;
+        me.y -= oy;
+        localEvent.data = me;
+    } else if (event.type == Event::MouseMove) {
+        auto me = event.mouseMove();
+        me.x -= ox;
+        me.y -= oy;
+        localEvent.data = me;
+    } else if (event.type == Event::MouseScroll) {
+        auto me = event.mouseScroll();
+        me.x -= ox;
+        me.y -= oy;
+        localEvent.data = me;
+    }
+
     // Dispatch in reverse order (top-most first)
     for (auto it = children_.rbegin(); it != children_.rend(); ++it) {
-        if ((*it)->handleEvent(event)) return true;
+        if ((*it)->handleEvent(localEvent)) return true;
     }
     return false;
 }
@@ -1109,6 +1134,630 @@ void Grid::layout(const Constraints& constraints) {
     bounds_.width = availWidth;
     bounds_.height = style_.height >= 0 ? style_.height :
                      std::clamp(totalHeight, constraints.minHeight, constraints.maxHeight);
+}
+
+// ============================================================
+// TextArea Widget
+// ============================================================
+
+std::vector<std::string> TextArea::getLines() const {
+    std::vector<std::string> lines;
+    std::string line;
+    for (char c : value_) {
+        if (c == '\n') {
+            lines.push_back(line);
+            line.clear();
+        } else {
+            line += c;
+        }
+    }
+    lines.push_back(line);
+    return lines;
+}
+
+void TextArea::updateCursorLineCol() {
+    int pos = 0;
+    cursorLine_ = 0;
+    cursorCol_ = 0;
+    for (char c : value_) {
+        if (pos >= cursorPos_) break;
+        if (c == '\n') {
+            cursorLine_++;
+            cursorCol_ = 0;
+        } else {
+            cursorCol_++;
+        }
+        pos++;
+    }
+}
+
+void TextArea::layout(const Constraints& constraints) {
+    bounds_.width = style_.width >= 0 ? style_.width :
+                    std::clamp(300.0f, constraints.minWidth, constraints.maxWidth);
+    bounds_.height = style_.height >= 0 ? style_.height :
+                     std::clamp(120.0f, constraints.minHeight, constraints.maxHeight);
+}
+
+void TextArea::paint(IRenderer& renderer) {
+    if (!visible_) return;
+
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    // Background
+    Color bg = state_ == WidgetState::Focused ? Color::white() : Color::rgb(245, 245, 245);
+    renderer.fillRoundedRect({0, 0, bounds_.width, bounds_.height},
+                              BorderRadius::all(4), bg);
+
+    // Border
+    Color borderColor = state_ == WidgetState::Focused ?
+                         Color::rgb(33, 150, 243) : Color::rgb(200, 200, 200);
+    renderer.drawRoundedRect({0, 0, bounds_.width, bounds_.height},
+                              BorderRadius::all(4), borderColor);
+
+    // Clip content area
+    renderer.clipRect({4, 4, bounds_.width - 8, bounds_.height - 8});
+
+    float textX = 8;
+    float lineHeight = font_.size > 0 ? font_.size * 1.4f : 14.0f * 1.4f;
+
+    if (value_.empty() && !placeholder_.empty()) {
+        renderer.drawText(placeholder_, textX, 6 - scrollY_, font_, Color::rgb(158, 158, 158));
+    } else {
+        auto lines = getLines();
+        for (size_t i = 0; i < lines.size(); i++) {
+            float y = 6 + i * lineHeight - scrollY_;
+            if (y + lineHeight < 0) continue;
+            if (y > bounds_.height) break;
+            renderer.drawText(lines[i], textX, y, font_, Color::black());
+        }
+
+        // Cursor
+        if (state_ == WidgetState::Focused && cursorVisible_) {
+            updateCursorLineCol();
+            auto lines2 = getLines();
+            std::string beforeCursor = (cursorLine_ < (int)lines2.size()) ?
+                lines2[cursorLine_].substr(0, cursorCol_) : "";
+            TextMetrics m = renderer.measureText(beforeCursor, font_);
+            float cursorY = 6 + cursorLine_ * lineHeight - scrollY_;
+            renderer.drawLine(textX + m.width, cursorY + 2,
+                               textX + m.width, cursorY + lineHeight - 2,
+                               Color::black(), 1.5f);
+        }
+    }
+
+    renderer.restore();
+}
+
+bool TextArea::handleEvent(const Event& event) {
+    if (event.type == Event::MouseButton) {
+        auto& me = event.mouseButton();
+        if (hitTest(me.x, me.y) && me.pressed) {
+            state_ = WidgetState::Focused;
+            SDL_StartTextInput();
+            return true;
+        } else if (!hitTest(me.x, me.y) && me.pressed) {
+            state_ = WidgetState::Normal;
+            SDL_StopTextInput();
+        }
+    }
+
+    if (state_ != WidgetState::Focused) return false;
+
+    if (event.type == Event::TextInput) {
+        auto& te = event.textInput();
+        value_.insert(cursorPos_, te.text);
+        cursorPos_ += te.text.length();
+        if (onChange_) onChange_(value_);
+        markDirty();
+        return true;
+    }
+
+    if (event.type == Event::Key && event.key().pressed) {
+        auto& ke = event.key();
+        if (ke.key == KeyCode::Backspace && cursorPos_ > 0) {
+            value_.erase(cursorPos_ - 1, 1);
+            cursorPos_--;
+            if (onChange_) onChange_(value_);
+            markDirty();
+            return true;
+        }
+        if (ke.key == KeyCode::Delete && cursorPos_ < (int)value_.size()) {
+            value_.erase(cursorPos_, 1);
+            if (onChange_) onChange_(value_);
+            markDirty();
+            return true;
+        }
+        if (ke.key == KeyCode::Enter) {
+            value_.insert(cursorPos_, 1, '\n');
+            cursorPos_++;
+            if (onChange_) onChange_(value_);
+            markDirty();
+            return true;
+        }
+        if (ke.key == KeyCode::Left && cursorPos_ > 0) { cursorPos_--; markDirty(); return true; }
+        if (ke.key == KeyCode::Right && cursorPos_ < (int)value_.size()) { cursorPos_++; markDirty(); return true; }
+        if (ke.key == KeyCode::Home) { cursorPos_ = 0; markDirty(); return true; }
+        if (ke.key == KeyCode::End) { cursorPos_ = value_.size(); markDirty(); return true; }
+    }
+
+    if (event.type == Event::MouseScroll) {
+        auto& se = event.mouseScroll();
+        if (hitTest(se.x, se.y)) {
+            float lineHeight = font_.size > 0 ? font_.size * 1.4f : 14.0f * 1.4f;
+            float contentHeight = getLines().size() * lineHeight;
+            scrollY_ -= se.scrollY * 30;
+            scrollY_ = std::max(0.0f, std::min(scrollY_, contentHeight - bounds_.height + 16));
+            markDirty();
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// ============================================================
+// RadioButton Widget
+// ============================================================
+
+void RadioButton::deselectGroup(Widget* root, const std::string& group, RadioButton* except) {
+    if (!root) return;
+    auto* rb = dynamic_cast<RadioButton*>(root);
+    if (rb && rb != except && rb->group_ == group) {
+        rb->selected_ = false;
+        rb->markDirty();
+    }
+    for (const auto& child : root->getChildren()) {
+        deselectGroup(child.get(), group, except);
+    }
+}
+
+void RadioButton::layout(const Constraints& constraints) {
+    float circleSize = 20;
+    float textW = label_.length() * 8.0f;
+    bounds_.width = std::clamp(circleSize + 8 + textW, constraints.minWidth, constraints.maxWidth);
+    bounds_.height = std::clamp(std::max(circleSize, 20.0f), constraints.minHeight, constraints.maxHeight);
+}
+
+void RadioButton::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    float radius = 9;
+    float centerY = bounds_.height / 2;
+
+    // Outer circle
+    renderer.drawCircle(radius, centerY, radius,
+                         selected_ ? activeColor_ : Color::rgb(158, 158, 158));
+
+    // Inner filled circle when selected
+    if (selected_) {
+        renderer.fillCircle(radius, centerY, 5, activeColor_);
+    }
+
+    // Label
+    if (!label_.empty()) {
+        FontSpec font = {"sans-serif", 14, FontWeight::Regular, FontStyle::Normal};
+        renderer.drawText(label_, radius * 2 + 8, (bounds_.height - 14) / 2, font, Color::black());
+    }
+
+    renderer.restore();
+}
+
+bool RadioButton::handleEvent(const Event& event) {
+    if (event.type == Event::MouseButton) {
+        auto& me = event.mouseButton();
+        if (hitTest(me.x, me.y) && !me.pressed && !selected_) {
+            // Deselect others in the same group
+            Widget* root = this;
+            while (root->getParent()) root = root->getParent();
+            deselectGroup(root, group_, this);
+
+            selected_ = true;
+            if (onChange_) onChange_(selected_);
+            markDirty();
+            return true;
+        }
+    }
+    return Widget::handleEvent(event);
+}
+
+// ============================================================
+// Dropdown Widget
+// ============================================================
+
+void Dropdown::layout(const Constraints& constraints) {
+    bounds_.width = style_.width >= 0 ? style_.width :
+                    std::clamp(200.0f, constraints.minWidth, constraints.maxWidth);
+    bounds_.height = style_.height >= 0 ? style_.height :
+                     std::clamp(40.0f, constraints.minHeight, constraints.maxHeight);
+}
+
+void Dropdown::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    // Button area
+    Color bg = open_ ? Color::rgb(235, 235, 235) : Color::rgb(245, 245, 245);
+    renderer.fillRoundedRect({0, 0, bounds_.width, bounds_.height},
+                              BorderRadius::all(4), bg);
+    renderer.drawRoundedRect({0, 0, bounds_.width, bounds_.height},
+                              BorderRadius::all(4), Color::rgb(200, 200, 200));
+
+    // Selected text or placeholder
+    FontSpec font = {"sans-serif", 14, FontWeight::Regular, FontStyle::Normal};
+    std::string displayText = (selectedIndex_ >= 0 && selectedIndex_ < (int)items_.size()) ?
+                               items_[selectedIndex_] : placeholder_;
+    Color textColor = (selectedIndex_ >= 0) ? Color::black() : Color::rgb(158, 158, 158);
+    renderer.drawText(displayText, 12, (bounds_.height - 14) / 2, font, textColor);
+
+    // Dropdown arrow
+    float arrowX = bounds_.width - 20;
+    float arrowY = bounds_.height / 2;
+    renderer.drawLine(arrowX - 4, arrowY - 2, arrowX, arrowY + 3, Color::rgb(100, 100, 100), 2);
+    renderer.drawLine(arrowX, arrowY + 3, arrowX + 4, arrowY - 2, Color::rgb(100, 100, 100), 2);
+
+    // Dropdown list overlay
+    if (open_ && !items_.empty()) {
+        float itemH = 36.0f;
+        float listH = items_.size() * itemH;
+
+        // Shadow
+        renderer.drawShadow({0, bounds_.height, bounds_.width, listH},
+                              BorderRadius::all(4), {0, 4, 12, Color::rgba(0, 0, 0, 40)});
+
+        // Background
+        renderer.fillRoundedRect({0, bounds_.height, bounds_.width, listH},
+                                  BorderRadius::all(4), Color::white());
+        renderer.drawRoundedRect({0, bounds_.height, bounds_.width, listH},
+                                  BorderRadius::all(4), Color::rgb(200, 200, 200));
+
+        for (int i = 0; i < (int)items_.size(); i++) {
+            float y = bounds_.height + i * itemH;
+            if (i == hoveredIndex_) {
+                renderer.fillRect({1, y, bounds_.width - 2, itemH}, Color::rgb(230, 230, 250));
+            }
+            if (i == selectedIndex_) {
+                renderer.drawText(items_[i], 12, y + (itemH - 14) / 2, font, Color::rgb(33, 150, 243));
+            } else {
+                renderer.drawText(items_[i], 12, y + (itemH - 14) / 2, font, Color::black());
+            }
+        }
+    }
+
+    renderer.restore();
+}
+
+bool Dropdown::handleEvent(const Event& event) {
+    if (event.type == Event::MouseButton) {
+        auto& me = event.mouseButton();
+        if (!me.pressed) {
+            if (open_) {
+                // Check if clicking on an item
+                float itemH = 36.0f;
+                float localY = me.y - bounds_.y - bounds_.height;
+                if (localY >= 0 && me.x >= bounds_.x && me.x <= bounds_.x + bounds_.width) {
+                    int idx = static_cast<int>(localY / itemH);
+                    if (idx >= 0 && idx < (int)items_.size()) {
+                        selectedIndex_ = idx;
+                        if (onChange_) onChange_(items_[idx]);
+                    }
+                }
+                open_ = false;
+                markDirty();
+                return true;
+            } else if (hitTest(me.x, me.y)) {
+                open_ = true;
+                markDirty();
+                return true;
+            }
+        }
+    }
+
+    if (event.type == Event::MouseMove && open_) {
+        auto& me = event.mouseMove();
+        float itemH = 36.0f;
+        float localY = me.y - bounds_.y - bounds_.height;
+        if (localY >= 0 && me.x >= bounds_.x && me.x <= bounds_.x + bounds_.width) {
+            int idx = static_cast<int>(localY / itemH);
+            if (idx >= 0 && idx < (int)items_.size() && idx != hoveredIndex_) {
+                hoveredIndex_ = idx;
+                markDirty();
+            }
+        } else {
+            if (hoveredIndex_ != -1) {
+                hoveredIndex_ = -1;
+                markDirty();
+            }
+        }
+    }
+
+    return Widget::handleEvent(event);
+}
+
+// ============================================================
+// Icon Widget
+// ============================================================
+
+void Icon::layout(const Constraints& constraints) {
+    bounds_.width = std::clamp(size_, constraints.minWidth, constraints.maxWidth);
+    bounds_.height = std::clamp(size_, constraints.minHeight, constraints.maxHeight);
+}
+
+void Icon::paint(IRenderer& renderer) {
+    if (!visible_ || icon_.empty()) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    FontSpec iconFont = {"sans-serif", size_, FontWeight::Regular, FontStyle::Normal};
+    TextMetrics m = renderer.measureText(icon_, iconFont);
+    float x = (bounds_.width - m.width) / 2;
+    float y = (bounds_.height - m.height) / 2;
+    renderer.drawText(icon_, x, y, iconFont, color_);
+
+    renderer.restore();
+}
+
+// ============================================================
+// Drawer Widget
+// ============================================================
+
+void Drawer::layout(const Constraints& constraints) {
+    bounds_.width = constraints.maxWidth;
+    bounds_.height = constraints.maxHeight;
+
+    if (open_) {
+        // Layout children within drawer area
+        Constraints childC = {0, drawerWidth_ - 16, 0, bounds_.height};
+        float y = 8;
+        for (auto& child : children_) {
+            child->layout(childC);
+            child->setPosition(8, y);
+            y += child->getComputedSize().height + 8;
+        }
+    }
+}
+
+void Drawer::paint(IRenderer& renderer) {
+    if (!visible_ || !open_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    // Backdrop
+    renderer.fillRect({0, 0, bounds_.width, bounds_.height}, backdropColor_);
+
+    // Drawer panel
+    renderer.drawShadow({0, 0, drawerWidth_, bounds_.height},
+                          BorderRadius::all(0), {4, 0, 16, Color::rgba(0, 0, 0, 60)});
+    renderer.fillRect({0, 0, drawerWidth_, bounds_.height}, Color::white());
+
+    // Paint children within drawer
+    renderer.clipRect({0, 0, drawerWidth_, bounds_.height});
+    paintChildren(renderer);
+
+    renderer.restore();
+}
+
+bool Drawer::handleEvent(const Event& event) {
+    if (!open_) return false;
+
+    if (event.type == Event::MouseButton) {
+        auto& me = event.mouseButton();
+        // Click on backdrop closes drawer
+        if (me.x > drawerWidth_ && !me.pressed) {
+            if (onClose_) onClose_();
+            return true;
+        }
+    }
+
+    if (event.type == Event::Key && event.key().key == KeyCode::Escape && event.key().pressed) {
+        if (onClose_) onClose_();
+        return true;
+    }
+
+    return Widget::handleEvent(event);
+}
+
+// ============================================================
+// TabBar Widget
+// ============================================================
+
+void TabBar::layout(const Constraints& constraints) {
+    bounds_.width = style_.width >= 0 ? style_.width : constraints.maxWidth;
+    bounds_.height = style_.height >= 0 ? style_.height :
+                     std::clamp(48.0f, constraints.minHeight, constraints.maxHeight);
+}
+
+void TabBar::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    // Background
+    renderer.fillRect({0, 0, bounds_.width, bounds_.height}, Color::rgb(245, 245, 245));
+
+    if (tabs_.empty()) {
+        renderer.restore();
+        return;
+    }
+
+    float tabWidth = bounds_.width / tabs_.size();
+    FontSpec font = {"sans-serif", 14, FontWeight::Medium, FontStyle::Normal};
+
+    for (int i = 0; i < (int)tabs_.size(); i++) {
+        float x = i * tabWidth;
+        Color textColor = (i == activeTab_) ? activeColor_ : inactiveColor_;
+
+        if (i == hoveredTab_ && i != activeTab_) {
+            renderer.fillRect({x, 0, tabWidth, bounds_.height}, Color::rgb(235, 235, 235));
+        }
+
+        TextMetrics m = renderer.measureText(tabs_[i], font);
+        float textX = x + (tabWidth - m.width) / 2;
+        float textY = (bounds_.height - m.height) / 2;
+        renderer.drawText(tabs_[i], textX, textY, font, textColor);
+
+        // Active indicator
+        if (i == activeTab_) {
+            renderer.fillRect({x, bounds_.height - 3, tabWidth, 3}, activeColor_);
+        }
+    }
+
+    // Bottom border
+    renderer.drawLine(0, bounds_.height - 1, bounds_.width, bounds_.height - 1,
+                       Color::rgb(224, 224, 224));
+
+    renderer.restore();
+}
+
+bool TabBar::handleEvent(const Event& event) {
+    if (event.type == Event::MouseButton) {
+        auto& me = event.mouseButton();
+        if (hitTest(me.x, me.y) && !me.pressed && !tabs_.empty()) {
+            float tabWidth = bounds_.width / tabs_.size();
+            int idx = static_cast<int>((me.x - bounds_.x) / tabWidth);
+            if (idx >= 0 && idx < (int)tabs_.size() && idx != activeTab_) {
+                activeTab_ = idx;
+                if (onTabChange_) onTabChange_(activeTab_);
+                markDirty();
+                return true;
+            }
+        }
+    }
+
+    if (event.type == Event::MouseMove) {
+        auto& me = event.mouseMove();
+        if (hitTest(me.x, me.y) && !tabs_.empty()) {
+            float tabWidth = bounds_.width / tabs_.size();
+            int idx = static_cast<int>((me.x - bounds_.x) / tabWidth);
+            if (idx >= 0 && idx < (int)tabs_.size() && idx != hoveredTab_) {
+                hoveredTab_ = idx;
+                markDirty();
+            }
+        } else if (hoveredTab_ != -1) {
+            hoveredTab_ = -1;
+            markDirty();
+        }
+    }
+
+    return Widget::handleEvent(event);
+}
+
+// ============================================================
+// Menu Widget
+// ============================================================
+
+void Menu::layout(const Constraints& constraints) {
+    if (!open_) return;
+    float maxW = 180.0f;
+    FontSpec font = {"sans-serif", 14, FontWeight::Regular, FontStyle::Normal};
+
+    // Calculate width based on item text
+    for (const auto& item : items_) {
+        if (!item.separator) {
+            float w = item.label.length() * 8.0f + 32;
+            maxW = std::max(maxW, w);
+        }
+    }
+
+    bounds_.width = maxW;
+    bounds_.height = items_.size() * itemHeight_;
+    bounds_.x = posX_;
+    bounds_.y = posY_;
+}
+
+void Menu::paint(IRenderer& renderer) {
+    if (!visible_ || !open_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    // Shadow
+    renderer.drawShadow({0, 0, bounds_.width, bounds_.height},
+                          BorderRadius::all(4), {0, 4, 16, Color::rgba(0, 0, 0, 50)});
+
+    // Background
+    renderer.fillRoundedRect({0, 0, bounds_.width, bounds_.height},
+                              BorderRadius::all(4), Color::white());
+    renderer.drawRoundedRect({0, 0, bounds_.width, bounds_.height},
+                              BorderRadius::all(4), Color::rgb(224, 224, 224));
+
+    FontSpec font = {"sans-serif", 14, FontWeight::Regular, FontStyle::Normal};
+
+    for (int i = 0; i < (int)items_.size(); i++) {
+        float y = i * itemHeight_;
+
+        if (items_[i].separator) {
+            renderer.drawLine(8, y + itemHeight_ / 2, bounds_.width - 8,
+                               y + itemHeight_ / 2, Color::rgb(224, 224, 224));
+            continue;
+        }
+
+        if (i == hoveredIndex_ && items_[i].enabled) {
+            renderer.fillRect({1, y, bounds_.width - 2, itemHeight_}, Color::rgb(230, 230, 250));
+        }
+
+        Color textColor = items_[i].enabled ? Color::black() : Color::rgb(189, 189, 189);
+
+        // Icon
+        if (!items_[i].icon.empty()) {
+            renderer.drawText(items_[i].icon, 8, y + (itemHeight_ - 14) / 2, font, textColor);
+        }
+
+        // Label
+        float textX = items_[i].icon.empty() ? 12 : 32;
+        renderer.drawText(items_[i].label, textX, y + (itemHeight_ - 14) / 2, font, textColor);
+    }
+
+    renderer.restore();
+}
+
+bool Menu::handleEvent(const Event& event) {
+    if (!open_) return false;
+
+    if (event.type == Event::MouseButton) {
+        auto& me = event.mouseButton();
+        if (!me.pressed) {
+            // Check if clicking on an item
+            float localX = me.x - posX_;
+            float localY = me.y - posY_;
+            if (localX >= 0 && localX <= bounds_.width && localY >= 0 && localY <= bounds_.height) {
+                int idx = static_cast<int>(localY / itemHeight_);
+                if (idx >= 0 && idx < (int)items_.size() && items_[idx].enabled && !items_[idx].separator) {
+                    if (items_[idx].onClick) items_[idx].onClick();
+                    hide();
+                    return true;
+                }
+            }
+            // Click outside closes menu
+            hide();
+            return true;
+        }
+    }
+
+    if (event.type == Event::MouseMove) {
+        auto& me = event.mouseMove();
+        float localX = me.x - posX_;
+        float localY = me.y - posY_;
+        if (localX >= 0 && localX <= bounds_.width && localY >= 0 && localY <= bounds_.height) {
+            int idx = static_cast<int>(localY / itemHeight_);
+            if (idx >= 0 && idx < (int)items_.size() && idx != hoveredIndex_) {
+                hoveredIndex_ = idx;
+                markDirty();
+            }
+        } else if (hoveredIndex_ != -1) {
+            hoveredIndex_ = -1;
+            markDirty();
+        }
+    }
+
+    if (event.type == Event::Key && event.key().key == KeyCode::Escape && event.key().pressed) {
+        hide();
+        return true;
+    }
+
+    return false;
 }
 
 } // namespace gui

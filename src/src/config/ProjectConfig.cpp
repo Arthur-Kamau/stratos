@@ -199,6 +199,7 @@ public:
                     if (obj.count("entry")) config.entry = obj["entry"];
                     if (obj.count("source_dir")) config.source_dir = obj["source_dir"];
                     if (obj.count("output")) config.output = obj["output"];
+                    if (obj.count("target")) config.target = obj["target"];
                 }
                 else if (key == "memory") {
                     // Parse memory configuration
@@ -210,6 +211,12 @@ public:
                         std::string amVal = obj["allow_manual"];
                         config.memory.allowManual = (amVal == "true" || amVal == "1" || amVal == "yes" || amVal == "on");
                     }
+                }
+                else if (key == "stui") {
+                    if (obj.count("entry")) config.stuiEntry = obj["entry"];
+                }
+                else if (key == "web") {
+                    if (obj.count("renderer")) config.webRenderer = obj["renderer"];
                 }
                 else if (key == "exports") {
                     config.exports = obj;
@@ -397,6 +404,12 @@ std::optional<ProjectConfig> ProjectConfigParser::parse(const std::string& confi
             else if (key == "allow_manual") {
                 config.memory.allowManual = (value == "true" || value == "1" || value == "yes" || value == "on");
             }
+        }
+        else if (currentSection == "stui") {
+            if (key == "entry") config.stuiEntry = value;
+        }
+        else if (currentSection == "web") {
+            if (key == "renderer") config.webRenderer = value;
         }
     }
 

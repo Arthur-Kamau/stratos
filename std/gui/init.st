@@ -28,6 +28,7 @@ fn __gui_app_set_fps(fps: int) bool;
 
 // Widget creation
 fn __gui_text_create(text: string) int;
+fn __gui_text_set_content(id: int, text: string) bool;
 fn __gui_text_set_font_size(id: int, size: float) bool;
 fn __gui_text_set_color(id: int, r: int, g: int, b: int) bool;
 fn __gui_text_set_bold(id: int) bool;
@@ -125,19 +126,32 @@ fn __gui_widget_set_enabled(id: int, enabled: bool) bool;
 fn __gui_widget_set_flex(id: int, flex: float) bool;
 fn __gui_widget_set_opacity(id: int, opacity: float) bool;
 
-// Event handlers
-fn __gui_widget_set_onclick(id: int, callbackId: int) int;
-fn __gui_widget_set_onchange(id: int, callbackId: int) int;
-fn __gui_widget_set_onsubmit(id: int, callbackId: int) int;
-fn __gui_widget_set_onmouseenter(id: int, callbackId: int) int;
-fn __gui_widget_set_onmouseleave(id: int, callbackId: int) int;
-fn __gui_widget_set_onkeypress(id: int, callbackId: int) int;
+// Event handlers (closure-based)
+fn __gui_widget_set_onclick(id: int, callback: any) int;
+fn __gui_widget_set_onchange(id: int, callback: any) int;
+fn __gui_widget_set_onsubmit(id: int, callback: any) int;
+fn __gui_widget_set_onmouseenter(id: int, callback: any) int;
+fn __gui_widget_set_onmouseleave(id: int, callback: any) int;
+fn __gui_widget_set_onkeypress(id: int, callback: any) int;
 
-// State management
+// State management (legacy)
 fn __gui_state_create(initial: any) int;
 fn __gui_state_get(id: int) any;
 fn __gui_state_set(id: int, value: any) bool;
 fn __gui_state_watch(stateId: int, callbackId: int) bool;
+
+// Signal system (advanced reactivity)
+fn __gui_signal_create(initial: any) int;
+fn __gui_signal_get(id: int) any;
+fn __gui_signal_set(id: int, value: any) bool;
+fn __gui_signal_peek(id: int) any;
+fn __gui_effect_create(closure: any) int;
+fn __gui_effect_dispose(id: int) bool;
+fn __gui_computed_create(closure: any) int;
+fn __gui_computed_get(id: int) any;
+fn __gui_batch(closure: any) bool;
+fn __gui_untrack(closure: any) any;
+fn __gui_on_cleanup(closure: any) bool;
 
 fn __gui_destroy_widget(id: int) bool;
 fn __gui_destroy_all() bool;
@@ -245,6 +259,119 @@ class DerivedState {
     fn recompute() void {
         // Caller should invoke this after dependencies change
     }
+}
+
+// ============================================================
+// Signal — fine-grained reactive primitive
+// ============================================================
+
+/// Reactive signal with auto-tracking.
+/// When read inside a createEffect() callback, the effect automatically
+/// re-runs when this signal changes.
+///
+/// Example:
+///   val count = Signal(0);
+///   createEffect(fn() void {
+///       println("Count changed: ${count.get()}");
+///   });
+///   count.set(1);  // effect re-runs automatically
+class Signal {
+    var id: int;
+
+    constructor(initial: any) {
+        this.id = __gui_signal_create(initial);
+    }
+
+    /// Get the value. If called inside an effect, subscribes the effect.
+    fn get() any {
+        return __gui_signal_get(this.id);
+    }
+
+    /// Set the value. Notifies all subscribed effects.
+    fn set(value: any) void {
+        __gui_signal_set(this.id, value);
+    }
+
+    /// Read without tracking (won't subscribe the current effect).
+    fn peek() any {
+        return __gui_signal_peek(this.id);
+    }
+}
+
+/// Computed (memoized) signal that derives from other signals.
+/// Automatically recomputes when any dependency changes.
+///
+/// Example:
+///   val count = Signal(5);
+///   val doubled = Computed(fn() any => count.get() as int * 2);
+///   println(doubled.get());  // 10
+///   count.set(10);
+///   println(doubled.get());  // 20
+class Computed {
+    var id: int;
+
+    constructor(compute: any) {
+        this.id = __gui_computed_create(compute);
+    }
+
+    /// Get the cached value. Recomputes if dependencies changed.
+    fn get() any {
+        return __gui_computed_get(this.id);
+    }
+}
+
+/// Create a reactive side-effect that auto-tracks signal dependencies.
+/// Returns an effect ID that can be passed to disposeEffect().
+///
+/// Example:
+///   val name = Signal("World");
+///   val effectId = createEffect(fn() void {
+///       println("Hello, ${name.get()}!");
+///   });
+///   name.set("Stratos");  // prints "Hello, Stratos!"
+fn createEffect(closure: any) int {
+    return __gui_effect_create(closure);
+}
+
+/// Dispose (stop) a previously created effect.
+fn disposeEffect(id: int) void {
+    __gui_effect_dispose(id);
+}
+
+/// Batch multiple signal updates — effects only run once at the end.
+///
+/// Example:
+///   batch(fn() void {
+///       x.set(1);
+///       y.set(2);
+///       z.set(3);
+///       // effects that depend on x, y, z only run once here
+///   });
+fn batch(closure: any) void {
+    __gui_batch(closure);
+}
+
+/// Read signals without tracking — the current effect won't subscribe.
+///
+/// Example:
+///   createEffect(fn() void {
+///       val tracked = count.get();     // subscribes
+///       val ignored = untrack(fn() any => other.get());  // doesn't subscribe
+///   });
+fn untrack(closure: any) any {
+    return __gui_untrack(closure);
+}
+
+/// Register a cleanup function for the current effect.
+/// Runs before the effect re-executes or when disposed.
+///
+/// Example:
+///   createEffect(fn() void {
+///       val timer = startTimer();
+///       onCleanup(fn() void { stopTimer(timer); });
+///   });
+fn onCleanup(closure: any) void {
+    __gui_on_cleanup(closure);
 }
 
 // ============================================================
@@ -592,34 +719,39 @@ fn hideMenu(id: int) void {
 // Event handler helpers
 // ============================================================
 
-/// Set a click handler on a widget.
-fn onClick(id: int, callbackId: int) void {
-    __gui_widget_set_onclick(id, callbackId);
+/// Update the text content of a Text widget.
+fn setText(id: int, text: string) void {
+    __gui_text_set_content(id, text);
+}
+
+/// Set a click handler on a widget. Callback is a closure: fn() void { ... }
+fn onClick(id: int, callback: any) void {
+    __gui_widget_set_onclick(id, callback);
 }
 
 /// Set a change handler on a text input or dropdown.
-fn onChange(id: int, callbackId: int) void {
-    __gui_widget_set_onchange(id, callbackId);
+fn onChange(id: int, callback: any) void {
+    __gui_widget_set_onchange(id, callback);
 }
 
 /// Set a submit handler on a text field.
-fn onSubmit(id: int, callbackId: int) void {
-    __gui_widget_set_onsubmit(id, callbackId);
+fn onSubmit(id: int, callback: any) void {
+    __gui_widget_set_onsubmit(id, callback);
 }
 
 /// Set a mouse enter handler.
-fn onMouseEnter(id: int, callbackId: int) void {
-    __gui_widget_set_onmouseenter(id, callbackId);
+fn onMouseEnter(id: int, callback: any) void {
+    __gui_widget_set_onmouseenter(id, callback);
 }
 
 /// Set a mouse leave handler.
-fn onMouseLeave(id: int, callbackId: int) void {
-    __gui_widget_set_onmouseleave(id, callbackId);
+fn onMouseLeave(id: int, callback: any) void {
+    __gui_widget_set_onmouseleave(id, callback);
 }
 
 /// Set a key press handler.
-fn onKeyPress(id: int, callbackId: int) void {
-    __gui_widget_set_onkeypress(id, callbackId);
+fn onKeyPress(id: int, callback: any) void {
+    __gui_widget_set_onkeypress(id, callback);
 }
 
 // ============================================================
