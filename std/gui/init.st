@@ -167,6 +167,18 @@ fn __gui_router_get_query(routerId: int, name: string) string;
 fn __gui_router_get_path(routerId: int) string;
 fn __gui_router_get_widget(routerId: int) int;
 
+// Store
+fn __gui_store_create() int;
+fn __gui_store_get(id: int, key: string) any;
+fn __gui_store_set(id: int, key: string, value: any) bool;
+fn __gui_store_subscribe(id: int, key: string, callback: any) int;
+fn __gui_store_unsubscribe(subscriptionId: int) bool;
+
+// Context
+fn __gui_context_create(name: string, defaultValue: any) int;
+fn __gui_context_provide(contextId: int, value: any) bool;
+fn __gui_context_consume(contextId: int) any;
+
 fn __gui_destroy_widget(id: int) bool;
 fn __gui_destroy_all() bool;
 
@@ -1001,6 +1013,60 @@ fn Link(text: string, path: string, router: any) int {
         router.navigate(path);
     });
     return btn;
+}
+
+// ============================================================
+// Store — reactive key-value container
+// ============================================================
+
+class Store {
+    var id: int;
+
+    constructor() {
+        this.id = __gui_store_create();
+    }
+
+    /// Read a field from the store.
+    fn get(key: string) any {
+        return __gui_store_get(this.id, key);
+    }
+
+    /// Write a field to the store, notifying subscribers.
+    fn set(key: string, value: any) void {
+        __gui_store_set(this.id, key, value);
+    }
+
+    /// Subscribe to changes on a specific key. Returns subscription ID.
+    fn subscribe(key: string, callback: any) int {
+        return __gui_store_subscribe(this.id, key, callback);
+    }
+
+    /// Remove a subscription by ID.
+    fn unsubscribe(subscriptionId: int) void {
+        __gui_store_unsubscribe(subscriptionId);
+    }
+}
+
+// ============================================================
+// Context — dependency injection
+// ============================================================
+
+class Context {
+    pub var id: int;
+
+    constructor(name: string, defaultValue: any) {
+        this.id = __gui_context_create(name, defaultValue);
+    }
+
+    /// Provide a value into this context.
+    fn provide(value: any) void {
+        __gui_context_provide(this.id, value);
+    }
+
+    /// Consume the current value from this context.
+    fn consume() any {
+        return __gui_context_consume(this.id);
+    }
 }
 
 // ============================================================

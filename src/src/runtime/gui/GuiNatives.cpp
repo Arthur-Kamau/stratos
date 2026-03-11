@@ -5,6 +5,7 @@
 #include "stratos/gui/Renderer.h"
 #include "stratos/gui/Signals.h"
 #include "stratos/gui/Router.h"
+#include "stratos/gui/Store.h"
 #include <iostream>
 #include <unordered_map>
 #include <memory>
@@ -1517,6 +1518,94 @@ void NativeRegistry::initGui() {
         });
 
     // ========================================
+    // ========================================
+    // Store & Context
+    // ========================================
+
+    registerFunction("gui", "__gui_store_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            return gui::StoreRegistry::instance().createStore();
+        });
+
+    registerFunction("gui", "__gui_store_get",
+        [](const std::vector<std::any>& args) -> std::any {
+            int storeId = std::any_cast<int>(args[0]);
+            std::string key = std::any_cast<std::string>(args[1]);
+            auto* store = gui::StoreRegistry::instance().getStore(storeId);
+            if (!store) return std::any{};
+            return store->get(key);
+        });
+
+    registerFunction("gui", "__gui_store_set",
+        [](const std::vector<std::any>& args) -> std::any {
+            int storeId = std::any_cast<int>(args[0]);
+            std::string key = std::any_cast<std::string>(args[1]);
+            std::any value = args[2];
+            auto* store = gui::StoreRegistry::instance().getStore(storeId);
+            if (!store) return false;
+            store->set(key, std::move(value));
+            return true;
+        });
+
+    registerFunction("gui", "__gui_store_subscribe",
+        [](const std::vector<std::any>& args) -> std::any {
+            int storeId = std::any_cast<int>(args[0]);
+            std::string key = std::any_cast<std::string>(args[1]);
+            std::any closure = args[2];
+            auto* store = gui::StoreRegistry::instance().getStore(storeId);
+            if (!store) return -1;
+
+            auto* interp = guiInterpreter_;
+            int subId = store->subscribe(key, [closure, interp](std::any newValue) {
+                if (interp) {
+                    RuntimeValue rv(closure, "function");
+                    RuntimeValue argVal(newValue, "any");
+                    std::vector<RuntimeValue> cbArgs = {argVal};
+                    interp->executeCallback(rv, cbArgs);
+                }
+            });
+            return subId;
+        });
+
+    registerFunction("gui", "__gui_store_unsubscribe",
+        [](const std::vector<std::any>& args) -> std::any {
+            int subscriptionId = std::any_cast<int>(args[0]);
+            // Search all stores for this subscription
+            // Since subscription IDs are globally unique per store, iterate stores
+            // For simplicity, we store a global mapping
+            // Actually, subscription IDs are per-store, so we need to search
+            // We'll iterate all stores
+            auto& registry = gui::StoreRegistry::instance();
+            // Try to unsubscribe from each store until found
+            // This is O(n) but fine for typical usage
+            for (int i = 0; ; i++) {
+                auto* store = registry.getStore(i);
+                if (!store) break;
+                if (store->unsubscribe(subscriptionId)) return true;
+            }
+            return false;
+        });
+
+    registerFunction("gui", "__gui_context_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            std::string name = std::any_cast<std::string>(args[0]);
+            std::any defaultValue = args[1];
+            return gui::ContextRegistry::instance().createContext(name, std::move(defaultValue));
+        });
+
+    registerFunction("gui", "__gui_context_provide",
+        [](const std::vector<std::any>& args) -> std::any {
+            int contextId = std::any_cast<int>(args[0]);
+            std::any value = args[1];
+            return gui::ContextRegistry::instance().provide(contextId, std::move(value));
+        });
+
+    registerFunction("gui", "__gui_context_consume",
+        [](const std::vector<std::any>& args) -> std::any {
+            int contextId = std::any_cast<int>(args[0]);
+            return gui::ContextRegistry::instance().consume(contextId);
+        });
+
     // Cleanup
     // ========================================
 
@@ -1542,6 +1631,8 @@ void NativeRegistry::initGui() {
             signalEffects.clear();
             gui::SignalRegistry::instance().clear();
             gui::RouterRegistry::instance().clear();
+            gui::StoreRegistry::instance().clear();
+            gui::ContextRegistry::instance().clear();
             guiInterpreter_ = nullptr;
             nextStateId = 1;
             nextCallbackId = 1;

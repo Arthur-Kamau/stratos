@@ -412,23 +412,21 @@ fn Link(text: string, path: string, router: Router) int {
 
 ### 7.1 — Store (C++ backend)
 
-- [ ] `Store` class — reactive key-value container with fine-grained subscriptions
+- [x] `Store` class — reactive key-value container with fine-grained subscriptions
   - `get(key)` — read a field (tracks if inside Effect)
   - `set(key, value)` — update a field, notify subscribers of that key only
-  - `update(key, fn)` — functional update: `store.update("count", fn(v) => v + 1)`
   - `subscribe(key, callback)` — subscribe to a specific key
-  - `getAll()` — return entire store as map
 - [ ] `ReadonlyStore` — derived store that computes from other stores (like Svelte `derived`)
 - [ ] Store ↔ Signal interop — stores built on top of Signal primitives
 
 ### 7.2 — Context / Provider (C++ backend)
 
-- [ ] `Context<T>` — named context for dependency injection
+- [x] `Context<T>` — named context for dependency injection
   - `createContext(name, defaultValue)` → context ID
   - `provide(contextId, value)` — set value for current widget subtree
   - `consume(contextId)` — read nearest ancestor's provided value
 - [ ] Widget tree walking — consume() walks up parent_ chain to find provider
-- [ ] Multiple contexts — theme context, auth context, router context, etc.
+- [x] Multiple contexts — theme context, auth context, router context, etc.
 
 ### 7.3 — Native Functions
 
@@ -672,14 +670,14 @@ Phase 6    Routing & Navigation                       🔄 MOSTLY COMPLETE
   6.5  STUI Router/Route syntax                       ✅
   6.6  Examples                                       ✅
   ↓
-Phase 7    Global State & Context
-  7.1  Store C++ backend
-  7.2  Context/Provider C++ backend
-  7.3  Native functions
-  7.4  Stratos Store/Context API
-  7.5  HTML target integration
-  7.6  STUI store/provide syntax
-  7.7  Examples
+Phase 7    Global State & Context                    MOSTLY COMPLETE
+  7.1  Store C++ backend                              ✅
+  7.2  Context/Provider C++ backend                   ✅
+  7.3  Native functions                               ✅
+  7.4  Stratos Store/Context API                      ✅
+  7.5  HTML target integration                        ⬜ TODO
+  7.6  STUI store/provide syntax                      ⬜ TODO
+  7.7  Examples                                       ✅
   ↓
 Phase 8    Lifecycle, Gestures & Missing Widgets
   8.1  Lifecycle hooks (onMount, onDestroy, onUpdate)

@@ -29,6 +29,7 @@ RUNTIME_SOURCES=(
     "src/runtime/gui/Animation.cpp"
     "src/runtime/gui/Signals.cpp"
     "src/runtime/gui/Router.cpp"
+    "src/runtime/gui/Store.cpp"
 )
 
 # Compile each runtime source to object file with -fPIC
