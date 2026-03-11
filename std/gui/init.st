@@ -218,6 +218,20 @@ fn __gui_bottomnav_add_item(id: int, icon: string, label: string) bool;
 fn __gui_bottomnav_get_active(id: int) int;
 fn __gui_bottomnav_set_active(id: int, index: int) bool;
 
+// Form system
+fn __gui_form_create() int;
+fn __gui_form_add_field(formId: int, name: string, fieldId: int) bool;
+fn __gui_form_validate(formId: int) bool;
+fn __gui_form_reset(formId: int) bool;
+fn __gui_form_submit(formId: int) bool;
+fn __gui_form_set_onsubmit(formId: int, callback: any) bool;
+fn __gui_formfield_create(label: string, inputId: int) int;
+fn __gui_formfield_add_required(fieldId: int, errorMsg: string) bool;
+fn __gui_formfield_add_min_length(fieldId: int, minLen: int, errorMsg: string) bool;
+fn __gui_formfield_add_max_length(fieldId: int, maxLen: int, errorMsg: string) bool;
+fn __gui_formfield_add_email(fieldId: int, errorMsg: string) bool;
+fn __gui_formfield_get_error(fieldId: int) string;
+
 fn __gui_destroy_widget(id: int) bool;
 fn __gui_destroy_all() bool;
 
@@ -1318,6 +1332,80 @@ fn getActiveNavItem(id: int) int {
 /// Set the active nav item index.
 fn setActiveNavItem(id: int, index: int) void {
     __gui_bottomnav_set_active(id, index);
+}
+
+// ============================================================
+// Form system
+// ============================================================
+
+/// Create a form field with label wrapping an input widget.
+fn FormField(label: string, inputId: int) int {
+    return __gui_formfield_create(label, inputId);
+}
+
+/// Add a required validation rule to a form field.
+fn addRequired(fieldId: int, errorMsg: string) void {
+    __gui_formfield_add_required(fieldId, errorMsg);
+}
+
+/// Add a minimum length validation rule.
+fn addMinLength(fieldId: int, minLen: int, errorMsg: string) void {
+    __gui_formfield_add_min_length(fieldId, minLen, errorMsg);
+}
+
+/// Add a maximum length validation rule.
+fn addMaxLength(fieldId: int, maxLen: int, errorMsg: string) void {
+    __gui_formfield_add_max_length(fieldId, maxLen, errorMsg);
+}
+
+/// Add an email validation rule.
+fn addEmailValidation(fieldId: int, errorMsg: string) void {
+    __gui_formfield_add_email(fieldId, errorMsg);
+}
+
+/// Get the current error message of a form field.
+fn getFieldError(fieldId: int) string {
+    return __gui_formfield_get_error(fieldId);
+}
+
+/// Create a form from an array of field widget IDs.
+fn Form(fields: array<int>) int {
+    val id = __gui_form_create();
+    for val field in fields {
+        __gui_widget_add_child(id, field);
+    }
+    return id;
+}
+
+/// Create a form with named fields.
+fn FormWithNames(names: array<string>, fieldIds: array<int>) int {
+    val id = __gui_form_create();
+    var i = 0;
+    for val name in names {
+        __gui_form_add_field(id, name, fieldIds[i]);
+        i = i + 1;
+    }
+    return id;
+}
+
+/// Validate all fields in a form.
+fn validateForm(formId: int) bool {
+    return __gui_form_validate(formId);
+}
+
+/// Reset all field errors in a form.
+fn resetForm(formId: int) void {
+    __gui_form_reset(formId);
+}
+
+/// Submit a form (validates first, then calls onSubmit if valid).
+fn submitForm(formId: int) void {
+    __gui_form_submit(formId);
+}
+
+/// Set the submit callback for a form.
+fn onFormSubmit(formId: int, callback: any) void {
+    __gui_form_set_onsubmit(formId, callback);
 }
 
 // ============================================================

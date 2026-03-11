@@ -615,11 +615,11 @@ Implementation for each:
 
 ### 9.1 — Form System
 
-- [ ] `Form` widget — groups input widgets, tracks validity
-- [ ] `FormField` wrapper — adds label, error message, validation rules
-- [ ] Built-in validators: `required`, `minLength`, `maxLength`, `email`, `regex`, `custom(fn)`
-- [ ] `form.validate()` → bool, `form.reset()`, `form.values()` → map
-- [ ] Submit handling: `form.onSubmit(fn(values) { ... })`
+- [x] `Form` widget — groups input widgets, tracks validity
+- [x] `FormField` wrapper — adds label, error message, validation rules
+- [x] Built-in validators: `required`, `minLength`, `maxLength`, `email`, `regex`, `custom(fn)`
+- [x] `form.validate()` → bool, `form.reset()`
+- [x] Submit handling: `form.onSubmit(fn(values) { ... })`
 
 ### 9.2 — Async Widget Support
 

@@ -1138,5 +1138,86 @@ private:
     std::function<void(int)> onChange_;
 };
 
+// ============================================================
+// Form Validation
+// ============================================================
+
+enum class ValidationRule {
+    Required,
+    MinLength,
+    MaxLength,
+    Email,
+    Regex,
+    Custom
+};
+
+struct ValidationEntry {
+    ValidationRule rule;
+    int intParam = 0;
+    std::string stringParam;
+    std::function<bool(const std::string&)> customValidator;
+    std::string errorMessage;
+};
+
+// FormField — wraps an input widget with label, error, validation
+class FormField : public Widget {
+public:
+    FormField() = default;
+    FormField(const std::string& label, WidgetPtr input)
+        : label_(label), input_(std::move(input)) {}
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    std::string typeName() const override { return "FormField"; }
+
+    void setLabel(const std::string& label) { label_ = label; markDirty(); }
+    void setError(const std::string& error) { error_ = error; markDirty(); }
+    const std::string& getError() const { return error_; }
+    void setInput(WidgetPtr input) { input_ = std::move(input); markDirty(); }
+    WidgetPtr getInput() const { return input_; }
+
+    void addValidation(const ValidationEntry& entry) { validations_.push_back(entry); }
+    bool validate(const std::string& value);
+    void clearError() { error_.clear(); markDirty(); }
+
+    const std::string& getLabel() const { return label_; }
+
+private:
+    std::string label_;
+    std::string error_;
+    WidgetPtr input_;
+    std::vector<ValidationEntry> validations_;
+    FontSpec font_;
+};
+
+// Form — groups FormFields, tracks validity
+class Form : public Widget {
+public:
+    Form() = default;
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    std::string typeName() const override { return "Form"; }
+
+    void addField(const std::string& name, std::shared_ptr<FormField> field) {
+        fields_[name] = field;
+        addChild(field);
+    }
+
+    bool validate();
+    void reset();
+    bool isValid() const { return valid_; }
+
+    void setOnSubmit(std::function<void()> handler) { onSubmit_ = std::move(handler); }
+    void submit() {
+        if (validate() && onSubmit_) onSubmit_();
+    }
+
+private:
+    std::unordered_map<std::string, std::shared_ptr<FormField>> fields_;
+    bool valid_ = true;
+    std::function<void()> onSubmit_;
+};
+
 } // namespace gui
 } // namespace stratos

@@ -1952,6 +1952,146 @@ void NativeRegistry::initGui() {
         });
 
     // ========================================
+    // Form system
+    // ========================================
+
+    registerFunction("gui", "__gui_form_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto widget = std::make_shared<gui::Form>();
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_form_add_field",
+        [](const std::vector<std::any>& args) -> std::any {
+            int formId = std::any_cast<int>(args[0]);
+            std::string name = std::any_cast<std::string>(args[1]);
+            int fieldId = std::any_cast<int>(args[2]);
+            auto form = std::dynamic_pointer_cast<gui::Form>(getWidget(formId));
+            auto field = std::dynamic_pointer_cast<gui::FormField>(getWidget(fieldId));
+            if (form && field) {
+                form->addField(name, field);
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_form_validate",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto form = std::dynamic_pointer_cast<gui::Form>(getWidget(id));
+            if (form) return form->validate();
+            return false;
+        });
+
+    registerFunction("gui", "__gui_form_reset",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto form = std::dynamic_pointer_cast<gui::Form>(getWidget(id));
+            if (form) { form->reset(); return true; }
+            return false;
+        });
+
+    registerFunction("gui", "__gui_form_submit",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto form = std::dynamic_pointer_cast<gui::Form>(getWidget(id));
+            if (form) { form->submit(); return true; }
+            return false;
+        });
+
+    registerFunction("gui", "__gui_form_set_onsubmit",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto closure = args[1];
+            auto form = std::dynamic_pointer_cast<gui::Form>(getWidget(id));
+            if (form && guiInterpreter_) {
+                auto interpPtr = guiInterpreter_;
+                form->setOnSubmit([closure, interpPtr]() {
+                    RuntimeValue rv(closure, "function");
+                    std::vector<RuntimeValue> noArgs;
+                    interpPtr->executeCallback(rv, noArgs);
+                });
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_formfield_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            std::string label = std::any_cast<std::string>(args[0]);
+            int inputId = std::any_cast<int>(args[1]);
+            auto input = getWidget(inputId);
+            auto widget = std::make_shared<gui::FormField>(label, input);
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_formfield_add_required",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            std::string msg = std::any_cast<std::string>(args[1]);
+            auto field = std::dynamic_pointer_cast<gui::FormField>(getWidget(id));
+            if (field) {
+                gui::ValidationEntry entry;
+                entry.rule = gui::ValidationRule::Required;
+                entry.errorMessage = msg;
+                field->addValidation(entry);
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_formfield_add_min_length",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            int minLen = std::any_cast<int>(args[1]);
+            std::string msg = std::any_cast<std::string>(args[2]);
+            auto field = std::dynamic_pointer_cast<gui::FormField>(getWidget(id));
+            if (field) {
+                gui::ValidationEntry entry;
+                entry.rule = gui::ValidationRule::MinLength;
+                entry.intParam = minLen;
+                entry.errorMessage = msg;
+                field->addValidation(entry);
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_formfield_add_max_length",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            int maxLen = std::any_cast<int>(args[1]);
+            std::string msg = std::any_cast<std::string>(args[2]);
+            auto field = std::dynamic_pointer_cast<gui::FormField>(getWidget(id));
+            if (field) {
+                gui::ValidationEntry entry;
+                entry.rule = gui::ValidationRule::MaxLength;
+                entry.intParam = maxLen;
+                entry.errorMessage = msg;
+                field->addValidation(entry);
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_formfield_add_email",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            std::string msg = std::any_cast<std::string>(args[1]);
+            auto field = std::dynamic_pointer_cast<gui::FormField>(getWidget(id));
+            if (field) {
+                gui::ValidationEntry entry;
+                entry.rule = gui::ValidationRule::Email;
+                entry.errorMessage = msg;
+                field->addValidation(entry);
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_formfield_get_error",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto field = std::dynamic_pointer_cast<gui::FormField>(getWidget(id));
+            if (field) return field->getError();
+            return std::string("");
+        });
+
+    // ========================================
     // Cleanup
     // ========================================
 

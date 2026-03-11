@@ -2,6 +2,7 @@
 #include <SDL2/SDL.h>
 #include <algorithm>
 #include <cmath>
+#include <regex>
 
 namespace stratos {
 namespace gui {
@@ -2273,6 +2274,180 @@ bool BottomNavBar::handleEvent(const Event& event) {
         }
     }
     return false;
+}
+
+// ============================================================
+// FormField Widget
+// ============================================================
+
+bool FormField::validate(const std::string& value) {
+    for (auto& entry : validations_) {
+        switch (entry.rule) {
+            case ValidationRule::Required:
+                if (value.empty()) {
+                    error_ = entry.errorMessage;
+                    markDirty();
+                    return false;
+                }
+                break;
+            case ValidationRule::MinLength:
+                if ((int)value.length() < entry.intParam) {
+                    error_ = entry.errorMessage;
+                    markDirty();
+                    return false;
+                }
+                break;
+            case ValidationRule::MaxLength:
+                if ((int)value.length() > entry.intParam) {
+                    error_ = entry.errorMessage;
+                    markDirty();
+                    return false;
+                }
+                break;
+            case ValidationRule::Email:
+                if (value.find('@') == std::string::npos || value.find('.') == std::string::npos) {
+                    error_ = entry.errorMessage;
+                    markDirty();
+                    return false;
+                }
+                break;
+            case ValidationRule::Regex: {
+                try {
+                    std::regex re(entry.stringParam);
+                    if (!std::regex_match(value, re)) {
+                        error_ = entry.errorMessage;
+                        markDirty();
+                        return false;
+                    }
+                } catch (...) {
+                    error_ = "Invalid regex pattern";
+                    markDirty();
+                    return false;
+                }
+                break;
+            }
+            case ValidationRule::Custom:
+                if (entry.customValidator && !entry.customValidator(value)) {
+                    error_ = entry.errorMessage;
+                    markDirty();
+                    return false;
+                }
+                break;
+        }
+    }
+    error_.clear();
+    markDirty();
+    return true;
+}
+
+void FormField::layout(const Constraints& constraints) {
+    float maxWidth = style_.width >= 0 ? style_.width : constraints.maxWidth;
+    float yOffset = 0;
+
+    // Label height
+    float labelH = 20.0f;
+    yOffset += labelH + 4.0f;
+
+    // Input widget
+    if (input_) {
+        Constraints inputC = {0, maxWidth, 0, constraints.maxHeight - yOffset};
+        input_->layout(inputC);
+        input_->setBounds({0, yOffset, input_->getComputedSize().width, input_->getComputedSize().height});
+        yOffset += input_->getComputedSize().height + 4.0f;
+    }
+
+    // Error text height
+    if (!error_.empty()) {
+        yOffset += 16.0f;
+    }
+
+    bounds_.width = maxWidth;
+    bounds_.height = yOffset;
+}
+
+void FormField::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    float yOffset = 0;
+
+    // Draw label
+    font_.size = 14;
+    font_.weight = FontWeight::Medium;
+    renderer.drawText(label_, 0, yOffset, font_, Color::rgb(100, 100, 100));
+    yOffset += 20.0f + 4.0f;
+
+    // Draw input
+    if (input_) {
+        input_->setBounds({0, yOffset, input_->getComputedSize().width, input_->getComputedSize().height});
+        input_->paint(renderer);
+        yOffset += input_->getComputedSize().height + 4.0f;
+    }
+
+    // Draw error
+    if (!error_.empty()) {
+        font_.size = 12;
+        font_.weight = FontWeight::Regular;
+        renderer.drawText(error_, 0, yOffset, font_, Color::rgb(211, 47, 47));
+    }
+
+    renderer.restore();
+}
+
+// ============================================================
+// Form Widget
+// ============================================================
+
+void Form::layout(const Constraints& constraints) {
+    float maxWidth = style_.width >= 0 ? style_.width : constraints.maxWidth;
+    float yOffset = 0;
+    float spacing = 12.0f;
+
+    for (size_t i = 0; i < children_.size(); i++) {
+        Constraints childC = {0, maxWidth, 0, constraints.maxHeight - yOffset};
+        children_[i]->layout(childC);
+        children_[i]->setBounds({0, yOffset, children_[i]->getComputedSize().width, children_[i]->getComputedSize().height});
+        yOffset += children_[i]->getComputedSize().height;
+        if (i + 1 < children_.size()) yOffset += spacing;
+    }
+
+    bounds_.width = maxWidth;
+    bounds_.height = yOffset;
+}
+
+void Form::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    for (auto& child : children_) {
+        child->paint(renderer);
+    }
+
+    renderer.restore();
+}
+
+bool Form::validate() {
+    valid_ = true;
+    for (auto& [name, field] : fields_) {
+        std::string value;
+        auto input = field->getInput();
+        if (auto tf = std::dynamic_pointer_cast<TextField>(input)) {
+            value = tf->getValue();
+        }
+        if (!field->validate(value)) {
+            valid_ = false;
+        }
+    }
+    return valid_;
+}
+
+void Form::reset() {
+    for (auto& [name, field] : fields_) {
+        field->clearError();
+    }
+    valid_ = true;
 }
 
 } // namespace gui
