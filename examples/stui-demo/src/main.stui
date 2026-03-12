@@ -1,0 +1,24 @@
+package main;
+
+import "std/gui";
+
+component Counter {
+    state count: int = 0;
+    computed doubled: int = count * 2;
+
+    view {
+        Column(spacing: 16) {
+            Text("Counter Demo") {
+                fontSize: 24;
+                fontWeight: "bold";
+            }
+            Text("Count") {
+                fontSize: 18;
+            }
+            Row(spacing: 8) {
+                Button("Increment")
+                Button("Reset")
+            }
+        }
+    }
+}

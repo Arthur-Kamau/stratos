@@ -101,6 +101,7 @@ g++ -std=c++20 -I include -I libs/sqlite -I/usr/include/postgresql $(pkg-config 
   src/stui/STUILexer.cpp \
   src/stui/STUIParser.cpp \
   src/stui/STUITranspiler.cpp \
+  src/stui/STUIFormatter.cpp \
   src/codegen/WasmCompiler.cpp \
   src/codegen/HTMLGenerator.cpp \
   src/doc/HTMLDocGenerator.cpp \

@@ -50,6 +50,7 @@
 #include "stratos/STUILexer.h"
 #include "stratos/STUIParser.h"
 #include "stratos/STUITranspiler.h"
+#include "stratos/STUIFormatter.h"
 #include "stratos/WasmCompiler.h"
 #include "stratos/HTMLGenerator.h"
 
@@ -105,8 +106,8 @@ void printHelp() {
     std::cout << "  stratos check <file.st>        Parse and analyze without code generation\n";
     std::cout << "  stratos check <file.stui>      Validate STUI syntax and components\n";
     std::cout << "  stratos check <directory>      Check all .st files in directory\n";
-    std::cout << "  stratos fmt <file.st>          Format a Stratos source file\n";
-    std::cout << "  stratos fmt <directory> --write Format all .st files in directory\n";
+    std::cout << "  stratos fmt <file.st|.stui>     Format a Stratos source file\n";
+    std::cout << "  stratos fmt <directory> --write Format all .st/.stui files in directory\n";
     std::cout << "  stratos build                  Build project (looks for stratos.conf)\n";
     std::cout << "  stratos build <project_dir>    Build project in specified directory\n";
     std::cout << "  stratos new <project-name>     Create a new Stratos project\n";
@@ -2280,39 +2281,49 @@ int handleFmt(int argc, char* argv[]) {
         file.close();
 
         try {
-            // Lexical Analysis
-            Lexer lexer(source, filePath);
-            std::vector<Token> tokens = lexer.scanTokens();
+            std::string formattedCode;
+            bool isStuiFile = filePath.size() >= 5 &&
+                filePath.substr(filePath.size() - 5) == ".stui";
 
-            if (tokens.empty()) {
-                throw std::runtime_error("No tokens found in file");
-            }
+            if (isStuiFile) {
+                // STUI formatting pipeline
+                stui::STUILexer stuiLexer(source, filePath);
+                auto stuiTokens = stuiLexer.scanTokens();
+                stui::STUIParser stuiParser(stuiTokens, filePath);
+                auto stuiFile = stuiParser.parse();
+                stui::STUIFormatter stuiFmt;
+                formattedCode = stuiFmt.format(stuiFile);
+            } else {
+                // Standard .st formatting pipeline
+                Lexer lexer(source, filePath);
+                std::vector<Token> tokens = lexer.scanTokens();
 
-            // Parsing
-            Parser parser(tokens);
-            std::vector<std::unique_ptr<Stmt>> statements;
-
-            // Catch parser errors
-            try {
-                statements = parser.parse();
-            } catch (const std::exception& parseError) {
-                throw std::runtime_error(std::string("Parse error: ") + parseError.what());
-            }
-
-            if (statements.empty()) {
-                throw std::runtime_error("No statements found (possible parse error)");
-            }
-
-            // Validate AST - check for null statements
-            for (const auto& stmt : statements) {
-                if (!stmt) {
-                    throw std::runtime_error("Invalid AST: null statement encountered (possible parse error)");
+                if (tokens.empty()) {
+                    throw std::runtime_error("No tokens found in file");
                 }
-            }
 
-            // Format
-            Formatter formatter;
-            std::string formattedCode = formatter.format(statements);
+                Parser parser(tokens);
+                std::vector<std::unique_ptr<Stmt>> statements;
+
+                try {
+                    statements = parser.parse();
+                } catch (const std::exception& parseError) {
+                    throw std::runtime_error(std::string("Parse error: ") + parseError.what());
+                }
+
+                if (statements.empty()) {
+                    throw std::runtime_error("No statements found (possible parse error)");
+                }
+
+                for (const auto& stmt : statements) {
+                    if (!stmt) {
+                        throw std::runtime_error("Invalid AST: null statement encountered (possible parse error)");
+                    }
+                }
+
+                Formatter formatter;
+                formattedCode = formatter.format(statements);
+            }
 
             if (checkOnly) {
                 // Check if formatted code differs from original
