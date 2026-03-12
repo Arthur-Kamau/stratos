@@ -2,6 +2,7 @@
 
 #include "stratos/gui/Renderer.h"
 #include "stratos/gui/Event.h"
+#include "stratos/gui/Animation.h"
 #include <string>
 #include <vector>
 #include <memory>
@@ -1217,6 +1218,336 @@ private:
     std::unordered_map<std::string, std::shared_ptr<FormField>> fields_;
     bool valid_ = true;
     std::function<void()> onSubmit_;
+};
+
+// ============================================================
+// Phase 8.2 — Gesture Detection
+// ============================================================
+
+enum class SwipeDirection {
+    Left,
+    Right,
+    Up,
+    Down
+};
+
+using OnDragHandler = std::function<void(float x, float y, float dx, float dy)>;
+using OnSwipeHandler = std::function<void(SwipeDirection direction)>;
+
+class GestureDetector : public Widget {
+public:
+    GestureDetector() = default;
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    bool handleEvent(const Event& event) override;
+    std::string typeName() const override { return "GestureDetector"; }
+
+    void setOnDoubleTap(OnClickHandler handler) { onDoubleTap_ = std::move(handler); }
+    void setOnLongPress(OnClickHandler handler) { onLongPress_ = std::move(handler); }
+    void setOnDragStart(OnMouseHandler handler) { onDragStart_ = std::move(handler); }
+    void setOnDrag(OnDragHandler handler) { onDrag_ = std::move(handler); }
+    void setOnDragEnd(OnClickHandler handler) { onDragEnd_ = std::move(handler); }
+    void setOnSwipe(OnSwipeHandler handler) { onSwipe_ = std::move(handler); }
+
+private:
+    OnClickHandler onDoubleTap_;
+    OnClickHandler onLongPress_;
+    OnMouseHandler onDragStart_;
+    OnDragHandler onDrag_;
+    OnClickHandler onDragEnd_;
+    OnSwipeHandler onSwipe_;
+
+    // Gesture state
+    bool dragging_ = false;
+    float dragStartX_ = 0, dragStartY_ = 0;
+    float lastDragX_ = 0, lastDragY_ = 0;
+    float pressStartX_ = 0, pressStartY_ = 0;
+    uint32_t lastClickTime_ = 0;
+    uint32_t pressStartTime_ = 0;
+    bool waitingForDoubleClick_ = false;
+    bool pressed_ = false;
+    static constexpr uint32_t DOUBLE_TAP_MS = 300;
+    static constexpr uint32_t LONG_PRESS_MS = 500;
+    static constexpr float SWIPE_MIN_DISTANCE = 50.0f;
+    static constexpr float DRAG_THRESHOLD = 5.0f;
+};
+
+// ============================================================
+// Phase 8.4 — Error Boundary
+// ============================================================
+
+class ErrorBoundary : public Widget {
+public:
+    ErrorBoundary() = default;
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    bool handleEvent(const Event& event) override;
+    std::string typeName() const override { return "ErrorBoundary"; }
+
+    void setFallback(WidgetPtr fallback) { fallback_ = std::move(fallback); }
+    void setOnError(std::function<void(const std::string&)> handler) { onError_ = std::move(handler); }
+
+    bool hasError() const { return hasError_; }
+    const std::string& getErrorMessage() const { return errorMessage_; }
+    void setError(const std::string& message);
+    void reset();
+
+private:
+    WidgetPtr fallback_;
+    std::function<void(const std::string&)> onError_;
+    bool hasError_ = false;
+    std::string errorMessage_;
+    FontSpec font_;
+};
+
+// ============================================================
+// Phase 8.5 — MediaQuery / Responsive
+// ============================================================
+
+enum class Orientation {
+    Portrait,
+    Landscape
+};
+
+enum class Breakpoint {
+    Mobile,     // < 600
+    Tablet,     // 600 - 1024
+    Desktop     // > 1024
+};
+
+struct MediaQueryData {
+    float width = 0;
+    float height = 0;
+    Orientation orientation = Orientation::Landscape;
+    Breakpoint breakpoint = Breakpoint::Desktop;
+};
+
+// Singleton that provides current window metrics
+class MediaQueryRegistry {
+public:
+    static MediaQueryRegistry& instance() {
+        static MediaQueryRegistry inst;
+        return inst;
+    }
+
+    void update(float width, float height) {
+        data_.width = width;
+        data_.height = height;
+        data_.orientation = height > width ? Orientation::Portrait : Orientation::Landscape;
+        if (width < 600) data_.breakpoint = Breakpoint::Mobile;
+        else if (width <= 1024) data_.breakpoint = Breakpoint::Tablet;
+        else data_.breakpoint = Breakpoint::Desktop;
+    }
+
+    const MediaQueryData& get() const { return data_; }
+
+    void clear() { data_ = {}; }
+
+private:
+    MediaQueryRegistry() = default;
+    MediaQueryData data_;
+};
+
+class Responsive : public Widget {
+public:
+    Responsive() = default;
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    bool handleEvent(const Event& event) override;
+    std::string typeName() const override { return "Responsive"; }
+
+    void setMobileBuilder(std::function<WidgetPtr()> builder) { mobileBuilder_ = std::move(builder); }
+    void setTabletBuilder(std::function<WidgetPtr()> builder) { tabletBuilder_ = std::move(builder); }
+    void setDesktopBuilder(std::function<WidgetPtr()> builder) { desktopBuilder_ = std::move(builder); }
+
+private:
+    void rebuildIfNeeded();
+
+    std::function<WidgetPtr()> mobileBuilder_;
+    std::function<WidgetPtr()> tabletBuilder_;
+    std::function<WidgetPtr()> desktopBuilder_;
+    WidgetPtr currentChild_;
+    Breakpoint lastBreakpoint_ = Breakpoint::Desktop;
+    bool needsRebuild_ = true;
+};
+
+// ============================================================
+// Phase 9.2 — Async Widget Support
+// ============================================================
+
+enum class AsyncState {
+    Loading,
+    Success,
+    Error
+};
+
+class FutureBuilder : public Widget {
+public:
+    FutureBuilder() = default;
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    bool handleEvent(const Event& event) override;
+    std::string typeName() const override { return "FutureBuilder"; }
+
+    void setLoadingWidget(WidgetPtr loading) { loadingWidget_ = std::move(loading); }
+    void setSuccessWidget(WidgetPtr success) { successWidget_ = std::move(success); }
+    void setErrorWidget(WidgetPtr error) { errorWidget_ = std::move(error); }
+
+    void setState(AsyncState state) { state_ = state; markDirty(); }
+    AsyncState getState() const { return state_; }
+    void setErrorMessage(const std::string& msg) { errorMessage_ = msg; }
+
+private:
+    WidgetPtr loadingWidget_;
+    WidgetPtr successWidget_;
+    WidgetPtr errorWidget_;
+    AsyncState state_ = AsyncState::Loading;
+    std::string errorMessage_;
+};
+
+class Suspense : public Widget {
+public:
+    Suspense() = default;
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    bool handleEvent(const Event& event) override;
+    std::string typeName() const override { return "Suspense"; }
+
+    void setFallback(WidgetPtr fallback) { fallback_ = std::move(fallback); }
+    void setReady(bool ready) { ready_ = ready; markDirty(); }
+    bool isReady() const { return ready_; }
+
+private:
+    WidgetPtr fallback_;
+    bool ready_ = false;
+};
+
+// ============================================================
+// Phase 9.3 — Transition Animations
+// ============================================================
+
+class AnimatedContainer : public Widget {
+public:
+    AnimatedContainer() = default;
+    AnimatedContainer(float durationMs, EasingType easing = EasingType::EaseInOut)
+        : duration_(durationMs), easing_(easing) {}
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    std::string typeName() const override { return "AnimatedContainer"; }
+
+    // Target properties — animates toward these values
+    void setTargetWidth(float w) { targetWidth_ = w; animateProperty(currentWidth_, w, widthTween_); }
+    void setTargetHeight(float h) { targetHeight_ = h; animateProperty(currentHeight_, h, heightTween_); }
+    void setTargetColor(const Color& c) { targetColor_ = c; animateColors_ = true; colorProgress_ = 0; }
+    void setDuration(float ms) { duration_ = ms; }
+    void setEasing(EasingType e) { easing_ = e; }
+
+    void update(float deltaMs);
+
+private:
+    void animateProperty(float current, float target, std::shared_ptr<Tween>& tween);
+
+    float duration_ = 300;
+    EasingType easing_ = EasingType::EaseInOut;
+
+    float targetWidth_ = -1;
+    float targetHeight_ = -1;
+    float currentWidth_ = -1;
+    float currentHeight_ = -1;
+    Color targetColor_ = Color::transparent();
+    Color startColor_ = Color::transparent();
+    bool animateColors_ = false;
+    float colorProgress_ = 0;
+
+    std::shared_ptr<Tween> widthTween_;
+    std::shared_ptr<Tween> heightTween_;
+};
+
+class FadeTransition : public Widget {
+public:
+    FadeTransition() = default;
+    FadeTransition(float durationMs, EasingType easing = EasingType::EaseInOut)
+        : duration_(durationMs), easing_(easing) {}
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    std::string typeName() const override { return "FadeTransition"; }
+
+    void fadeIn() { startFade(0.0f, 1.0f); }
+    void fadeOut() { startFade(1.0f, 0.0f); }
+    void setDuration(float ms) { duration_ = ms; }
+    void setOpacity(float o) { currentOpacity_ = o; }
+
+    void update(float deltaMs);
+
+private:
+    void startFade(float from, float to);
+
+    float duration_ = 300;
+    EasingType easing_ = EasingType::EaseInOut;
+    float currentOpacity_ = 1.0f;
+    std::shared_ptr<Tween> opacityTween_;
+};
+
+class SlideTransition : public Widget {
+public:
+    enum class Direction { Left, Right, Up, Down };
+
+    SlideTransition() = default;
+    SlideTransition(Direction dir, float durationMs, EasingType easing = EasingType::EaseInOut)
+        : direction_(dir), duration_(durationMs), easing_(easing) {}
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    std::string typeName() const override { return "SlideTransition"; }
+
+    void slideIn() { startSlide(true); }
+    void slideOut() { startSlide(false); }
+    void setDirection(Direction d) { direction_ = d; }
+    void setDuration(float ms) { duration_ = ms; }
+
+    void update(float deltaMs);
+
+private:
+    void startSlide(bool entering);
+
+    Direction direction_ = Direction::Left;
+    float duration_ = 300;
+    EasingType easing_ = EasingType::EaseInOut;
+    float offsetX_ = 0, offsetY_ = 0;
+    std::shared_ptr<Tween> slideTween_;
+    bool entering_ = true;
+};
+
+class ScaleTransition : public Widget {
+public:
+    ScaleTransition() = default;
+    ScaleTransition(float durationMs, EasingType easing = EasingType::EaseInOut)
+        : duration_(durationMs), easing_(easing) {}
+
+    void layout(const Constraints& constraints) override;
+    void paint(IRenderer& renderer) override;
+    std::string typeName() const override { return "ScaleTransition"; }
+
+    void scaleIn() { startScale(0.0f, 1.0f); }
+    void scaleOut() { startScale(1.0f, 0.0f); }
+    void setDuration(float ms) { duration_ = ms; }
+
+    void update(float deltaMs);
+
+private:
+    void startScale(float from, float to);
+
+    float duration_ = 300;
+    EasingType easing_ = EasingType::EaseInOut;
+    float currentScale_ = 1.0f;
+    std::shared_ptr<Tween> scaleTween_;
 };
 
 } // namespace gui

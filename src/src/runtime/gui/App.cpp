@@ -167,6 +167,10 @@ void App::update() {
 
     // Re-layout from root
     Size windowSize = renderer_->getWindowSize();
+
+    // Update MediaQuery with current window dimensions
+    MediaQueryRegistry::instance().update(windowSize.width, windowSize.height);
+
     Constraints rootConstraints = {windowSize.width, windowSize.width,
                                     windowSize.height, windowSize.height};
     root_->layout(rootConstraints);

@@ -93,6 +93,8 @@ void NativeRegistry::initGui() {
             signalEffects.clear();
             gui::SignalRegistry::instance().clear();
             gui::LifecycleRegistry::instance().clear();
+            gui::MediaQueryRegistry::instance().clear();
+            gui::AnimationManager::instance().clear();
             widgetRegistry.clear();
             currentApp.reset();
 
@@ -2092,6 +2094,486 @@ void NativeRegistry::initGui() {
         });
 
     // ========================================
+    // Phase 8.2 — Gesture Detection
+    // ========================================
+
+    registerFunction("gui", "__gui_gesture_detector_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto widget = std::make_shared<gui::GestureDetector>();
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_gesture_set_on_double_tap",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto closure = args[1];
+            auto widget = std::dynamic_pointer_cast<gui::GestureDetector>(getWidget(id));
+            if (widget && guiInterpreter_) {
+                auto interpPtr = guiInterpreter_;
+                widget->setOnDoubleTap([closure, interpPtr]() {
+                    RuntimeValue rv(closure, "function");
+                    std::vector<RuntimeValue> noArgs;
+                    interpPtr->executeCallback(rv, noArgs);
+                });
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_gesture_set_on_long_press",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto closure = args[1];
+            auto widget = std::dynamic_pointer_cast<gui::GestureDetector>(getWidget(id));
+            if (widget && guiInterpreter_) {
+                auto interpPtr = guiInterpreter_;
+                widget->setOnLongPress([closure, interpPtr]() {
+                    RuntimeValue rv(closure, "function");
+                    std::vector<RuntimeValue> noArgs;
+                    interpPtr->executeCallback(rv, noArgs);
+                });
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_gesture_set_on_drag_start",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto closure = args[1];
+            auto widget = std::dynamic_pointer_cast<gui::GestureDetector>(getWidget(id));
+            if (widget && guiInterpreter_) {
+                auto interpPtr = guiInterpreter_;
+                widget->setOnDragStart([closure, interpPtr](float x, float y) {
+                    RuntimeValue rv(closure, "function");
+                    std::vector<RuntimeValue> cbArgs;
+                    cbArgs.push_back(RuntimeValue(static_cast<double>(x), "float"));
+                    cbArgs.push_back(RuntimeValue(static_cast<double>(y), "float"));
+                    interpPtr->executeCallback(rv, cbArgs);
+                });
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_gesture_set_on_drag",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto closure = args[1];
+            auto widget = std::dynamic_pointer_cast<gui::GestureDetector>(getWidget(id));
+            if (widget && guiInterpreter_) {
+                auto interpPtr = guiInterpreter_;
+                widget->setOnDrag([closure, interpPtr](float x, float y, float dx, float dy) {
+                    RuntimeValue rv(closure, "function");
+                    std::vector<RuntimeValue> cbArgs;
+                    cbArgs.push_back(RuntimeValue(static_cast<double>(x), "float"));
+                    cbArgs.push_back(RuntimeValue(static_cast<double>(y), "float"));
+                    cbArgs.push_back(RuntimeValue(static_cast<double>(dx), "float"));
+                    cbArgs.push_back(RuntimeValue(static_cast<double>(dy), "float"));
+                    interpPtr->executeCallback(rv, cbArgs);
+                });
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_gesture_set_on_drag_end",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto closure = args[1];
+            auto widget = std::dynamic_pointer_cast<gui::GestureDetector>(getWidget(id));
+            if (widget && guiInterpreter_) {
+                auto interpPtr = guiInterpreter_;
+                widget->setOnDragEnd([closure, interpPtr]() {
+                    RuntimeValue rv(closure, "function");
+                    std::vector<RuntimeValue> noArgs;
+                    interpPtr->executeCallback(rv, noArgs);
+                });
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_gesture_set_on_swipe",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto closure = args[1];
+            auto widget = std::dynamic_pointer_cast<gui::GestureDetector>(getWidget(id));
+            if (widget && guiInterpreter_) {
+                auto interpPtr = guiInterpreter_;
+                widget->setOnSwipe([closure, interpPtr](gui::SwipeDirection dir) {
+                    RuntimeValue rv(closure, "function");
+                    std::vector<RuntimeValue> cbArgs;
+                    std::string dirStr;
+                    switch (dir) {
+                        case gui::SwipeDirection::Left: dirStr = "left"; break;
+                        case gui::SwipeDirection::Right: dirStr = "right"; break;
+                        case gui::SwipeDirection::Up: dirStr = "up"; break;
+                        case gui::SwipeDirection::Down: dirStr = "down"; break;
+                    }
+                    cbArgs.push_back(RuntimeValue(dirStr, "string"));
+                    interpPtr->executeCallback(rv, cbArgs);
+                });
+            }
+            return true;
+        });
+
+    // ========================================
+    // Phase 8.4 — Error Boundary
+    // ========================================
+
+    registerFunction("gui", "__gui_error_boundary_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto widget = std::make_shared<gui::ErrorBoundary>();
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_error_boundary_set_fallback",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            int fallbackId = std::any_cast<int>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::ErrorBoundary>(getWidget(id));
+            auto fallback = getWidget(fallbackId);
+            if (widget && fallback) widget->setFallback(fallback);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_error_boundary_set_on_error",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto closure = args[1];
+            auto widget = std::dynamic_pointer_cast<gui::ErrorBoundary>(getWidget(id));
+            if (widget && guiInterpreter_) {
+                auto interpPtr = guiInterpreter_;
+                widget->setOnError([closure, interpPtr](const std::string& msg) {
+                    RuntimeValue rv(closure, "function");
+                    std::vector<RuntimeValue> cbArgs;
+                    cbArgs.push_back(RuntimeValue(msg, "string"));
+                    interpPtr->executeCallback(rv, cbArgs);
+                });
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_error_boundary_set_error",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            std::string msg = std::any_cast<std::string>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::ErrorBoundary>(getWidget(id));
+            if (widget) widget->setError(msg);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_error_boundary_reset",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::ErrorBoundary>(getWidget(id));
+            if (widget) widget->reset();
+            return true;
+        });
+
+    registerFunction("gui", "__gui_error_boundary_has_error",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::ErrorBoundary>(getWidget(id));
+            return widget ? widget->hasError() : false;
+        });
+
+    // ========================================
+    // Phase 8.5 — MediaQuery / Responsive
+    // ========================================
+
+    registerFunction("gui", "__gui_media_query_width",
+        [](const std::vector<std::any>& args) -> std::any {
+            return static_cast<double>(gui::MediaQueryRegistry::instance().get().width);
+        });
+
+    registerFunction("gui", "__gui_media_query_height",
+        [](const std::vector<std::any>& args) -> std::any {
+            return static_cast<double>(gui::MediaQueryRegistry::instance().get().height);
+        });
+
+    registerFunction("gui", "__gui_media_query_orientation",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto o = gui::MediaQueryRegistry::instance().get().orientation;
+            return std::string(o == gui::Orientation::Portrait ? "portrait" : "landscape");
+        });
+
+    registerFunction("gui", "__gui_media_query_breakpoint",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto bp = gui::MediaQueryRegistry::instance().get().breakpoint;
+            switch (bp) {
+                case gui::Breakpoint::Mobile: return std::string("mobile");
+                case gui::Breakpoint::Tablet: return std::string("tablet");
+                case gui::Breakpoint::Desktop: return std::string("desktop");
+            }
+            return std::string("desktop");
+        });
+
+    registerFunction("gui", "__gui_responsive_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto widget = std::make_shared<gui::Responsive>();
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_responsive_set_mobile",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto closure = args[1];
+            auto widget = std::dynamic_pointer_cast<gui::Responsive>(getWidget(id));
+            if (widget && guiInterpreter_) {
+                auto interpPtr = guiInterpreter_;
+                widget->setMobileBuilder([closure, interpPtr]() -> gui::WidgetPtr {
+                    RuntimeValue rv(closure, "function");
+                    std::vector<RuntimeValue> noArgs;
+                    auto result = interpPtr->executeCallback(rv, noArgs);
+                    if (result.type == "int") {
+                        int widgetId = result.asInt();
+                        return getWidget(widgetId);
+                    }
+                    return nullptr;
+                });
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_responsive_set_tablet",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto closure = args[1];
+            auto widget = std::dynamic_pointer_cast<gui::Responsive>(getWidget(id));
+            if (widget && guiInterpreter_) {
+                auto interpPtr = guiInterpreter_;
+                widget->setTabletBuilder([closure, interpPtr]() -> gui::WidgetPtr {
+                    RuntimeValue rv(closure, "function");
+                    std::vector<RuntimeValue> noArgs;
+                    auto result = interpPtr->executeCallback(rv, noArgs);
+                    if (result.type == "int") {
+                        int widgetId = result.asInt();
+                        return getWidget(widgetId);
+                    }
+                    return nullptr;
+                });
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_responsive_set_desktop",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto closure = args[1];
+            auto widget = std::dynamic_pointer_cast<gui::Responsive>(getWidget(id));
+            if (widget && guiInterpreter_) {
+                auto interpPtr = guiInterpreter_;
+                widget->setDesktopBuilder([closure, interpPtr]() -> gui::WidgetPtr {
+                    RuntimeValue rv(closure, "function");
+                    std::vector<RuntimeValue> noArgs;
+                    auto result = interpPtr->executeCallback(rv, noArgs);
+                    if (result.type == "int") {
+                        int widgetId = result.asInt();
+                        return getWidget(widgetId);
+                    }
+                    return nullptr;
+                });
+            }
+            return true;
+        });
+
+    // ========================================
+    // Phase 9.2 — Async Widget Support
+    // ========================================
+
+    registerFunction("gui", "__gui_future_builder_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto widget = std::make_shared<gui::FutureBuilder>();
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_future_builder_set_loading",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            int loadingId = std::any_cast<int>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::FutureBuilder>(getWidget(id));
+            auto loading = getWidget(loadingId);
+            if (widget && loading) widget->setLoadingWidget(loading);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_future_builder_set_success",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            int successId = std::any_cast<int>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::FutureBuilder>(getWidget(id));
+            auto success = getWidget(successId);
+            if (widget && success) widget->setSuccessWidget(success);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_future_builder_set_error",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            int errorId = std::any_cast<int>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::FutureBuilder>(getWidget(id));
+            auto errorW = getWidget(errorId);
+            if (widget && errorW) widget->setErrorWidget(errorW);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_future_builder_set_state",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            std::string state = std::any_cast<std::string>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::FutureBuilder>(getWidget(id));
+            if (widget) {
+                if (state == "loading") widget->setState(gui::AsyncState::Loading);
+                else if (state == "success") widget->setState(gui::AsyncState::Success);
+                else if (state == "error") widget->setState(gui::AsyncState::Error);
+                if (currentApp) currentApp->requestRedraw();
+            }
+            return true;
+        });
+
+    registerFunction("gui", "__gui_future_builder_get_state",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::FutureBuilder>(getWidget(id));
+            if (widget) {
+                switch (widget->getState()) {
+                    case gui::AsyncState::Loading: return std::string("loading");
+                    case gui::AsyncState::Success: return std::string("success");
+                    case gui::AsyncState::Error: return std::string("error");
+                }
+            }
+            return std::string("loading");
+        });
+
+    registerFunction("gui", "__gui_suspense_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            auto widget = std::make_shared<gui::Suspense>();
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_suspense_set_fallback",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            int fallbackId = std::any_cast<int>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::Suspense>(getWidget(id));
+            auto fallback = getWidget(fallbackId);
+            if (widget && fallback) widget->setFallback(fallback);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_suspense_set_ready",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            bool ready = std::any_cast<bool>(args[1]);
+            auto widget = std::dynamic_pointer_cast<gui::Suspense>(getWidget(id));
+            if (widget) {
+                widget->setReady(ready);
+                if (currentApp) currentApp->requestRedraw();
+            }
+            return true;
+        });
+
+    // ========================================
+    // Phase 9.3 — Transition Animations
+    // ========================================
+
+    registerFunction("gui", "__gui_animated_container_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            float duration = args.empty() ? 300.0f : static_cast<float>(std::any_cast<double>(args[0]));
+            auto widget = std::make_shared<gui::AnimatedContainer>(duration);
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_animated_container_set_target_width",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            float w = static_cast<float>(std::any_cast<double>(args[1]));
+            auto widget = std::dynamic_pointer_cast<gui::AnimatedContainer>(getWidget(id));
+            if (widget) widget->setTargetWidth(w);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_animated_container_set_target_height",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            float h = static_cast<float>(std::any_cast<double>(args[1]));
+            auto widget = std::dynamic_pointer_cast<gui::AnimatedContainer>(getWidget(id));
+            if (widget) widget->setTargetHeight(h);
+            return true;
+        });
+
+    registerFunction("gui", "__gui_fade_transition_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            float duration = args.empty() ? 300.0f : static_cast<float>(std::any_cast<double>(args[0]));
+            auto widget = std::make_shared<gui::FadeTransition>(duration);
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_fade_transition_fade_in",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::FadeTransition>(getWidget(id));
+            if (widget) widget->fadeIn();
+            return true;
+        });
+
+    registerFunction("gui", "__gui_fade_transition_fade_out",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::FadeTransition>(getWidget(id));
+            if (widget) widget->fadeOut();
+            return true;
+        });
+
+    registerFunction("gui", "__gui_slide_transition_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            std::string dir = args.empty() ? "left" : std::any_cast<std::string>(args[0]);
+            float duration = args.size() > 1 ? static_cast<float>(std::any_cast<double>(args[1])) : 300.0f;
+            gui::SlideTransition::Direction d = gui::SlideTransition::Direction::Left;
+            if (dir == "right") d = gui::SlideTransition::Direction::Right;
+            else if (dir == "up") d = gui::SlideTransition::Direction::Up;
+            else if (dir == "down") d = gui::SlideTransition::Direction::Down;
+            auto widget = std::make_shared<gui::SlideTransition>(d, duration);
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_slide_transition_slide_in",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::SlideTransition>(getWidget(id));
+            if (widget) widget->slideIn();
+            return true;
+        });
+
+    registerFunction("gui", "__gui_slide_transition_slide_out",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::SlideTransition>(getWidget(id));
+            if (widget) widget->slideOut();
+            return true;
+        });
+
+    registerFunction("gui", "__gui_scale_transition_create",
+        [](const std::vector<std::any>& args) -> std::any {
+            float duration = args.empty() ? 300.0f : static_cast<float>(std::any_cast<double>(args[0]));
+            auto widget = std::make_shared<gui::ScaleTransition>(duration);
+            return storeWidget(widget);
+        });
+
+    registerFunction("gui", "__gui_scale_transition_scale_in",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::ScaleTransition>(getWidget(id));
+            if (widget) widget->scaleIn();
+            return true;
+        });
+
+    registerFunction("gui", "__gui_scale_transition_scale_out",
+        [](const std::vector<std::any>& args) -> std::any {
+            int id = std::any_cast<int>(args[0]);
+            auto widget = std::dynamic_pointer_cast<gui::ScaleTransition>(getWidget(id));
+            if (widget) widget->scaleOut();
+            return true;
+        });
+
+    // ========================================
     // Cleanup
     // ========================================
 
@@ -2120,6 +2602,8 @@ void NativeRegistry::initGui() {
             gui::StoreRegistry::instance().clear();
             gui::ContextRegistry::instance().clear();
             gui::LifecycleRegistry::instance().clear();
+            gui::MediaQueryRegistry::instance().clear();
+            gui::AnimationManager::instance().clear();
             guiInterpreter_ = nullptr;
             nextStateId = 1;
             nextCallbackId = 1;

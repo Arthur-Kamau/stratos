@@ -232,6 +232,58 @@ fn __gui_formfield_add_max_length(fieldId: int, maxLen: int, errorMsg: string) b
 fn __gui_formfield_add_email(fieldId: int, errorMsg: string) bool;
 fn __gui_formfield_get_error(fieldId: int) string;
 
+// Gesture detection (Phase 8.2)
+fn __gui_gesture_detector_create() int;
+fn __gui_gesture_set_on_double_tap(id: int, callback: any) bool;
+fn __gui_gesture_set_on_long_press(id: int, callback: any) bool;
+fn __gui_gesture_set_on_drag_start(id: int, callback: any) bool;
+fn __gui_gesture_set_on_drag(id: int, callback: any) bool;
+fn __gui_gesture_set_on_drag_end(id: int, callback: any) bool;
+fn __gui_gesture_set_on_swipe(id: int, callback: any) bool;
+
+// Error boundary (Phase 8.4)
+fn __gui_error_boundary_create() int;
+fn __gui_error_boundary_set_fallback(id: int, fallbackId: int) bool;
+fn __gui_error_boundary_set_on_error(id: int, callback: any) bool;
+fn __gui_error_boundary_set_error(id: int, message: string) bool;
+fn __gui_error_boundary_reset(id: int) bool;
+fn __gui_error_boundary_has_error(id: int) bool;
+
+// MediaQuery / Responsive (Phase 8.5)
+fn __gui_media_query_width() float;
+fn __gui_media_query_height() float;
+fn __gui_media_query_orientation() string;
+fn __gui_media_query_breakpoint() string;
+fn __gui_responsive_create() int;
+fn __gui_responsive_set_mobile(id: int, builder: any) bool;
+fn __gui_responsive_set_tablet(id: int, builder: any) bool;
+fn __gui_responsive_set_desktop(id: int, builder: any) bool;
+
+// Async widgets (Phase 9.2)
+fn __gui_future_builder_create() int;
+fn __gui_future_builder_set_loading(id: int, loadingId: int) bool;
+fn __gui_future_builder_set_success(id: int, successId: int) bool;
+fn __gui_future_builder_set_error(id: int, errorId: int) bool;
+fn __gui_future_builder_set_state(id: int, state: string) bool;
+fn __gui_future_builder_get_state(id: int) string;
+fn __gui_suspense_create() int;
+fn __gui_suspense_set_fallback(id: int, fallbackId: int) bool;
+fn __gui_suspense_set_ready(id: int, ready: bool) bool;
+
+// Transition animations (Phase 9.3)
+fn __gui_animated_container_create(duration: float) int;
+fn __gui_animated_container_set_target_width(id: int, width: float) bool;
+fn __gui_animated_container_set_target_height(id: int, height: float) bool;
+fn __gui_fade_transition_create(duration: float) int;
+fn __gui_fade_transition_fade_in(id: int) bool;
+fn __gui_fade_transition_fade_out(id: int) bool;
+fn __gui_slide_transition_create(direction: string, duration: float) int;
+fn __gui_slide_transition_slide_in(id: int) bool;
+fn __gui_slide_transition_slide_out(id: int) bool;
+fn __gui_scale_transition_create(duration: float) int;
+fn __gui_scale_transition_scale_in(id: int) bool;
+fn __gui_scale_transition_scale_out(id: int) bool;
+
 fn __gui_destroy_widget(id: int) bool;
 fn __gui_destroy_all() bool;
 
@@ -1406,6 +1458,245 @@ fn submitForm(formId: int) void {
 /// Set the submit callback for a form.
 fn onFormSubmit(formId: int, callback: any) void {
     __gui_form_set_onsubmit(formId, callback);
+}
+
+// ============================================================
+// Phase 8.2 — Gesture Detection
+// ============================================================
+
+/// Create a gesture detector that wraps a child widget.
+/// Detects double-tap, long-press, drag, and swipe gestures.
+fn GestureDetector(child: int) int {
+    val id = __gui_gesture_detector_create();
+    __gui_widget_add_child(id, child);
+    return id;
+}
+
+/// Set a double-tap handler on a gesture detector.
+fn onDoubleTap(id: int, callback: any) void {
+    __gui_gesture_set_on_double_tap(id, callback);
+}
+
+/// Set a long-press handler on a gesture detector.
+fn onLongPress(id: int, callback: any) void {
+    __gui_gesture_set_on_long_press(id, callback);
+}
+
+/// Set a drag start handler. Callback: fn(x: float, y: float) void
+fn onDragStart(id: int, callback: any) void {
+    __gui_gesture_set_on_drag_start(id, callback);
+}
+
+/// Set a drag handler. Callback: fn(x: float, y: float, dx: float, dy: float) void
+fn onDrag(id: int, callback: any) void {
+    __gui_gesture_set_on_drag(id, callback);
+}
+
+/// Set a drag end handler. Callback: fn() void
+fn onDragEnd(id: int, callback: any) void {
+    __gui_gesture_set_on_drag_end(id, callback);
+}
+
+/// Set a swipe handler. Callback: fn(direction: string) void
+/// Direction is one of: "left", "right", "up", "down"
+fn onSwipe(id: int, callback: any) void {
+    __gui_gesture_set_on_swipe(id, callback);
+}
+
+// ============================================================
+// Phase 8.4 — Error Boundary
+// ============================================================
+
+/// Create an error boundary that catches child rendering errors.
+/// Shows a fallback widget when an error occurs.
+fn ErrorBoundary(children: array<int>) int {
+    val id = __gui_error_boundary_create();
+    for val child in children {
+        __gui_widget_add_child(id, child);
+    }
+    return id;
+}
+
+/// Create an error boundary with a fallback widget.
+fn ErrorBoundaryWithFallback(fallbackId: int, children: array<int>) int {
+    val id = __gui_error_boundary_create();
+    __gui_error_boundary_set_fallback(id, fallbackId);
+    for val child in children {
+        __gui_widget_add_child(id, child);
+    }
+    return id;
+}
+
+/// Set the error callback for an error boundary.
+/// Callback: fn(message: string) void
+fn onError(id: int, callback: any) void {
+    __gui_error_boundary_set_on_error(id, callback);
+}
+
+/// Manually trigger an error on an error boundary.
+fn triggerError(id: int, message: string) void {
+    __gui_error_boundary_set_error(id, message);
+}
+
+/// Reset an error boundary to its normal state.
+fn resetError(id: int) void {
+    __gui_error_boundary_reset(id);
+}
+
+/// Check if an error boundary currently has an error.
+fn hasError(id: int) bool {
+    return __gui_error_boundary_has_error(id);
+}
+
+// ============================================================
+// Phase 8.5 — MediaQuery / Responsive
+// ============================================================
+
+/// Get the current window width.
+fn getWindowWidth() float {
+    return __gui_media_query_width();
+}
+
+/// Get the current window height.
+fn getWindowHeight() float {
+    return __gui_media_query_height();
+}
+
+/// Get the current orientation: "portrait" or "landscape".
+fn getOrientation() string {
+    return __gui_media_query_orientation();
+}
+
+/// Get the current breakpoint: "mobile", "tablet", or "desktop".
+fn getBreakpoint() string {
+    return __gui_media_query_breakpoint();
+}
+
+/// Create a responsive widget that shows different content based on screen size.
+/// Pass builder functions for each breakpoint.
+fn Responsive(mobileBuilder: any, tabletBuilder: any, desktopBuilder: any) int {
+    val id = __gui_responsive_create();
+    __gui_responsive_set_mobile(id, mobileBuilder);
+    __gui_responsive_set_tablet(id, tabletBuilder);
+    __gui_responsive_set_desktop(id, desktopBuilder);
+    return id;
+}
+
+/// Create a responsive widget with only mobile and desktop builders.
+/// Tablet falls back to desktop.
+fn ResponsiveMD(mobileBuilder: any, desktopBuilder: any) int {
+    val id = __gui_responsive_create();
+    __gui_responsive_set_mobile(id, mobileBuilder);
+    __gui_responsive_set_desktop(id, desktopBuilder);
+    return id;
+}
+
+// ============================================================
+// Phase 9.2 — Async Widget Support
+// ============================================================
+
+/// Create a FutureBuilder that shows different widgets based on async state.
+/// Pass widget IDs for loading, success, and error states.
+fn FutureBuilder(loadingId: int, successId: int, errorId: int) int {
+    val id = __gui_future_builder_create();
+    __gui_future_builder_set_loading(id, loadingId);
+    __gui_future_builder_set_success(id, successId);
+    __gui_future_builder_set_error(id, errorId);
+    return id;
+}
+
+/// Set the async state of a FutureBuilder: "loading", "success", or "error".
+fn setAsyncState(id: int, state: string) void {
+    __gui_future_builder_set_state(id, state);
+}
+
+/// Get the current async state of a FutureBuilder.
+fn getAsyncState(id: int) string {
+    return __gui_future_builder_get_state(id);
+}
+
+/// Create a Suspense widget that shows a fallback until content is ready.
+fn Suspense(fallbackId: int, children: array<int>) int {
+    val id = __gui_suspense_create();
+    __gui_suspense_set_fallback(id, fallbackId);
+    for val child in children {
+        __gui_widget_add_child(id, child);
+    }
+    return id;
+}
+
+/// Set whether a Suspense widget's content is ready to show.
+fn setSuspenseReady(id: int, ready: bool) void {
+    __gui_suspense_set_ready(id, ready);
+}
+
+// ============================================================
+// Phase 9.3 — Transition Animations
+// ============================================================
+
+/// Create an animated container that smoothly transitions size and color.
+fn AnimatedContainer(duration: float, children: array<int>) int {
+    val id = __gui_animated_container_create(duration);
+    return addChildren(id, children);
+}
+
+/// Animate the container width to a target value.
+fn animateWidth(id: int, width: float) void {
+    __gui_animated_container_set_target_width(id, width);
+}
+
+/// Animate the container height to a target value.
+fn animateHeight(id: int, height: float) void {
+    __gui_animated_container_set_target_height(id, height);
+}
+
+/// Create a fade transition wrapper.
+fn FadeTransition(duration: float, children: array<int>) int {
+    val id = __gui_fade_transition_create(duration);
+    return addChildren(id, children);
+}
+
+/// Fade the widget in (opacity 0 -> 1).
+fn fadeIn(id: int) void {
+    __gui_fade_transition_fade_in(id);
+}
+
+/// Fade the widget out (opacity 1 -> 0).
+fn fadeOut(id: int) void {
+    __gui_fade_transition_fade_out(id);
+}
+
+/// Create a slide transition wrapper.
+/// Direction: "left", "right", "up", "down"
+fn SlideTransition(direction: string, duration: float, children: array<int>) int {
+    val id = __gui_slide_transition_create(direction, duration);
+    return addChildren(id, children);
+}
+
+/// Slide the widget in from off-screen.
+fn slideIn(id: int) void {
+    __gui_slide_transition_slide_in(id);
+}
+
+/// Slide the widget out off-screen.
+fn slideOut(id: int) void {
+    __gui_slide_transition_slide_out(id);
+}
+
+/// Create a scale transition wrapper.
+fn ScaleTransition(duration: float, children: array<int>) int {
+    val id = __gui_scale_transition_create(duration);
+    return addChildren(id, children);
+}
+
+/// Scale the widget in (0 -> 1).
+fn scaleIn(id: int) void {
+    __gui_scale_transition_scale_in(id);
+}
+
+/// Scale the widget out (1 -> 0).
+fn scaleOut(id: int) void {
+    __gui_scale_transition_scale_out(id);
 }
 
 // ============================================================

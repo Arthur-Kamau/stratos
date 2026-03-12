@@ -162,6 +162,7 @@ public:
         stateStack_.clear();
         transformX_ = 0;
         transformY_ = 0;
+        opacity_ = 1.0f;
     }
 
     void endFrame() override {
@@ -179,7 +180,7 @@ public:
 
     // State management
     void save() override {
-        stateStack_.push_back({transformX_, transformY_, clipRect_});
+        stateStack_.push_back({transformX_, transformY_, clipRect_, opacity_});
     }
 
     void restore() override {
@@ -188,6 +189,7 @@ public:
             transformX_ = state.tx;
             transformY_ = state.ty;
             clipRect_ = state.clip;
+            opacity_ = state.opacity;
             if (clipRect_.width > 0 && clipRect_.height > 0) {
                 SDL_Rect clip = toSDLRect(clipRect_);
                 SDL_RenderSetClipRect(sdlRenderer_, &clip);
@@ -205,6 +207,10 @@ public:
 
     void scale(float sx, float sy) override {
         SDL_RenderSetScale(sdlRenderer_, sx, sy);
+    }
+
+    void setOpacity(float opacity) override {
+        opacity_ = std::clamp(opacity, 0.0f, 1.0f);
     }
 
     void rotate(float /*radians*/) override {
@@ -636,6 +642,7 @@ private:
     struct SavedState {
         float tx, ty;
         Rect clip;
+        float opacity;
     };
 
     SDL_Window* window_ = nullptr;
@@ -646,6 +653,7 @@ private:
 
     // Transform state
     float transformX_ = 0, transformY_ = 0;
+    float opacity_ = 1.0f;
     Rect clipRect_ = {0, 0, 0, 0};
     std::vector<SavedState> stateStack_;
 

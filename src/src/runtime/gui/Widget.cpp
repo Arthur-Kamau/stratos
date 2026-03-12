@@ -2450,5 +2450,549 @@ void Form::reset() {
     valid_ = true;
 }
 
+// ============================================================
+// Phase 8.2 — GestureDetector
+// ============================================================
+
+void GestureDetector::layout(const Constraints& constraints) {
+    // Size to child
+    if (!children_.empty()) {
+        children_[0]->layout(constraints);
+        auto sz = children_[0]->getComputedSize();
+        bounds_.width = sz.width;
+        bounds_.height = sz.height;
+    } else {
+        bounds_.width = style_.width >= 0 ? style_.width : constraints.maxWidth;
+        bounds_.height = style_.height >= 0 ? style_.height : constraints.maxHeight;
+    }
+}
+
+void GestureDetector::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+    paintChildren(renderer);
+    renderer.restore();
+}
+
+bool GestureDetector::handleEvent(const Event& event) {
+    if (!visible_ || !isEnabled()) return false;
+
+    if (event.type == Event::MouseButton) {
+        auto& me = event.mouseButton();
+        if (!hitTest(me.x, me.y)) return dispatchToChildren(event);
+
+        uint32_t now = SDL_GetTicks();
+
+        if (me.pressed) {
+            pressed_ = true;
+            pressStartX_ = me.x;
+            pressStartY_ = me.y;
+            pressStartTime_ = now;
+            lastDragX_ = me.x;
+            lastDragY_ = me.y;
+        } else {
+            // Release
+            if (dragging_) {
+                dragging_ = false;
+
+                // Check swipe
+                float dx = me.x - dragStartX_;
+                float dy = me.y - dragStartY_;
+                float dist = std::sqrt(dx * dx + dy * dy);
+                if (dist >= SWIPE_MIN_DISTANCE && onSwipe_) {
+                    if (std::abs(dx) > std::abs(dy)) {
+                        onSwipe_(dx > 0 ? SwipeDirection::Right : SwipeDirection::Left);
+                    } else {
+                        onSwipe_(dy > 0 ? SwipeDirection::Down : SwipeDirection::Up);
+                    }
+                }
+
+                if (onDragEnd_) onDragEnd_();
+            } else if (pressed_) {
+                // Check double-tap
+                if (waitingForDoubleClick_ && (now - lastClickTime_) < DOUBLE_TAP_MS) {
+                    if (onDoubleTap_) onDoubleTap_();
+                    waitingForDoubleClick_ = false;
+                } else {
+                    waitingForDoubleClick_ = true;
+                    lastClickTime_ = now;
+                }
+            }
+            pressed_ = false;
+        }
+        return true;
+    }
+
+    if (event.type == Event::MouseMove && pressed_) {
+        auto& me = event.mouseMove();
+        float dx = me.x - pressStartX_;
+        float dy = me.y - pressStartY_;
+        float dist = std::sqrt(dx * dx + dy * dy);
+
+        if (!dragging_ && dist >= DRAG_THRESHOLD) {
+            dragging_ = true;
+            dragStartX_ = pressStartX_;
+            dragStartY_ = pressStartY_;
+            if (onDragStart_) onDragStart_(pressStartX_, pressStartY_);
+        }
+
+        if (dragging_ && onDrag_) {
+            float ddx = me.x - lastDragX_;
+            float ddy = me.y - lastDragY_;
+            onDrag_(me.x, me.y, ddx, ddy);
+            lastDragX_ = me.x;
+            lastDragY_ = me.y;
+        }
+        return true;
+    }
+
+    // Long press detection is checked frame-by-frame.
+    // For simplicity, check on mouse button events:
+    // The App event loop would need to pump timer events for true long press.
+    // We approximate by checking elapsed time on the next mouse event.
+
+    return dispatchToChildren(event);
+}
+
+// ============================================================
+// Phase 8.4 — ErrorBoundary
+// ============================================================
+
+void ErrorBoundary::setError(const std::string& message) {
+    hasError_ = true;
+    errorMessage_ = message;
+    if (onError_) onError_(message);
+    markDirty();
+}
+
+void ErrorBoundary::reset() {
+    hasError_ = false;
+    errorMessage_.clear();
+    markDirty();
+}
+
+void ErrorBoundary::layout(const Constraints& constraints) {
+    if (hasError_) {
+        if (fallback_) {
+            fallback_->layout(constraints);
+            auto sz = fallback_->getComputedSize();
+            bounds_.width = sz.width;
+            bounds_.height = sz.height;
+        } else {
+            // Default error display
+            bounds_.width = std::min(constraints.maxWidth, 400.0f);
+            bounds_.height = 80.0f;
+        }
+    } else {
+        // Layout normal children
+        float h = 0, w = 0;
+        for (auto& child : children_) {
+            child->layout(constraints);
+            auto sz = child->getComputedSize();
+            child->setPosition(0, h);
+            h += sz.height;
+            w = std::max(w, sz.width);
+        }
+        bounds_.width = std::clamp(w, constraints.minWidth, constraints.maxWidth);
+        bounds_.height = std::clamp(h, constraints.minHeight, constraints.maxHeight);
+    }
+}
+
+void ErrorBoundary::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    if (hasError_) {
+        if (fallback_) {
+            fallback_->paint(renderer);
+        } else {
+            // Default error UI
+            renderer.fillRoundedRect({0, 0, bounds_.width, bounds_.height},
+                                      BorderRadius::all(8), Color::rgb(255, 235, 238));
+            renderer.drawRoundedRect({0, 0, bounds_.width, bounds_.height},
+                                      BorderRadius::all(8), Color::rgb(211, 47, 47));
+            font_.size = 14;
+            font_.weight = FontWeight::Bold;
+            renderer.drawText("Error", 16, 12, font_, Color::rgb(211, 47, 47));
+            font_.size = 12;
+            font_.weight = FontWeight::Regular;
+            renderer.drawText(errorMessage_, 16, 36, font_, Color::rgb(100, 50, 50));
+        }
+    } else {
+        paintChildren(renderer);
+    }
+
+    renderer.restore();
+}
+
+bool ErrorBoundary::handleEvent(const Event& event) {
+    if (hasError_) {
+        if (fallback_) return fallback_->handleEvent(event);
+        return false;
+    }
+    return dispatchToChildren(event);
+}
+
+// ============================================================
+// Phase 8.5 — Responsive
+// ============================================================
+
+void Responsive::rebuildIfNeeded() {
+    auto& mq = MediaQueryRegistry::instance();
+    Breakpoint current = mq.get().breakpoint;
+
+    if (!needsRebuild_ && current == lastBreakpoint_) return;
+
+    lastBreakpoint_ = current;
+    needsRebuild_ = false;
+
+    // Clear existing child
+    currentChild_.reset();
+    children_.clear();
+
+    switch (current) {
+        case Breakpoint::Mobile:
+            if (mobileBuilder_) currentChild_ = mobileBuilder_();
+            else if (tabletBuilder_) currentChild_ = tabletBuilder_();
+            else if (desktopBuilder_) currentChild_ = desktopBuilder_();
+            break;
+        case Breakpoint::Tablet:
+            if (tabletBuilder_) currentChild_ = tabletBuilder_();
+            else if (desktopBuilder_) currentChild_ = desktopBuilder_();
+            else if (mobileBuilder_) currentChild_ = mobileBuilder_();
+            break;
+        case Breakpoint::Desktop:
+            if (desktopBuilder_) currentChild_ = desktopBuilder_();
+            else if (tabletBuilder_) currentChild_ = tabletBuilder_();
+            else if (mobileBuilder_) currentChild_ = mobileBuilder_();
+            break;
+    }
+
+    if (currentChild_) {
+        addChild(currentChild_);
+    }
+}
+
+void Responsive::layout(const Constraints& constraints) {
+    rebuildIfNeeded();
+
+    if (currentChild_) {
+        currentChild_->layout(constraints);
+        auto sz = currentChild_->getComputedSize();
+        bounds_.width = sz.width;
+        bounds_.height = sz.height;
+    } else {
+        bounds_.width = 0;
+        bounds_.height = 0;
+    }
+}
+
+void Responsive::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+    if (currentChild_) currentChild_->paint(renderer);
+    renderer.restore();
+}
+
+bool Responsive::handleEvent(const Event& event) {
+    if (currentChild_) return currentChild_->handleEvent(event);
+    return false;
+}
+
+// ============================================================
+// Phase 9.2 — FutureBuilder
+// ============================================================
+
+void FutureBuilder::layout(const Constraints& constraints) {
+    WidgetPtr active;
+    switch (state_) {
+        case AsyncState::Loading: active = loadingWidget_; break;
+        case AsyncState::Success: active = successWidget_; break;
+        case AsyncState::Error: active = errorWidget_; break;
+    }
+
+    if (active) {
+        active->layout(constraints);
+        auto sz = active->getComputedSize();
+        bounds_.width = sz.width;
+        bounds_.height = sz.height;
+    } else {
+        bounds_.width = 0;
+        bounds_.height = 0;
+    }
+}
+
+void FutureBuilder::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    WidgetPtr active;
+    switch (state_) {
+        case AsyncState::Loading: active = loadingWidget_; break;
+        case AsyncState::Success: active = successWidget_; break;
+        case AsyncState::Error: active = errorWidget_; break;
+    }
+
+    if (active) active->paint(renderer);
+
+    renderer.restore();
+}
+
+bool FutureBuilder::handleEvent(const Event& event) {
+    WidgetPtr active;
+    switch (state_) {
+        case AsyncState::Loading: active = loadingWidget_; break;
+        case AsyncState::Success: active = successWidget_; break;
+        case AsyncState::Error: active = errorWidget_; break;
+    }
+    if (active) return active->handleEvent(event);
+    return false;
+}
+
+// ============================================================
+// Phase 9.2 — Suspense
+// ============================================================
+
+void Suspense::layout(const Constraints& constraints) {
+    if (ready_) {
+        // Layout children
+        float h = 0, w = 0;
+        for (auto& child : children_) {
+            child->layout(constraints);
+            auto sz = child->getComputedSize();
+            child->setPosition(0, h);
+            h += sz.height;
+            w = std::max(w, sz.width);
+        }
+        bounds_.width = std::clamp(w, constraints.minWidth, constraints.maxWidth);
+        bounds_.height = std::clamp(h, constraints.minHeight, constraints.maxHeight);
+    } else if (fallback_) {
+        fallback_->layout(constraints);
+        auto sz = fallback_->getComputedSize();
+        bounds_.width = sz.width;
+        bounds_.height = sz.height;
+    } else {
+        bounds_.width = 0;
+        bounds_.height = 0;
+    }
+}
+
+void Suspense::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+
+    if (ready_) {
+        paintChildren(renderer);
+    } else if (fallback_) {
+        fallback_->paint(renderer);
+    }
+
+    renderer.restore();
+}
+
+bool Suspense::handleEvent(const Event& event) {
+    if (ready_) return dispatchToChildren(event);
+    if (fallback_) return fallback_->handleEvent(event);
+    return false;
+}
+
+// ============================================================
+// Phase 9.3 — AnimatedContainer
+// ============================================================
+
+void AnimatedContainer::animateProperty(float current, float target, std::shared_ptr<Tween>& tween) {
+    tween = AnimationManager::instance().createTween(current, target, duration_, easing_);
+    tween->start();
+    markDirty();
+}
+
+void AnimatedContainer::update(float deltaMs) {
+    bool changed = false;
+    if (widthTween_ && widthTween_->isRunning()) {
+        widthTween_->update(deltaMs);
+        currentWidth_ = widthTween_->getCurrentValue();
+        changed = true;
+    }
+    if (heightTween_ && heightTween_->isRunning()) {
+        heightTween_->update(deltaMs);
+        currentHeight_ = heightTween_->getCurrentValue();
+        changed = true;
+    }
+    if (animateColors_) {
+        colorProgress_ += deltaMs / duration_;
+        if (colorProgress_ >= 1.0f) {
+            colorProgress_ = 1.0f;
+            animateColors_ = false;
+            style_.backgroundColor = targetColor_;
+        } else {
+            float t = applyEasing(colorProgress_, easing_);
+            style_.backgroundColor.r = startColor_.r + (targetColor_.r - startColor_.r) * t;
+            style_.backgroundColor.g = startColor_.g + (targetColor_.g - startColor_.g) * t;
+            style_.backgroundColor.b = startColor_.b + (targetColor_.b - startColor_.b) * t;
+            style_.backgroundColor.a = startColor_.a + (targetColor_.a - startColor_.a) * t;
+        }
+        changed = true;
+    }
+    if (changed) markDirty();
+}
+
+void AnimatedContainer::layout(const Constraints& constraints) {
+    float w = currentWidth_ >= 0 ? currentWidth_ : (style_.width >= 0 ? style_.width : constraints.maxWidth);
+    float h = currentHeight_ >= 0 ? currentHeight_ : (style_.height >= 0 ? style_.height : 0);
+
+    Constraints childC = {0, w, 0, h > 0 ? h : constraints.maxHeight};
+    for (auto& child : children_) {
+        child->layout(childC);
+        auto sz = child->getComputedSize();
+        if (h <= 0) h = sz.height;
+    }
+
+    bounds_.width = std::clamp(w, constraints.minWidth, constraints.maxWidth);
+    bounds_.height = std::clamp(h, constraints.minHeight, constraints.maxHeight);
+}
+
+void AnimatedContainer::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+    paintBackground(renderer);
+    paintBorder(renderer);
+    paintChildren(renderer);
+    renderer.restore();
+}
+
+// ============================================================
+// Phase 9.3 — FadeTransition
+// ============================================================
+
+void FadeTransition::startFade(float from, float to) {
+    opacityTween_ = AnimationManager::instance().createTween(from, to, duration_, easing_);
+    opacityTween_->start();
+    currentOpacity_ = from;
+    markDirty();
+}
+
+void FadeTransition::update(float deltaMs) {
+    if (opacityTween_ && opacityTween_->isRunning()) {
+        opacityTween_->update(deltaMs);
+        currentOpacity_ = opacityTween_->getCurrentValue();
+        markDirty();
+    }
+}
+
+void FadeTransition::layout(const Constraints& constraints) {
+    for (auto& child : children_) {
+        child->layout(constraints);
+    }
+    if (!children_.empty()) {
+        auto sz = children_[0]->getComputedSize();
+        bounds_.width = sz.width;
+        bounds_.height = sz.height;
+    }
+}
+
+void FadeTransition::paint(IRenderer& renderer) {
+    if (!visible_ || currentOpacity_ <= 0) return;
+    renderer.save();
+    renderer.translate(bounds_.x, bounds_.y);
+    renderer.setOpacity(currentOpacity_);
+    paintChildren(renderer);
+    renderer.restore();
+}
+
+// ============================================================
+// Phase 9.3 — SlideTransition
+// ============================================================
+
+void SlideTransition::startSlide(bool entering) {
+    entering_ = entering;
+
+    float from = entering ? 1.0f : 0.0f;
+    float to = entering ? 0.0f : 1.0f;
+    slideTween_ = AnimationManager::instance().createTween(from, to, duration_, easing_);
+    slideTween_->start();
+    markDirty();
+}
+
+void SlideTransition::update(float deltaMs) {
+    if (slideTween_ && slideTween_->isRunning()) {
+        slideTween_->update(deltaMs);
+        float t = slideTween_->getCurrentValue();
+        switch (direction_) {
+            case Direction::Left: offsetX_ = -t * (bounds_.width > 0 ? bounds_.width : 400); offsetY_ = 0; break;
+            case Direction::Right: offsetX_ = t * (bounds_.width > 0 ? bounds_.width : 400); offsetY_ = 0; break;
+            case Direction::Up: offsetX_ = 0; offsetY_ = -t * (bounds_.height > 0 ? bounds_.height : 400); break;
+            case Direction::Down: offsetX_ = 0; offsetY_ = t * (bounds_.height > 0 ? bounds_.height : 400); break;
+        }
+        markDirty();
+    }
+}
+
+void SlideTransition::layout(const Constraints& constraints) {
+    for (auto& child : children_) {
+        child->layout(constraints);
+    }
+    if (!children_.empty()) {
+        auto sz = children_[0]->getComputedSize();
+        bounds_.width = sz.width;
+        bounds_.height = sz.height;
+    }
+}
+
+void SlideTransition::paint(IRenderer& renderer) {
+    if (!visible_) return;
+    renderer.save();
+    renderer.translate(bounds_.x + offsetX_, bounds_.y + offsetY_);
+    paintChildren(renderer);
+    renderer.restore();
+}
+
+// ============================================================
+// Phase 9.3 — ScaleTransition
+// ============================================================
+
+void ScaleTransition::startScale(float from, float to) {
+    scaleTween_ = AnimationManager::instance().createTween(from, to, duration_, easing_);
+    scaleTween_->start();
+    currentScale_ = from;
+    markDirty();
+}
+
+void ScaleTransition::update(float deltaMs) {
+    if (scaleTween_ && scaleTween_->isRunning()) {
+        scaleTween_->update(deltaMs);
+        currentScale_ = scaleTween_->getCurrentValue();
+        markDirty();
+    }
+}
+
+void ScaleTransition::layout(const Constraints& constraints) {
+    for (auto& child : children_) {
+        child->layout(constraints);
+    }
+    if (!children_.empty()) {
+        auto sz = children_[0]->getComputedSize();
+        bounds_.width = sz.width;
+        bounds_.height = sz.height;
+    }
+}
+
+void ScaleTransition::paint(IRenderer& renderer) {
+    if (!visible_ || currentScale_ <= 0) return;
+    renderer.save();
+    float cx = bounds_.x + bounds_.width / 2;
+    float cy = bounds_.y + bounds_.height / 2;
+    renderer.translate(cx, cy);
+    renderer.scale(currentScale_, currentScale_);
+    renderer.translate(-bounds_.width / 2, -bounds_.height / 2);
+    paintChildren(renderer);
+    renderer.restore();
+}
+
 } // namespace gui
 } // namespace stratos

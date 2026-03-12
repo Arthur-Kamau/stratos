@@ -143,6 +143,7 @@ public:
     virtual void scale(float sx, float sy) = 0;
     virtual void rotate(float radians) = 0;
     virtual void clipRect(const Rect& rect) = 0;
+    virtual void setOpacity(float opacity) { (void)opacity; }
 
     // Shapes
     virtual void drawRect(const Rect& rect, const Color& color) = 0;
