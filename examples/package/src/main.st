@@ -3,14 +3,10 @@ package main;
 use util;
 use animal;
 
-class Base {
-    pub fn hello() {
-        println("base hello");
-    }
-}
-
+// files in src belong to main package
 fn main(){
-    // use classes defined in same file
+
+    // use classes defined in base.st (same package)
     val b = Base();
     b.hello();
 
