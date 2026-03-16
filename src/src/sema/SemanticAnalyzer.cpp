@@ -282,23 +282,30 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
                     }
                     Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType, funcDecl->isPublic, funcDecl->isAsync, funcDecl->name.line, funcDecl->name.column, funcDecl->name.file);
                     if (!symbolTable.define(funcSymbol)) {
-                        auto existing = symbolTable.resolve(funcDecl->name.lexeme);
-                        std::string loc = "";
-                        if (existing) {
-                            if (existing->line > 0) {
-                                std::filesystem::path p(existing->file.empty() ? "" : existing->file);
-                                std::string fileName = p.filename().string();
-                                loc = " (previously defined at ";
-                                if (!fileName.empty()) {
-                                    loc += fileName + ":";
+                        // Allow forward declaration (no body) to be replaced by implementation (has body)
+                        if (funcDecl->body) {
+                            // This is an implementation — update the existing forward declaration
+                            symbolTable.update(funcDecl->name.lexeme, funcSymbol);
+                        } else {
+                            // Both are declarations or both are implementations — error
+                            auto existing = symbolTable.resolve(funcDecl->name.lexeme);
+                            std::string loc = "";
+                            if (existing) {
+                                if (existing->line > 0) {
+                                    std::filesystem::path p(existing->file.empty() ? "" : existing->file);
+                                    std::string fileName = p.filename().string();
+                                    loc = " (previously defined at ";
+                                    if (!fileName.empty()) {
+                                        loc += fileName + ":";
+                                    }
+                                    loc += std::to_string(existing->line) + ":" + std::to_string(existing->column) + ")";
+                                } else if (!existing->file.empty()) {
+                                    std::filesystem::path p(existing->file);
+                                    loc = " (previously defined in " + p.filename().string() + ")";
                                 }
-                                loc += std::to_string(existing->line) + ":" + std::to_string(existing->column) + ")";
-                            } else if (!existing->file.empty()) {
-                                std::filesystem::path p(existing->file);
-                                loc = " (previously defined in " + p.filename().string() + ")";
                             }
+                            error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined." + loc);
                         }
-                        error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined." + loc);
                     }
                 } else if (auto* classDecl = dynamic_cast<ClassDecl*>(decl.get())) {
                     // Debug statements removed First pass - Found ClassDecl '" << classDecl->name.lexeme << "' in package" << std::endl;
@@ -372,20 +379,25 @@ bool SemanticAnalyzer::analyze(const std::vector<std::unique_ptr<Stmt>>& stateme
             }
             Symbol funcSymbol = Symbol::Function(funcDecl->name.lexeme, paramTypes, funcDecl->returnType, funcDecl->isPublic, funcDecl->isAsync, funcDecl->name.line, funcDecl->name.column, funcDecl->name.file);
             if (!symbolTable.define(funcSymbol)) {
-                auto existing = symbolTable.resolve(funcDecl->name.lexeme);
-                std::string loc = "";
-                if (existing) {
-                    if (existing->line > 0) {
-                        loc = " (previously defined at line " + std::to_string(existing->line);
-                        if (!existing->file.empty()) {
-                            loc += " in " + existing->file;
+                // Allow forward declaration to be replaced by implementation
+                if (funcDecl->body) {
+                    symbolTable.update(funcDecl->name.lexeme, funcSymbol);
+                } else {
+                    auto existing = symbolTable.resolve(funcDecl->name.lexeme);
+                    std::string loc = "";
+                    if (existing) {
+                        if (existing->line > 0) {
+                            loc = " (previously defined at line " + std::to_string(existing->line);
+                            if (!existing->file.empty()) {
+                                loc += " in " + existing->file;
+                            }
+                            loc += ")";
+                        } else if (!existing->file.empty()) {
+                            loc = " (previously defined in " + existing->file + ")";
                         }
-                        loc += ")";
-                    } else if (!existing->file.empty()) {
-                        loc = " (previously defined in " + existing->file + ")";
                     }
+                    error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined." + loc);
                 }
-                error(funcDecl->name, "Function '" + funcDecl->name.lexeme + "' is already defined." + loc);
             }
         } else if (auto* classDecl = dynamic_cast<ClassDecl*>(statements[i].get())) {
             if (!symbolTable.define(Symbol::Class(classDecl->name.lexeme, classDecl->name.lexeme, false, classDecl->name.line, classDecl->name.column, classDecl->name.file))) {
@@ -628,6 +640,18 @@ void SemanticAnalyzer::visit(BinaryExpr& expr) {
         
         if (classSymbol && classSymbol->kind == SymbolKind::CLASS) {
             return; // Valid member access on object
+        }
+
+        // Allow member access on built-in types (array, string, map, etc.)
+        // These have methods implemented natively in the runtime
+        if (baseType == "array" || baseType == "Array" || baseType == "string" ||
+            baseType == "map" || baseType == "Map" || baseType == "int" ||
+            baseType == "float" || baseType == "double" || baseType == "bool" ||
+            baseType == "File" || baseType == "Result" || baseType == "Optional" ||
+            baseType == "Promise" || baseType == "Channel" || baseType == "Mutex" ||
+            baseType == "WaitGroup" || baseType == "WorkerPool" ||
+            baseType == "Regex" || baseType == "Match") {
+            return; // Built-in type — methods validated at runtime
         }
 
         // For other dot accesses (like module.function), just validate right side
@@ -1096,8 +1120,14 @@ void SemanticAnalyzer::visit(PackageDecl& stmt) {
     // Don't define the package name as a symbol to avoid conflicts.
     // NOTE: Package imports (via 'use' keyword) would be different.
 
+    // Register the package name as a module so self-references work
+    // (e.g., regex.matches() inside the regex package)
+    symbolTable.define(Symbol::Variable(stmt.name.lexeme, "module", false));
+    if (std::find(loadedModules.begin(), loadedModules.end(), stmt.name.lexeme) == loadedModules.end()) {
+        loadedModules.push_back(stmt.name.lexeme);
+    }
+
     // Process declarations within the package without creating a new scope
-    // or defining the package name as a symbol
     for (size_t i = 0; i < stmt.declarations.size(); ++i) {
         if (stmt.declarations[i]) {
             if (auto* classDecl = dynamic_cast<ClassDecl*>(stmt.declarations[i].get())) {
@@ -1180,7 +1210,7 @@ void SemanticAnalyzer::visit(WhileStmt& stmt) {
 void SemanticAnalyzer::visit(ForStmt& stmt) {
     // Analyze the iterable expression first (in outer scope)
     stmt.iterable->accept(*this);
-    
+
     loopDepth++;
 
     // Enter new scope for loop variable and body
@@ -1210,7 +1240,7 @@ void SemanticAnalyzer::visit(ForStmt& stmt) {
 
     // Exit loop scope
     symbolTable.exitScope();
-    
+
     loopDepth--;
 }
 
@@ -1297,6 +1327,14 @@ void SemanticAnalyzer::loadModule(const std::string& moduleName) {
         projectRoot + "/deps/" + searchName + "/src/" + searchName + ".st",
         projectRoot + "/../deps/" + searchName + "/src/init.st",
         projectRoot + "/../deps/" + searchName + "/src/" + searchName + ".st",
+
+        // External packages (git submodules)
+        projectRoot + "/external/stratos-" + searchName + "/src/init.st",
+        projectRoot + "/external/" + searchName + "/src/init.st",
+        projectRoot + "/../external/stratos-" + searchName + "/src/init.st",
+        projectRoot + "/../external/" + searchName + "/src/init.st",
+        projectRoot + "/../../external/stratos-" + searchName + "/src/init.st",
+        projectRoot + "/../../external/" + searchName + "/src/init.st",
 
         // Project std directory
         projectRoot + "/std/" + searchName + "/init.st",

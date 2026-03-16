@@ -907,6 +907,29 @@ void Interpreter::visit(CallExpr& expr) {
                             } else if (methodName == "isEmpty") {
                                 lastValue = RuntimeValue(vec.empty());
                                 return;
+                            } else if (methodName == "push" || methodName == "add") {
+                                if (!args.empty()) {
+                                    vec.push_back(args[0].value);
+                                    lastValue = RuntimeValue(std::any(), "void");
+                                } else {
+                                    error(methodName + "() requires a value argument");
+                                }
+                                return;
+                            } else if (methodName == "pop") {
+                                if (!vec.empty()) {
+                                    auto back = vec.back();
+                                    vec.pop_back();
+                                    if (back.type() == typeid(int)) {
+                                        lastValue = RuntimeValue(std::any_cast<int>(back));
+                                    } else if (back.type() == typeid(std::string)) {
+                                        lastValue = RuntimeValue(std::any_cast<std::string>(back));
+                                    } else {
+                                        lastValue = RuntimeValue(back, "any");
+                                    }
+                                } else {
+                                    lastValue = RuntimeValue(std::any(), "void");
+                                }
+                                return;
                             } else if (methodName == "forEach") {
                                 if (args.empty()) error("forEach requires a callback");
                                 auto callback = args[0];

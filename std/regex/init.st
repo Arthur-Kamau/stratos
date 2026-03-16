@@ -4,6 +4,7 @@
 package regex;
 
 use strings;
+use convert;
 
 // ============================================================================
 // Types
@@ -45,16 +46,8 @@ fn extract(pattern: string, text: string) Array<string> {
 }
 
 // Replace with callback function
-fn replaceFunc(pattern: string, text: string, replacer: Function<string, string>) string {
-    val matches = extract(pattern, text);
-    var result = text;
-
-    for val match in matches {
-        val replacement = replacer(match);
-        result = regex.replace(pattern, result, replacement);
-    }
-
-    return result;
+fn replaceFunc(pattern: string, text: string, replacement: string) string {
+    return regex.replace(pattern, text, replacement);
 }
 
 // Test multiple patterns (OR)

@@ -77,7 +77,4 @@ fn main() {
     log.info("Woke up!");
 
     log.info("\nBasic concurrency examples complete!");
-
-    // Run advanced demo
-    advancedConcurrencyDemo();
 }

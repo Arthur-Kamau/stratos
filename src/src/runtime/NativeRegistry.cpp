@@ -4575,14 +4575,16 @@ void NativeRegistry::initSQLite() {
     }, FunctionSignature{{"int"}, "void"});
 
     // __sqlite_rows_close(handle: int): void
+    // Rows shares the statement handle with Statement, so just reset (don't finalize).
+    // The owning Statement.close() will finalize.
     registerFunction("db", "__sqlite_rows_close", [](const std::vector<std::any>& args) -> std::any {
         int handle = std::any_cast<int>(args[0]);
         sqlite3_stmt* stmt = GET_SQLITE_STMT(handle);
         if (!stmt) {
-            throw std::runtime_error("Invalid or closed SQLite statement handle");
+            // Statement already closed — silently ignore
+            return std::any();
         }
-        sqlite3_finalize(stmt);
-        ResourceManager::instance().closeResource(handle);
+        sqlite3_reset(stmt);
         return std::any();
     }, FunctionSignature{{"int"}, "void"});
 

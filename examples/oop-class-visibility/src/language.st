@@ -1,6 +1,6 @@
 package main;
 
-class VisibiltyTest {
+class VisibilityTest {
     fn privateMethod() {
         println("Private method");
     }
@@ -9,12 +9,8 @@ class VisibiltyTest {
         println("Public method");
     }
 
-        fn privateMethodInternalCall() {
+    fn privateMethodInternalCall() {
         println("Private method internal call");
-    }
-
-    pub fn publicMethod() {
-        println("Public method call");
     }
 
     pub fn callPrivate() {

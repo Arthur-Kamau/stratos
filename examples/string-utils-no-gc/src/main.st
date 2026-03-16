@@ -15,7 +15,7 @@ fn demonstrateBasicOperations() {
 
     val greeting = "Hello, World!";
     println("Original: '${greeting}'");
-    println("Length: ${strings.len(greeting)}");
+    println("Length: ${strings.length(greeting)}");
     println("Uppercase: '${strings.toUpper(greeting)}'");
     println("Lowercase: '${strings.toLower(greeting)}'");
 
@@ -135,7 +135,7 @@ fn demonstrateCharOperations() {
     val text = "Hello";
     println("Text: '${text}'");
 
-    for i in 0..strings.len(text) {
+    for i in 0..strings.length(text) {
         val char = strings.charAt(text, i);
         println("Character at ${i}: '${char}'");
     }

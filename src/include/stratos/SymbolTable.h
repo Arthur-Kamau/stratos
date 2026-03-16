@@ -44,6 +44,13 @@ public:
         return true;
     }
 
+    // Update/overwrite an existing symbol in the current scope
+    void update(const std::string& name, Symbol symbol) {
+        if (scopes.empty()) return;
+        auto& currentScope = scopes.back();
+        currentScope[name] = symbol;
+    }
+
     // Look up a symbol by name, searching from current scope outwards
     std::optional<Symbol> resolve(const std::string& name) {
         for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {

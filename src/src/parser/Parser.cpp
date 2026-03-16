@@ -174,7 +174,11 @@ std::unique_ptr<Stmt> Parser::fnDeclaration(const std::string& kind, bool isPubl
     consume(TokenType::RIGHT_PAREN, "Expect ')' after parameters.");
 
     std::string returnType = "void";
-    if (check(TokenType::IDENTIFIER) || check(TokenType::INT) || check(TokenType::DOUBLE) ||
+    // Support both `fn foo() int {` and `fn foo(): int {` syntax
+    if (match({TokenType::COLON})) {
+        // Colon-style return type: `fn foo(): int`
+        returnType = parseType();
+    } else if (check(TokenType::IDENTIFIER) || check(TokenType::INT) || check(TokenType::DOUBLE) ||
         check(TokenType::STRING) || check(TokenType::BOOL) || check(TokenType::VOID) ||
         check(TokenType::ASYNC)) {
         // Optional return type parsing without colon if it's just the type
@@ -581,15 +585,14 @@ std::unique_ptr<Stmt> Parser::whileStatement() {
 std::unique_ptr<Stmt> Parser::forStatement() {
     // Parse: for (val|var) variable (: type)? in iterable { body }
 
-    // Check for val or var
+    // Check for val or var (optional — defaults to val/immutable if omitted)
     bool isMutable = false;
     if (match({TokenType::VAR})) {
         isMutable = true;
     } else if (match({TokenType::VAL})) {
         isMutable = false;
-    } else {
-        throw ParseError("Expect 'val' or 'var' after 'for'", peek().line, peek().column);
     }
+    // If neither val nor var, default to immutable (e.g., "for i in 0..10")
 
     // Get variable name
     Token variable = consume(TokenType::IDENTIFIER, "Expect variable name in for loop.");
@@ -1290,10 +1293,20 @@ std::unique_ptr<Expr> Parser::primary() {
         std::vector<std::pair<std::string, std::unique_ptr<Expr>>> entries;
         if (!check(TokenType::RIGHT_BRACE)) {
             do {
-                Token key = consume(TokenType::IDENTIFIER, "Expect key in map literal.");
+                // Accept both identifier and string literal as map keys
+                std::string keyStr;
+                if (check(TokenType::IDENTIFIER)) {
+                    Token key = advance();
+                    keyStr = key.lexeme;
+                } else if (check(TokenType::STRING)) {
+                    Token key = advance();
+                    keyStr = key.lexeme;
+                } else {
+                    throw ParseError("Expect key (identifier or string) in map literal.", peek().line, peek().column);
+                }
                 consume(TokenType::COLON, "Expect ':' after key in map literal.");
                 std::unique_ptr<Expr> value = expression();
-                entries.push_back({key.lexeme, std::move(value)});
+                entries.push_back({keyStr, std::move(value)});
             } while (match({TokenType::COMMA}));
         }
         consume(TokenType::RIGHT_BRACE, "Expect '}' after map literal.");

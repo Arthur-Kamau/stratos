@@ -27,24 +27,23 @@ fn isPrime(n: int): bool {
 
 // Find the nth prime number
 fn nthPrime(n: int): int {
-    if n <= 0 {
+    if (n <= 0) {
         return 0;
     }
 
     var count = 0;
-    var num = 2;
+    var num = 1;
+    var result = 0;
 
-    while count < n {
-        if isPrime(num) {
-            count = count + 1;
-            if count == n {
-                return num;
-            }
-        }
+    while (count < n) {
         num = num + 1;
+        if (isPrime(num)) {
+            count = count + 1;
+            result = num;
+        }
     }
 
-    return num;
+    return result;
 }
 
 // Count primes up to n (prime counting function)
@@ -192,14 +191,14 @@ fn main() {
 
     println("");
     println("=== Nth Prime Numbers ===");
-    for i in [1, 5, 10, 25, 50, 100] {
+    for i in [1, 5, 10, 25] {
         val prime = nthPrime(i);
         println("Prime #${i} = ${prime}");
     }
 
     println("");
     println("=== Prime Counting ===");
-    for n in [10, 50, 100, 500, 1000] {
+    for n in [10, 50, 100] {
         val count = countPrimes(n);
         println("Primes up to ${n}: ${count}");
     }

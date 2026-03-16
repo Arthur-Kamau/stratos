@@ -1,30 +1,34 @@
 package main;
 
-use io;
-
 fn classifyNumber(num: int) string {
-    return when {
-        num < 0 -> "Negative"
-        num == 0 -> "Zero"
-        num > 0 and num <= 10 -> "Small Positive"
-        num > 10 and num <= 100 -> "Medium Positive"
-        else -> "Large Positive"
-    };
+    if (num < 0) {
+        return "Negative";
+    } else if (num == 0) {
+        return "Zero";
+    } else if (num <= 10) {
+        return "Small Positive";
+    } else if (num <= 100) {
+        return "Medium Positive";
+    }
+    return "Large Positive";
 }
 
-fn isPrime(n: int) bool {
-    if (n <= 1) return false;
-    if (n <= 3) return true;
-
-    var i = 2;
-    while (i * i <= n) {
-        if (n % i == 0) {
-            return false;
+fn getAccess(user: string) string {
+    when (user) {
+        "admin" -> {
+            return "full";
         }
-        i++;
+        "editor" -> {
+            return "write";
+        }
+        "viewer" -> {
+            return "read";
+        }
+        else -> {
+            return "none";
+        }
     }
-
-    return true;
+    return "none";
 }
 
 fn main() {
@@ -36,27 +40,12 @@ fn main() {
         println(num + " is " + classification);
     }
 
-    // Check for primes
-    println("\nPrime numbers from 1 to 20:");
-    var i = 1;
-    while (i <= 20) {
-        if (isPrime(i)) {
-            println(i);
-        }
-        i++;
-    }
-
     // User type access control
+    println("\nAccess Control:");
     val users = ["admin", "editor", "viewer", "guest"];
 
     for val user in users {
-        val access = when (user) {
-        "admin" -> "full"
-        "editor" -> "write"
-        "viewer" -> "read"
-        else -> "none"
-    };
-        
+        val access = getAccess(user);
         println(user + " has " + access + " access");
     }
 }

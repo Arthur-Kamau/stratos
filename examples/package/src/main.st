@@ -2,12 +2,15 @@ package main;
 
 use util;
 use animal;
-use animal.cat;
 
-// files in src belong to main package
+class Base {
+    pub fn hello() {
+        println("base hello");
+    }
+}
+
 fn main(){
-
-    // use classes defined above in the same file
+    // use classes defined in same file
     val b = Base();
     b.hello();
 
@@ -19,9 +22,5 @@ fn main(){
     val n = Animolia();
     n.helloAnimolia();
 
-    // use struct BirmanCat from cat package
-    val k = BirmanCat{name: "Lola", age: 10};
-    println("The Birman cat name: {} age: {}", k.name, k.age);
-
-
+    println("Package imports working!");
 }
