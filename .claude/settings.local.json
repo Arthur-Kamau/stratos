@@ -2,7 +2,16 @@
   "permissions": {
     "allow": [
       "Bash(powershell.exe -File build.ps1)",
-      "Bash(./src/interpreter/cpp/build/stratos run:*)"
+      "Bash(./src/interpreter/cpp/build/stratos run:*)",
+      "Bash(dpkg -l libsdl2-gfx-dev)",
+      "Bash(pkg-config --cflags --libs SDL2_gfx)",
+      "Read(//usr/include/SDL2/**)",
+      "Bash(cd /home/kamau/Development/Projects/stratos/src && bash build.sh 2>&1)",
+      "Bash(./src/build/stratos check:*)",
+      "Bash(./src/build/stratos run:*)",
+      "Bash(cd:*)",
+      "Bash(src/build/stratos run:*)",
+      "/dangerously-skip-permissions"
     ]
   }
 }

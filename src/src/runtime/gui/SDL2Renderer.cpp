@@ -7,6 +7,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <set>
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -126,6 +127,10 @@ public:
         SDL_GL_GetDrawableSize(window_, &drawW, &drawH);
         scaleFactor_ = static_cast<float>(drawW) / width;
 
+        if (scaleFactor_ > 1.0f) {
+            SDL_RenderSetLogicalSize(sdlRenderer_, width, height);
+        }
+
         // Load a default font
         loadDefaultFont();
 
@@ -136,9 +141,14 @@ public:
     void shutdown() override {
         if (!initialized_) return;
 
-        // Clean up fonts
+        // Clean up fonts — deduplicate pointers to avoid double-free
+        // (e.g. "Inter:14:400:0" and "sans-serif:14:400:0" share the same TTF_Font*)
+        std::set<TTF_Font*> closedFonts;
         for (auto& [key, font] : fontCache_) {
-            if (font) TTF_CloseFont(font);
+            if (font && closedFonts.find(font) == closedFonts.end()) {
+                TTF_CloseFont(font);
+                closedFonts.insert(font);
+            }
         }
         fontCache_.clear();
 
@@ -260,11 +270,12 @@ public:
         drawCircleImpl(cx + transformX_, cy + transformY_, radius, true);
     }
 
-    void drawLine(float x1, float y1, float x2, float y2, const Color& color, float /*thickness*/) override {
-        SDL_SetRenderDrawColor(sdlRenderer_, color.r, color.g, color.b, color.a);
-        SDL_RenderDrawLineF(sdlRenderer_,
-            x1 + transformX_, y1 + transformY_,
-            x2 + transformX_, y2 + transformY_);
+    void drawLine(float x1, float y1, float x2, float y2, const Color& color, float thickness) override {
+        float ax = x1 + transformX_;
+        float ay = y1 + transformY_;
+        float bx = x2 + transformX_;
+        float by = y2 + transformY_;
+        drawAALine(ax, ay, bx, by, color, thickness);
     }
 
     // Text
@@ -280,9 +291,13 @@ public:
 
         SDL_Texture* texture = SDL_CreateTextureFromSurface(sdlRenderer_, surface);
         if (texture) {
+            // On HiDPI, font was opened at size*scaleFactor_ so surface is larger;
+            // divide back to get logical coordinates
+            float dispW = static_cast<float>(surface->w) / scaleFactor_;
+            float dispH = static_cast<float>(surface->h) / scaleFactor_;
             SDL_FRect dst = {
                 x + transformX_, y + transformY_,
-                static_cast<float>(surface->w), static_cast<float>(surface->h)
+                dispW, dispH
             };
             SDL_RenderCopyF(sdlRenderer_, texture, nullptr, &dst);
             SDL_DestroyTexture(texture);
@@ -297,11 +312,13 @@ public:
         int w, h;
         TTF_SizeUTF8(ttfFont, text.c_str(), &w, &h);
 
+        // Divide by scaleFactor_ since fonts are opened at size*scaleFactor_ on HiDPI
+        float sf = scaleFactor_;
         return {
-            static_cast<float>(w),
-            static_cast<float>(h),
-            static_cast<float>(TTF_FontAscent(ttfFont)),
-            static_cast<float>(TTF_FontDescent(ttfFont))
+            static_cast<float>(w) / sf,
+            static_cast<float>(h) / sf,
+            static_cast<float>(TTF_FontAscent(ttfFont)) / sf,
+            static_cast<float>(TTF_FontDescent(ttfFont)) / sf
         };
     }
 
@@ -541,7 +558,8 @@ private:
 
         if (fontPath.empty()) return nullptr;
 
-        TTF_Font* font = TTF_OpenFont(fontPath.c_str(), static_cast<int>(spec.size));
+        // Scale font size by scaleFactor_ for HiDPI — renders at higher resolution
+        TTF_Font* font = TTF_OpenFont(fontPath.c_str(), static_cast<int>(spec.size * scaleFactor_));
         if (font) {
             int style = TTF_STYLE_NORMAL;
             if (spec.weight >= FontWeight::Bold) style |= TTF_STYLE_BOLD;
@@ -552,89 +570,250 @@ private:
         return font;
     }
 
-    // Rounded rect using the midpoint circle algorithm
-    void drawRoundedRectImpl(const Rect& rect, float radius, const Color& color, bool fill) {
-        SDL_SetRenderDrawColor(sdlRenderer_, color.r, color.g, color.b, color.a);
+    // ---- SDF-based anti-aliased rendering ----
 
+    // Rounded-rect signed distance function
+    // Returns negative inside, positive outside, 0 on edge
+    float roundedRectSDF(float px, float py, float cx, float cy, float halfW, float halfH, float r) {
+        float dx = std::max(std::abs(px - cx) - halfW + r, 0.0f);
+        float dy = std::max(std::abs(py - cy) - halfH + r, 0.0f);
+        return std::sqrt(dx * dx + dy * dy) - r;
+    }
+
+    // Draw a single pixel with alpha blending
+    void drawPixelAlpha(float px, float py, const Color& color, float alpha) {
+        if (alpha <= 0.0f) return;
+        alpha = std::min(alpha, 1.0f);
+        uint8_t a = static_cast<uint8_t>(color.a * alpha);
+        if (a == 0) return;
+        SDL_SetRenderDrawColor(sdlRenderer_, color.r, color.g, color.b, a);
+        SDL_RenderDrawPointF(sdlRenderer_, px, py);
+    }
+
+    void drawRoundedRectImpl(const Rect& rect, float radius, const Color& color, bool fill) {
         float x = rect.x + transformX_;
         float y = rect.y + transformY_;
         float w = rect.width;
         float h = rect.height;
-        float r = std::min(radius, std::min(w / 2, h / 2));
+        float r = std::min(radius, std::min(w / 2.0f, h / 2.0f));
+
+        float cx = x + w / 2.0f;
+        float cy = y + h / 2.0f;
+        float halfW = w / 2.0f;
+        float halfH = h / 2.0f;
 
         if (fill) {
-            // Fill the body rectangles
-            SDL_FRect bodyH = {x + r, y, w - 2 * r, h};
-            SDL_FRect bodyV = {x, y + r, w, h - 2 * r};
-            SDL_RenderFillRectF(sdlRenderer_, &bodyH);
-            SDL_RenderFillRectF(sdlRenderer_, &bodyV);
+            if (r <= 0) {
+                SDL_SetRenderDrawColor(sdlRenderer_, color.r, color.g, color.b, color.a);
+                SDL_FRect body = {x, y, w, h};
+                SDL_RenderFillRectF(sdlRenderer_, &body);
+                return;
+            }
 
-            // Fill the four corners
-            fillCornerCircle(x + r, y + r, r);                      // top-left
-            fillCornerCircle(x + w - r, y + r, r);                  // top-right
-            fillCornerCircle(x + r, y + h - r, r);                  // bottom-left
-            fillCornerCircle(x + w - r, y + h - r, r);              // bottom-right
-        } else {
-            // Top edge
-            SDL_RenderDrawLineF(sdlRenderer_, x + r, y, x + w - r, y);
-            // Bottom edge
-            SDL_RenderDrawLineF(sdlRenderer_, x + r, y + h, x + w - r, y + h);
-            // Left edge
-            SDL_RenderDrawLineF(sdlRenderer_, x, y + r, x, y + h - r);
-            // Right edge
-            SDL_RenderDrawLineF(sdlRenderer_, x + w, y + r, x + w, y + h - r);
+            // Scanline approach: for each row, compute SDF-clipped left/right edges
+            // This avoids all body-rect/corner seam issues
+            int iy = static_cast<int>(std::floor(y));
+            int iyEnd = static_cast<int>(std::ceil(y + h));
 
-            // Draw corner arcs
-            drawCornerArc(x + r, y + r, r, 180, 270);           // top-left
-            drawCornerArc(x + w - r, y + r, r, 270, 360);       // top-right
-            drawCornerArc(x + r, y + h - r, r, 90, 180);        // bottom-left
-            drawCornerArc(x + w - r, y + h - r, r, 0, 90);      // bottom-right
-        }
-    }
+            SDL_SetRenderDrawColor(sdlRenderer_, color.r, color.g, color.b, color.a);
 
-    void fillCornerCircle(float cx, float cy, float radius) {
-        int r = static_cast<int>(radius);
-        for (int dy = -r; dy <= r; dy++) {
-            int dx = static_cast<int>(std::sqrt(r * r - dy * dy));
-            SDL_RenderDrawLineF(sdlRenderer_, cx - dx, cy + dy, cx + dx, cy + dy);
-        }
-    }
+            for (int row = iy - 1; row <= iyEnd; row++) {
+                float py = row + 0.5f;
 
-    void drawCornerArc(float cx, float cy, float radius, int startAngle, int endAngle) {
-        for (int angle = startAngle; angle <= endAngle; angle++) {
-            float rad = angle * 3.14159265f / 180.0f;
-            float px = cx + radius * std::cos(rad);
-            float py = cy + radius * std::sin(rad);
-            SDL_RenderDrawPointF(sdlRenderer_, px, py);
-        }
-    }
+                // Skip rows clearly outside
+                if (py < y - 1.0f || py > y + h + 1.0f) continue;
 
-    void drawCircleImpl(float cx, float cy, float radius, bool fill) {
-        int r = static_cast<int>(radius);
-        if (fill) {
-            for (int dy = -r; dy <= r; dy++) {
-                int dx = static_cast<int>(std::sqrt(r * r - dy * dy));
-                SDL_RenderDrawLineF(sdlRenderer_, cx - dx, cy + dy, cx + dx, cy + dy);
+                // For this row, find the leftmost and rightmost visible pixels
+                int ix = static_cast<int>(std::floor(x));
+                int ixEnd = static_cast<int>(std::ceil(x + w));
+
+                // Check if this row is in the corner zone (top r pixels or bottom r pixels)
+                bool inCornerZone = (py < y + r + 0.5f) || (py > y + h - r - 0.5f);
+
+                if (!inCornerZone) {
+                    // Middle rows: straight edges, no AA needed on left/right
+                    // But we still need AA on the top/bottom edges of the straight portion
+                    float d = roundedRectSDF(x + 0.5f, py, cx, cy, halfW, halfH, r);
+                    if (d < -0.5f) {
+                        // Fully inside — fill entire row
+                        SDL_SetRenderDrawColor(sdlRenderer_, color.r, color.g, color.b, color.a);
+                        SDL_RenderDrawLineF(sdlRenderer_, x, py, x + w - 1, py);
+                    } else {
+                        // Edge row — need per-pixel SDF
+                        for (int col = ix - 1; col <= ixEnd; col++) {
+                            float px = col + 0.5f;
+                            float dd = roundedRectSDF(px, py, cx, cy, halfW, halfH, r);
+                            float coverage = std::clamp(0.5f - dd, 0.0f, 1.0f);
+                            if (coverage >= 0.99f) {
+                                SDL_SetRenderDrawColor(sdlRenderer_, color.r, color.g, color.b, color.a);
+                                SDL_RenderDrawPointF(sdlRenderer_, px, py);
+                            } else if (coverage > 0.0f) {
+                                drawPixelAlpha(px, py, color, coverage);
+                            }
+                        }
+                    }
+                } else {
+                    // Corner zone rows: need per-pixel SDF for the corners,
+                    // but can fill the middle straight section in bulk
+
+                    // Find where the curve starts/ends using SDF
+                    // Left corner zone: x to x+r+1
+                    // Right corner zone: x+w-r-1 to x+w
+                    // Middle: x+r+1 to x+w-r-1
+
+                    // Left corner pixels
+                    int leftEnd = static_cast<int>(std::ceil(x + r)) + 1;
+                    for (int col = ix - 1; col <= leftEnd; col++) {
+                        float px = col + 0.5f;
+                        float dd = roundedRectSDF(px, py, cx, cy, halfW, halfH, r);
+                        float coverage = std::clamp(0.5f - dd, 0.0f, 1.0f);
+                        if (coverage >= 0.99f) {
+                            SDL_SetRenderDrawColor(sdlRenderer_, color.r, color.g, color.b, color.a);
+                            SDL_RenderDrawPointF(sdlRenderer_, px, py);
+                        } else if (coverage > 0.0f) {
+                            drawPixelAlpha(px, py, color, coverage);
+                        }
+                    }
+
+                    // Middle section (guaranteed inside if the row itself is inside)
+                    float midLeft = x + r + 1;
+                    float midRight = x + w - r - 1;
+                    float dMid = roundedRectSDF(midLeft, py, cx, cy, halfW, halfH, r);
+                    if (dMid < -0.5f && midRight > midLeft) {
+                        SDL_SetRenderDrawColor(sdlRenderer_, color.r, color.g, color.b, color.a);
+                        SDL_RenderDrawLineF(sdlRenderer_, midLeft, py, midRight, py);
+                    }
+
+                    // Right corner pixels
+                    int rightStart = static_cast<int>(std::floor(x + w - r)) - 1;
+                    for (int col = rightStart; col <= ixEnd + 1; col++) {
+                        float px = col + 0.5f;
+                        float dd = roundedRectSDF(px, py, cx, cy, halfW, halfH, r);
+                        float coverage = std::clamp(0.5f - dd, 0.0f, 1.0f);
+                        if (coverage >= 0.99f) {
+                            SDL_SetRenderDrawColor(sdlRenderer_, color.r, color.g, color.b, color.a);
+                            SDL_RenderDrawPointF(sdlRenderer_, px, py);
+                        } else if (coverage > 0.0f) {
+                            drawPixelAlpha(px, py, color, coverage);
+                        }
+                    }
+                }
             }
         } else {
-            // Midpoint circle algorithm
-            int x = r, y = 0, err = 1 - r;
-            while (x >= y) {
-                SDL_RenderDrawPointF(sdlRenderer_, cx + x, cy + y);
-                SDL_RenderDrawPointF(sdlRenderer_, cx + y, cy + x);
-                SDL_RenderDrawPointF(sdlRenderer_, cx - y, cy + x);
-                SDL_RenderDrawPointF(sdlRenderer_, cx - x, cy + y);
-                SDL_RenderDrawPointF(sdlRenderer_, cx - x, cy - y);
-                SDL_RenderDrawPointF(sdlRenderer_, cx - y, cy - x);
-                SDL_RenderDrawPointF(sdlRenderer_, cx + y, cy - x);
-                SDL_RenderDrawPointF(sdlRenderer_, cx + x, cy - y);
-                y++;
-                if (err < 0) {
-                    err += 2 * y + 1;
-                } else {
-                    x--;
-                    err += 2 * (y - x) + 1;
+            // Stroke: draw an AA outline using SDF — iterate entire perimeter band
+            float strokeW = 1.0f;
+            int iy = static_cast<int>(std::floor(y)) - 1;
+            int iyEnd = static_cast<int>(std::ceil(y + h)) + 1;
+            int ix = static_cast<int>(std::floor(x)) - 1;
+            int ixEnd = static_cast<int>(std::ceil(x + w)) + 1;
+
+            for (int row = iy; row <= iyEnd; row++) {
+                float py = row + 0.5f;
+                for (int col = ix; col <= ixEnd; col++) {
+                    float px = col + 0.5f;
+                    float d = roundedRectSDF(px, py, cx, cy, halfW, halfH, r);
+                    // Only process pixels near the edge (within strokeW + 1 of boundary)
+                    if (d > 1.0f || d < -(strokeW + 1.0f)) continue;
+                    float outer = std::clamp(0.5f - d, 0.0f, 1.0f);
+                    float inner = std::clamp(0.5f - (-(d + strokeW)), 0.0f, 1.0f);
+                    float coverage = outer * inner;
+                    drawPixelAlpha(px, py, color, coverage);
                 }
+            }
+        }
+    }
+
+    // Anti-aliased circle using SDF
+    void drawCircleImpl(float cx, float cy, float radius, bool fill) {
+        int r = static_cast<int>(std::ceil(radius)) + 2;
+
+        if (fill) {
+            // Get the current draw color (set by callers)
+            uint8_t cr, cg, cb, ca;
+            SDL_GetRenderDrawColor(sdlRenderer_, &cr, &cg, &cb, &ca);
+            Color color = Color::rgba(cr, cg, cb, ca);
+
+            // Fill interior scanlines
+            int ir = static_cast<int>(radius - 1);
+            SDL_SetRenderDrawColor(sdlRenderer_, cr, cg, cb, ca);
+            for (int dy = -ir; dy <= ir; dy++) {
+                int dx = static_cast<int>(std::sqrt(radius * radius - dy * dy) - 1);
+                if (dx > 0) {
+                    SDL_RenderDrawLineF(sdlRenderer_, cx - dx, cy + dy, cx + dx, cy + dy);
+                }
+            }
+
+            // AA the edge pixels
+            for (int dy = -r; dy <= r; dy++) {
+                for (int dx = -r; dx <= r; dx++) {
+                    float px = cx + dx + 0.5f;
+                    float py = cy + dy + 0.5f;
+                    float dist = std::sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy)) - radius;
+                    // Only process edge pixels (within ~1px of the edge)
+                    if (dist > -1.5f && dist < 1.0f) {
+                        float coverage = std::clamp(0.5f - dist, 0.0f, 1.0f);
+                        drawPixelAlpha(px, py, color, coverage);
+                    }
+                }
+            }
+        } else {
+            // Stroke circle
+            uint8_t cr, cg, cb, ca;
+            SDL_GetRenderDrawColor(sdlRenderer_, &cr, &cg, &cb, &ca);
+            Color color = Color::rgba(cr, cg, cb, ca);
+            float strokeW = 1.0f;
+
+            for (int dy = -r; dy <= r; dy++) {
+                for (int dx = -r; dx <= r; dx++) {
+                    float px = cx + dx + 0.5f;
+                    float py = cy + dy + 0.5f;
+                    float dist = std::sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy)) - radius;
+                    float outer = std::clamp(0.5f - dist, 0.0f, 1.0f);
+                    float inner = std::clamp(0.5f - (-(dist + strokeW)), 0.0f, 1.0f);
+                    float coverage = outer * inner;
+                    drawPixelAlpha(px, py, color, coverage);
+                }
+            }
+        }
+    }
+
+    // Anti-aliased line using perpendicular distance
+    void drawAALine(float x1, float y1, float x2, float y2, const Color& color, float thickness) {
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+        float len = std::sqrt(dx * dx + dy * dy);
+        if (len < 0.001f) return;
+
+        float halfW = std::max(thickness / 2.0f, 0.5f);
+
+        // Bounding box with margin
+        int minX = static_cast<int>(std::floor(std::min(x1, x2) - halfW - 1));
+        int maxX = static_cast<int>(std::ceil(std::max(x1, x2) + halfW + 1));
+        int minY = static_cast<int>(std::floor(std::min(y1, y2) - halfW - 1));
+        int maxY = static_cast<int>(std::ceil(std::max(y1, y2) + halfW + 1));
+
+        // Unit direction and normal
+        float ux = dx / len, uy = dy / len;
+        float nx = -uy, ny = ux;
+
+        for (int py = minY; py <= maxY; py++) {
+            for (int px = minX; px <= maxX; px++) {
+                float fpx = px + 0.5f;
+                float fpy = py + 0.5f;
+
+                // Project onto line segment
+                float t = ((fpx - x1) * ux + (fpy - y1) * uy);
+                // Perpendicular distance
+                float perpDist = std::abs((fpx - x1) * nx + (fpy - y1) * ny);
+
+                // Distance along the line (for end caps)
+                float alongDist = 0.0f;
+                if (t < 0) alongDist = -t;
+                else if (t > len) alongDist = t - len;
+
+                float totalDist = std::sqrt(perpDist * perpDist + alongDist * alongDist);
+                float coverage = std::clamp(halfW + 0.5f - totalDist, 0.0f, 1.0f);
+                drawPixelAlpha(fpx, fpy, color, coverage);
             }
         }
     }

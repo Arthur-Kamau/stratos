@@ -1,0 +1,27 @@
+// Canvas rendering mode — future feature
+// This example demonstrates the planned canvas rendering target.
+// Currently, Stratos web compilation uses DOM-based rendering.
+// Canvas mode will use Emscripten + SDL2 for pixel-perfect rendering.
+
+import "std/gui";
+
+component App {
+    view {
+        Window(title: "Canvas Demo", width: 800, height: 600) {
+            Center {
+                Column(spacing: 16) {
+                    Text("Canvas Rendering Mode") {
+                        fontSize: 24;
+                        color: "white";
+                    }
+                    Text("This mode is planned for a future release.") {
+                        color: "#888";
+                    }
+                    Text("Currently uses DOM rendering as fallback.") {
+                        color: "#888";
+                    }
+                }
+            }
+        }
+    }
+}

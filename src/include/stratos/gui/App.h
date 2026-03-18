@@ -144,7 +144,7 @@ public:
     WidgetPtr getRoot() const { return root_; }
 
     // Theme
-    void setTheme(const Theme& theme) { theme_ = theme; }
+    void setTheme(const Theme& theme) { theme_ = theme; needsRedraw_ = true; }
     const Theme& getTheme() const { return theme_; }
 
     // Window

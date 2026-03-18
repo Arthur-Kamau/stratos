@@ -1,0 +1,46 @@
+import "std/gui";
+
+component TodoItem {
+    props {
+        text: string;
+        done: bool = false;
+    }
+
+    view {
+        Row(spacing: 8) {
+            Checkbox(text) {
+                checked: done;
+            }
+        }
+    }
+}
+
+component App {
+    state newTodo: string = "";
+
+    view {
+        Window(title: "Todo App", width: 800, height: 600) {
+            Column(spacing: 16, padding: 24) {
+                Text("Todo List") {
+                    fontSize: 24;
+                    fontWeight: "bold";
+                    color: "white";
+                }
+                Row(spacing: 8) {
+                    TextField("Add a todo...") {
+                        value: newTodo;
+                        onChange: { newTodo = value; }
+                    }
+                    Button("Add") {
+                        onClick: { newTodo = ""; }
+                    }
+                }
+                Column(spacing: 4) {
+                    Checkbox("Learn Stratos")
+                    Checkbox("Build a web app")
+                    Checkbox("Deploy to production")
+                }
+            }
+        }
+    }
+}

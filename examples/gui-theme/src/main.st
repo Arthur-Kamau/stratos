@@ -10,6 +10,15 @@ fn main() {
     val subtitle = Text("Toggle between light and dark themes");
     val lightBtn = ColoredButton("Light Theme", 255, 193, 7);
     val darkBtn = ColoredButton("Dark Theme", 55, 71, 79);
+
+    onClick(lightBtn, fn() void {
+        app.setTheme("light");
+    });
+
+    onClick(darkBtn, fn() void {
+        app.setTheme("dark");
+    });
+
     val buttons = Row(12.0, [lightBtn, darkBtn]);
     val input = TextField("Sample input field");
     val cb = Checkbox("Dark mode enabled");

@@ -1,0 +1,85 @@
+import "std/gui";
+
+component StatCard {
+    props {
+        label: string;
+        value: string;
+    }
+
+    view {
+        Box {
+            padding: 16;
+            backgroundColor: "#16213e";
+            borderRadius: 8;
+
+            Column(spacing: 8) {
+                Text(label) {
+                    fontSize: 12;
+                    color: "#888";
+                }
+                Text(value) {
+                    fontSize: 28;
+                    fontWeight: "bold";
+                    color: "white";
+                }
+            }
+        }
+    }
+}
+
+component App {
+    view {
+        Window(title: "Dashboard", width: 1024, height: 768) {
+            Column(spacing: 0) {
+                AppBar("Analytics Dashboard")
+
+                Column(spacing: 24, padding: 24) {
+                    Grid(columns: 4, spacing: 16) {
+                        StatCard(label: "Users", value: "12,847")
+                        StatCard(label: "Revenue", value: "$48,290")
+                        StatCard(label: "Orders", value: "1,423")
+                        StatCard(label: "Growth", value: "+12.5%")
+                    }
+
+                    Row(spacing: 16) {
+                        Box {
+                            flex: 2;
+                            padding: 16;
+                            backgroundColor: "#16213e";
+                            borderRadius: 8;
+
+                            Column(spacing: 8) {
+                                Text("Recent Activity") {
+                                    fontSize: 16;
+                                    fontWeight: "bold";
+                                    color: "white";
+                                }
+                                Text("User signed up — 2m ago") { color: "#ccc"; }
+                                Text("New order #1423 — 5m ago") { color: "#ccc"; }
+                                Text("Payment received — 12m ago") { color: "#ccc"; }
+                                Text("User updated profile — 15m ago") { color: "#ccc"; }
+                            }
+                        }
+                        Box {
+                            flex: 1;
+                            padding: 16;
+                            backgroundColor: "#16213e";
+                            borderRadius: 8;
+
+                            Column(spacing: 8) {
+                                Text("Quick Actions") {
+                                    fontSize: 16;
+                                    fontWeight: "bold";
+                                    color: "white";
+                                }
+                                Button("New Report")
+                                Button("Export Data")
+                                Button("Settings")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

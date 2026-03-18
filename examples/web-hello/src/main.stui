@@ -1,0 +1,21 @@
+import "std/gui";
+
+component App {
+    view {
+        Window(title: "Hello Web", width: 800, height: 600) {
+            Center {
+                Column(spacing: 16) {
+                    Text("Hello from Stratos Web!") {
+                        fontSize: 32;
+                        color: "white";
+                    }
+                    Button("Click Me") {
+                        onClick: {
+                            console.log("Button clicked!");
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

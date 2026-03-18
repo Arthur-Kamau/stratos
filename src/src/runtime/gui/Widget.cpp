@@ -1,4 +1,5 @@
 #include "stratos/gui/Widget.h"
+#include "stratos/gui/App.h"
 #include <SDL2/SDL.h>
 #include <algorithm>
 #include <cmath>
@@ -6,6 +7,12 @@
 
 namespace stratos {
 namespace gui {
+
+// Helper to get the active theme (returns nullptr if no app)
+static const Theme* activeTheme() {
+    App* app = App::current();
+    return app ? &app->getTheme() : nullptr;
+}
 
 // ============================================================
 // Base Widget
@@ -530,7 +537,14 @@ void Text::paint(IRenderer& renderer) {
     if (align_ == TextAlign::Center) textX = (bounds_.width - metrics.width) / 2;
     else if (align_ == TextAlign::Right) textX = bounds_.width - metrics.width;
 
-    renderer.drawText(text_, textX, 0, font_, color_);
+    // Use theme text color if the widget color is still the default black
+    Color textColor = color_;
+    if (auto* theme = activeTheme()) {
+        if (color_.r == 0 && color_.g == 0 && color_.b == 0 && color_.a == 255) {
+            textColor = theme->textPrimary;
+        }
+    }
+    renderer.drawText(text_, textX, 0, font_, textColor);
 
     renderer.restore();
 }
@@ -567,13 +581,6 @@ void Button::paint(IRenderer& renderer) {
         case WidgetState::Pressed: bgColor = pressedColor_; break;
         case WidgetState::Disabled: bgColor = disabledColor_; break;
         default: break;
-    }
-
-    // Shadow
-    if (state_ != WidgetState::Disabled) {
-        Shadow shadow = {0, 2, 4, Color::rgba(0, 0, 0, 40)};
-        renderer.drawShadow({0, 0, bounds_.width, bounds_.height},
-                             BorderRadius::all(4), shadow);
     }
 
     // Background
@@ -661,8 +668,10 @@ void Box::paint(IRenderer& renderer) {
 // ============================================================
 
 void TextField::layout(const Constraints& constraints) {
+    // Fill available width when not explicitly sized; fall back to 200 if unconstrained
+    float defaultW = constraints.maxWidth < 1e5f ? constraints.maxWidth : 200.0f;
     bounds_.width = style_.width >= 0 ? style_.width :
-                    std::clamp(200.0f, constraints.minWidth, constraints.maxWidth);
+                    std::clamp(defaultW, constraints.minWidth, constraints.maxWidth);
     bounds_.height = style_.height >= 0 ? style_.height :
                      std::clamp(40.0f, constraints.minHeight, constraints.maxHeight);
 }
@@ -673,14 +682,25 @@ void TextField::paint(IRenderer& renderer) {
     renderer.save();
     renderer.translate(bounds_.x, bounds_.y);
 
+    // Theme-aware colors
+    const Theme* theme = activeTheme();
+    Color surfaceColor = theme ? theme->surface : Color::white();
+    Color surfaceDim = theme ? Color::rgb(
+        std::min(255, (int)surfaceColor.r + 10),
+        std::min(255, (int)surfaceColor.g + 10),
+        std::min(255, (int)surfaceColor.b + 10)) : Color::rgb(245, 245, 245);
+    Color primaryColor = theme ? theme->primary : Color::rgb(33, 150, 243);
+    Color borderNormal = theme ? theme->divider : Color::rgb(200, 200, 200);
+    Color hintColor = theme ? theme->textHint : Color::rgb(158, 158, 158);
+    Color textColor = theme ? theme->textPrimary : Color::black();
+
     // Background
-    Color bg = state_ == WidgetState::Focused ? Color::white() : Color::rgb(245, 245, 245);
+    Color bg = state_ == WidgetState::Focused ? surfaceColor : surfaceDim;
     renderer.fillRoundedRect({0, 0, bounds_.width, bounds_.height},
                               BorderRadius::all(4), bg);
 
     // Border
-    Color borderColor = state_ == WidgetState::Focused ?
-                         Color::rgb(33, 150, 243) : Color::rgb(200, 200, 200);
+    Color borderColor = state_ == WidgetState::Focused ? primaryColor : borderNormal;
     renderer.drawRoundedRect({0, 0, bounds_.width, bounds_.height},
                               BorderRadius::all(4), borderColor);
 
@@ -689,9 +709,9 @@ void TextField::paint(IRenderer& renderer) {
     float textY = (bounds_.height - font_.size * 1.4f) / 2;
 
     if (value_.empty() && !placeholder_.empty()) {
-        renderer.drawText(placeholder_, textX, textY, font_, Color::rgb(158, 158, 158));
+        renderer.drawText(placeholder_, textX, textY, font_, hintColor);
     } else {
-        renderer.drawText(value_, textX, textY, font_, Color::black());
+        renderer.drawText(value_, textX, textY, font_, textColor);
 
         // Cursor
         if (state_ == WidgetState::Focused && cursorVisible_) {
@@ -699,7 +719,7 @@ void TextField::paint(IRenderer& renderer) {
             TextMetrics m = renderer.measureText(beforeCursor, font_);
             renderer.drawLine(textX + m.width, textY + 2,
                                textX + m.width, textY + font_.size + 2,
-                               Color::black(), 1.5f);
+                               textColor, 1.5f);
         }
     }
 
@@ -774,6 +794,11 @@ void Checkbox::paint(IRenderer& renderer) {
     float boxSize = 18;
     float boxY = (bounds_.height - boxSize) / 2;
 
+    // Theme-aware colors
+    const Theme* theme = activeTheme();
+    Color uncheckedBorder = theme ? theme->textHint : Color::rgb(158, 158, 158);
+    Color labelColor = theme ? theme->textPrimary : Color::black();
+
     // Box
     if (checked_) {
         renderer.fillRoundedRect({0, boxY, boxSize, boxSize},
@@ -783,13 +808,13 @@ void Checkbox::paint(IRenderer& renderer) {
         renderer.drawLine(7, boxY + boxSize - 5, 14, boxY + 4, Color::white(), 2);
     } else {
         renderer.drawRoundedRect({0, boxY, boxSize, boxSize},
-                                  BorderRadius::all(3), Color::rgb(158, 158, 158));
+                                  BorderRadius::all(3), uncheckedBorder);
     }
 
     // Label
     if (!label_.empty()) {
         FontSpec font = {"sans-serif", 14, FontWeight::Regular, FontStyle::Normal};
-        renderer.drawText(label_, boxSize + 8, (bounds_.height - 14) / 2, font, Color::black());
+        renderer.drawText(label_, boxSize + 8, (bounds_.height - 14) / 2, font, labelColor);
     }
 
     renderer.restore();
@@ -813,8 +838,9 @@ bool Checkbox::handleEvent(const Event& event) {
 // ============================================================
 
 void Slider::layout(const Constraints& constraints) {
+    float defaultW = constraints.maxWidth < 1e5f ? constraints.maxWidth : 200.0f;
     bounds_.width = style_.width >= 0 ? style_.width :
-                    std::clamp(200.0f, constraints.minWidth, constraints.maxWidth);
+                    std::clamp(defaultW, constraints.minWidth, constraints.maxWidth);
     bounds_.height = style_.height >= 0 ? style_.height :
                      std::clamp(32.0f, constraints.minHeight, constraints.maxHeight);
 }
@@ -830,9 +856,16 @@ void Slider::paint(IRenderer& renderer) {
     float progress = (value_ - min_) / (max_ - min_);
     float thumbX = progress * (bounds_.width - thumbR * 2) + thumbR;
 
+    // Theme-aware track color
+    const Theme* theme = activeTheme();
+    Color trackBg = trackColor_;
+    if (theme && trackColor_.r == 200 && trackColor_.g == 200 && trackColor_.b == 200) {
+        trackBg = theme->divider;
+    }
+
     // Track background
     renderer.fillRoundedRect({0, trackY, bounds_.width, trackH},
-                              BorderRadius::all(2), trackColor_);
+                              BorderRadius::all(2), trackBg);
 
     // Active track
     renderer.fillRoundedRect({0, trackY, thumbX, trackH},
@@ -843,7 +876,11 @@ void Slider::paint(IRenderer& renderer) {
                           BorderRadius::all(thumbR), {0, 1, 3, Color::rgba(0, 0, 0, 40)});
 
     // Thumb
-    renderer.fillCircle(thumbX, bounds_.height / 2, thumbR, thumbColor_);
+    Color thumbBg = thumbColor_;
+    if (theme && thumbColor_.r == 255 && thumbColor_.g == 255 && thumbColor_.b == 255) {
+        thumbBg = theme->surface;
+    }
+    renderer.fillCircle(thumbX, bounds_.height / 2, thumbR, thumbBg);
     renderer.drawCircle(thumbX, bounds_.height / 2, thumbR, activeColor_);
 
     renderer.restore();
@@ -1173,10 +1210,12 @@ void TextArea::updateCursorLineCol() {
 }
 
 void TextArea::layout(const Constraints& constraints) {
+    float defaultW = constraints.maxWidth < 1e5f ? constraints.maxWidth : 300.0f;
     bounds_.width = style_.width >= 0 ? style_.width :
-                    std::clamp(300.0f, constraints.minWidth, constraints.maxWidth);
+                    std::clamp(defaultW, constraints.minWidth, constraints.maxWidth);
+    float defaultH = constraints.maxHeight < 1e5f ? std::min(120.0f, constraints.maxHeight) : 120.0f;
     bounds_.height = style_.height >= 0 ? style_.height :
-                     std::clamp(120.0f, constraints.minHeight, constraints.maxHeight);
+                     std::clamp(defaultH, constraints.minHeight, constraints.maxHeight);
 }
 
 void TextArea::paint(IRenderer& renderer) {
@@ -1369,8 +1408,9 @@ bool RadioButton::handleEvent(const Event& event) {
 // ============================================================
 
 void Dropdown::layout(const Constraints& constraints) {
+    float defaultW = constraints.maxWidth < 1e5f ? constraints.maxWidth : 200.0f;
     bounds_.width = style_.width >= 0 ? style_.width :
-                    std::clamp(200.0f, constraints.minWidth, constraints.maxWidth);
+                    std::clamp(defaultW, constraints.minWidth, constraints.maxWidth);
     bounds_.height = style_.height >= 0 ? style_.height :
                      std::clamp(40.0f, constraints.minHeight, constraints.maxHeight);
 }
